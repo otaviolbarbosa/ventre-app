@@ -1,0 +1,34 @@
+{
+  "name": "@nascere/supabase",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./server": "./src/server.ts",
+    "./types": "./src/types/database.types.ts"
+  },
+  "scripts": {
+    "dev": "supabase start",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff",
+    "db:migration:new": "supabase migration new",
+    "types": "supabase gen types typescript --project-id osnpmadayhignmkpoevr > ./src/types/database.types.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.91.1"
+  },
+  "peerDependencies": {
+    "next": ">=14.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "next": "^16.1.0",
+    "supabase": "^2.72.8",
+    "typescript": "^5.9.3"
+  }
+}
