@@ -1,17 +1,18 @@
 "use client";
 
-import { Bell, ChevronLeft, DotSquare, EllipsisVertical, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { getInitials } from "@/utils";
+import { Bell, ChevronLeft } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import Image from "next/image";
-import { getInitials } from "@/utils";
 
 interface HeaderProps {
   title?: string;
-  back?: boolean;
+  back?: string | boolean;
 }
 
 export function Header({ title, back }: HeaderProps) {
@@ -38,42 +39,47 @@ export function Header({ title, back }: HeaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleGoBack = router.back;
+  const handleGoBack = () => {
+    if (typeof back === "string") {
+      router.replace(back);
+    }
+    router.back();
+  };
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-gray-50 flex h-16 items-center gap-2 px-4 md:px-6 transition-shadow duration-300",
-        isScrolled && "shadow-lg shadow-gray-200",
+        "sticky top-0 z-40 flex h-16 items-center gap-2 bg-primary-50 px-4 transition-shadow duration-300 md:px-6",
+        isScrolled && "shadow-gray-200 shadow-lg",
       )}
     >
       {/* Back button */}
       {back && (
-        <Button variant="ghost" size="icon" className="md:hidden mx-0" onClick={handleGoBack}>
+        <Button variant="ghost" size="icon" className="mx-0 md:hidden" onClick={handleGoBack}>
           <ChevronLeft />
         </Button>
       )}
       {/* Title */}
       {title && (
         <div className="flex-1">
-          {title && <h1 className="font-poppins text-2xl font-semibold tracking-tight">{title}</h1>}
+          {title && <h1 className="font-poppins font-semibold text-2xl tracking-tight">{title}</h1>}
         </div>
       )}
       {/* Mobile menu */}
-      <div className="flex gap-2 justify-center">
-        <Button variant="ghost" size="icon" className="md:hidden">
+      <div className="flex justify-center gap-2">
+        <Button variant="ghost" size="icon" className="bg-white md:hidden">
           <Bell className="h-5 w-5" />
-          <span className="sr-only">Abrir menu</span>
+          <span className="sr-only">Notificações</span>
         </Button>
-        <Button variant="ghost" size="icon" className="md:hidden overflow-hidden">
+        <Link href="/profile" className="size-9 overflow-hidden rounded-full md:hidden">
           {profile?.avatar_url ? (
-            <Image src={profile.avatar_url} alt="User avatar" width={40} height={40} priority />
+            <Image src={profile.avatar_url} alt="User avatar" width={36} height={36} priority />
           ) : (
             getInitials(profile?.name)
           )}
 
           <span className="sr-only">Perfil</span>
-        </Button>
+        </Link>
       </div>
     </header>
   );

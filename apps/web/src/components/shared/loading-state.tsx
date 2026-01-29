@@ -32,14 +32,6 @@ export function LoadingCard() {
 export function LoadingTable() {
   return (
     <div className="rounded-lg border">
-      <div className="border-b bg-muted/50 p-4">
-        <div className="flex gap-4">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-28" />
-        </div>
-      </div>
       <div className="divide-y">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 p-4">

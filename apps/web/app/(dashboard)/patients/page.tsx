@@ -1,10 +1,8 @@
-import type { Tables } from "@nascere/supabase/types";
-import PatientsScreen from "@/screens/patients-screen";
-
-type Patient = Tables<"patients">;
+import { PatientsScreen } from "@/screens";
+import { getMyPatients } from "@/services";
 
 export default async function PatientsPage() {
-  const patients = (await fetch("/api/patients")) as unknown as Patient[];
+  const { patients } = await getMyPatients();
 
   return <PatientsScreen patients={patients} />;
 }

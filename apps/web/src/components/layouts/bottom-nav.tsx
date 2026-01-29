@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Home, Mail, Users, Settings, Brain, BrainCircuit } from "lucide-react";
+import { Home, Mail, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -26,17 +26,17 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed sm:hidden w-full bottom-0 p-4">
-      <div className="flex justify-between gap-2 bg-white p-1.5 border border-primary/20 rounded-full shadow-md shadow-primary/10 overflow-scroll">
+    <div className="fixed bottom-0 w-full p-4 sm:hidden">
+      <div className="flex justify-between gap-2 overflow-scroll rounded-full border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
         {navigation.map((navItem) => {
           return (
             <Link
               key={`bottom-nav-tem-${navItem.name}`}
               href={navItem.href}
               className={cn(
-                "flex justify-center items-center size-12 border border-primary/20 rounded-full bg-primary-50",
+                "flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
                 "transition-all duration-500 ease-out",
-                navItem.isActive && "flex-1 size-auto px-4 bg-primary shadow",
+                navItem.isActive && "size-auto flex-1 bg-primary px-4 shadow",
               )}
             >
               <navItem.icon
@@ -47,8 +47,8 @@ export default function BottomNav() {
               />
               <div
                 className={cn(
-                  "font-poppins text-xs text-white font-medium overflow-hidden transition-all duration-500 ease-out",
-                  navItem.isActive ? "max-w-24 opacity-100 pl-2" : "max-w-0 opacity-0",
+                  "overflow-hidden font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
+                  navItem.isActive ? "max-w-24 pl-2 opacity-100" : "max-w-0 opacity-0",
                 )}
               >
                 {navItem.name}

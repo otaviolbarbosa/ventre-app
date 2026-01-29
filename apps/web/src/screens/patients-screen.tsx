@@ -1,24 +1,19 @@
 "use client";
-import React, { useState } from "react";
-import Link from "next/link";
-import { Plus, Users, Baby, Calendar } from "lucide-react";
-import { dayjs } from "@/lib/dayjs";
-import { calculateGestationalAge } from "@/lib/gestational-age";
+import { Header } from "@/components/layouts/header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Header } from "@/components/layouts/header";
-import { PageHeader } from "@/components/shared/page-header";
-import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingTable } from "@/components/shared/loading-state";
+import { dayjs } from "@/lib/dayjs";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { Tables } from "@nascere/supabase";
+import { Baby, Plus } from "lucide-react";
+import Link from "next/link";
 
 type PatientsScreenProps = {
   patients: Tables<"patients">[];
 };
 export default function PatientsScreen({ patients }: PatientsScreenProps) {
-  const [loading, setLoading] = useState(false);
-
   return (
     <div>
       <Header title="Minhas Gestantes" />
@@ -35,9 +30,7 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
           </Link>
         </PageHeader>
 
-        {loading ? (
-          <LoadingTable />
-        ) : patients.length === 0 ? (
+        {patients.length === 0 ? (
           <EmptyState
             icon={Baby}
             title="Nenhuma paciente cadastrada"

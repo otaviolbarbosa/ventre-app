@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Mail, Check, X, Baby, Calendar } from "lucide-react";
-import { toast } from "sonner";
-import { dayjs } from "@/lib/dayjs";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layouts/header";
-import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingTable } from "@/components/shared/loading-state";
+import { PageHeader } from "@/components/shared/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { dayjs } from "@/lib/dayjs";
+import { Calendar, Check, Mail, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type Invite = {
   id: string;
@@ -69,8 +69,8 @@ export default function InvitesPage() {
   return (
     <div>
       <Header title="Convites" />
-      <div className="p-4 md:p-6">
-        <PageHeader title="Convites" description="Convites recebidos para participar de equipes" />
+      <div className="p-4 pt-0 md:p-6">
+        <PageHeader description="Convites recebidos para participar de equipes" />
 
         {loading ? (
           <LoadingTable />
