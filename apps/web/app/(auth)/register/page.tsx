@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -27,6 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -77,7 +77,10 @@ export default function RegisterPage() {
 
     if (error) {
       toast.error("Erro ao criar conta", {
-        description: error.message,
+        description:
+          typeof error === "object" && error !== null && "message" in error
+            ? (error as { message: string }).message
+            : "Ocorreu um erro desconhecido.",
       });
       setIsLoading(false);
       return;

@@ -1,16 +1,16 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -27,9 +27,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { useAuth } from "@/hooks/use-auth";
 
 const loginSchema = z.object({
@@ -59,11 +59,23 @@ function LoginForm() {
     const { error } = await signIn(data.email, data.password);
 
     if (error) {
+      let message = "";
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: unknown }).message === "string"
+      ) {
+        message = (error as { message: string }).message;
+      }
       toast.error("Erro ao fazer login", {
-        description:
-          error.message === "Invalid login credentials"
-            ? "Email ou senha incorretos"
-            : error.message,
+        description: (
+          <>
+            {message === "Invalid login credentials"
+              ? "Email ou senha incorretos"
+              : message || "Ocorreu um erro ao fazer login."}
+          </>
+        ),
       });
       setIsLoading(false);
       return;

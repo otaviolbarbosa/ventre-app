@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -36,15 +36,19 @@ function GoogleIcon() {
 
 export function SocialLoginButtons({ redirectTo }: SocialLoginButtonsProps) {
   const { signInWithGoogle } = useAuth();
-  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+  const [loadingProvider, setLoadingProvider] = useState<null | "google">(null);
 
   const handleGoogleLogin = async () => {
     setLoadingProvider("google");
     const { error } = await signInWithGoogle(redirectTo);
 
     if (error) {
+      const errorMessage =
+        typeof error === "object" && error !== null && "message" in error
+          ? (error as { message?: string }).message
+          : "Ocorreu um erro desconhecido.";
       toast.error("Erro ao fazer login com Google", {
-        description: error.message,
+        description: errorMessage,
       });
       setLoadingProvider(null);
     }
