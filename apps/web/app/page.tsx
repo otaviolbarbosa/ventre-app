@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { Baby, Users, Calendar, ArrowRight } from "lucide-react";
+import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Logo } from "@/components/shared/logo";
+import { ArrowRight, Baby, Calendar, Users } from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -10,7 +10,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="border-b bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Logo href="/" />
+          <Logo href="/" size="xl" />
           <nav className="flex items-center space-x-4">
             <Link href="/login">
               <Button variant="ghost">Entrar</Button>
