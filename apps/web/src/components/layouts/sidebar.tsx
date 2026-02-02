@@ -5,13 +5,16 @@ import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { LogOut, Mail, Users } from "lucide-react";
+import { Calendar, Home, LogOut, Mail, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const navigation = [
+  { name: "Home", href: "/home", icon: Home },
   { name: "Pacientes", href: "/patients", icon: Users },
+  { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Convites", href: "/invites", icon: Mail },
+  { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -40,7 +43,7 @@ export function Sidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-sm transition-colors",
                 isActive
                   ? "bg-primary-50 text-primary-700"
                   : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
@@ -58,8 +61,8 @@ export function Sidebar() {
         <div className="mb-3 flex items-center gap-3">
           <Avatar className="size-10" />
           <div className="flex-1 truncate">
-            <p className="truncate text-sm font-medium text-gray-900">{profile?.name}</p>
-            <p className="truncate text-xs text-gray-500">{profile?.professional_type}</p>
+            <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>
+            <p className="truncate text-gray-500 text-xs">{profile?.professional_type}</p>
           </div>
         </div>
         <Button
