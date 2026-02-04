@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-primary-50 pb-24 sm:pb-0">{children}</main>
+        <main className="flex-1 overflow-y-auto pb-24 sm:pb-0">{children}</main>
       </div>
       <BottomNav />
     </div>

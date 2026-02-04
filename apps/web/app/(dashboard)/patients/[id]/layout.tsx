@@ -83,8 +83,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             </CardHeader>
             <CardContent className="flex items-center gap-6 p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-gray-200 p-4">
-                  <Baby />
+                <div className="rounded-lg bg-primary-50 p-4 shadow shadow-primary/20">
+                  <Baby className="text-primary-700" />
                 </div>
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1">
@@ -112,8 +112,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             </CardHeader>
             <CardContent className="flex items-center p-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-gray-200 p-4">
-                  <Calendar />
+                <div className="rounded-lg bg-primary-50 p-4 shadow shadow-primary/20">
+                  <Calendar className="text-primary-700" />
                 </div>
                 <div className="font-poppins">
                   <div className="text-center font-semibold text-2xl">

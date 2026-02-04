@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { Header } from "@/components/layouts/header";
+import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
@@ -19,9 +20,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Header } from "@/components/layouts/header";
-import { PageHeader } from "@/components/shared/page-header";
-import { createPatientSchema, type CreatePatientInput } from "@/lib/validations/patient";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
+import dayjs from "dayjs";
 
 export default function NewPatientPage() {
   const router = useRouter();
@@ -120,7 +122,13 @@ export default function NewPatientPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input type="tel" placeholder="(11) 99999-9999" {...field} />
+                          {/* <Input type="tel" placeholder="(11) 99999-9999" {...field} /> */}
+                          <InputMask
+                            component={Input}
+                            mask="(__) _____-____"
+                            replacement={{ _: /\d/ }}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -155,14 +163,17 @@ export default function NewPatientPage() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e);
-                              // const dpp = e.target.value
-                              // if (dpp) {
-                              //   const dppDate = new Date(`${dpp}T00:00:00`)
-                              //   dppDate.setDate(dppDate.getDate() - 280)
-                              //   form.setValue("dum", dppDate.toISOString().split("T")[0])
-                              // } else {
-                              //   form.setValue("dum", "")
-                              // }
+                              const dpp = e.target.value;
+                              if (dpp) {
+                                const dppDate = dayjs(dpp);
+
+                                form.setValue(
+                                  "dum",
+                                  dppDate.subtract(280, "day").format("YYYY-MM-DD"),
+                                );
+                              } else {
+                                form.setValue("dum", "");
+                              }
                             }}
                           />
                         </FormControl>

@@ -218,7 +218,9 @@ export default function PatientAppointmentsPage() {
                         min={15}
                         step={15}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value) || undefined)}
+                        onChange={(e) =>
+                          field.onChange(Number.parseInt(e.target.value) || undefined)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -295,11 +297,13 @@ export default function PatientAppointmentsPage() {
             return (
               <Card key={appointment.id}>
                 <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-primary-50 px-3 py-2 font-poppins text-primary-700">
+                  <div className="flex flex-col items-center justify-center rounded-lg bg-primary-50 px-3 py-2 font-poppins text-primary-700 shadow shadow-primary/20">
                     <span className="font-semibold text-2xl">
                       {dayjs(appointment.date).format("DD")}
                     </span>
-                    <span className="text-sm uppercase">{dayjs(appointment.date).format("MMM")}</span>
+                    <span className="text-sm uppercase">
+                      {dayjs(appointment.date).format("MMM")}
+                    </span>
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between gap-2">

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  /* :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
     --card: 0 0% 100%;
@@ -46,6 +46,80 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 259 75% 60%;
+  } */
+
+  /* https://shadcnstudio.com/theme-generator#basic-features */
+  /* pnpm dlx shadcn@latest add @ss-themes/pastel-dreams */
+  :root {
+    --background: 283 41% 97%;
+    --foreground: 217 19% 26%;
+    --card: 0 0% 100%;
+    --card-foreground: 217 19% 26%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 217 19% 26%;
+    --primary: 255 93% 76%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 267 85% 92%;
+    --secondary-foreground: 216 15% 35%;
+    --muted: 269 100% 96%;
+    --muted-foreground: 220 8% 46%;
+    --accent: 293 53% 93%;
+    --accent-foreground: 217 19% 26%;
+    /* --destructive: 0 91% 82%; */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 267 85% 92%;
+    --input: 267 85% 92%;
+    --ring: 255 93% 76%;
+    --chart-1: 255 93% 76%;
+    --chart-2: 258 92% 67%;
+    --chart-3: 262 84% 58%;
+    --chart-4: 263 69% 50%;
+    --chart-5: 263 70% 42%;
+    --sidebar: 267 85% 92%;
+    --sidebar-foreground: 217 19% 26%;
+    --sidebar-primary: 255 93% 76%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 293 53% 93%;
+    --sidebar-accent-foreground: 217 19% 26%;
+    --sidebar-border: 267 85% 92%;
+    --sidebar-ring: 255 93% 76%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 23 15% 10%;
+    --foreground: 227 88% 94%;
+    --card: 270 18% 18%;
+    --card-foreground: 227 88% 94%;
+    --popover: 270 18% 18%;
+    --popover-foreground: 227 88% 94%;
+    --primary: 256 100% 83%;
+    --primary-foreground: 23 15% 10%;
+    --secondary: 273 18% 24%;
+    --secondary-foreground: 218 13% 84%;
+    --muted: 270 18% 18%;
+    --muted-foreground: 218 10% 65%;
+    --accent: 267 19% 30%;
+    --accent-foreground: 218 13% 84%;
+    --destructive: 0 91% 82%;
+    --border: 273 18% 24%;
+    --input: 273 18% 24%;
+    --ring: 256 100% 83%;
+    --chart-1: 256 100% 83%;
+    --chart-2: 255 93% 76%;
+    --chart-3: 258 92% 67%;
+    --chart-4: 262 84% 58%;
+    --chart-5: 263 69% 50%;
+    --sidebar: 273 18% 24%;
+    --sidebar-foreground: 227 88% 94%;
+    --sidebar-primary: 256 100% 83%;
+    --sidebar-primary-foreground: 23 15% 10%;
+    --sidebar-accent: 267 19% 30%;
+    --sidebar-accent-foreground: 218 13% 84%;
+    --sidebar-border: 273 18% 24%;
+    --sidebar-ring: 256 100% 83%;
   }
 }
 

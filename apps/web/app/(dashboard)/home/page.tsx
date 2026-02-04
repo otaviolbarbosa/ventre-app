@@ -1,11 +1,11 @@
 import { HomeScreen } from "@/screens";
-import { getProfile } from "@/services";
+import { getHomeData, getProfile } from "@/services";
 import type { Tables } from "@nascere/supabase";
 
 type Profile = Tables<"users">;
 
 export default async function Home() {
-  const { profile } = await getProfile();
+  const [{ profile }, homeData] = await Promise.all([getProfile(), getHomeData()]);
 
-  return <HomeScreen profile={profile as Profile} />;
+  return <HomeScreen profile={profile as Profile} homeData={homeData} />;
 }
