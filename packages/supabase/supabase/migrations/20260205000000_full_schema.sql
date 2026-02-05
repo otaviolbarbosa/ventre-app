@@ -1,0 +1,2 @@
+-- This migration is a schema checkpoint marker.
+-- The full schema state at this point is defined by the previous migrations.

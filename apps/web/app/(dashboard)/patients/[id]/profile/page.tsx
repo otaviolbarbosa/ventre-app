@@ -11,8 +11,13 @@ import { toast } from "sonner";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { ContentModal } from "@/components/shared/content-modal";
 import { LoadingCard } from "@/components/shared/loading-state";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -32,7 +37,7 @@ type Patient = Tables<"patients">;
 function InfoItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-muted-foreground text-sm">{label}</p>
       <p className="font-medium">{value || "-"}</p>
     </div>
   );
@@ -163,46 +168,83 @@ export default function PatientProfilePage() {
 
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Informações da Gestante</CardTitle>
-            <Button variant="outline" size="sm" onClick={handleOpenEditModal}>
-              <Pencil className="h-4 w-4" />
-              <span className="ml-2 hidden sm:block">Editar</span>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <InfoItem label="Nome completo" value={patient.name} />
+      <div className="space-y-6">
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="informacoes">
+            <AccordionTrigger className="font-semibold text-base">
+              <div className="flex w-full items-center justify-between pr-4">
+                <span>Informações da Paciente</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="relative space-y-4 pt-4">
+              <InfoItem label="Nome completo" value={patient.name} />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InfoItem label="Email" value={patient.email} />
-              <InfoItem label="Telefone" value={patient.phone} />
-            </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <InfoItem label="Email" value={patient.email} />
+                <InfoItem label="Telefone" value={patient.phone} />
+              </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <InfoItem
+                  label="Data de nascimento"
+                  value={
+                    patient.date_of_birth ? dayjs(patient.date_of_birth).format("DD/MM/YYYY") : null
+                  }
+                />
+                <InfoItem
+                  label="Data prevista do parto (DPP)"
+                  value={patient.due_date ? dayjs(patient.due_date).format("DD/MM/YYYY") : null}
+                />
+              </div>
+
               <InfoItem
-                label="Data de nascimento"
-                value={
-                  patient.date_of_birth ? dayjs(patient.date_of_birth).format("DD/MM/YYYY") : null
-                }
+                label="Data da última menstruação (DUM)"
+                value={patient.dum ? dayjs(patient.dum).format("DD/MM/YYYY") : null}
               />
-              <InfoItem
-                label="Data prevista do parto (DPP)"
-                value={patient.due_date ? dayjs(patient.due_date).format("DD/MM/YYYY") : null}
-              />
-            </div>
 
-            <InfoItem
-              label="Data da última menstruação (DUM)"
-              value={patient.dum ? dayjs(patient.dum).format("DD/MM/YYYY") : null}
-            />
+              <InfoItem label="Endereço" value={patient.address} />
 
-            <InfoItem label="Endereço" value={patient.address} />
+              <InfoItem label="Observações" value={patient.observations} />
 
-            <InfoItem label="Observações" value={patient.observations} />
-          </CardContent>
-        </Card>
+              <Button
+                variant="outline"
+                className="absolute top-0 right-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditModal();
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+                <span className="ml-2 block">Editar</span>
+              </Button>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="cartao-prenatal">
+            <AccordionTrigger className="font-semibold text-base">
+              Cartão Pré-natal
+            </AccordionTrigger>
+            <AccordionContent>
+              <p className="text-muted-foreground">Em breve...</p>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="documentos">
+            <AccordionTrigger className="font-semibold text-base">Documentos</AccordionTrigger>
+            <AccordionContent>
+              <p className="text-muted-foreground">Em breve...</p>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="evolucao">
+            <AccordionTrigger className="font-semibold text-base">
+              Evolução da Paciente
+            </AccordionTrigger>
+            <AccordionContent>
+              <p className="text-muted-foreground">Em breve...</p>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
 
         <Button variant="destructive" className="w-full" onClick={() => setShowDeleteDialog(true)}>
           <Trash2 className="mr-2 h-4 w-4" />

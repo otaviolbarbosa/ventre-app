@@ -1,15 +1,10 @@
 "use client";
 
 import { Header } from "@/components/layouts/header";
-import GestationalProgressBar from "@/components/shared/gestational-progress-bar";
 import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { dayjs } from "@/lib/dayjs";
-import { calculateGestationalAge, calculateRemainingDays } from "@/lib/gestational-age";
 import type { Tables } from "@nascere/supabase/types";
-import { Baby, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -76,7 +71,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
           // title={patient.name}
           breadcrumbs={[{ label: "Gestantes", href: "/patients" }, { label: patient.name }]}
         />
-        <div className="mb-6 block flex flex-col gap-2 lg:flex-row">
+        {/* <div className="mb-6 block flex flex-col gap-2 lg:flex-row">
           <Card className="flex-1">
             <CardHeader className="p-4 pb-0">
               <CardTitle>Idade Gestacional</CardTitle>
@@ -133,7 +128,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
 
         <Tabs value={currentTab} className="mb-6 w-full">
           <TabsList>

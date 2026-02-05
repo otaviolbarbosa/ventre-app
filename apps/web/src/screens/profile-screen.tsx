@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { InputMask } from "@react-input/mask";
 import type { Tables } from "@nascere/supabase/types";
+import { InputMask } from "@react-input/mask";
 import {
   Bell,
   Camera,
@@ -300,7 +300,7 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
           <MenuItem
             icon={<Settings className="h-5 w-5" />}
             label="Configurações"
-            href="/settings"
+            href="/profile/settings"
           />
           <MenuItem
             icon={<CreditCard className="h-5 w-5" />}

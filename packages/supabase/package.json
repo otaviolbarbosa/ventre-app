@@ -16,6 +16,7 @@
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",
     "db:migration:new": "supabase migration new",
+    "db:seed:generate": "tsx scripts/generate-seed.ts",
     "types": "supabase gen types typescript --project-id osnpmadayhignmkpoevr > ./src/types/database.types.ts"
   },
   "dependencies": {
@@ -26,9 +27,12 @@
     "next": ">=14.0.0"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.2.0",
     "@types/node": "^25.0.10",
+    "dayjs": "^1.11.19",
     "next": "^16.1.0",
     "supabase": "^2.72.8",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

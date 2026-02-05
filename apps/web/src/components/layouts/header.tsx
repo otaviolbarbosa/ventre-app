@@ -1,10 +1,7 @@
 "use client";
-
-import Avatar from "@/components/shared/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Bell, ChevronLeft } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -68,10 +65,6 @@ export function Header({ title, back }: HeaderProps) {
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notificações</span>
         </Button>
-        <Link href="/profile" className="md:hidden">
-          <Avatar />
-          <span className="sr-only">Perfil</span>
-        </Link>
       </div>
     </header>
   );

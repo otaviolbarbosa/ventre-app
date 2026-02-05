@@ -1,9 +1,10 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Calendar, Home, Mail, Settings, Users } from "lucide-react";
+import { Calendar, Home, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import Avatar from "../shared/avatar";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -23,6 +24,8 @@ export default function BottomNav() {
     }
     fetchInvites();
   }, []);
+
+  const isProfileActive = pathname.startsWith("/profile");
 
   const navigation = [
     { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
@@ -44,12 +47,6 @@ export default function BottomNav() {
       icon: Mail,
       isActive: pathname.startsWith("/invites"),
       hasNewContent: hasPendingInvites,
-    },
-    {
-      name: "Ajustes",
-      href: "/settings",
-      icon: Settings,
-      isActive: pathname.startsWith("/settings"),
     },
   ];
 
@@ -75,7 +72,7 @@ export default function BottomNav() {
               />
               <div
                 className={cn(
-                  "overflow-hidden font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
+                  "flex-1 overflow-hidden text-center font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
                   navItem.isActive ? "max-w-24 pl-2 opacity-100" : "max-w-0 opacity-0",
                 )}
               >
@@ -87,6 +84,25 @@ export default function BottomNav() {
             </Link>
           );
         })}
+        <Link
+          href="/profile"
+          className={cn(
+            "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
+            "transition-all duration-500 ease-out",
+            isProfileActive && "size-auto flex-1 bg-primary px-4 opacity-100 shadow-md",
+          )}
+        >
+          <Avatar size={10} className="border-none" />
+
+          <div
+            className={cn(
+              "flex-1 overflow-hidden text-center font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
+              isProfileActive ? "max-w-24 pl-2 opacity-100" : "max-w-0 opacity-0",
+            )}
+          >
+            Profile
+          </div>
+        </Link>
       </div>
     </div>
   );
