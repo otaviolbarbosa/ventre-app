@@ -3,12 +3,16 @@ import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dayjs } from "@/lib/dayjs";
+import NewAppointmentModal from "@/modals/new-appointment-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import type { Tables } from "@nascere/supabase";
+import { Calendar, Clock, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 
 type AppointmentsScreenProps = {
   appointments: AppointmentWithPatient[];
@@ -30,6 +34,8 @@ const typeLabels: Record<string, string> = {
   consulta: "Consulta",
   encontro: "Encontro",
 };
+
+type Patient = Tables<"patients">;
 
 function groupAppointmentsByDate(appointments: AppointmentWithPatient[]) {
   const grouped = appointments.reduce(
@@ -66,9 +72,7 @@ function AppointmentList({
   );
 
   if (appointments.length === 0) {
-    return (
-      <EmptyState icon={Calendar} title={emptyTitle} description={emptyDescription} />
-    );
+    return <EmptyState icon={Calendar} title={emptyTitle} description={emptyDescription} />;
   }
 
   return (
@@ -145,8 +149,32 @@ function AppointmentList({
   );
 }
 
-export default function AppointmentsScreen({ appointments }: AppointmentsScreenProps) {
+export default function AppointmentsScreen({
+  appointments: initialAppointments,
+}: AppointmentsScreenProps) {
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [_loading, setLoading] = useState(false);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentWithPatient[]>(initialAppointments);
   const now = dayjs();
+
+  const fetchPatients = useCallback(async () => {
+    const response = await fetch("/api/patients");
+    const data = await response.json();
+    setPatients(data.patients || []);
+  }, []);
+
+  const fetchAppointments = useCallback(async () => {
+    setLoading(true);
+    const response = await fetch("/api/appointments");
+    const data = await response.json();
+    setAppointments(data.appointments || []);
+    setLoading(false);
+  }, []);
+
+  function handleOpenNewModal() {
+    setShowNewModal(true);
+  }
 
   const upcomingAppointments = appointments.filter((appointment) => {
     const appointmentDateTime = dayjs(`${appointment.date} ${appointment.time}`);
@@ -158,11 +186,22 @@ export default function AppointmentsScreen({ appointments }: AppointmentsScreenP
     return appointmentDateTime.isBefore(now);
   });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchAppointments changes on every render
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
   return (
     <div>
       <Header title="Agenda" />
       <div className="p-4 pt-0 md:p-6">
-        <PageHeader description="Seus agendamentos" />
+        <div className="flex justify-between">
+          <PageHeader description="Seus agendamentos" />
+          <Button className="gradient-primary" onClick={handleOpenNewModal}>
+            <Plus className="h-4 w-4" />
+            <span className="ml-2 hidden sm:block">Adicionar Agendamento</span>
+          </Button>
+        </div>
 
         <Tabs defaultValue="upcoming" className="w-full">
           <TabsList>
@@ -202,6 +241,12 @@ export default function AppointmentsScreen({ appointments }: AppointmentsScreenP
           </TabsContent>
         </Tabs>
       </div>
+      <NewAppointmentModal
+        showModal={showNewModal}
+        setShowModal={setShowNewModal}
+        patients={patients}
+        callback={fetchAppointments}
+      />
     </div>
   );
 }

@@ -19,9 +19,14 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("appointments")
-      .select("*, professional:users!appointments_professional_id_fkey(name, professional_type)")
-      .order("date", { ascending: false })
-      .order("time", { ascending: false });
+      .select(`
+        *,
+        patient:patients!appointments_patient_id_fkey(id, name),
+        professional:users!appointments_professional_id_fkey(name, professional_type)
+      `)
+      .eq("professional_id", user.id)
+      .order("date", { ascending: true })
+      .order("time", { ascending: true });
 
     if (patientId) {
       query = query.eq("patient_id", patientId);

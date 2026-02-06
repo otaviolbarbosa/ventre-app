@@ -209,7 +209,7 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
         />
         <Button
           size="icon"
-          className="absolute right-0 bottom-0 h-9 w-9 rounded-full shadow-md"
+          className="gradient-primary absolute right-0 bottom-0 h-9 w-9 rounded-full shadow-md"
           onClick={handleAvatarClick}
           disabled={isUploading}
         >
@@ -226,7 +226,10 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
       <p className="text-muted-foreground">{profile.email}</p>
 
       {/* Edit Profile Button */}
-      <Button className="mt-6 rounded-full px-8" onClick={() => setIsEditModalOpen(true)}>
+      <Button
+        className="gradient-primary mt-6 rounded-full px-8"
+        onClick={() => setIsEditModalOpen(true)}
+      >
         Editar Perfil
       </Button>
 

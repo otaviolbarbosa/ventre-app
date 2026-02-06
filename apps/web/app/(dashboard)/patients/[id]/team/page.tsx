@@ -186,7 +186,7 @@ export default function PatientTeamPage() {
               </Button>
             )}
             {availableTypes.length > 0 && (
-              <Button onClick={() => setIsInviteOpen(true)}>
+              <Button className="gradient-primary" onClick={() => setIsInviteOpen(true)}>
                 <Plus className="h-4 w-4" />
                 <span className="ml-2 hidden sm:block">Convidar Profissional</span>
               </Button>

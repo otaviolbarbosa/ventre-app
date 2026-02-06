@@ -6,6 +6,26 @@ import { ArrowRight, Baby, Calendar, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 export default function HomePage() {
+  const benefits = [
+    {
+      icon: <Baby className="mb-2 h-10 w-10 text-primary-500" />,
+      title: "Gestão de Pacientes",
+      description:
+        "Cadastre gestantes, acompanhe semanas gestacionais e mantenha todas as informações organizadas.",
+    },
+    {
+      icon: <Calendar className="mb-2 h-10 w-10 text-primary-500" />,
+      title: "Agendamentos",
+      description:
+        "Organize consultas e encontros, com histórico completo de atendimentos para cada paciente.",
+    },
+    {
+      icon: <Users className="h-10 w-10 text-primary-500" />,
+      title: "Equipe Multidisciplinar",
+      description:
+        "Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada gestante.",
+    },
+  ];
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
@@ -24,7 +44,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-primary-50 to-secondary-50 pt-[264px] pb-40">
+      <section className="relative bg-gradient-to-br from-primary-50 to-secondary-50 sm:pt-[264px] pt-[224px] pb:20 sm:pb-40">
         <div className="absolute inset-0 z-0">
           <Image src={heroBG} alt="hero-bg" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background" />
@@ -35,7 +55,7 @@ export default function HomePage() {
             Cuidado integrado para
             <span className="text-primary-600"> gestantes</span>
           </h1>
-          <p className="mx-auto max-w-2xl text-gray-600 text-lg">
+          <p className="mx-auto max-w-2xl text-gray-900 text-lg">
             Plataforma completa para profissionais de saúde acompanharem gestantes com organização,
             colaboração em equipe e comunicação eficiente.
           </p>
@@ -56,46 +76,28 @@ export default function HomePage() {
 
       {/* Features */}
       <section className="py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-12 text-center font-bold text-3xl">
-            Tudo que você precisa para um acompanhamento de qualidade
-          </h2>
+        <div className="container mx-auto space-y-12 px-4">
+          <div className="space-y-4">
+            <h2 className="text-center font-bold text-3xl">
+              Tudo que você precisa para um acompanhamento de qualidade
+            </h2>
+            <p className="mx-auto max-w-2xl text-center text-gray-900">
+              Ferramentas pensadas para facilitar seu dia a dia e oferecer o melhor cuidado às suas
+              pacientes.
+            </p>
+          </div>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <span className="mb-4 flex size-16 items-center justify-center rounded-lg bg-primary-50">
-                  <Baby className="mb-2 h-10 w-10 text-primary-500" />
-                </span>
-                <CardTitle>Gestão de Pacientes</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                Cadastre gestantes, acompanhe semanas gestacionais e mantenha todas as informações
-                organizadas.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <span className="mb-4 flex size-16 items-center justify-center rounded-lg bg-primary-50">
-                  <Calendar className="mb-2 h-10 w-10 text-primary-500" />
-                </span>
-                <CardTitle>Agendamentos</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                Organize consultas e encontros, com histórico completo de atendimentos para cada
-                paciente.
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <span className="mb-4 flex size-16 items-center justify-center rounded-lg bg-primary-50">
-                  <Users className="h-10 w-10 text-primary" />
-                </span>
-                <CardTitle>Equipe Multidisciplinar</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada gestante.
-              </CardContent>
-            </Card>
+            {benefits.map((benefit) => (
+              <Card key={benefit.title}>
+                <CardHeader>
+                  <span className="mb-4 flex size-16 items-center justify-center rounded-lg bg-primary-50">
+                    {benefit.icon}
+                  </span>
+                  <CardTitle>{benefit.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">{benefit.description}</CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>

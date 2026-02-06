@@ -23,7 +23,7 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
           description="Gerencie suas gestantes"
         >
           <Link href="/patients/new">
-            <Button>
+            <Button className="gradient-primary">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:block">Adicionar</span>
             </Button>

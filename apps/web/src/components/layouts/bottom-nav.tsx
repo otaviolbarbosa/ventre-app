@@ -61,7 +61,7 @@ export default function BottomNav() {
               className={cn(
                 "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
                 "transition-all duration-500 ease-out",
-                navItem.isActive && "size-auto flex-1 bg-primary px-4 opacity-100 shadow-md",
+                navItem.isActive && "gradient-primary size-auto flex-1 px-4 opacity-100 shadow-md",
               )}
             >
               <navItem.icon
@@ -89,11 +89,10 @@ export default function BottomNav() {
           className={cn(
             "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
             "transition-all duration-500 ease-out",
-            isProfileActive && "size-auto flex-1 bg-primary px-4 opacity-100 shadow-md",
+            isProfileActive && "gradient-primary size-auto flex-1 px-4 opacity-100 shadow-md",
           )}
         >
           <Avatar size={10} className="border-none" />
-
           <div
             className={cn(
               "flex-1 overflow-hidden text-center font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",

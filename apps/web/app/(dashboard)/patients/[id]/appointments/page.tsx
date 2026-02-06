@@ -1,46 +1,22 @@
 "use client";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase/types";
-import { Calendar, Clock, Loader2, MapPin, Plus } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-
-import { ContentModal } from "@/components/shared/content-modal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingTable } from "@/components/shared/loading-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { dayjs } from "@/lib/dayjs";
-import {
-  type CreateAppointmentInput,
-  createAppointmentSchema,
-} from "@/lib/validations/appointment";
+import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { professionalTypeLabels } from "@/utils/team";
+import type { Tables } from "@nascere/supabase/types";
+import { Calendar, Clock, MapPin, Plus } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 type Appointment = Tables<"appointments"> & {
   professional: { name: string; professional_type: string } | null;
 };
+
+type Patient = Tables<"patients">;
 
 const statusLabels: Record<
   string,
@@ -58,25 +34,12 @@ const typeLabels: Record<string, string> = {
 
 export default function PatientAppointmentsPage() {
   const params = useParams();
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const patientId = params.id as string;
-
-  const form = useForm<CreateAppointmentInput>({
-    resolver: zodResolver(createAppointmentSchema),
-    defaultValues: {
-      patient_id: patientId,
-      date: "",
-      time: "",
-      type: undefined,
-      duration: 60,
-      location: "",
-      notes: "",
-    },
-  });
 
   const fetchAppointments = async () => {
     const response = await fetch(`/api/appointments?patient_id=${patientId}`);
@@ -85,47 +48,21 @@ export default function PatientAppointmentsPage() {
     setLoading(false);
   };
 
+  const fetchPatients = useCallback(async () => {
+    const response = await fetch("/api/patients");
+    const data = await response.json();
+    setPatients(data.patients || []);
+    setLoading(false);
+  }, []);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetchAppointments changes on every render
   useEffect(() => {
     fetchAppointments();
+    fetchPatients();
   }, [patientId]);
 
   function handleOpenNewModal() {
-    form.reset({
-      patient_id: patientId,
-      date: "",
-      time: "",
-      type: undefined,
-      duration: 60,
-      location: "",
-      notes: "",
-    });
     setShowNewModal(true);
-  }
-
-  async function onSubmit(data: CreateAppointmentInput) {
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/appointments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao criar agendamento");
-      }
-
-      toast.success("Agendamento criado com sucesso!");
-      setShowNewModal(false);
-      fetchAppointments();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar agendamento");
-    } finally {
-      setIsSubmitting(false);
-    }
   }
 
   if (loading) {
@@ -146,133 +83,13 @@ export default function PatientAppointmentsPage() {
           </Button>
         </EmptyState>
 
-        <ContentModal
-          open={showNewModal}
-          onOpenChange={setShowNewModal}
-          title="Novo Agendamento"
-          description="Agende uma consulta ou encontro com a paciente"
-        >
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de agendamento</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="consulta">Consulta</SelectItem>
-                        <SelectItem value="encontro">Encontro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Horário</FormLabel>
-                      <FormControl>
-                        <Input type="time" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duração (minutos)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={15}
-                        step={15}
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(Number.parseInt(e.target.value) || undefined)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Local (opcional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Endereço ou descrição do local" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações (opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Notas sobre o agendamento" rows={3} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowNewModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Criar Agendamento
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </ContentModal>
+        <NewAppointmentModal
+          showModal={showNewModal}
+          setShowModal={setShowNewModal}
+          patientId={patientId}
+          patients={patients}
+          callback={fetchAppointments}
+        />
       </>
     );
   }
@@ -282,7 +99,7 @@ export default function PatientAppointmentsPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-semibold text-lg">Agenda</h2>
-          <Button onClick={handleOpenNewModal}>
+          <Button className="gradient-primary" onClick={handleOpenNewModal}>
             <Plus className="h-4 w-4" />
             <span className="ml-2 hidden sm:block">Novo Agendamento</span>
           </Button>
@@ -339,131 +156,13 @@ export default function PatientAppointmentsPage() {
         </div>
       </div>
 
-      <ContentModal
-        open={showNewModal}
-        onOpenChange={setShowNewModal}
-        title="Novo Agendamento"
-        description="Agende uma consulta ou encontro com a paciente"
-      >
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de agendamento</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="consulta">Consulta</SelectItem>
-                      <SelectItem value="encontro">Encontro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Horário</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Duração (minutos)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min={15}
-                      step={15}
-                      {...field}
-                      onChange={(e) => field.onChange(Number.parseInt(e.target.value) || undefined)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Local (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Endereço ou descrição do local" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações (opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Notas sobre o agendamento" rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowNewModal(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Agendamento
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </ContentModal>
+      <NewAppointmentModal
+        showModal={showNewModal}
+        setShowModal={setShowNewModal}
+        patientId={patientId}
+        patients={patients}
+        callback={fetchAppointments}
+      />
     </>
   );
 }
