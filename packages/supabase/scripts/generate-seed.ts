@@ -152,9 +152,9 @@ DELETE FROM auth.users WHERE id != '${DOULA_ID}';
 `;
 
   // Inserir obstetras em auth.users
-  sql += `-- ==========================================\n`;
-  sql += `-- OBSTETRAS (10)\n`;
-  sql += `-- ==========================================\n\n`;
+  sql += "-- ==========================================\n";
+  sql += "-- OBSTETRAS (10)\n";
+  sql += "-- ==========================================\n\n";
 
   for (const obstetra of obstetras) {
     sql += `INSERT INTO auth.users (
@@ -181,9 +181,9 @@ DELETE FROM auth.users WHERE id != '${DOULA_ID}';
   }
 
   // Inserir enfermeiras em auth.users
-  sql += `-- ==========================================\n`;
-  sql += `-- ENFERMEIRAS OBSTÉTRICAS (10)\n`;
-  sql += `-- ==========================================\n\n`;
+  sql += "-- ==========================================\n";
+  sql += "-- ENFERMEIRAS OBSTÉTRICAS (10)\n";
+  sql += "-- ==========================================\n\n";
 
   for (const enfermeira of enfermeiras) {
     sql += `INSERT INTO auth.users (
@@ -210,9 +210,9 @@ DELETE FROM auth.users WHERE id != '${DOULA_ID}';
   }
 
   // Inserir pacientes
-  sql += `-- ==========================================\n`;
-  sql += `-- GESTANTES (25)\n`;
-  sql += `-- ==========================================\n\n`;
+  sql += "-- ==========================================\n";
+  sql += "-- GESTANTES (25)\n";
+  sql += "-- ==========================================\n\n";
 
   for (const patient of patients) {
     sql += `INSERT INTO public.patients (
@@ -233,9 +233,9 @@ DELETE FROM auth.users WHERE id != '${DOULA_ID}';
   }
 
   // Associar TODAS as gestantes à doula
-  sql += `-- ==========================================\n`;
-  sql += `-- ASSOCIAR TODAS AS GESTANTES À DOULA\n`;
-  sql += `-- ==========================================\n\n`;
+  sql += "-- ==========================================\n";
+  sql += "-- ASSOCIAR TODAS AS GESTANTES À DOULA\n";
+  sql += "-- ==========================================\n\n";
 
   for (const patient of patients) {
     sql += `INSERT INTO public.team_members (patient_id, professional_id, professional_type)
@@ -248,9 +248,9 @@ VALUES ('${patient.id}', '${DOULA_ID}', 'doula');
   const shuffledForObstetras = [...patients].sort(() => Math.random() - 0.5);
   const patientsForObstetras = shuffledForObstetras.slice(0, 10);
 
-  sql += `-- ==========================================\n`;
-  sql += `-- ASSOCIAR 10 GESTANTES A OBSTETRAS\n`;
-  sql += `-- ==========================================\n\n`;
+  sql += "-- ==========================================\n";
+  sql += "-- ASSOCIAR 10 GESTANTES A OBSTETRAS\n";
+  sql += "-- ==========================================\n\n";
 
   for (let i = 0; i < 10; i++) {
     const patient = patientsForObstetras[i];
@@ -265,9 +265,9 @@ VALUES ('${patient.id}', '${obstetra.id}', 'obstetra');
   const shuffledForEnfermeiras = [...patients].sort(() => Math.random() - 0.5);
   const patientsForEnfermeiras = shuffledForEnfermeiras.slice(0, 10);
 
-  sql += `-- ==========================================\n`;
-  sql += `-- ASSOCIAR 10 GESTANTES A ENFERMEIRAS OBSTÉTRICAS\n`;
-  sql += `-- ==========================================\n\n`;
+  sql += "-- ==========================================\n";
+  sql += "-- ASSOCIAR 10 GESTANTES A ENFERMEIRAS OBSTÉTRICAS\n";
+  sql += "-- ==========================================\n\n";
 
   for (let i = 0; i < 10; i++) {
     const patient = patientsForEnfermeiras[i];
@@ -287,11 +287,11 @@ const outputPath = join(__dirname, "..", "supabase", "seed.sql");
 writeFileSync(outputPath, sql);
 
 console.log(`Seed gerada em: ${outputPath}`);
-console.log(`\nResumo:`);
-console.log(`- 10 Obstetras (emails: otavioblbarbosa+mo01@gmail.com até +mo10)`);
-console.log(`- 10 Enfermeiras Obstétricas (emails: otavioblbarbosa+eo01@gmail.com até +eo10)`);
-console.log(`- 25 Gestantes (emails: otavioblbarbosa+ge01@gmail.com até +ge25)`);
+console.log("\nResumo:");
+console.log("- 10 Obstetras (emails: otavioblbarbosa+mo01@gmail.com até +mo10)");
+console.log("- 10 Enfermeiras Obstétricas (emails: otavioblbarbosa+eo01@gmail.com até +eo10)");
+console.log("- 25 Gestantes (emails: otavioblbarbosa+ge01@gmail.com até +ge25)");
 console.log(`- Todas as gestantes associadas à doula (${DOULA_ID})`);
-console.log(`- 10 gestantes com obstetras`);
-console.log(`- 10 gestantes com enfermeiras`);
-console.log(`\nSenha padrão: password123`);
+console.log("- 10 gestantes com obstetras");
+console.log("- 10 gestantes com enfermeiras");
+console.log("\nSenha padrão: password123");

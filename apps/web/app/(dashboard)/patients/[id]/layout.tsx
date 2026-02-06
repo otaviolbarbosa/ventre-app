@@ -1,7 +1,6 @@
 "use client";
 
 import { Header } from "@/components/layouts/header";
-import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tables } from "@nascere/supabase/types";
@@ -67,10 +66,10 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     <div>
       <Header title={patient.name} back />
       <div className="p-4 pt-0 md:p-6">
-        <PageHeader
+        {/* <PageHeader
           // title={patient.name}
           breadcrumbs={[{ label: "Gestantes", href: "/patients" }, { label: patient.name }]}
-        />
+        /> */}
         {/* <div className="mb-6 block flex flex-col gap-2 lg:flex-row">
           <Card className="flex-1">
             <CardHeader className="p-4 pb-0">

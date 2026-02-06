@@ -1,6 +1,7 @@
+export type ProfessionalType = "obstetra" | "enfermeiro" | "doula";
 export type Invite = {
   id: string;
-  professional_type: string | null;
+  professional_type: ProfessionalType | null;
   expires_at: string;
   patient: { id: string; name: string; due_date: string; dum: string } | null;
   inviter: { name: string; professional_type: string | null } | null;
@@ -9,7 +10,7 @@ export type Invite = {
 export type TeamMember = {
   id: string;
   professional_id: string;
-  professional_type: string;
+  professional_type: ProfessionalType;
   joined_at: string | null;
   professional: { id: string; name: string; email: string } | null;
 };
@@ -18,5 +19,5 @@ export type Professional = {
   id: string;
   name: string;
   email: string;
-  professional_type: string | null;
+  professional_type: ProfessionalType | null;
 };

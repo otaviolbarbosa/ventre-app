@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/hooks/use-auth";
 import type { TeamMember } from "@/types";
 import { getInitials } from "@/utils";
 import { professionalTypeLabels } from "@/utils/team";
@@ -10,8 +9,6 @@ type TeamMemberCardProps = {
 };
 
 export default function TeamMemberCard({ member }: TeamMemberCardProps) {
-  const { user } = useAuth();
-
   return (
     <Card>
       <CardContent className="space-y-3">
@@ -20,13 +17,13 @@ export default function TeamMemberCard({ member }: TeamMemberCardProps) {
             {getInitials(member.professional?.name)}
           </div>
           <div className="flex-1">
-            <p className="font-medium">{member.professional?.name}</p>
+            <div className="flex justify-between">
+              <p className="font-medium">{member.professional?.name}</p>
+              <Badge variant="outline" className="rounded-full">
+                {professionalTypeLabels[member.professional_type]}
+              </Badge>
+            </div>
             <p className="text-muted-foreground text-sm">{member.professional?.email}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge variant="outline" className="rounded-full">
-              {professionalTypeLabels[member.professional_type]}
-            </Badge>
           </div>
         </div>
       </CardContent>
