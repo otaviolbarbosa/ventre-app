@@ -1,6 +1,6 @@
+import { createEvolutionSchema } from "@/lib/validations/evolution";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { NextResponse } from "next/server";
-import { createEvolutionSchema } from "@/lib/validations/evolution";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -48,10 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const parsed = createEvolutionSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.errors[0].message },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: parsed.error.errors[0]?.message }, { status: 400 });
     }
 
     const { data: evolution, error } = await supabase
