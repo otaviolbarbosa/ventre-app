@@ -21,6 +21,14 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Nascere - Gestão de Saúde para Gestantes",
   description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Nascere",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -30,6 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="theme-color" content="#7c3aed" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${poppinsSans.variable} font-sans antialiased`}
       >

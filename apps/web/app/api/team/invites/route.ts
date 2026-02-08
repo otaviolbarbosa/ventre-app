@@ -1,6 +1,8 @@
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import type { Enums, TablesInsert } from "@nascere/supabase/types";
 import { NextResponse } from "next/server";
+import { sendNotificationToUser } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 
 export async function GET() {
   try {
@@ -117,6 +119,24 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Fire-and-forget: notify invited professional
+    const [{ data: inviterProfile }, { data: patient }] = await Promise.all([
+      supabase.from("users").select("name").eq("id", user.id).single(),
+      supabase.from("patients").select("name").eq("id", patient_id).single(),
+    ]);
+
+    if (inviterProfile && patient) {
+      const template = getNotificationTemplate("team_invite_received", {
+        professionalName: inviterProfile.name,
+        patientName: patient.name,
+      });
+      sendNotificationToUser(invited_professional_id, {
+        type: "team_invite_received",
+        ...template,
+        data: { url: "/invites" },
+      });
     }
 
     return NextResponse.json({ invite }, { status: 201 });

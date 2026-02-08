@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
+import { sendNotificationToTeam } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -15,7 +17,7 @@ const ALLOWED_TYPES = [
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -147,6 +149,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         .from("patient_documents")
         .createSignedUrl(storagePath, 3600);
       if (signed) preview_url = signed.signedUrl;
+    }
+
+    // Fire-and-forget: notify team about new document
+    const [{ data: uploaderProfile }, { data: patient }] = await Promise.all([
+      supabase.from("users").select("name").eq("id", user.id).single(),
+      supabase.from("patients").select("name").eq("id", patientId).single(),
+    ]);
+
+    if (uploaderProfile && patient) {
+      const template = getNotificationTemplate("document_uploaded", {
+        professionalName: uploaderProfile.name,
+        patientName: patient.name,
+        documentName: file.name,
+      });
+      sendNotificationToTeam(patientId, user.id, {
+        type: "document_uploaded",
+        ...template,
+        data: { url: `/patients/${patientId}` },
+      });
     }
 
     return NextResponse.json({ document: { ...document, preview_url } }, { status: 201 });

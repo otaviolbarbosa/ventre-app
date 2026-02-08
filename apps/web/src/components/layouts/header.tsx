@@ -1,7 +1,8 @@
 "use client";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { cn } from "@/lib/utils";
-import { Bell, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -59,12 +60,8 @@ export function Header({ title, back }: HeaderProps) {
           {title && <h1 className="font-poppins font-semibold text-2xl tracking-tight">{title}</h1>}
         </div>
       )}
-      {/* Mobile menu */}
       <div className="flex justify-center gap-2">
-        <Button variant="ghost" size="icon" className="bg-white md:hidden">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notificações</span>
-        </Button>
+        <NotificationBell />
       </div>
     </header>
   );
