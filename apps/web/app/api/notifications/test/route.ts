@@ -21,7 +21,7 @@ export async function POST() {
 
     // Get user's active tokens
     const { data: subscriptions } = await supabase
-      .from("push_subscriptions" as string)
+      .from("push_subscriptions")
       .select("fcm_token")
       .eq("user_id", user.id)
       .eq("is_active", true);
