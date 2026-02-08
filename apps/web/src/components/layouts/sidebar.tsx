@@ -59,7 +59,7 @@ export function Sidebar() {
       {/* User section */}
       <div className="border-t p-4">
         <div className="mb-3 flex items-center gap-3">
-          <Avatar className="size-10" />
+          <Avatar size={10} />
           <div className="flex-1 truncate">
             <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>
             <p className="truncate text-gray-500 text-xs">{profile?.professional_type}</p>

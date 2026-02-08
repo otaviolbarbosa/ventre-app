@@ -8,7 +8,9 @@ type Appointment = Tables<"appointments">;
 
 export type PatientWithGestationalInfo = Patient & {
   weeks: number;
+  days: number;
   remainingDays: number;
+  progress: number;
 };
 
 export type HomeAppointment = Appointment & {
@@ -23,7 +25,7 @@ export type TrimesterCounts = {
 
 export type HomeData = {
   trimesterCounts: TrimesterCounts;
-  upcomingDueDates: PatientWithGestationalInfo[];
+  patients: PatientWithGestationalInfo[];
   upcomingAppointments: HomeAppointment[];
 };
 
@@ -44,7 +46,7 @@ export async function getHomeData(): Promise<HomeData> {
   if (!user) {
     return {
       trimesterCounts: { first: 0, second: 0, third: 0 },
-      upcomingDueDates: [],
+      patients: [],
       upcomingAppointments: [],
     };
   }
@@ -60,7 +62,7 @@ export async function getHomeData(): Promise<HomeData> {
   if (patientIds.length === 0) {
     return {
       trimesterCounts: { first: 0, second: 0, third: 0 },
-      upcomingDueDates: [],
+      patients: [],
       upcomingAppointments: [],
     };
   }
@@ -69,9 +71,10 @@ export async function getHomeData(): Promise<HomeData> {
   const { data: patients } = await supabase
     .from("patients")
     .select("*")
-    .in("id", patientIds);
+    .in("id", patientIds)
+    .order("due_date", { ascending: true });
 
-  // Calculate trimester counts and prepare upcoming due dates
+  // Calculate trimester counts and prepare patient list
   const trimesterCounts: TrimesterCounts = { first: 0, second: 0, third: 0 };
   const today = dayjs();
 
@@ -85,25 +88,18 @@ export async function getHomeData(): Promise<HomeData> {
       else if (trimester === 2) trimesterCounts.second++;
       else if (trimester === 3) trimesterCounts.third++;
 
-      // Calculate remaining days until due date
       const dueDate = dayjs(patient.due_date);
-      const remainingDays = dueDate.diff(today, "day");
+      const remainingDays = Math.max(dueDate.diff(today, "day"), 0);
 
-      // Only include patients with upcoming due dates (within next 60 days)
-      if (remainingDays >= 0 && remainingDays <= 60) {
-        patientsWithInfo.push({
-          ...patient,
-          weeks: gestationalAge.weeks,
-          remainingDays,
-        });
-      }
+      patientsWithInfo.push({
+        ...patient,
+        weeks: gestationalAge.weeks,
+        days: gestationalAge.days,
+        remainingDays,
+        progress: Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100),
+      });
     }
   }
-
-  // Sort by due date (closest first) and take top 3
-  const upcomingDueDates = patientsWithInfo
-    .sort((a, b) => a.remainingDays - b.remainingDays)
-    .slice(0, 3);
 
   // Get upcoming appointments
   const { data: appointments } = await supabase
@@ -119,11 +115,11 @@ export async function getHomeData(): Promise<HomeData> {
     .eq("status", "agendada")
     .order("date", { ascending: true })
     .order("time", { ascending: true })
-    .limit(3);
+    .limit(5);
 
   return {
     trimesterCounts,
-    upcomingDueDates,
+    patients: patientsWithInfo.slice(0, 5),
     upcomingAppointments: (appointments as HomeAppointment[]) || [],
   };
 }
