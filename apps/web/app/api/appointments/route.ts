@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { createAppointmentSchema } from "@/lib/validations/appointment";
+import { sendNotificationToTeam } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 import type { TablesInsert } from "@nascere/supabase/types";
 
 export async function GET(request: Request) {
@@ -82,6 +84,26 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Fire-and-forget: send notification to team
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("name")
+      .eq("id", validation.data.patient_id)
+      .single();
+
+    if (patient) {
+      const template = getNotificationTemplate("appointment_created", {
+        patientName: patient.name,
+        date: validation.data.date,
+        time: validation.data.time,
+      });
+      sendNotificationToTeam(validation.data.patient_id, user.id, {
+        type: "appointment_created",
+        ...template,
+        data: { url: "/appointments" },
+      });
     }
 
     return NextResponse.json({ appointment }, { status: 201 });

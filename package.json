@@ -14,11 +14,17 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@serwist/next": "^9.5.5",
     "turbo": "^2.7.5",
     "typescript": "5.9.2"
   },
   "packageManager": "pnpm@10.28.1",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "firebase": "^12.9.0",
+    "firebase-admin": "^13.6.1",
+    "serwist": "^9.5.5"
   }
 }

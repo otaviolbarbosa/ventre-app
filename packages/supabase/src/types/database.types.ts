@@ -74,6 +74,109 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          appointment_cancelled: boolean
+          appointment_created: boolean
+          appointment_reminder: boolean
+          appointment_updated: boolean
+          created_at: string
+          document_uploaded: boolean
+          dpp_approaching: boolean
+          evolution_added: boolean
+          id: string
+          team_invite_accepted: boolean
+          team_invite_received: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_cancelled?: boolean
+          appointment_created?: boolean
+          appointment_reminder?: boolean
+          appointment_updated?: boolean
+          created_at?: string
+          document_uploaded?: boolean
+          dpp_approaching?: boolean
+          evolution_added?: boolean
+          id?: string
+          team_invite_accepted?: boolean
+          team_invite_received?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_cancelled?: boolean
+          appointment_created?: boolean
+          appointment_reminder?: boolean
+          appointment_updated?: boolean
+          created_at?: string
+          document_uploaded?: boolean
+          dpp_approaching?: boolean
+          evolution_added?: boolean
+          id?: string
+          team_invite_accepted?: boolean
+          team_invite_received?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean
+          read_at: string | null
+          sent_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          read_at?: string | null
+          sent_at?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean
+          read_at?: string | null
+          sent_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_documents: {
         Row: {
           created_at: string | null
@@ -269,6 +372,77 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          fcm_token: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          fcm_token: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          fcm_token?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          payload: Json | null
+          processed_at: string | null
+          reference_id: string
+          reference_type: string
+          scheduled_for: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          payload?: Json | null
+          processed_at?: string | null
+          reference_id: string
+          reference_type: string
+          scheduled_for: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_type?: Database["public"]["Enums"]["notification_type"]
+          payload?: Json | null
+          processed_at?: string | null
+          reference_id?: string
+          reference_type?: string
+          scheduled_for?: string
+        }
+        Relationships: []
+      }
       team_invites: {
         Row: {
           created_at: string | null
@@ -418,10 +592,22 @@ export type Database = {
     Functions: {
       is_professional: { Args: never; Returns: boolean }
       is_team_member: { Args: { p_patient_id: string }; Returns: boolean }
+      process_scheduled_notifications: { Args: never; Returns: undefined }
+      schedule_dpp_reminders: { Args: never; Returns: undefined }
     }
     Enums: {
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro"
+      notification_type:
+        | "appointment_created"
+        | "appointment_updated"
+        | "appointment_cancelled"
+        | "appointment_reminder"
+        | "team_invite_received"
+        | "team_invite_accepted"
+        | "document_uploaded"
+        | "evolution_added"
+        | "dpp_approaching"
       professional_type: "obstetra" | "enfermeiro" | "doula"
       user_type: "professional" | "patient"
     }
@@ -553,6 +739,17 @@ export const Constants = {
     Enums: {
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro"],
+      notification_type: [
+        "appointment_created",
+        "appointment_updated",
+        "appointment_cancelled",
+        "appointment_reminder",
+        "team_invite_received",
+        "team_invite_accepted",
+        "document_uploaded",
+        "evolution_added",
+        "dpp_approaching",
+      ],
       professional_type: ["obstetra", "enfermeiro", "doula"],
       user_type: ["professional", "patient"],
     },

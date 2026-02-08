@@ -1,6 +1,8 @@
 import { createEvolutionSchema } from "@/lib/validations/evolution";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { NextResponse } from "next/server";
+import { sendNotificationToTeam } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -63,6 +65,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Fire-and-forget: notify team about new evolution
+    const [{ data: professionalProfile }, { data: patient }] = await Promise.all([
+      supabase.from("users").select("name").eq("id", user.id).single(),
+      supabase.from("patients").select("name").eq("id", patientId).single(),
+    ]);
+
+    if (professionalProfile && patient) {
+      const template = getNotificationTemplate("evolution_added", {
+        professionalName: professionalProfile.name,
+        patientName: patient.name,
+      });
+      sendNotificationToTeam(patientId, user.id, {
+        type: "evolution_added",
+        ...template,
+        data: { url: `/patients/${patientId}` },
+      });
     }
 
     return NextResponse.json({ evolution }, { status: 201 });

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { updateAppointmentSchema } from "@/lib/validations/appointment";
+import { sendNotificationToTeam } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 import type { TablesUpdate } from "@nascere/supabase/types";
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -69,11 +71,31 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .from("appointments")
       .update(updateData)
       .eq("id", id)
-      .select()
+      .select("*, patient:patients!appointments_patient_id_fkey(id, name)")
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Fire-and-forget: send notification
+    if (appointment?.patient) {
+      const isCancelled = validation.data.status === "cancelada";
+      const notificationType = isCancelled ? "appointment_cancelled" : "appointment_updated";
+      const template = getNotificationTemplate(notificationType, {
+        patientName: (appointment.patient as { name: string }).name,
+        date: appointment.date,
+        time: appointment.time,
+      });
+      sendNotificationToTeam(
+        (appointment.patient as { id: string }).id,
+        user.id,
+        {
+          type: notificationType,
+          ...template,
+          data: { url: "/appointments" },
+        },
+      );
     }
 
     return NextResponse.json({ appointment });
@@ -82,7 +104,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
