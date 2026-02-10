@@ -12,7 +12,6 @@ type AvatarProps = {
 export default function Avatar({ size = 9, className }: AvatarProps) {
   const { profile } = useAuth();
 
-  console.log(profile, profile?.name);
   return (
     <div
       className={cn(

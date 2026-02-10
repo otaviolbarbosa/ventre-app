@@ -16,6 +16,10 @@
 # production
 /build
 
+# serwist service worker (generated at build time)
+/public/sw.js
+/public/sw.js.map
+
 # misc
 .DS_Store
 *.pem

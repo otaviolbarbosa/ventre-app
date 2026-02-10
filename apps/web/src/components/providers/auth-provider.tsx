@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { supabase } from "@nascere/supabase";
-import type { User } from "@supabase/supabase-js";
 import type { Tables } from "@nascere/supabase/types";
+import type { User } from "@supabase/supabase-js";
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
 
 type UserProfile = Tables<"users">;
 
@@ -34,7 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase.from("users").select("*").eq("id", userId).single();
-    console.log(data);
     setProfile(data);
   }, []);
 
@@ -43,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      console.log("user", user);
+
       setUser(user);
       if (user) {
         await fetchProfile(user.id);

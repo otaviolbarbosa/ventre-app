@@ -33,6 +33,5 @@ export async function getMyInvites(): Promise<GetMyInvitesResult> {
     return { invites: [], error: error.message };
   }
 
-  console.log(invites);
   return { invites: (invites as Invite[]) || [] };
 }
