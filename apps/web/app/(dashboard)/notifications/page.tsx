@@ -2,7 +2,6 @@
 
 import { Header } from "@/components/layouts/header";
 import { NotificationItem } from "@/components/shared/notification-item";
-import { NotificationPermissionPrompt } from "@/components/shared/notification-permission-prompt";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { Notification } from "@/services/notification";
@@ -162,7 +161,6 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
-      <NotificationPermissionPrompt />
     </>
   );
 }

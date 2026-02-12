@@ -75,12 +75,12 @@ export default function ForgotPasswordPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Verifique sua caixa de entrada e spam. O link expira em 1 hora.
           </p>
         </CardContent>
         <CardFooter>
-          <Link href="/login" className="flex items-center text-sm text-primary hover:underline">
+          <Link href="/login" className="flex items-center text-primary text-sm hover:underline">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar para o login
           </Link>
@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
       <CardFooter>
         <Link
           href="/login"
-          className="flex items-center text-sm text-muted-foreground hover:text-primary"
+          className="flex items-center text-muted-foreground text-sm hover:text-primary"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para o login

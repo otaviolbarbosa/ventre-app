@@ -13,7 +13,6 @@ export function NotificationPermissionPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    console.log("$$$", permissionStatus);
     if (typeof window === "undefined") return;
     if (!("Notification" in window)) return;
     if (permissionStatus !== "default") return;

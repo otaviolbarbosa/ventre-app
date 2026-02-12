@@ -1,5 +1,5 @@
 import type { Invite } from "@/types";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
 
 type GetMyInvitesResult = {
   invites: Invite[];
@@ -17,7 +17,11 @@ export async function getMyInvites(): Promise<GetMyInvitesResult> {
     return { invites: [], error: "Usuário não encontrado" };
   }
 
-  const { data: invites, error } = await supabase
+  // Use admin client to bypass RLS — the invited professional is not yet
+  // a team member, so RLS on the patients table blocks the JOIN.
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  const { data: invites, error } = await supabaseAdmin
     .from("team_invites")
     .select(`
       *,

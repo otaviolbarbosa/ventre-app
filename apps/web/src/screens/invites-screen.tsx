@@ -4,7 +4,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { Invite } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import dayjs from "dayjs";
@@ -58,62 +59,66 @@ export default function InvitesScreen({ invites }: InvistesScreenProps) {
           />
         ) : (
           <div className="space-y-4">
-            {invites.map((invite) => (
-              <Card key={invite.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{invite.patient?.name}</CardTitle>
-                      <CardDescription>
-                        Convidado por {invite.inviter?.name}
+            {invites.map((invite) => {
+              const gestationalAge = calculateGestationalAge(invite.patient?.dum);
+
+              return (
+                <Card key={invite.id}>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <div>
+                          Enviado por: <span className="font-semibold">{invite.inviter?.name}</span>
+                        </div>
                         <Badge variant="outline">
                           {professionalTypeLabels[invite.inviter?.professional_type || ""]}
                         </Badge>
-                      </CardDescription>
+                      </div>
+                      <div>
+                        Gestante: <span className="font-semibold">{invite.patient?.name}</span>
+                      </div>
                     </div>
-                    <Badge variant="outline">
-                      {invite.professional_type && professionalTypeLabels[invite.professional_type]}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap gap-4 text-muted-foreground text-sm">
-                      {invite.patient?.dum && (
-                        <div className="flex items-center gap-1">
-                          <Baby className="h-4 w-4" />
-                          <span>{invite.patient.dum} semanas</span>
-                        </div>
-                      )}
-                      {invite.patient?.due_date && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>DPP: {dayjs(invite.patient.due_date).format("DD/MM/YYYY")}</span>
-                        </div>
-                      )}
-                      <span>Expira em {dayjs(invite.expires_at).format("DD/MM/YYYY")}</span>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap gap-1 text-muted-foreground text-sm sm:gap-4">
+                        {invite.patient?.dum && (
+                          <div className="flex items-center gap-1">
+                            <Baby className="h-4 w-4" />
+                            <span>
+                              {gestationalAge?.weeks} semanas{" "}
+                              {gestationalAge?.days ? `e ${gestationalAge.days} dias` : null}
+                            </span>
+                          </div>
+                        )}
+                        {invite.patient?.due_date && (
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>DPP: {dayjs(invite.patient.due_date).format("DD/MM/YYYY")}</span>
+                          </div>
+                        )}
+                        <span>Expira em {dayjs(invite.expires_at).format("DD/MM/YYYY")}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAction(invite.id, "reject")}
+                          disabled={processingId === invite.id}
+                          className="flex-1"
+                        >
+                          Recusar
+                        </Button>
+                        <Button
+                          onClick={() => handleAction(invite.id, "accept")}
+                          disabled={processingId === invite.id}
+                          className="flex-1"
+                        >
+                          Aceitar
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleAction(invite.id, "reject")}
-                        disabled={processingId === invite.id}
-                        className="flex-1"
-                      >
-                        Recusar
-                      </Button>
-                      <Button
-                        onClick={() => handleAction(invite.id, "accept")}
-                        disabled={processingId === invite.id}
-                        className="flex-1"
-                      >
-                        Aceitar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
