@@ -74,6 +74,211 @@ export type Database = {
           },
         ]
       }
+      billing_notification_preferences: {
+        Row: {
+          created_at: string
+          enable_billing_reminders: boolean
+          enable_payment_confirmations: boolean
+          reminder_days_before: number[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enable_billing_reminders?: boolean
+          enable_payment_confirmations?: boolean
+          reminder_days_before?: number[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enable_billing_reminders?: boolean
+          enable_payment_confirmations?: boolean
+          reminder_days_before?: number[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billings: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          installment_count: number
+          installment_interval: number
+          notes: string | null
+          paid_amount: number
+          patient_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          professional_id: string
+          status: Database["public"]["Enums"]["billing_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          installment_count?: number
+          installment_interval?: number
+          notes?: string | null
+          paid_amount?: number
+          patient_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          professional_id: string
+          status?: Database["public"]["Enums"]["billing_status"]
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          installment_count?: number
+          installment_interval?: number
+          notes?: string | null
+          paid_amount?: number
+          patient_id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          professional_id?: string
+          status?: Database["public"]["Enums"]["billing_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billings_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billings_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installments: {
+        Row: {
+          amount: number
+          billing_id: string
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          notes: string | null
+          paid_amount: number
+          paid_at: string | null
+          payment_link: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          status: Database["public"]["Enums"]["installment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          billing_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          status?: Database["public"]["Enums"]["installment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          status?: Database["public"]["Enums"]["installment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_billing_id_fkey"
+            columns: ["billing_id"]
+            isOneToOne: false
+            referencedRelation: "billings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installments_scheduled_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          installment_id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["installments_notification_status"]
+          type: Database["public"]["Enums"]["installments_notification_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          installment_id: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["installments_notification_status"]
+          type: Database["public"]["Enums"]["installments_notification_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          installment_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["installments_notification_status"]
+          type?: Database["public"]["Enums"]["installments_notification_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_scheduled_notifications_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installments_scheduled_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           appointment_cancelled: boolean
@@ -372,6 +577,54 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          created_at: string
+          id: string
+          installment_id: string
+          notes: string | null
+          paid_amount: number
+          paid_at: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          registered_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          installment_id: string
+          notes?: string | null
+          paid_amount: number
+          paid_at: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          registered_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          installment_id?: string
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          registered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_registered_by_fkey"
+            columns: ["registered_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           created_at: string
@@ -598,6 +851,18 @@ export type Database = {
     Enums: {
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro"
+      billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      installment_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      installments_notification_status:
+        | "pending"
+        | "sent"
+        | "cancelled"
+        | "failed"
+      installments_notification_type:
+        | "due_in_7_days"
+        | "due_in_3_days"
+        | "due_today"
+        | "overdue"
       notification_type:
         | "appointment_created"
         | "appointment_updated"
@@ -608,6 +873,16 @@ export type Database = {
         | "document_uploaded"
         | "evolution_added"
         | "dpp_approaching"
+        | "billing_created"
+        | "billing_payment_received"
+        | "billing_reminder"
+      payment_method:
+        | "credito"
+        | "debito"
+        | "pix"
+        | "boleto"
+        | "dinheiro"
+        | "outro"
       professional_type: "obstetra" | "enfermeiro" | "doula"
       user_type: "professional" | "patient"
     }
@@ -739,6 +1014,20 @@ export const Constants = {
     Enums: {
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro"],
+      billing_status: ["pendente", "pago", "atrasado", "cancelado"],
+      installment_status: ["pendente", "pago", "atrasado", "cancelado"],
+      installments_notification_status: [
+        "pending",
+        "sent",
+        "cancelled",
+        "failed",
+      ],
+      installments_notification_type: [
+        "due_in_7_days",
+        "due_in_3_days",
+        "due_today",
+        "overdue",
+      ],
       notification_type: [
         "appointment_created",
         "appointment_updated",
@@ -749,6 +1038,17 @@ export const Constants = {
         "document_uploaded",
         "evolution_added",
         "dpp_approaching",
+        "billing_created",
+        "billing_payment_received",
+        "billing_reminder",
+      ],
+      payment_method: [
+        "credito",
+        "debito",
+        "pix",
+        "boleto",
+        "dinheiro",
+        "outro",
       ],
       professional_type: ["obstetra", "enfermeiro", "doula"],
       user_type: ["professional", "patient"],

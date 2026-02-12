@@ -5,7 +5,7 @@ import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Bell, Calendar, Home, LogOut, Mail, Settings, Users } from "lucide-react";
+import { Bell, Calendar, DollarSign, Home, LogOut, Mail, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -13,6 +13,7 @@ const navigation = [
   { name: "Home", href: "/home", icon: Home },
   { name: "Pacientes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
+  { name: "Financeiro", href: "/billing", icon: DollarSign },
   { name: "Convites", href: "/invites", icon: Mail },
   { name: "Notificações", href: "/notifications", icon: Bell },
   { name: "Configurações", href: "/settings", icon: Settings },

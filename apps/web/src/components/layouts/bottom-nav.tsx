@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Calendar, Home, Mail, Users } from "lucide-react";
+import { Calendar, DollarSign, Home, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -40,6 +40,12 @@ export default function BottomNav() {
       href: "/appointments",
       icon: Calendar,
       isActive: pathname.startsWith("/appointments"),
+    },
+    {
+      name: "Financeiro",
+      href: "/billing",
+      icon: DollarSign,
+      isActive: pathname.startsWith("/billing"),
     },
     {
       name: "Convites",

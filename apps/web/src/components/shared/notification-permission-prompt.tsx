@@ -53,7 +53,7 @@ export function NotificationPermissionPrompt() {
             Receba lembretes de consultas e atualizações da equipe.
           </p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" onClick={handleActivate}>
+            <Button size="sm" className="gradient-primary" onClick={handleActivate}>
               Ativar
             </Button>
             <Button size="sm" variant="ghost" onClick={handleDismiss}>

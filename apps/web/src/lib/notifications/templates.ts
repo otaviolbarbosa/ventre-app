@@ -12,6 +12,10 @@ type TemplateParams = {
   time?: string;
   documentName?: string;
   daysUntilDpp?: number;
+  amount?: string;
+  dueDate?: string;
+  description?: string;
+  installmentNumber?: number;
 };
 
 export function getNotificationTemplate(
@@ -54,6 +58,18 @@ export function getNotificationTemplate(
     dpp_approaching: () => ({
       title: "DPP se aproximando",
       body: `A data provável de parto de ${params.patientName} é em ${params.daysUntilDpp} dias.`,
+    }),
+    billing_created: () => ({
+      title: "Nova cobrança criada",
+      body: `${params.description} - ${params.amount}`,
+    }),
+    billing_payment_received: () => ({
+      title: "Pagamento registrado",
+      body: `Parcela ${params.installmentNumber} de ${params.description} - ${params.amount}`,
+    }),
+    billing_reminder: () => ({
+      title: "Vencimento próximo",
+      body: `Parcela de ${params.amount} vence em ${params.dueDate}`,
     }),
   };
 

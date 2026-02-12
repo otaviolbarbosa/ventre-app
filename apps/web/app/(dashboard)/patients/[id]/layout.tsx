@@ -17,11 +17,13 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   const [loading, setLoading] = useState(true);
 
   const patientId = params.id as string;
-  const currentTab = pathname.includes("/appointments")
-    ? "appointments"
-    : pathname.includes("/team")
-      ? "team"
-      : "profile";
+  const currentTab = pathname.includes("/billing")
+    ? "billing"
+    : pathname.includes("/appointments")
+      ? "appointments"
+      : pathname.includes("/team")
+        ? "team"
+        : "profile";
 
   useEffect(() => {
     async function fetchPatient() {
@@ -139,6 +141,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             </Link>
             <Link href={`/patients/${patientId}/team`} className="flex-1">
               <TabsTrigger value="team">Equipe</TabsTrigger>
+            </Link>
+            <Link href={`/patients/${patientId}/billing`} className="flex-1">
+              <TabsTrigger value="billing">Financeiro</TabsTrigger>
             </Link>
           </TabsList>
         </Tabs>

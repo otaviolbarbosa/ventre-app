@@ -10,7 +10,10 @@ export type NotificationType =
   | "team_invite_accepted"
   | "document_uploaded"
   | "evolution_added"
-  | "dpp_approaching";
+  | "dpp_approaching"
+  | "billing_created"
+  | "billing_payment_received"
+  | "billing_reminder";
 
 type NotificationPayload = {
   type: NotificationType;
@@ -33,6 +36,21 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
     if (settings) {
       const settingKey = payload.type as keyof typeof settings;
       if (settings[settingKey] === false) return;
+    }
+
+    // Check billing-specific notification preferences
+    const billingTypes = ["billing_created", "billing_payment_received", "billing_reminder"];
+    if (billingTypes.includes(payload.type)) {
+      const { data: billingPrefs } = await supabaseAdmin
+        .from("billing_notification_preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+
+      if (billingPrefs) {
+        if (payload.type === "billing_reminder" && !billingPrefs.enable_billing_reminders) return;
+        if (payload.type === "billing_payment_received" && !billingPrefs.enable_payment_confirmations) return;
+      }
     }
 
     // Get active push tokens
