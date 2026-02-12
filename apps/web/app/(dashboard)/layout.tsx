@@ -1,5 +1,6 @@
 import BottomNav from "@/components/layouts/bottom-nav";
 import { Sidebar } from "@/components/layouts/sidebar";
+import { NotificationPermissionPrompt } from "@/components/shared/notification-permission-prompt";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -14,6 +15,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto pb-24 sm:pb-0">{children}</main>
       </div>
       <BottomNav />
+      <NotificationPermissionPrompt />
     </div>
   );
 }

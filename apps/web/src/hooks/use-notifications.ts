@@ -53,13 +53,6 @@ export function useNotifications() {
     return unsubscribe;
   }, [user]);
 
-  // Check if already subscribed
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsSubscribed(localStorage.getItem("nascere_push_subscribed") === "true");
-    }
-  }, []);
-
   const subscribe = useCallback(async () => {
     const token = await requestFcmToken();
     if (!token) return false;
@@ -114,6 +107,19 @@ export function useNotifications() {
     }
     return false;
   }, [subscribe]);
+
+  // Auto-subscribe if permission already granted (refreshes FCM token)
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) return;
+    if (!("Notification" in window)) return;
+
+    const alreadySubscribed = localStorage.getItem("nascere_push_subscribed") === "true";
+    setIsSubscribed(alreadySubscribed);
+
+    if (Notification.permission === "granted") {
+      subscribe();
+    }
+  }, [user, subscribe]);
 
   const markAsRead = useCallback(
     async (ids?: string[]) => {
