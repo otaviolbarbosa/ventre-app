@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/billing/calculations";
 import type { Tables } from "@nascere/supabase/types";
 import Link from "next/link";
-import { StatusBadge } from "./status-badge";
 import { PaymentMethodBadge } from "./payment-method-badge";
+import { StatusBadge } from "./status-badge";
 
 type Billing = Tables<"billings"> & {
   installments: { id: string; status: string }[];
@@ -16,12 +16,10 @@ export function BillingCard({ billing }: { billing: Billing }) {
   const paidCount = billing.installments.filter((i) => i.status === "pago").length;
   const totalCount = billing.installments.length;
   const progressPercent =
-    billing.total_amount > 0
-      ? Math.round((billing.paid_amount / billing.total_amount) * 100)
-      : 0;
+    billing.total_amount > 0 ? Math.round((billing.paid_amount / billing.total_amount) * 100) : 0;
 
   return (
-    <Link href={`/patients/${billing.patient_id}/billing/${billing.id}`}>
+    <Link href={`/patients/${billing.patient_id}/billing/${billing.id}`} className="block">
       <Card className="transition-shadow hover:shadow-md">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-2">
@@ -34,9 +32,7 @@ export function BillingCard({ billing }: { billing: Billing }) {
 
           <div className="mt-3 flex items-center justify-between text-sm">
             <div>
-              <span className="font-semibold text-lg">
-                {formatCurrency(billing.total_amount)}
-              </span>
+              <span className="font-semibold text-lg">{formatCurrency(billing.total_amount)}</span>
               {billing.paid_amount > 0 && (
                 <span className="ml-2 text-muted-foreground">
                   ({formatCurrency(billing.paid_amount)} pago)

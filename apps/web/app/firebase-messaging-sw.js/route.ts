@@ -17,7 +17,7 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   const data = payload.notification || payload.data || {};
-  const title = data.title || "Nascere";
+  const title = data.title || "Ventre";
   const options = {
     body: data.body || "",
     icon: data.icon || "/icons/icon-192x192.png",

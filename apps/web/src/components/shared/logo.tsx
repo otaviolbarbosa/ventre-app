@@ -22,13 +22,7 @@ export function Logo({ href, size = "md", className }: LogoProps) {
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
-      <Image
-        src="/logo.png"
-        alt="Nascere"
-        width={image}
-        height={image}
-        className="object-contain"
-      />
+      <Image src="/logo.png" alt="Ventre" width={image} height={image} className="object-contain" />
     </div>
   );
 

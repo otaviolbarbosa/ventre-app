@@ -22,10 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
-import {
-  type RecordPaymentInput,
-  recordPaymentSchema,
-} from "@/lib/validations/billing";
+import { type RecordPaymentInput, recordPaymentSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase/types";
 import { Loader2 } from "lucide-react";
@@ -50,9 +47,7 @@ export default function RecordPaymentModal({
 }: RecordPaymentModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const remaining = installment
-    ? installment.amount - installment.paid_amount
-    : 0;
+  const remaining = installment ? installment.amount - installment.paid_amount : 0;
 
   const form = useForm<RecordPaymentInput>({
     resolver: zodResolver(recordPaymentSchema),
@@ -81,14 +76,11 @@ export default function RecordPaymentModal({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
-        `/api/installments/${installment.id}/payments`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        },
-      );
+      const response = await fetch(`/api/installments/${installment.id}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -99,11 +91,7 @@ export default function RecordPaymentModal({
       callback?.();
       setShowModal(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Erro ao registrar pagamento",
-      );
+      toast.error(error instanceof Error ? error.message : "Erro ao registrar pagamento");
     } finally {
       setIsSubmitting(false);
     }
@@ -124,16 +112,12 @@ export default function RecordPaymentModal({
         <div className="mb-4 rounded-lg bg-muted p-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Valor da parcela:</span>
-            <span className="font-medium">
-              {formatCurrency(installment.amount)}
-            </span>
+            <span className="font-medium">{formatCurrency(installment.amount)}</span>
           </div>
           {installment.paid_amount > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Já pago:</span>
-              <span className="font-medium">
-                {formatCurrency(installment.paid_amount)}
-              </span>
+              <span className="font-medium">{formatCurrency(installment.paid_amount)}</span>
             </div>
           )}
           <div className="flex justify-between text-sm">
@@ -152,11 +136,7 @@ export default function RecordPaymentModal({
               <FormItem>
                 <FormLabel>Data do Pagamento</FormLabel>
                 <FormControl>
-                  <Input
-                    type="date"
-                    max={dayjs().format("YYYY-MM-DD")}
-                    {...field}
-                  />
+                  <Input type="date" max={dayjs().format("YYYY-MM-DD")} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -170,10 +150,7 @@ export default function RecordPaymentModal({
               <FormItem>
                 <FormLabel>Valor Pago</FormLabel>
                 <FormControl>
-                  <CurrencyInput
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
+                  <CurrencyInput value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -213,11 +190,7 @@ export default function RecordPaymentModal({
               <FormItem>
                 <FormLabel>Observações (opcional)</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Notas sobre o pagamento"
-                    rows={2}
-                    {...field}
-                  />
+                  <Textarea placeholder="Notas sobre o pagamento" rows={2} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -233,14 +206,8 @@ export default function RecordPaymentModal({
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="gradient-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button type="submit" className="gradient-primary" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Registrar
             </Button>
           </div>

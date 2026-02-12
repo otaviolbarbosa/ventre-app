@@ -31,46 +31,32 @@ export function InstallmentList({ installments, onRecordPayment }: InstallmentLi
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    {formatCurrency(installment.amount)}
-                  </span>
+                  <span className="font-medium">{formatCurrency(installment.amount)}</span>
                   <StatusBadge status={installment.status} />
                 </div>
                 <div className="text-muted-foreground text-sm">
                   Vencimento: {dayjs(installment.due_date).format("DD/MM/YYYY")}
                   {installment.paid_amount > 0 && (
-                    <span className="ml-2">
-                      (Pago: {formatCurrency(installment.paid_amount)})
-                    </span>
+                    <span className="ml-2">(Pago: {formatCurrency(installment.paid_amount)})</span>
                   )}
                 </div>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              {installment.payment_link && (
-                <Button variant="ghost" size="sm" asChild>
-                  <a
-                    href={installment.payment_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="mr-1 h-4 w-4" />
-                    Link
-                  </a>
-                </Button>
-              )}
-              {installment.status !== "pago" &&
-                installment.status !== "cancelado" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onRecordPayment(installment)}
-                  >
-                    Registrar Pagamento
+            {installment.status !== "pago" && installment.status !== "cancelado" && (
+              <div className="flex items-center gap-2">
+                {installment.payment_link && (
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href={installment.payment_link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-1 h-4 w-4" />
+                      Link
+                    </a>
                   </Button>
                 )}
-            </div>
+                <Button size="sm" variant="outline" onClick={() => onRecordPayment(installment)}>
+                  Registrar Pagamento
+                </Button>
+              </div>
+            )}
           </div>
         ))}
     </div>
