@@ -56,7 +56,7 @@ export default function InviteProfessionalModal({
   function handleShareWhatsApp() {
     const url = getInviteUrl();
     const selectedProf = professionals.find((p) => p.id === selectedProfessional);
-    const message = `Olá${selectedProf ? ` ${selectedProf.name.split(" ")[0]}` : ""}! Você foi convidado(a) para participar de uma equipe de cuidado no Nascere. Acesse o link para ver o convite: ${url}`;
+    const message = `Olá${selectedProf ? ` ${selectedProf.name.split(" ")[0]}` : ""}! Você foi convidado(a) para participar de uma equipe de cuidado no VentreApp. Acesse o link para ver o convite: ${url}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   }

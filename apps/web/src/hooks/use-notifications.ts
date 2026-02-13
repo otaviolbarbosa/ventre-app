@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { requestFcmToken, onForegroundMessage } from "@/lib/firebase/client";
+import { onForegroundMessage, requestFcmToken } from "@/lib/firebase/client";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -69,7 +69,7 @@ export function useNotifications() {
 
       if (res.ok) {
         setIsSubscribed(true);
-        localStorage.setItem("nascere_push_subscribed", "true");
+        localStorage.setItem("ventre_push_subscribed", "true");
         return true;
       }
     } catch {
@@ -93,7 +93,7 @@ export function useNotifications() {
     }
 
     setIsSubscribed(false);
-    localStorage.removeItem("nascere_push_subscribed");
+    localStorage.removeItem("ventre_push_subscribed");
   }, []);
 
   const requestPermission = useCallback(async () => {
@@ -113,7 +113,7 @@ export function useNotifications() {
     if (typeof window === "undefined" || !user) return;
     if (!("Notification" in window)) return;
 
-    const alreadySubscribed = localStorage.getItem("nascere_push_subscribed") === "true";
+    const alreadySubscribed = localStorage.getItem("ventre_push_subscribed") === "true";
     setIsSubscribed(alreadySubscribed);
 
     if (Notification.permission === "granted") {
@@ -121,27 +121,24 @@ export function useNotifications() {
     }
   }, [user, subscribe]);
 
-  const markAsRead = useCallback(
-    async (ids?: string[]) => {
-      try {
-        const res = await fetch("/api/notifications", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids }),
-        });
-        if (res.ok) {
-          if (ids) {
-            setUnreadCount((c) => Math.max(0, c - ids.length));
-          } else {
-            setUnreadCount(0);
-          }
+  const markAsRead = useCallback(async (ids?: string[]) => {
+    try {
+      const res = await fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (res.ok) {
+        if (ids) {
+          setUnreadCount((c) => Math.max(0, c - ids.length));
+        } else {
+          setUnreadCount(0);
         }
-      } catch {
-        // silently fail
       }
-    },
-    [],
-  );
+    } catch {
+      // silently fail
+    }
+  }, []);
 
   return {
     permissionStatus,

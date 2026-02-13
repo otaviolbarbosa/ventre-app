@@ -19,12 +19,12 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Nascere - Gestão de Saúde para Gestantes",
+  title: "Ventre - Gestão de Saúde para Gestantes",
   description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Nascere",
+    title: "Ventre",
   },
   other: {
     "mobile-web-app-capable": "yes",
