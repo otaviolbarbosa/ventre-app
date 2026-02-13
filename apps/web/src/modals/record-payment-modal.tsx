@@ -25,8 +25,8 @@ import { dayjs } from "@/lib/dayjs";
 import { type RecordPaymentInput, recordPaymentSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase/types";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { FileText, Loader2, Paperclip, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -46,6 +46,8 @@ export default function RecordPaymentModal({
   callback,
 }: RecordPaymentModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const remaining = installment ? installment.amount - installment.paid_amount : 0;
 
@@ -68,6 +70,7 @@ export default function RecordPaymentModal({
         payment_method: installment.payment_method || undefined,
         notes: "",
       });
+      setReceiptFile(null);
     }
   }, [installment, showModal]);
 
@@ -76,10 +79,16 @@ export default function RecordPaymentModal({
     setIsSubmitting(true);
 
     try {
+      const formData = new FormData();
+      formData.append("paid_at", data.paid_at);
+      formData.append("paid_amount", String(data.paid_amount));
+      formData.append("payment_method", data.payment_method);
+      if (data.notes) formData.append("notes", data.notes);
+      if (receiptFile) formData.append("receipt", receiptFile);
+
       const response = await fetch(`/api/installments/${installment.id}/payments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -95,6 +104,12 @@ export default function RecordPaymentModal({
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function formatFileSize(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   return (
@@ -196,6 +211,61 @@ export default function RecordPaymentModal({
               </FormItem>
             )}
           />
+
+          <div>
+            <FormLabel>Comprovante (opcional)</FormLabel>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                if (file && file.size > 10 * 1024 * 1024) {
+                  toast.error("Arquivo muito grande. Máximo 10MB.");
+                  return;
+                }
+                setReceiptFile(file);
+              }}
+            />
+            {receiptFile ? (
+              <div className="flex items-center gap-2 rounded-lg border p-3">
+                {receiptFile.type === "application/pdf" ? (
+                  <FileText className="h-5 w-5 shrink-0 text-red-500" />
+                ) : (
+                  <Paperclip className="h-5 w-5 shrink-0 text-muted-foreground" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm">{receiptFile.name}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {formatFileSize(receiptFile.size)}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  onClick={() => {
+                    setReceiptFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-1.5 w-full"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Paperclip className="mr-2 h-4 w-4" />
+                Anexar comprovante
+              </Button>
+            )}
+          </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button

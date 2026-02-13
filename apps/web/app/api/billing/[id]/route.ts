@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import {
+  createServerSupabaseClient,
+  createServerSupabaseAdmin,
+} from "@nascere/supabase/server";
 import { updateBillingSchema } from "@/lib/validations/billing";
 
 export async function GET(
@@ -39,7 +42,45 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ billing });
+    // Generate signed URLs for payments with receipts
+    const allPayments = billing.installments.flatMap((i) => i.payments);
+    const paymentsWithReceipts = allPayments.filter((p) => p.receipt_path);
+
+    const receiptUrls: Record<string, string> = {};
+    if (paymentsWithReceipts.length > 0) {
+      const supabaseAdmin = await createServerSupabaseAdmin();
+      const paths = paymentsWithReceipts.map(
+        (p) => p.receipt_path as string,
+      );
+      const { data: signedUrls } = await supabaseAdmin.storage
+        .from("payments")
+        .createSignedUrls(paths, 3600);
+
+      if (signedUrls) {
+        for (const entry of signedUrls) {
+          if (entry.signedUrl) {
+            const payment = paymentsWithReceipts.find(
+              (p) => p.receipt_path === entry.path,
+            );
+            if (payment) receiptUrls[payment.id] = entry.signedUrl;
+          }
+        }
+      }
+    }
+
+    // Inject receipt_url into each payment
+    const billingWithUrls = {
+      ...billing,
+      installments: billing.installments.map((installment) => ({
+        ...installment,
+        payments: installment.payments.map((payment) => ({
+          ...payment,
+          receipt_url: receiptUrls[payment.id] ?? null,
+        })),
+      })),
+    };
+
+    return NextResponse.json({ billing: billingWithUrls });
   } catch {
     return NextResponse.json(
       { error: "Erro interno do servidor" },

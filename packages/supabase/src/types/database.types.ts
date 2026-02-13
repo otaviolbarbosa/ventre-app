@@ -586,6 +586,7 @@ export type Database = {
           paid_amount: number
           paid_at: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          receipt_path: string | null
           registered_by: string
         }
         Insert: {
@@ -596,6 +597,7 @@ export type Database = {
           paid_amount: number
           paid_at: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          receipt_path?: string | null
           registered_by: string
         }
         Update: {
@@ -606,6 +608,7 @@ export type Database = {
           paid_amount?: number
           paid_at?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          receipt_path?: string | null
           registered_by?: string
         }
         Relationships: [

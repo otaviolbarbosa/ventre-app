@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@nascere/supabase/types";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, FileText, Image } from "lucide-react";
 import { StatusBadge } from "./status-badge";
 
-type Payment = Tables<"payments">;
+type Payment = Tables<"payments"> & { receipt_url?: string | null };
 type Installment = Tables<"installments"> & { payments: Payment[] };
 
 type InstallmentListProps = {
@@ -42,21 +42,38 @@ export function InstallmentList({ installments, onRecordPayment }: InstallmentLi
                 </div>
               </div>
             </div>
-            {installment.status !== "pago" && installment.status !== "cancelado" && (
-              <div className="flex items-center gap-2">
-                {installment.payment_link && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={installment.payment_link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="mr-1 h-4 w-4" />
-                      Link
-                    </a>
+            <div className="flex items-center gap-2">
+              {installment.status === "pago" &&
+                installment.payments
+                  .filter((p) => p.receipt_url)
+                  .map((p) => (
+                    <Button key={p.id} variant="ghost" size="sm" asChild>
+                      <a href={p.receipt_url as string} target="_blank" rel="noopener noreferrer">
+                        {p.receipt_path?.endsWith(".pdf") ? (
+                          <FileText className="mr-1 h-4 w-4 text-red-500" />
+                        ) : (
+                          <Image className="mr-1 h-4 w-4 text-blue-500" />
+                        )}
+                        Comprovante
+                      </a>
+                    </Button>
+                  ))}
+              {installment.status !== "pago" && installment.status !== "cancelado" && (
+                <>
+                  {installment.payment_link && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={installment.payment_link} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-1 h-4 w-4" />
+                        Link
+                      </a>
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => onRecordPayment(installment)}>
+                    Registrar Pagamento
                   </Button>
-                )}
-                <Button size="sm" variant="outline" onClick={() => onRecordPayment(installment)}>
-                  Registrar Pagamento
-                </Button>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         ))}
     </div>
