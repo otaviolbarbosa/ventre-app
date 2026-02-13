@@ -1,14 +1,11 @@
-import type { Database } from "@nascere/supabase/types";
 import { dayjs } from "@/lib/dayjs";
+import type { Database } from "@nascere/supabase/types";
 
 type BillingStatus = Database["public"]["Enums"]["billing_status"];
 type InstallmentStatus = Database["public"]["Enums"]["installment_status"];
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 
-export function calculateInstallmentAmount(
-  totalAmount: number,
-  count: number,
-): number[] {
+export function calculateInstallmentAmount(totalAmount: number, count: number): number[] {
   const base = Math.floor(totalAmount / count);
   const remainder = totalAmount - base * count;
   return Array.from({ length: count }, (_, i) => (i === 0 ? base + remainder : base));
@@ -52,8 +49,8 @@ export function parseCurrencyToCents(value: string): number {
 }
 
 const paymentMethodLabels: Record<PaymentMethod, string> = {
-  credito: "Cartão de Crédito",
-  debito: "Cartão de Débito",
+  credito: "Crédito",
+  debito: "Débito",
   pix: "PIX",
   boleto: "Boleto",
   dinheiro: "Dinheiro",
@@ -66,11 +63,11 @@ export function getPaymentMethodLabel(method: PaymentMethod): string {
 
 type StatusConfig = {
   label: string;
-  variant: "default" | "success" | "destructive" | "secondary";
+  variant: "default" | "success" | "warning" | "destructive" | "secondary";
 };
 
 const statusConfigs: Record<BillingStatus, StatusConfig> = {
-  pendente: { label: "Pendente", variant: "default" },
+  pendente: { label: "Pendente", variant: "warning" },
   pago: { label: "Pago", variant: "success" },
   atrasado: { label: "Atrasado", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },

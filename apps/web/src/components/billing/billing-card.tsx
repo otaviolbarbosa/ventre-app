@@ -34,7 +34,7 @@ export function BillingCard({ billing }: { billing: Billing }) {
             <div>
               <span className="font-semibold text-lg">{formatCurrency(billing.total_amount)}</span>
               {billing.paid_amount > 0 && (
-                <span className="ml-2 text-muted-foreground">
+                <span className="ml-2 whitespace-nowrap text-muted-foreground">
                   ({formatCurrency(billing.paid_amount)} pago)
                 </span>
               )}

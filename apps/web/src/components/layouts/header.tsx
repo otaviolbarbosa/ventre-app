@@ -56,8 +56,8 @@ export function Header({ title, back }: HeaderProps) {
       )}
       {/* Title */}
       {title && (
-        <div className="flex-1">
-          {title && <h1 className="font-poppins font-semibold text-2xl tracking-tight">{title}</h1>}
+        <div className="min-w-0 flex-1">
+          {title && <h1 className="truncate font-poppins font-semibold text-2xl tracking-tight">{title}</h1>}
         </div>
       )}
       <div className="flex justify-center gap-2">

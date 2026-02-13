@@ -1,17 +1,20 @@
 "use client";
 
 import { BillingCard } from "@/components/billing/billing-card";
-import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
+import {
+  DashboardMetrics,
+  type FilterKey,
+} from "@/components/billing/dashboard-metrics";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { Header } from "@/components/layouts/header";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@nascere/supabase/types";
 import { Receipt } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Billing = Tables<"billings"> & {
-  installments: { id: string; status: string }[];
+  installments: { id: string; status: string; due_date: string }[];
   patient: { id: string; name: string };
 };
 
@@ -22,12 +25,24 @@ type Metrics = {
   upcoming_due: unknown[];
 };
 
+const FILTER_LABELS: Record<FilterKey, string> = {
+  total: "Total a Receber",
+  paid: "Recebido",
+  overdue: "Em Atraso",
+  upcoming: "Próximos Vencimentos",
+};
+
 export default function BillingDashboardPage() {
   const [billings, setBillings] = useState<Billing[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
+
+  const handleFilterClick = useCallback((filter: FilterKey) => {
+    setActiveFilter((prev) => (prev === filter ? null : filter));
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -56,6 +71,40 @@ export default function BillingDashboardPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const filteredBillings = useMemo(() => {
+    if (!activeFilter) return billings;
+
+    const now = new Date();
+    const in7Days = new Date(now);
+    in7Days.setDate(in7Days.getDate() + 7);
+
+    return billings.filter((billing) => {
+      switch (activeFilter) {
+        case "total":
+          return (
+            billing.paid_amount < billing.total_amount &&
+            billing.status !== "cancelado"
+          );
+        case "paid":
+          return billing.paid_amount > 0;
+        case "overdue":
+          return billing.installments.some((i) => i.status === "atrasado");
+        case "upcoming":
+          return billing.installments.some((i) => {
+            if (i.status !== "pendente") return false;
+            const dueDate = new Date(i.due_date);
+            return dueDate >= now && dueDate <= in7Days;
+          });
+        default:
+          return true;
+      }
+    });
+  }, [billings, activeFilter]);
+
+  const sectionTitle = activeFilter
+    ? FILTER_LABELS[activeFilter]
+    : "Cobranças Recentes";
 
   return (
     <div>
@@ -98,20 +147,26 @@ export default function BillingDashboardPage() {
                 paidAmount={metrics.paid_amount}
                 overdueAmount={metrics.overdue_amount}
                 upcomingCount={metrics.upcoming_due.length}
+                activeFilter={activeFilter}
+                onFilterClick={handleFilterClick}
               />
             )}
 
             <div>
-              <h2 className="mb-3 font-semibold text-lg">Cobranças Recentes</h2>
-              {billings.length === 0 ? (
+              <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
+              {filteredBillings.length === 0 ? (
                 <EmptyState
                   icon={Receipt}
                   title="Nenhuma cobrança"
-                  description="Suas cobranças aparecerão aqui."
+                  description={
+                    activeFilter
+                      ? "Nenhuma cobrança encontrada para este filtro."
+                      : "Suas cobranças aparecerão aqui."
+                  }
                 />
               ) : (
                 <div className="space-y-3">
-                  {billings.map((billing) => (
+                  {filteredBillings.map((billing) => (
                     <BillingCard key={billing.id} billing={billing} />
                   ))}
                 </div>

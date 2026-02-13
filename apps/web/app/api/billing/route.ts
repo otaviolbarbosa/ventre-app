@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       .select(
         `
         *,
-        installments(id, status),
+        installments(id, status, due_date),
         patient:patients!billings_patient_id_fkey(id, name)
       `,
         { count: "exact" },
