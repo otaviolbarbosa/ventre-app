@@ -1,17 +1,14 @@
 "use client";
 
 import { BillingCard } from "@/components/billing/billing-card";
-import {
-  DashboardMetrics,
-  type FilterKey,
-} from "@/components/billing/dashboard-metrics";
+import { DashboardMetrics, type FilterKey } from "@/components/billing/dashboard-metrics";
+import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
-import { Header } from "@/components/layouts/header";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@nascere/supabase/types";
 import { Receipt } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Billing = Tables<"billings"> & {
   installments: { id: string; status: string; due_date: string }[];
@@ -39,9 +36,13 @@ export default function BillingDashboardPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
+  const sectionRef = useRef<HTMLHeadingElement>(null);
 
   const handleFilterClick = useCallback((filter: FilterKey) => {
     setActiveFilter((prev) => (prev === filter ? null : filter));
+    setTimeout(() => {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -82,10 +83,7 @@ export default function BillingDashboardPage() {
     return billings.filter((billing) => {
       switch (activeFilter) {
         case "total":
-          return (
-            billing.paid_amount < billing.total_amount &&
-            billing.status !== "cancelado"
-          );
+          return billing.paid_amount < billing.total_amount && billing.status !== "cancelado";
         case "paid":
           return billing.paid_amount > 0;
         case "overdue":
@@ -102,15 +100,13 @@ export default function BillingDashboardPage() {
     });
   }, [billings, activeFilter]);
 
-  const sectionTitle = activeFilter
-    ? FILTER_LABELS[activeFilter]
-    : "Cobranças Recentes";
+  const sectionTitle = activeFilter ? FILTER_LABELS[activeFilter] : "Cobranças Recentes";
 
   return (
     <div>
       <Header title="Financeiro" />
       <div className="space-y-6 p-4 md:p-6">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:flex sm:items-center">
           <div className="flex items-center gap-2">
             <label htmlFor="start_date" className="text-muted-foreground text-sm">
               De:
@@ -120,7 +116,7 @@ export default function BillingDashboardPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-auto"
+              className="flex-1 sm:w-auto sm:flex-none"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -132,7 +128,7 @@ export default function BillingDashboardPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-auto"
+              className="flex-1 sm:w-auto sm:flex-none"
             />
           </div>
         </div>
