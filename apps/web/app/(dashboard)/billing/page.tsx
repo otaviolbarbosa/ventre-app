@@ -148,7 +148,7 @@ export default function BillingDashboardPage() {
               />
             )}
 
-            <div>
+            <div ref={sectionRef}>
               <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
               {filteredBillings.length === 0 ? (
                 <EmptyState
@@ -161,7 +161,7 @@ export default function BillingDashboardPage() {
                   }
                 />
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   {filteredBillings.map((billing) => (
                     <BillingCard key={billing.id} billing={billing} />
                   ))}

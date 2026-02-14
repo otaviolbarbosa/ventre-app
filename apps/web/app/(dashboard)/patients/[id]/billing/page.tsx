@@ -44,11 +44,7 @@ export default function PatientBillingPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-semibold text-lg">Cobranças</h2>
-        <Button
-          size="sm"
-          className="gradient-primary"
-          onClick={() => setShowModal(true)}
-        >
+        <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
           <Plus className="mr-1 h-4 w-4" />
           Nova Cobrança
         </Button>
@@ -60,16 +56,13 @@ export default function PatientBillingPage() {
           title="Nenhuma cobrança"
           description="Crie uma cobrança para acompanhar os pagamentos desta paciente."
         >
-          <Button
-            className="gradient-primary"
-            onClick={() => setShowModal(true)}
-          >
+          <Button className="gradient-primary" onClick={() => setShowModal(true)}>
             <Plus className="mr-1 h-4 w-4" />
             Nova Cobrança
           </Button>
         </EmptyState>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {billings.map((billing) => (
             <BillingCard key={billing.id} billing={billing} />
           ))}

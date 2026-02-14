@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
 import type { TablesInsert } from "@nascere/supabase/types";
+import { NextResponse } from "next/server";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -15,6 +15,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    const supabaseAdmin = await createServerSupabaseAdmin();
     const body = await request.json();
     const { action } = body; // 'accept' or 'reject'
 
@@ -85,7 +86,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         professional_type: professionalType,
       };
 
-      const { error: teamError } = await supabase.from("team_members").insert(teamMemberData);
+      const { error: teamError } = await supabaseAdmin.from("team_members").insert(teamMemberData);
 
       if (teamError) {
         return NextResponse.json({ error: teamError.message }, { status: 500 });
