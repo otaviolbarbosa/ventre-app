@@ -64,7 +64,7 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
                 <Link key={patient.id} href={`/patients/${patient.id}`} className="block">
                   <Card className="transition-colors hover:bg-muted/50">
                     <CardContent className="flex items-center gap-4 p-2">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 text-primary-700">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                         <Baby className="h-6 w-6" />
                       </div>
                       <div className="flex-1">

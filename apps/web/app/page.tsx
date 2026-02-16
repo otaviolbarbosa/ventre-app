@@ -8,19 +8,19 @@ import Link from "next/link";
 export default function HomePage() {
   const benefits = [
     {
-      icon: <Baby className="mb-2 h-10 w-10 text-primary-500" />,
+      icon: <Baby className="mb-2 h-10 w-10 text-muted-foreground" />,
       title: "Gestão de Pacientes",
       description:
         "Cadastre gestantes, acompanhe semanas gestacionais e mantenha todas as informações organizadas.",
     },
     {
-      icon: <Calendar className="mb-2 h-10 w-10 text-primary-500" />,
+      icon: <Calendar className="mb-2 h-10 w-10 text-muted-foreground" />,
       title: "Agendamentos",
       description:
         "Organize consultas e encontros, com histórico completo de atendimentos para cada paciente.",
     },
     {
-      icon: <Users className="h-10 w-10 text-primary-500" />,
+      icon: <Users className="h-10 w-10 text-muted-foreground" />,
       title: "Equipe Multidisciplinar",
       description:
         "Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada gestante.",
@@ -44,7 +44,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative bg-gradient-to-br from-primary-50 to-secondary-50 sm:pt-[264px] pt-[224px] pb:20 sm:pb-40">
+      <section className="pb:20 relative bg-gradient-to-br from-primary-50 to-secondary-50 pt-[224px] sm:pt-[264px] sm:pb-40">
         <div className="absolute inset-0 z-0">
           <Image src={heroBG} alt="hero-bg" className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background" />
@@ -53,7 +53,7 @@ export default function HomePage() {
         <div className="container relative mx-auto space-y-14 px-4 text-center">
           <h1 className="font-bold text-4xl text-gray-900 tracking-tight sm:text-5xl md:text-6xl">
             Cuidado integrado para
-            <span className="text-primary-600"> gestantes</span>
+            <span className="text-primary"> gestantes</span>
           </h1>
           <p className="mx-auto max-w-2xl text-gray-900 text-lg">
             Plataforma completa para profissionais de saúde acompanharem gestantes com organização,
@@ -90,7 +90,7 @@ export default function HomePage() {
             {benefits.map((benefit) => (
               <Card key={benefit.title}>
                 <CardHeader>
-                  <span className="mb-4 flex size-16 items-center justify-center rounded-lg bg-primary-50">
+                  <span className="mb-4 flex size-16 items-center justify-center rounded-lg bg-muted">
                     {benefit.icon}
                   </span>
                   <CardTitle>{benefit.title}</CardTitle>

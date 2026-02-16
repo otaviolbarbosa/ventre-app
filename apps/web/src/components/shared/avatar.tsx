@@ -15,7 +15,7 @@ export default function Avatar({ size = 9, className }: AvatarProps) {
   return (
     <div
       className={cn(
-        "flex items-center justify-center overflow-hidden overflow-hidden rounded-full rounded-full border bg-primary-100 font-semibold text-primary-700",
+        "flex items-center justify-center overflow-hidden overflow-hidden rounded-full rounded-full border bg-muted font-semibold text-muted-foreground",
         `size-${size}`,
         className,
       )}

@@ -114,7 +114,7 @@ export default function PatientAppointmentsPage() {
             return (
               <Card key={appointment.id}>
                 <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex flex-col items-center justify-center rounded-lg bg-primary-50 px-3 py-2 font-poppins text-primary-700 shadow shadow-primary/20">
+                  <div className="flex flex-col items-center justify-center rounded-lg bg-muted px-3 py-2 font-poppins text-muted-foreground shadow shadow-primary/20">
                     <span className="font-semibold text-2xl">
                       {dayjs(appointment.date).format("DD")}
                     </span>

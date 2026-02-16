@@ -55,7 +55,7 @@ function PatientCard({ patient }: { patient: PatientWithGestationalInfo }) {
       href={`/patients/${patient.id}`}
       className="flex items-center gap-4 border-b p-4 transition-colors last:border-b-0 hover:bg-muted/50"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 font-semibold text-muted-foreground">
         {getInitials(patient.name)}
       </div>
       <div className="min-w-0 flex-1">
@@ -227,7 +227,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       subtitle: "Gestantes ativas",
       icon: SmilePlus,
       iconColor: "text-primary",
-      iconBg: "bg-primary-50",
+      iconBg: "bg-muted",
     },
     {
       label: "2º Trimestre",
@@ -235,7 +235,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       subtitle: "Acompanhamento regular",
       icon: Activity,
       iconColor: "text-primary",
-      iconBg: "bg-primary-50",
+      iconBg: "bg-muted",
     },
     {
       label: "3º Trimestre",
@@ -307,7 +307,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
             {/* Title + Filters */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
-              <div className="flex rounded-full bg-gray-200/50 p-1">
+              <div className="flex rounded-full bg-muted p-1">
                 {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
                   <button
                     key={filter}
@@ -315,7 +315,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     onClick={() => handleFilterChange(filter)}
                     className={`flex-1 whitespace-nowrap rounded-full px-4 py-1.5 font-medium text-sm transition-colors sm:inline ${
                       activeFilter === filter
-                        ? "bg-background text-foreground shadow-sm"
+                        ? "bg-white text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >

@@ -13,7 +13,7 @@ export default function TeamMemberCard({ member }: TeamMemberCardProps) {
     <Card>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 font-poppins font-semibold text-primary-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted font-poppins font-semibold text-muted-foreground">
             {getInitials(member.professional?.name)}
           </div>
           <div className="flex-1">
