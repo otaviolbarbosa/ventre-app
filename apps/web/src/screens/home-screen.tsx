@@ -1,5 +1,7 @@
 "use client";
 
+import { PatientCard } from "@/components/shared/patient-card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { HomeAppointment, HomeData, PatientWithGestationalInfo } from "@/services/home";
-import { getFirstName, getInitials } from "@/utils";
+import type { HomeAppointment, HomeData } from "@/services/home";
+import type { PatientWithGestationalInfo } from "@/types";
+import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
-import { Activity, Baby, Bell, Heart, MoreHorizontal, Plus, Search, SmilePlus } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Activity, Baby, Bell, Check, Heart, ListFilter, Plus, Search, SmilePlus, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -19,7 +23,7 @@ type HomeScreenProps = {
   homeData: HomeData;
 };
 
-type FilterType = "all" | "final" | "recent";
+type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -42,49 +46,6 @@ function PatientCardSkeleton() {
         <Skeleton className="mt-2 h-2 w-full rounded-full" />
       </div>
     </div>
-  );
-}
-
-function PatientCard({ patient }: { patient: PatientWithGestationalInfo }) {
-  const dppFormatted = dayjs(patient.due_date).format("DD/MM/YYYY");
-  const statusColor =
-    patient.weeks >= 37 ? "bg-orange-400" : patient.weeks >= 28 ? "bg-blue-400" : "bg-green-400";
-
-  return (
-    <Link
-      href={`/patients/${patient.id}`}
-      className="flex items-center gap-4 border-b p-4 transition-colors last:border-b-0 hover:bg-muted/50"
-    >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
-        {getInitials(patient.name)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <h4 className="font-medium">{patient.name}</h4>
-          <button
-            type="button"
-            className="rounded-full p-1 text-muted-foreground hover:bg-muted"
-            onClick={(e) => e.preventDefault()}
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          DPP: {dppFormatted} &bull;{" "}
-          <span className="text-rose-500">{patient.remainingDays} dias restantes</span>
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <div className={`h-2 w-2 shrink-0 rounded-full ${statusColor}`} />
-          <div className="relative flex-1 overflow-hidden rounded-full bg-muted p-0.5">
-            <div
-              className="inset-y-0 left-0 h-2 rounded-full bg-primary"
-              style={{ width: `${patient.progress}%` }}
-            />
-          </div>
-          <span className="text-muted-foreground text-xs">{patient.weeks} Semanas</span>
-        </div>
-      </div>
-    </Link>
   );
 }
 
@@ -172,8 +133,11 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
 
 const FILTER_LABELS: Record<FilterType, string> = {
   all: "Todas",
-  final: "Reta Final",
-  recent: "Recentes",
+  recent: "Últimas",
+  trim1: "1º Trim",
+  trim2: "2º Trim",
+  trim3: "3º Trim",
+  final: "A Termo",
 };
 
 export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
@@ -184,7 +148,9 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   const [patients, setPatients] = useState<PatientWithGestationalInfo[]>(initialPatients);
   const [isLoading, setIsLoading] = useState(false);
   const [showNewPatient, setShowNewPatient] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const fetchPatients = useCallback(async (filter: FilterType, search: string) => {
     setIsLoading(true);
@@ -201,10 +167,29 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     }
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setShowFilters(false);
+      }
+    }
+    if (showFilters) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilters]);
+
+  const handleFilterToggle = useCallback(() => {
+    setShowFilters((prev) => !prev);
+  }, []);
+
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
+    setShowFilters(false);
     fetchPatients(filter, searchQuery);
   };
+
+  const activeLabel = FILTER_LABELS[activeFilter];
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -305,23 +290,52 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
           {/* Left: Patient List */}
           <div className="space-y-4">
             {/* Title + Filters */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between">
               <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
-              <div className="flex rounded-full bg-gray-200/50 p-1">
-                {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
-                  <button
-                    key={filter}
-                    type="button"
-                    onClick={() => handleFilterChange(filter)}
-                    className={`flex-1 whitespace-nowrap rounded-full px-4 py-1.5 font-medium text-sm transition-colors sm:inline ${
-                      activeFilter === filter
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+              <div className="flex items-center gap-2">
+                {activeFilter !== "all" && (
+                  <Badge variant="default" className="gap-1 px-3 py-1.5 text-sm">
+                    {activeLabel}
+                    <button type="button" onClick={() => handleFilterChange("all")}>
+                      <X className="size-3" />
+                    </button>
+                  </Badge>
+                )}
+                <div ref={filterRef} className="relative">
+                  <Button
+                    size="icon"
+                    variant={activeFilter !== "all" ? "default" : "outline"}
+                    onClick={handleFilterToggle}
                   >
-                    {FILTER_LABELS[filter]}
-                  </button>
-                ))}
+                    <ListFilter className="size-4" />
+                  </Button>
+                  <div
+                    className={cn(
+                      "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
+                      showFilters ? "opacity-100" : "pointer-events-none opacity-0",
+                    )}
+                  >
+                    {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => handleFilterChange(filter)}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                          activeFilter === filter && "font-medium text-primary",
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "size-4 shrink-0",
+                            activeFilter === filter ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                        {FILTER_LABELS[filter]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -330,7 +344,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
               <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome, data ou sintomas..."
-                className="h-11 rounded-xl bg-white pl-10"
+                className="h-11 rounded-full bg-white pl-10"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
