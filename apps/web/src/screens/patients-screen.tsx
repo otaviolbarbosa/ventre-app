@@ -5,12 +5,20 @@ import { PageHeader } from "@/components/shared/page-header";
 import { PatientCard } from "@/components/shared/patient-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { PatientFilter } from "@/types";
 import type { Tables } from "@nascere/supabase";
-import { Input } from "@/components/ui/input";
 import { Baby, Check, ListFilter, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -25,13 +33,23 @@ const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
   { key: "final", label: "A termo" },
 ];
 
+const PATIENTS_PER_PAGE = 10;
+
 type PatientsScreenProps = {
   patients: Tables<"patients">[];
+  totalCount: number;
+  currentPage: number;
   initialFilter: PatientFilter;
   initialSearch: string;
 };
 
-export default function PatientsScreen({ patients, initialFilter, initialSearch }: PatientsScreenProps) {
+export default function PatientsScreen({
+  patients,
+  totalCount,
+  currentPage,
+  initialFilter,
+  initialSearch,
+}: PatientsScreenProps) {
   const router = useRouter();
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<PatientFilter>(initialFilter);
@@ -56,10 +74,11 @@ export default function PatientsScreen({ patients, initialFilter, initialSearch 
     setShowFilters((prev) => !prev);
   }, []);
 
-  const buildUrl = useCallback((filter: PatientFilter, search: string) => {
+  const buildUrl = useCallback((filter: PatientFilter, search: string, page = 1) => {
     const params = new URLSearchParams();
     if (filter !== "all") params.set("filter", filter);
     if (search) params.set("search", search);
+    if (page > 1) params.set("page", String(page));
     const qs = params.toString();
     return qs ? `/patients?${qs}` : "/patients";
   }, []);
@@ -77,6 +96,8 @@ export default function PatientsScreen({ patients, initialFilter, initialSearch 
       router.push(buildUrl(activeFilter, value));
     }, 400);
   };
+
+  const totalPages = Math.ceil(totalCount / PATIENTS_PER_PAGE);
 
   useEffect(() => {
     return () => {
@@ -187,26 +208,76 @@ export default function PatientsScreen({ patients, initialFilter, initialSearch 
             </EmptyState>
           )
         ) : (
-          <div className="space-y-3">
-            {patients.map((patient) => {
-              const weekInfo = calculateGestationalAge(patient?.dum);
-              return (
-                <Link key={patient.id} href={`/patients/${patient.id}`} className="block">
-                  <div className="rounded-xl border">
-                    <PatientCard
-                      patient={{
-                        ...patient,
-                        weeks: weekInfo?.weeks ?? 0,
-                        days: weekInfo?.days ?? 0,
-                        remainingDays: 280 - (weekInfo?.totalDays ?? 0),
-                        progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
-                      }}
-                    />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+          <>
+            <div className="space-y-3">
+              {patients.map((patient) => {
+                const weekInfo = calculateGestationalAge(patient?.dum);
+                return (
+                  <Link key={patient.id} href={`/patients/${patient.id}`} className="block">
+                    <div className="rounded-xl border">
+                      <PatientCard
+                        patient={{
+                          ...patient,
+                          weeks: weekInfo?.weeks ?? 0,
+                          days: weekInfo?.days ?? 0,
+                          remainingDays: 280 - (weekInfo?.totalDays ?? 0),
+                          progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
+                        }}
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <Pagination className="mt-6">
+                <PaginationContent>
+                  {currentPage > 1 && (
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href={buildUrl(activeFilter, searchQuery, currentPage - 1)}
+                      />
+                    </PaginationItem>
+                  )}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((page) => {
+                      if (totalPages <= 5) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      return Math.abs(page - currentPage) <= 1;
+                    })
+                    .map((page, idx, arr) => {
+                      const items = [];
+                      if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
+                        items.push(
+                          <PaginationItem key={`ellipsis-${page}`}>
+                            <span className="flex size-9 items-center justify-center text-muted-foreground">
+                              ...
+                            </span>
+                          </PaginationItem>,
+                        );
+                      }
+                      items.push(
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href={buildUrl(activeFilter, searchQuery, page)}
+                            isActive={page === currentPage}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>,
+                      );
+                      return items;
+                    })}
+                  {currentPage < totalPages && (
+                    <PaginationItem>
+                      <PaginationNext href={buildUrl(activeFilter, searchQuery, currentPage + 1)} />
+                    </PaginationItem>
+                  )}
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
         )}
       </div>
 

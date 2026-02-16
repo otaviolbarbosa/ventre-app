@@ -7,14 +7,23 @@ const VALID_FILTERS: PatientFilter[] = ["all", "recent", "trim1", "trim2", "trim
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; search?: string }>;
+  searchParams: Promise<{ filter?: string; search?: string; page?: string }>;
 }) {
-  const { filter, search } = await searchParams;
+  const { filter, search, page } = await searchParams;
   const validFilter = VALID_FILTERS.includes(filter as PatientFilter)
     ? (filter as PatientFilter)
     : "all";
+  const currentPage = Math.max(1, Number(page) || 1);
 
-  const { patients } = await getMyPatients(validFilter, search || "");
+  const { patients, totalCount } = await getMyPatients(validFilter, search || "", currentPage);
 
-  return <PatientsScreen patients={patients} initialFilter={validFilter} initialSearch={search || ""} />;
+  return (
+    <PatientsScreen
+      patients={patients}
+      totalCount={totalCount}
+      currentPage={currentPage}
+      initialFilter={validFilter}
+      initialSearch={search || ""}
+    />
+  );
 }
