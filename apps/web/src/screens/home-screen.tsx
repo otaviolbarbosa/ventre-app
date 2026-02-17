@@ -8,13 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
+import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { HomeAppointment, HomeData } from "@/services/home";
 import type { PatientWithGestationalInfo } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
-import { cn } from "@/lib/utils";
-import { Activity, Baby, Bell, Check, Heart, ListFilter, Plus, Search, SmilePlus, X } from "lucide-react";
+import {
+  Activity,
+  Baby,
+  Bell,
+  Check,
+  Heart,
+  ListFilter,
+  Plus,
+  Search,
+  SmilePlus,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -133,11 +144,11 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
 
 const FILTER_LABELS: Record<FilterType, string> = {
   all: "Todas",
-  recent: "Últimas",
-  trim1: "1º Trim",
-  trim2: "2º Trim",
-  trim3: "3º Trim",
-  final: "A Termo",
+  recent: "Adicionadas Recentemente",
+  trim1: "1º Trimestre",
+  trim2: "2º Trimestre",
+  trim3: "3º Trimestre",
+  final: "Bebê a Termo",
 };
 
 export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
@@ -212,7 +223,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       subtitle: "Gestantes ativas",
       icon: SmilePlus,
       iconColor: "text-primary",
-      iconBg: "bg-primary-50",
+      iconBg: "bg-muted",
     },
     {
       label: "2º Trimestre",
@@ -220,7 +231,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       subtitle: "Acompanhamento regular",
       icon: Activity,
       iconColor: "text-primary",
-      iconBg: "bg-primary-50",
+      iconBg: "bg-muted",
     },
     {
       label: "3º Trimestre",
@@ -294,7 +305,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
               <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
               <div className="flex items-center gap-2">
                 {activeFilter !== "all" && (
-                  <Badge variant="default" className="gap-1 px-3 py-1.5 text-sm">
+                  <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
                     {activeLabel}
                     <button type="button" onClick={() => handleFilterChange("all")}>
                       <X className="size-3" />
@@ -304,7 +315,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                 <div ref={filterRef} className="relative">
                   <Button
                     size="icon"
-                    variant={activeFilter !== "all" ? "default" : "outline"}
+                    variant={activeFilter !== "all" ? "secondary" : "outline"}
                     onClick={handleFilterToggle}
                   >
                     <ListFilter className="size-4" />
@@ -343,7 +354,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
             <div className="relative">
               <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, data ou sintomas..."
+                placeholder="Buscar por nome"
                 className="h-11 rounded-full bg-white pl-10"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}

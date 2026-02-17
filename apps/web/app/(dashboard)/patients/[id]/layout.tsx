@@ -68,69 +68,6 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
     <div>
       <Header title={patient.name} back />
       <div className="p-4 pt-0 md:p-6">
-        {/* <PageHeader
-          // title={patient.name}
-          breadcrumbs={[{ label: "Gestantes", href: "/patients" }, { label: patient.name }]}
-        /> */}
-        {/* <div className="mb-6 block flex flex-col gap-2 lg:flex-row">
-          <Card className="flex-1">
-            <CardHeader className="p-4 pb-0">
-              <CardTitle>Idade Gestacional</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center gap-6 p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary-50 p-4 shadow shadow-primary/20">
-                  <Baby className="text-primary-700" />
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-1">
-                    <span className="font-poppins font-semibold text-3xl">
-                      {calculateGestationalAge(patient.dum)?.weeks}
-                    </span>
-                    <span className="text-gray-500 text-sm">semanas</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="font-poppins font-semibold text-lg">
-                      {calculateGestationalAge(patient.dum)?.days}
-                    </span>{" "}
-                    <span className="text-gray-500 text-sm">dias</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-1">
-                <GestationalProgressBar dum={patient.dum} />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="flex-1">
-            <CardHeader className="p-4 pb-0">
-              <CardTitle>DPP</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary-50 p-4 shadow shadow-primary/20">
-                  <Calendar className="text-primary-700" />
-                </div>
-                <div className="font-poppins">
-                  <div className="text-center font-semibold text-2xl">
-                    {dayjs(patient.due_date).format("DD")}
-                  </div>
-                  <div className="text-center text-sm">
-                    {dayjs(patient.due_date).format("MMM").toUpperCase()}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-1 items-center justify-end gap-3 text-gray-500">
-                Faltam{" "}
-                <span className="font-poppins font-semibold text-3xl text-black">
-                  {calculateRemainingDays(patient.due_date)}
-                </span>{" "}
-                dias
-              </div>
-            </CardContent>
-          </Card>
-        </div> */}
-
         <Tabs value={currentTab} className="mb-6 w-full">
           <TabsList>
             <Link href={`/patients/${patientId}/profile`} className="flex-1">

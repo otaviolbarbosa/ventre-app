@@ -26,11 +26,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
   { key: "all", label: "Todas" },
-  { key: "recent", label: "Recentes" },
+  { key: "recent", label: "Adicionadas Recentemente" },
   { key: "trim1", label: "1º Trimestre" },
   { key: "trim2", label: "2º Trimestre" },
   { key: "trim3", label: "3º Trimestre" },
-  { key: "final", label: "A termo" },
+  { key: "final", label: "Bebê a Termo" },
 ];
 
 const PATIENTS_PER_PAGE = 10;
@@ -112,7 +112,7 @@ export default function PatientsScreen({
       <Header title="Minhas Gestantes" />
       <div className="p-4 pt-0 md:p-6">
         <PageHeader description="Gerencie suas gestantes">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
               size="icon"
               className="gradient-primary flex sm:hidden"
@@ -128,10 +128,20 @@ export default function PatientsScreen({
               <Plus className="size-4" />
               <span className="hidden sm:block">Adicionar</span>
             </Button>
+            {activeFilter !== "all" && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+                  {activeLabel}
+                  <button type="button" onClick={() => handleFilterClick("all")}>
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              </div>
+            )}
             <div ref={filterRef} className="relative">
               <Button
                 size="icon"
-                variant={activeFilter !== "all" ? "default" : "outline"}
+                variant={activeFilter !== "all" ? "secondary" : "outline"}
                 className="flex"
                 onClick={handleFilterToggle}
               >
@@ -167,22 +177,11 @@ export default function PatientsScreen({
           </div>
         </PageHeader>
 
-        {activeFilter !== "all" && (
-          <div className="mb-4 flex items-center gap-2">
-            <Badge variant="default" className="gap-1 px-3 py-1.5 text-sm">
-              {activeLabel}
-              <button type="button" onClick={() => handleFilterClick("all")}>
-                <X className="size-3" />
-              </button>
-            </Badge>
-          </div>
-        )}
-
         <div className="relative mb-4">
           <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome..."
-            className="h-11 rounded-full pl-10"
+            className="h-11 rounded-full bg-white pl-10"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
@@ -209,7 +208,7 @@ export default function PatientsScreen({
           )
         ) : (
           <>
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {patients.map((patient) => {
                 const weekInfo = calculateGestationalAge(patient?.dum);
                 return (

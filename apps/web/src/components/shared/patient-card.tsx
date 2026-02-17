@@ -14,7 +14,7 @@ export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }
       href={`/patients/${patient.id}`}
       className="flex items-center gap-4 border-b p-4 transition-colors last:border-b-0 hover:bg-muted/50"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">
         {getInitials(patient.name)}
       </div>
       <div className="min-w-0 flex-1">
