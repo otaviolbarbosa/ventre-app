@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Plataforma de gestão de saúde para profissionais acompanharem gestantes",
     start_url: "/home",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#7c3aed",
+    background_color: "#E35A49",
+    theme_color: "#be5237",
     lang: "pt-BR",
     orientation: "portrait-primary",
     icons: [

@@ -80,7 +80,7 @@ export default function BottomNav() {
   const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
 
   return (
-    <div className="fixed bottom-2 w-full p-4 sm:hidden">
+    <div className="fixed bottom-2 z-20 w-full p-4 sm:hidden">
       <div ref={moreRef} className="relative">
         <div
           className={cn(
