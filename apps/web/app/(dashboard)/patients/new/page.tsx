@@ -72,7 +72,7 @@ export default function NewPatientPage() {
       <Header title="Nova Gestante" back />
       <div className="p-4 pt-0 md:p-6">
         <PageHeader
-          breadcrumbs={[{ label: "Pacientes", href: "/patients" }, { label: "Nova Gestante" }]}
+          breadcrumbs={[{ label: "Gestantes", href: "/patients" }, { label: "Nova Gestante" }]}
         />
 
         <Card>

@@ -1,13 +1,17 @@
 "use client";
 
 import { BillingCard } from "@/components/billing/billing-card";
-import { DashboardMetrics, type FilterKey } from "@/components/billing/dashboard-metrics";
+import {
+  DashboardMetrics,
+  type FilterKey,
+  type MetricItem,
+} from "@/components/billing/dashboard-metrics";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingState } from "@/components/shared/loading-state";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@nascere/supabase/types";
-import { Receipt } from "lucide-react";
+import { AlertTriangle, Clock, DollarSign, Receipt, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Billing = Tables<"billings"> & {
@@ -139,10 +143,34 @@ export default function BillingDashboardPage() {
           <>
             {metrics && (
               <DashboardMetrics
-                totalAmount={metrics.total_amount}
-                paidAmount={metrics.paid_amount}
-                overdueAmount={metrics.overdue_amount}
-                upcomingCount={metrics.upcoming_due.length}
+                metrics={
+                  [
+                    {
+                      key: "total",
+                      title: "Total a Receber",
+                      amount: metrics.total_amount,
+                      icon: DollarSign,
+                    },
+                    {
+                      key: "paid",
+                      title: "Recebido",
+                      amount: metrics.paid_amount,
+                      icon: TrendingUp,
+                    },
+                    {
+                      key: "overdue",
+                      title: "Em Atraso",
+                      amount: metrics.overdue_amount,
+                      icon: AlertTriangle,
+                    },
+                    {
+                      key: "upcoming",
+                      title: "Próx. Vencimentos",
+                      amount: metrics.upcoming_due.length,
+                      icon: Clock,
+                    },
+                  ] satisfies MetricItem[]
+                }
                 activeFilter={activeFilter}
                 onFilterClick={handleFilterClick}
               />

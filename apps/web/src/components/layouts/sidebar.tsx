@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 const navigation = [
   { name: "Home", href: "/home", icon: Home },
-  { name: "Pacientes", href: "/patients", icon: Users },
+  { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Financeiro", href: "/billing", icon: DollarSign },
   { name: "Convites", href: "/invites", icon: Mail },

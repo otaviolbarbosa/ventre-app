@@ -78,12 +78,8 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
   return (
     <Card className="h-fit">
       <CardContent className="p-5">
-        <div className="mb-4 flex items-start justify-between">
-          <h3 className="font-poppins font-semibold text-lg leading-tight">
-            Próximos
-            <br />
-            Encontros
-          </h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-poppins font-semibold text-lg leading-tight">Próximos Encontros</h3>
           <Link
             href="/appointments"
             className="font-semibold text-primary text-xs uppercase tracking-wide hover:underline"
@@ -130,13 +126,6 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
             ))}
           </div>
         )}
-
-        {/* <Link href="/appointments">
-          <Button variant="outline" className="mt-4 w-full gap-2">
-            <Calendar className="h-4 w-4" />
-            Agendar Encontro
-          </Button>
-        </Link> */}
       </CardContent>
     </Card>
   );
@@ -160,6 +149,8 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
@@ -193,6 +184,18 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   const handleFilterToggle = useCallback(() => {
     setShowFilters((prev) => !prev);
   }, []);
+
+  const handleSearchToggle = useCallback(() => {
+    setShowSearch((prev) => {
+      if (prev) {
+        setSearchQuery("");
+        fetchPatients(activeFilter, "");
+      } else {
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      return !prev;
+    });
+  }, [activeFilter, fetchPatients]);
 
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
@@ -248,13 +251,13 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-6 pb-2 md:px-8">
         <div>
-          <h1 className="font-bold font-poppins text-2xl tracking-tight md:text-3xl">
+          <h1 className="font-poppins font-semibold text-2xl tracking-tight md:text-xl">
             {getGreeting()}, {getFirstName(profile.name)}!
           </h1>
           <p className="mt-1 text-muted-foreground text-sm">{formatTodayDate()}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="hidden md:flex">
+          <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
           </Button>
           <Button
@@ -277,12 +280,12 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
 
       <div className="flex flex-1 flex-col space-y-6 px-4 pt-4 pb-20 sm:pb-4 md:px-8">
         {/* Trimester Cards */}
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
           {trimesterCards.map((card) => (
-            <Card key={card.label}>
+            <Card key={card.label} className="w-52 shrink-0 sm:w-auto">
               <CardContent className="flex items-center justify-between p-4">
                 <div>
-                  <p className="text-muted-foreground text-sm">{card.label}</p>
+                  <p className="font-semibold text-muted-foreground text-sm">{card.label}</p>
                   <p className="font-bold font-poppins text-3xl">{card.count}</p>
                   <p className="text-muted-foreground text-xs">{card.subtitle}</p>
                 </div>
@@ -312,6 +315,13 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     </button>
                   </Badge>
                 )}
+                <Button
+                  size="icon"
+                  variant={showSearch ? "secondary" : "outline"}
+                  onClick={handleSearchToggle}
+                >
+                  {showSearch ? <X className="size-4" /> : <Search className="size-4" />}
+                </Button>
                 <div ref={filterRef} className="relative">
                   <Button
                     size="icon"
@@ -351,15 +361,18 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
             </div>
 
             {/* Search */}
-            <div className="relative">
-              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome"
-                className="h-11 rounded-full bg-white pl-10"
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-              />
-            </div>
+            {showSearch && (
+              <div className="relative">
+                <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  placeholder="Buscar por nome"
+                  className="h-11 rounded-full bg-white pl-10"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                />
+              </div>
+            )}
 
             {/* Patient List */}
             <Card>

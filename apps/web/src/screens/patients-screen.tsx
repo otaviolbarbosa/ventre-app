@@ -55,8 +55,10 @@ export default function PatientsScreen({
   const [activeFilter, setActiveFilter] = useState<PatientFilter>(initialFilter);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(!!initialSearch);
   const filterRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -82,6 +84,18 @@ export default function PatientsScreen({
     const qs = params.toString();
     return qs ? `/patients?${qs}` : "/patients";
   }, []);
+
+  const handleSearchToggle = useCallback(() => {
+    setShowSearch((prev) => {
+      if (prev) {
+        setSearchQuery("");
+        router.push(buildUrl(activeFilter, ""));
+      } else {
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      return !prev;
+    });
+  }, [activeFilter, buildUrl, router]);
 
   const handleFilterClick = (filter: PatientFilter) => {
     setActiveFilter(filter);
@@ -113,21 +127,6 @@ export default function PatientsScreen({
       <div className="p-4 pt-0 md:p-6">
         <PageHeader description="Gerencie suas gestantes">
           <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              className="gradient-primary flex sm:hidden"
-              onClick={() => setShowNewPatientModal(true)}
-            >
-              <Plus className="size-4" />
-              <span className="hidden sm:block">Adicionar</span>
-            </Button>
-            <Button
-              className="gradient-primary hidden sm:flex"
-              onClick={() => setShowNewPatientModal(true)}
-            >
-              <Plus className="size-4" />
-              <span className="hidden sm:block">Adicionar</span>
-            </Button>
             {activeFilter !== "all" && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
@@ -138,6 +137,13 @@ export default function PatientsScreen({
                 </Badge>
               </div>
             )}
+            <Button
+              size="icon"
+              variant={showSearch ? "secondary" : "outline"}
+              onClick={handleSearchToggle}
+            >
+              {showSearch ? <X className="size-4" /> : <Search className="size-4" />}
+            </Button>
             <div ref={filterRef} className="relative">
               <Button
                 size="icon"
@@ -174,18 +180,36 @@ export default function PatientsScreen({
                 ))}
               </div>
             </div>
+
+            <Button
+              size="icon"
+              className="gradient-primary flex sm:hidden"
+              onClick={() => setShowNewPatientModal(true)}
+            >
+              <Plus className="size-4" />
+            </Button>
+            <Button
+              className="gradient-primary hidden sm:flex"
+              onClick={() => setShowNewPatientModal(true)}
+            >
+              <Plus className="size-4" />
+              <span className="hidden sm:block">Adicionar</span>
+            </Button>
           </div>
         </PageHeader>
 
-        <div className="relative mb-4">
-          <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome..."
-            className="h-11 rounded-full bg-white pl-10"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-        </div>
+        {showSearch && (
+          <div className="relative mb-4">
+            <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-4 text-muted-foreground" />
+            <Input
+              ref={searchInputRef}
+              placeholder="Buscar por nome..."
+              className="h-11 rounded-full bg-white pl-10"
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+          </div>
+        )}
 
         {patients.length === 0 ? (
           activeFilter !== "all" ? (
