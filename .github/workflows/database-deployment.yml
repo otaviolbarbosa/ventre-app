@@ -35,6 +35,8 @@ jobs:
           fetch-depth: 1
 
       - uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - run: supabase link --project-ref $PROJECT_ID
 
