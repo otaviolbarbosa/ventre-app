@@ -115,9 +115,13 @@ export default function PatientProfilePage() {
           </AccordionItem>
         </Accordion>
 
-        <Button variant="destructive" className="w-full" onClick={() => setShowDeleteDialog(true)}>
+        <Button
+          variant="destructive"
+          className="w-full sm:w-auto"
+          onClick={() => setShowDeleteDialog(true)}
+        >
           <Trash2 className="mr-2 h-4 w-4" />
-          Excluir Paciente
+          Excluir Gestante
         </Button>
       </div>
 

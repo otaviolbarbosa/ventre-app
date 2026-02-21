@@ -1,17 +1,11 @@
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
+import type { PatientWithGestationalInfo } from "@/types";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
 
 type Patient = Tables<"patients">;
 type Appointment = Tables<"appointments">;
-
-export type PatientWithGestationalInfo = Patient & {
-  weeks: number;
-  days: number;
-  remainingDays: number;
-  progress: number;
-};
 
 export type HomeAppointment = Appointment & {
   patient: Pick<Patient, "id" | "name" | "dum">;

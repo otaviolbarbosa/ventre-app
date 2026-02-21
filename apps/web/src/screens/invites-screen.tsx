@@ -17,7 +17,8 @@ type InvistesScreenProps = {
   invites: Invite[];
 };
 
-export default function InvitesScreen({ invites }: InvistesScreenProps) {
+export default function InvitesScreen({ invites: initialInvites }: InvistesScreenProps) {
+  const [invites, setInvites] = useState<Invite[]>(initialInvites);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   async function handleAction(inviteId: string, action: "accept" | "reject") {
@@ -35,9 +36,23 @@ export default function InvitesScreen({ invites }: InvistesScreenProps) {
         throw new Error(error.error || "Erro ao processar convite");
       }
 
-      toast.success(action === "accept" ? "Convite aceito!" : "Convite rejeitado");
+      if (action === "accept") {
+        const invite = invites.find((i) => i.id === inviteId);
+        toast.success("Convite aceito!", {
+          action: invite?.patient
+            ? {
+                label: `Ver ${invite.patient.name}`,
+                onClick: () => {
+                  window.location.href = `/patients/${invite.patient?.id}`;
+                },
+              }
+            : undefined,
+        });
+      } else {
+        toast.success("Convite rejeitado");
+      }
 
-      //   setInvites(invites.filter((i) => i.id !== inviteId));
+      setInvites(invites.filter((i) => i.id !== inviteId));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao processar convite");
     } finally {

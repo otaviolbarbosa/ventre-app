@@ -37,7 +37,7 @@ export function PageHeader({ title, description, breadcrumbs, children }: PageHe
       {(title || description || children) && (
         <div className="flex justify-between gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            {title && <h1 className="text-2xl font-bold tracking-tight">{title}</h1>}
+            {title && <h1 className="font-bold text-2xl tracking-tight">{title}</h1>}
             {description && <p className="mt-1 text-muted-foreground">{description}</p>}
           </div>
           {children && <div className="flex items-center gap-2">{children}</div>}

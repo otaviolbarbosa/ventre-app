@@ -5,7 +5,7 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { Bell, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const COOLDOWN_KEY = "nascere_push_prompt_dismissed";
+const COOLDOWN_KEY = "ventre_push_prompt_dismissed";
 const COOLDOWN_DAYS = 7;
 
 export function NotificationPermissionPrompt() {
@@ -53,7 +53,7 @@ export function NotificationPermissionPrompt() {
             Receba lembretes de consultas e atualizações da equipe.
           </p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" onClick={handleActivate}>
+            <Button size="sm" className="gradient-primary" onClick={handleActivate}>
               Ativar
             </Button>
             <Button size="sm" variant="ghost" onClick={handleDismiss}>

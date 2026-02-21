@@ -5,14 +5,15 @@ import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Bell, Calendar, Home, LogOut, Mail, Settings, Users } from "lucide-react";
+import { Bell, Calendar, DollarSign, Home, LogOut, Mail, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 const navigation = [
   { name: "Home", href: "/home", icon: Home },
-  { name: "Pacientes", href: "/patients", icon: Users },
+  { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
+  { name: "Financeiro", href: "/billing", icon: DollarSign },
   { name: "Convites", href: "/invites", icon: Mail },
   { name: "Notificações", href: "/notifications", icon: Bell },
   { name: "Configurações", href: "/settings", icon: Settings },
@@ -46,8 +47,8 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 font-medium text-sm transition-colors",
                 isActive
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
+                  ? "bg-muted text-muted-foreground"
+                  : "text-gray-800 hover:bg-muted/40 hover:text-muted-foreground",
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -59,13 +60,13 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="border-t p-4">
-        <div className="mb-3 flex items-center gap-3">
+        <Link href="/profile" className="mb-3 flex items-center gap-3">
           <Avatar size={10} />
           <div className="flex-1 truncate">
             <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>
             <p className="truncate text-gray-500 text-xs">{profile?.professional_type}</p>
           </div>
-        </div>
+        </Link>
         <Button
           variant="ghost"
           className="w-full justify-start gap-2 text-gray-600"

@@ -3,11 +3,14 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { NextResponse } from "next/server";
 
+const VALID_FILTERS = ["all", "recent", "trim1", "trim2", "trim3", "final"];
+
 export async function GET(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
     const { searchParams } = new URL(request.url);
-    const filter = searchParams.get("filter") || "all";
+    const rawFilter = searchParams.get("filter") || "all";
+    const filter = VALID_FILTERS.includes(rawFilter) ? rawFilter : "all";
     const search = searchParams.get("search") || "";
 
     const {
@@ -29,21 +32,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ patients: [] });
     }
 
-    let query = supabase.from("patients").select("*").in("id", patientIds);
-
-    if (search) {
-      query = query.ilike("name", `%${search}%`);
-    }
-
-    if (filter === "all") {
-      query = query.order("updated_at", { ascending: false });
-    } else if (filter === "recent") {
-      query = query.order("created_at", { ascending: false });
-    } else {
-      query = query.order("due_date", { ascending: true });
-    }
-
-    const { data: patients, error } = await query;
+    const { data: patients, error } = await supabase.rpc("get_filtered_patients", {
+      patient_ids: patientIds,
+      filter_type: filter,
+      search_query: search,
+    });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -66,10 +59,6 @@ export async function GET(request: Request) {
             ? Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100)
             : 0,
         };
-      })
-      .filter((p) => {
-        if (filter === "final") return p.weeks >= 28;
-        return true;
       })
       .slice(0, 5);
 
