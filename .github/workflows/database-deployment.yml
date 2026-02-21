@@ -38,6 +38,17 @@ jobs:
         with:
           version: latest
 
+      - name: Create minimal config for CI
+        run: |
+          cat > supabase/config.toml << 'EOF'
+          project_id = "supabase"
+
+          [db]
+          port = 54322
+          shadow_port = 54320
+          major_version = 17
+          EOF
+
       - run: supabase link --project-ref $PROJECT_ID
 
       - run: supabase db push
