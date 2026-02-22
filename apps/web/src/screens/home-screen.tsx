@@ -20,6 +20,7 @@ import {
   Baby,
   Bell,
   Check,
+  Eye,
   Heart,
   ListFilter,
   Plus,
@@ -27,7 +28,7 @@ import {
   SmilePlus,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type HomeScreenProps = {
@@ -79,67 +80,85 @@ function AppointmentTimeline({
     return "Encontro Preparatório";
   }
 
-  return (
-    <Card className="h-fit">
-      <CardContent className="space-y-4 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-poppins font-semibold text-lg leading-tight">Próximos Encontros</h3>
-          <Link
-            href="/appointments"
-            className="font-semibold text-primary text-xs uppercase tracking-wide hover:underline"
-          >
-            Ver todos
-          </Link>
-        </div>
+  const handleOpenAppointments = () => {
+    redirect("/appointments");
+  };
 
-        {appointments.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-4 text-center">
-            <p className="text-muted-foreground text-sm">Sua agenda está livre.</p>
-          </div>
-        ) : (
-          <div className="space-y-0">
-            {appointments.map((appointment, index) => (
-              <div key={appointment.id} className="relative flex gap-3 pb-6 last:pb-0">
-                {/* Timeline line */}
-                {index < appointments.length - 1 && (
-                  <div className="absolute top-5 left-[9px] h-[calc(100%-12px)] w-px bg-border" />
-                )}
-                {/* Timeline dot */}
-                <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
-                  <div
-                    className={`h-3 w-3 rounded-full border-2 ${
-                      appointment.date === today
-                        ? "border-primary bg-primary/20"
-                        : "border-muted-foreground/40 bg-background"
-                    }`}
-                  />
-                </div>
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={`font-medium text-xs ${
-                      appointment.date === today ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {formatAppointmentDate(appointment.date)}, {appointment.time.slice(0, 5)}
-                  </p>
-                  <p className="font-medium text-sm">{appointment.patient.name}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {getTypeLabel(appointment.type, appointment.patient.dum)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="text-center">
-          <Button size="sm" variant="outline" onClick={onNewAppointment}>
-            <Plus className="mr-1 h-3.5 w-3.5" />
-            Agendar consulta
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-poppins font-semibold text-xl">Próximos Encontros</h2>
+        <div className="flex items-center gap-2">
+          <Button size="icon" variant="outline" onClick={handleOpenAppointments}>
+            <Eye />
+            {/* Agendar consulta */}
+          </Button>
+          <Button
+            size="icon"
+            // variant="outline"
+            onClick={onNewAppointment}
+            className="gradient-primary"
+          >
+            <Plus />
+            {/* Agendar consulta */}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <Card className="h-fit">
+        <CardContent className="space-y-4 p-5">
+          {/* <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-poppins font-semibold text-lg leading-tight">Próximos Encontros</h3>
+            <Link
+              href="/appointments"
+              className="font-semibold text-primary text-xs uppercase tracking-wide hover:underline"
+            >
+              Ver todos
+            </Link>
+          </div> */}
+
+          {appointments.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <p className="text-muted-foreground text-sm">Sua agenda está livre.</p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {appointments.map((appointment, index) => (
+                <div key={appointment.id} className="relative flex gap-3 pb-6 last:pb-0">
+                  {/* Timeline line */}
+                  {index < appointments.length - 1 && (
+                    <div className="absolute top-5 left-[9px] h-[calc(100%-12px)] w-px bg-border" />
+                  )}
+                  {/* Timeline dot */}
+                  <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
+                    <div
+                      className={`h-3 w-3 rounded-full border-2 ${
+                        appointment.date === today
+                          ? "border-primary bg-primary/20"
+                          : "border-muted-foreground/40 bg-background"
+                      }`}
+                    />
+                  </div>
+                  {/* Content */}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`font-medium text-xs ${
+                        appointment.date === today ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {formatAppointmentDate(appointment.date)}, {appointment.time.slice(0, 5)}
+                    </p>
+                    <p className="font-medium text-sm">{appointment.patient.name}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {getTypeLabel(appointment.type, appointment.patient.dum)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -273,25 +292,10 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
           </Button>
-          <Button
-            className="gradient-primary hidden gap-2 md:flex"
-            onClick={() => setShowNewPatient(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Nova Gestante
-          </Button>
-          {/* Mobile: only + icon */}
-          <Button
-            className="gradient-primary md:hidden"
-            size="icon"
-            onClick={() => setShowNewPatient(true)}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col space-y-6 px-4 pt-4 pb-20 sm:pb-4 md:px-8">
+      <div className="flex flex-1 flex-col space-y-6 px-4 pt-4 pb-28 sm:pb-4 md:px-8">
         {/* Trimester Cards */}
         <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
           {trimesterCards.map((card) => (
@@ -328,6 +332,22 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     </button>
                   </Badge>
                 )}
+                <Button
+                  className="gradient-primary hidden gap-2 md:flex"
+                  onClick={() => setShowNewPatient(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Nova Gestante
+                </Button>
+                {/* Mobile: only + icon */}
+                <Button
+                  className="gradient-primary md:hidden"
+                  size="icon"
+                  onClick={() => setShowNewPatient(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+
                 <Button
                   size="icon"
                   variant={showSearch ? "secondary" : "outline"}
