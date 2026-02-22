@@ -24,6 +24,10 @@ export function Sidebar() {
   const router = useRouter();
   const { signOut, profile } = useAuth();
 
+  if (pathname === "/select-type") {
+    return null;
+  }
+
   const handleSignOut = async () => {
     await signOut();
     router.push("/login");

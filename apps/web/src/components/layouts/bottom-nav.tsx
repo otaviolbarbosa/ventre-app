@@ -43,6 +43,10 @@ export default function BottomNav() {
     setMoreOpen((prev) => !prev);
   }, []);
 
+  if (pathname === "/select-type") {
+    return null;
+  }
+
   const isProfileActive = pathname.startsWith("/profile");
 
   const mainNav = [
