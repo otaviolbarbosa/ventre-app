@@ -96,6 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    if (!error) {
+      // Hard navigation forces the server to re-read the session from scratch,
+      // evitando que o cache de server components do Next.js App Router
+      // mantenha a sessão antiga após o logout.
+      window.location.href = "/login";
+    }
     return { error };
   };
 

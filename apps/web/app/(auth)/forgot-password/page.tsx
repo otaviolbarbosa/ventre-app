@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -9,14 +9,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -38,12 +30,11 @@ export default function ForgotPasswordPage() {
   const { resetPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [sentTo, setSentTo] = useState("");
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: {
-      email: "",
-    },
+    defaultValues: { email: "" },
   });
 
   async function onSubmit(data: ForgotPasswordFormData) {
@@ -61,72 +52,103 @@ export default function ForgotPasswordPage() {
       return;
     }
 
+    setSentTo(data.email);
     setEmailSent(true);
     setIsLoading(false);
   }
 
   if (emailSent) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Email enviado!</CardTitle>
-          <CardDescription>
-            Enviamos um link para redefinir sua senha para o email informado.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">
-            Verifique sua caixa de entrada e spam. O link expira em 1 hora.
+      <div className="hero-animate hero-animate-1 space-y-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+          <CheckCircle2 className="h-7 w-7 text-primary" />
+        </div>
+
+        <div>
+          <h1 className="font-poppins font-semibold text-2xl text-foreground">Email enviado!</h1>
+          <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
+            Enviamos um link de redefinição para{" "}
+            <span className="font-medium text-foreground">{sentTo}</span>. Verifique sua caixa de
+            entrada e spam.
           </p>
-        </CardContent>
-        <CardFooter>
-          <Link href="/login" className="flex items-center text-primary text-sm hover:underline">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para o login
-          </Link>
-        </CardFooter>
-      </Card>
+        </div>
+
+        <div className="rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
+          <p className="text-muted-foreground text-xs">
+            O link expira em <span className="font-medium text-foreground">1 hora</span>. Se não
+            receber, verifique a pasta de spam ou solicite um novo link.
+          </p>
+        </div>
+
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar para o login
+        </Link>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Esqueceu sua senha?</CardTitle>
-        <CardDescription>Digite seu email para receber um link de redefinição</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="seu@email.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="gradient-primary w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Enviar link
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-      <CardFooter>
-        <Link
-          href="/login"
-          className="flex items-center text-muted-foreground text-sm hover:text-primary"
+    <div className="space-y-7">
+      {/* Heading */}
+      <div className="hero-animate hero-animate-1">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+          <Mail className="h-6 w-6 text-primary" />
+        </div>
+        <h1 className="font-poppins font-semibold text-2xl text-foreground">Esqueceu a senha?</h1>
+        <p className="mt-1 text-muted-foreground text-sm">
+          Digite seu email e enviaremos um link de redefinição
+        </p>
+      </div>
+
+      {/* Form */}
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="hero-animate hero-animate-2 space-y-4"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para o login
-        </Link>
-      </CardFooter>
-    </Card>
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-medium text-foreground/60 text-xs uppercase tracking-wide">
+                  Email
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    className="h-11 rounded-xl border-border/60 bg-muted/30"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="gradient-primary h-11 w-full rounded-xl font-semibold shadow-soft"
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Enviar link de redefinição
+          </Button>
+        </form>
+      </Form>
+
+      <Link
+        href="/login"
+        className="hero-animate hero-animate-3 inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-primary"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar para o login
+      </Link>
+    </div>
   );
 }
