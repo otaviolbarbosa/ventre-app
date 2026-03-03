@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Bell, Calendar, DollarSign, Home, LogOut, Mail, Settings, Users } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const navigation = [
   { name: "Home", href: "/home", icon: Home },
@@ -21,7 +21,6 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { signOut, profile } = useAuth();
 
   if (pathname === "/select-type") {
@@ -30,7 +29,6 @@ export function Sidebar() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/login");
   };
 
   return (

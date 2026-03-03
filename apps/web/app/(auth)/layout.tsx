@@ -1,14 +1,68 @@
 import { Logo } from "@/components/shared/logo";
+import { Baby, Heart, Shield } from "lucide-react";
+
+const highlights = [
+  { icon: Heart, text: "Acompanhamento gestacional completo e personalizado" },
+  { icon: Baby, text: "Gestão de equipes multidisciplinares de cuidado" },
+  { icon: Shield, text: "Dados protegidos com os mais altos padrões de segurança" },
+];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-muted to-background px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <Logo size="3xl" href="/" />
-          <p className="text-muted-foreground">Gestão de saúde para gestantes</p>
+    <div className="flex min-h-screen">
+      {/* ── Left: brand panel ─────────────────────────────── */}
+      <div
+        className="relative hidden overflow-hidden lg:flex lg:w-[420px] lg:flex-col lg:justify-between xl:w-[480px]"
+        style={{ background: "var(--gradient-primary)" }}
+      >
+        {/* Decorative blobs */}
+        <div className="-right-24 -top-24 absolute h-80 w-80 rounded-full bg-white/10" />
+        <div className="-bottom-16 -left-16 absolute h-64 w-64 rounded-full bg-black/15" />
+        <div className="absolute right-8 bottom-1/3 h-40 w-40 rounded-full bg-white/5" />
+
+        {/* Logo */}
+        <div className="relative z-10 p-10">
+          <div className="brightness-0 invert">
+            <Logo size="xl" href="/" />
+          </div>
         </div>
-        {children}
+
+        {/* Center content */}
+        <div className="relative z-10 px-10 pb-4">
+          <p className="font-poppins font-semibold text-2xl text-white leading-snug">
+            "O cuidado que cada gestante merece, na palma da sua mão."
+          </p>
+          <div className="mt-8 space-y-4">
+            {highlights.map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
+                  <Icon className="h-3 w-3 text-white" />
+                </div>
+                <span className="text-sm text-white/80 leading-relaxed">{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 p-10">
+          <p className="text-white/40 text-xs">
+            © {new Date().getFullYear()} Ventre. Todos os direitos reservados.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right: form panel ─────────────────────────────── */}
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10">
+        {/* Mobile logo */}
+        <div className="mb-10 lg:hidden">
+          <Logo className="justify-center" href="/" size="2xl" />
+          <p className="mt-2 text-center text-muted-foreground text-sm">
+            Gestão de saúde para gestantes
+          </p>
+        </div>
+
+        <div className="w-full max-w-[380px]">{children}</div>
       </div>
     </div>
   );

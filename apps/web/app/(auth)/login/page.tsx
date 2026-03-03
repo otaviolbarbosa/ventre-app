@@ -12,14 +12,6 @@ import { z } from "zod";
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -29,7 +21,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 
 const loginSchema = z.object({
@@ -49,10 +40,7 @@ function LoginForm() {
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
   async function onSubmit(data: LoginFormData) {
@@ -70,13 +58,10 @@ function LoginForm() {
         message = (error as { message: string }).message;
       }
       toast.error("Erro ao fazer login", {
-        description: (
-          <>
-            {message === "Invalid login credentials"
-              ? "Email ou senha incorretos"
-              : message || "Ocorreu um erro ao fazer login."}
-          </>
-        ),
+        description:
+          message === "Invalid login credentials"
+            ? "Email ou senha incorretos"
+            : message || "Ocorreu um erro ao fazer login.",
       });
       setIsLoading(false);
       return;
@@ -87,107 +72,134 @@ function LoginForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Entrar</CardTitle>
-        <CardDescription>Entre com sua conta para continuar</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="seu@email.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input type={showPassword ? "text" : "password"} placeholder="******" {...field} />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        tabIndex={-1}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="gradient-primary w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Entrar
-            </Button>
-          </form>
-        </Form>
+    <div className="space-y-7">
+      {/* Heading */}
+      <div className="hero-animate hero-animate-1">
+        <h1 className="font-poppins font-semibold text-2xl text-foreground">
+          Boas-vindas de volta!
+        </h1>
+        <p className="mt-1 text-muted-foreground text-sm">Acesse sua conta para continuar</p>
+      </div>
 
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <Separator className="w-full" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">ou continue com</span>
-          </div>
+      {/* Form */}
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="hero-animate hero-animate-2 space-y-4"
+        >
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-medium text-foreground/60 text-xs uppercase tracking-wide">
+                  Email
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
+                    className="h-11 rounded-xl border-border/60 bg-muted/30"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <FormLabel className="font-medium text-foreground/60 text-xs uppercase tracking-wide">
+                    Senha
+                  </FormLabel>
+                  <Link href="/forgot-password" className="text-primary text-xs hover:underline">
+                    Esqueceu?
+                  </Link>
+                </div>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="h-11 rounded-xl border-border/60 bg-muted/30 pr-10"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword((p) => !p)}
+                      className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="gradient-primary h-11 w-full rounded-xl font-semibold shadow-soft"
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Entrar
+          </Button>
+        </form>
+      </Form>
+
+      {/* Divider */}
+      <div className="hero-animate hero-animate-3 relative">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
         </div>
+        <div className="relative flex justify-center">
+          <span className="bg-background px-3 text-muted-foreground text-xs uppercase tracking-wide">
+            ou continue com
+          </span>
+        </div>
+      </div>
 
+      <div className="hero-animate hero-animate-4">
         <SocialLoginButtons redirectTo={redirectTo} />
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-2">
-        <Link href="/forgot-password" className="text-sm text-muted-foreground hover:text-primary">
-          Esqueceu sua senha?
+      </div>
+
+      <p className="hero-animate hero-animate-5 text-center text-muted-foreground text-sm">
+        Não tem uma conta?{" "}
+        <Link href="/register" className="font-medium text-primary hover:underline">
+          Cadastre-se grátis
         </Link>
-        <p className="text-sm text-muted-foreground">
-          Não tem uma conta?{" "}
-          <Link href="/register" className="text-primary hover:underline">
-            Cadastre-se
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+      </p>
+    </div>
   );
 }
 
 function LoginFormSkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <Skeleton className="h-7 w-24" />
-        <Skeleton className="h-5 w-48 mt-1" />
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-12" />
-          <Skeleton className="h-9 w-full" />
+    <div className="space-y-7">
+      <div className="space-y-2">
+        <div className="h-7 w-40 animate-pulse rounded-lg bg-muted" />
+        <div className="h-4 w-52 animate-pulse rounded-lg bg-muted" />
+      </div>
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="h-3 w-12 animate-pulse rounded bg-muted" />
+          <div className="h-11 w-full animate-pulse rounded-xl bg-muted" />
         </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-12" />
-          <Skeleton className="h-9 w-full" />
+        <div className="space-y-1.5">
+          <div className="h-3 w-12 animate-pulse rounded bg-muted" />
+          <div className="h-11 w-full animate-pulse rounded-xl bg-muted" />
         </div>
-        <Skeleton className="h-9 w-full" />
-        <Skeleton className="h-9 w-full mt-6" />
-      </CardContent>
-      <CardFooter className="flex flex-col space-y-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-4 w-40" />
-      </CardFooter>
-    </Card>
+        <div className="h-11 w-full animate-pulse rounded-xl bg-muted" />
+      </div>
+    </div>
   );
 }
 

@@ -82,7 +82,7 @@ export default async function HomePage() {
         {/* Background image + overlays */}
         <div className="absolute inset-0 z-0 h-[560px] md:h-screen">
           <Image alt="" className="h-full w-full object-cover" src={heroBG} />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-background/20" />
+          <div className="absolute inset-0 bg-background/40 md:bg-gradient-to-r md:from-background/95 md:via-background/80 md:to-background/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         </div>
 

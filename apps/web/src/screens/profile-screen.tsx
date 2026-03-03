@@ -115,13 +115,7 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
   }, [isEditModalOpen, profileName, profilePhone, form]);
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push("/login");
-    } catch (error) {
-      console.error(error);
-      router.push("/login");
-    }
+    await signOut();
   };
 
   const { executeAsync: saveProfile } = useAction(updateProfileAction);
