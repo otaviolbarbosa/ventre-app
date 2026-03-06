@@ -5,6 +5,7 @@ import Link from "next/link";
 type LogoProps = {
   href?: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+  bg?: boolean;
   className?: string;
 };
 
@@ -17,12 +18,18 @@ const sizes = {
   "3xl": 160,
 };
 
-export function Logo({ href, size = "md", className }: LogoProps) {
+export function Logo({ href, size = "md", className, bg = false }: LogoProps) {
   const image = sizes[size];
 
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
-      <Image src="/logo.png" alt="Ventre" width={image} height={image} className="object-contain" />
+      <Image
+        src={bg ? "/logo-bg.png" : "/logo.png"}
+        alt="Ventre"
+        width={image}
+        height={image}
+        className="object-contain"
+      />
     </div>
   );
 

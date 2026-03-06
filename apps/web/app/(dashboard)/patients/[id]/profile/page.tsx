@@ -1,13 +1,8 @@
 "use client";
 import { deletePatientAction } from "@/actions/delete-patient-action";
 import { getPatientAction } from "@/actions/get-patient-action";
-import { Trash2 } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-
 import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { FinishCareModal } from "@/components/shared/finish-care-modal";
 import { LoadingPatientProfile } from "@/components/shared/loading-state";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
@@ -18,12 +13,19 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CheckCircle2, Trash2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function PatientProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
 
   const patientId = params.id as string;
 
@@ -98,15 +100,50 @@ export default function PatientProfilePage() {
           </AccordionItem>
         </Accordion>
 
-        <Button
-          variant="destructive"
-          className="w-full sm:w-auto"
-          onClick={() => setShowDeleteDialog(true)}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Excluir Gestante
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          {patient.has_finished ? (
+            <div className="flex flex-col gap-1">
+              <Badge variant="success" className="w-fit gap-1.5 px-3 py-1.5 text-sm">
+                <CheckCircle2 className="h-4 w-4" />
+                Acompanhamento Finalizado
+              </Badge>
+              {patient.born_at && (
+                <p className="text-muted-foreground text-sm">
+                  Nascimento:{" "}
+                  {new Date(patient.born_at).toLocaleDateString("pt-BR", {
+                    timeZone: "UTC",
+                  })}
+                </p>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              className="w-full border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700 sm:w-auto"
+              onClick={() => setShowFinishModal(true)}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Finalizar Acompanhamento
+            </Button>
+          )}
+
+          <Button
+            variant="destructive"
+            className="w-full sm:w-auto"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Excluir Gestante
+          </Button>
+        </div>
       </div>
+
+      <FinishCareModal
+        open={showFinishModal}
+        onOpenChange={setShowFinishModal}
+        patientId={patientId}
+        onSuccess={() => fetchPatient({ patientId })}
+      />
 
       <ConfirmModal
         open={showDeleteDialog}

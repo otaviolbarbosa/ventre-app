@@ -45,6 +45,7 @@ export async function proxy(request: NextRequest) {
     "/paywall",
     "/auth/callback",
     "/register/patient",
+    "/api/stripe/webhook",
   ];
   const isPublicRoute =
     pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route));

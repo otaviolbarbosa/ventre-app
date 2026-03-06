@@ -11,19 +11,17 @@ const schema = z.object({
 
 export const subscribeNotificationsAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase, user } }) => {
-    const { error } = await supabase
-      .from("push_subscriptions")
-      .upsert(
-        {
-          user_id: user.id,
-          fcm_token: parsedInput.fcmToken,
-          device_info: (parsedInput.deviceInfo ?? {}) as Json,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "fcm_token" },
-      );
+  .action(async ({ parsedInput, ctx: { supabaseAdmin, user } }) => {
+    const { error } = await supabaseAdmin.from("push_subscriptions").upsert(
+      {
+        user_id: user.id,
+        fcm_token: parsedInput.fcmToken,
+        device_info: (parsedInput.deviceInfo ?? {}) as Json,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "fcm_token" },
+    );
 
     if (error) throw new Error(error.message);
 

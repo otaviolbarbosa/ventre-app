@@ -147,8 +147,100 @@
   animation: landingFadeUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-.hero-animate-1 { animation-delay: 0.05s; }
-.hero-animate-2 { animation-delay: 0.2s; }
-.hero-animate-3 { animation-delay: 0.38s; }
-.hero-animate-4 { animation-delay: 0.52s; }
-.hero-animate-5 { animation-delay: 0.68s; }
+.hero-animate-1 {
+  animation-delay: 0.05s;
+}
+.hero-animate-2 {
+  animation-delay: 0.2s;
+}
+.hero-animate-3 {
+  animation-delay: 0.38s;
+}
+.hero-animate-4 {
+  animation-delay: 0.52s;
+}
+.hero-animate-5 {
+  animation-delay: 0.68s;
+}
+
+/* Decorative blob float animations — 3 waypoints with fade-out at each stop */
+@keyframes blob-float-1 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-48px, 36px);
+    opacity: 0.25;
+  }
+  58% {
+    transform: translate(-88px, -28px);
+    opacity: 0.3;
+  }
+  80% {
+    transform: translate(-20px, 56px);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes blob-float-2 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  28% {
+    transform: translate(36px, -44px);
+    opacity: 0.3;
+  }
+  56% {
+    transform: translate(64px, 24px);
+    opacity: 0.25;
+  }
+  80% {
+    transform: translate(20px, 60px);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes blob-float-3 {
+  0% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+  32% {
+    transform: translate(-32px, -40px);
+    opacity: 0.3;
+  }
+  60% {
+    transform: translate(40px, -24px);
+    opacity: 0.25;
+  }
+  82% {
+    transform: translate(-16px, 36px);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate(0, 0);
+    opacity: 1;
+  }
+}
+
+.blob-animate-1 {
+  animation: blob-float-1 14s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.blob-animate-2 {
+  animation: blob-float-2 11s cubic-bezier(0.45, 0, 0.55, 1) -3s infinite;
+}
+
+.blob-animate-3 {
+  animation: blob-float-3 9s cubic-bezier(0.45, 0, 0.55, 1) -2s infinite;
+}

@@ -1,3 +1,10 @@
+const frequenceList = {
+  month: "Mensal",
+  trimester: "Trimestral",
+  semester: "Semestral",
+  year: "Anual",
+};
+
 export const getInitials = (name?: string) => {
   const names = name?.replace(/[^\p{L}\s]/gu, "").split(" ");
 
@@ -14,3 +21,7 @@ export const getInitials = (name?: string) => {
 };
 
 export const getFirstName = (name: string) => name.split(" ")?.[0] ?? "";
+
+export const formattedFrequence = (frequence: keyof typeof frequenceList) => {
+  return frequenceList[frequence];
+};

@@ -1,12 +1,28 @@
 "use client";
 
+import { createStripeCheckoutSessionAction } from "@/actions/create-stripe-checkout-session-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { Check, Lock, RefreshCw, Shield, Star } from "lucide-react";
+import { supabase } from "@nascere/supabase";
+import { Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
-type BillingCycle = "monthly" | "annual";
+// const NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+type BillingCycle = "month" | "year";
 
 const freeFeatures = [
   "Gerenciamento de gestantes",
@@ -34,10 +50,73 @@ const enterpriseFeatures = [
 ];
 
 export default function PaywallScreen() {
-  const [billing, setBilling] = useState<BillingCycle>("monthly");
-  const isAnnual = billing === "annual";
+  const [billing, setBilling] = useState<BillingCycle>("month");
+  const [isConfirmReplaceModalOpen, setIsConfirmReplaceModalOpen] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
+  const isAnnual = billing === "year";
 
-  const toggleBilling = () => setBilling((prev) => (prev === "monthly" ? "annual" : "monthly"));
+  const { executeAsync: executeCreateStripeCheckoutSession } = useAction(
+    createStripeCheckoutSessionAction,
+  );
+
+  const toggleBilling = () => setBilling((prev) => (prev === "month" ? "year" : "month"));
+
+  const proceedToCheckout = async (plan: string) => {
+    setIsLoadingCheckout(true);
+    try {
+      const { data: checkoutSessionUrl } = await executeCreateStripeCheckoutSession({
+        slug: `${plan}-${billing}`,
+      });
+
+      if (!checkoutSessionUrl) {
+        toast.error("Erro na criação da sessão de pagamento");
+        return;
+      }
+
+      window.location.assign(checkoutSessionUrl);
+    } finally {
+      setIsLoadingCheckout(false);
+    }
+  };
+
+  const handleSignPlan = async (plan: string) => {
+    if (!user?.id) {
+      router.push("/login?redirectTo=%2Fpaywall");
+      return;
+    }
+
+    setIsLoadingCheckout(true);
+    const { data: activeSubscription, error } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    setIsLoadingCheckout(false);
+
+    if (error) {
+      toast.error("Não foi possível verificar sua assinatura atual");
+      return;
+    }
+
+    if (activeSubscription) {
+      setPendingPlan(plan);
+      setIsConfirmReplaceModalOpen(true);
+      return;
+    }
+
+    await proceedToCheckout(plan);
+  };
+
+  const handleConfirmReplace = async () => {
+    if (!pendingPlan) return;
+
+    setIsConfirmReplaceModalOpen(false);
+    await proceedToCheckout(pendingPlan);
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -61,7 +140,7 @@ export default function PaywallScreen() {
         <div className="hero-animate hero-animate-2 mb-10 flex items-center justify-center gap-3">
           <button
             type="button"
-            onClick={() => setBilling("monthly")}
+            onClick={() => setBilling("month")}
             className={cn(
               "text-sm transition-colors",
               !isAnnual ? "font-semibold text-foreground" : "text-muted-foreground",
@@ -88,7 +167,7 @@ export default function PaywallScreen() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setBilling("annual")}
+              onClick={() => setBilling("year")}
               className={cn(
                 "text-sm transition-colors",
                 isAnnual ? "font-semibold text-foreground" : "text-muted-foreground",
@@ -176,7 +255,14 @@ export default function PaywallScreen() {
                 ))}
               </div>
 
-              <Button className="gradient-primary mt-8 w-full">Assinar Mais Cuidado</Button>
+              <Button
+                className="gradient-primary mt-8 w-full"
+                onClick={() => handleSignPlan("plus-care")}
+                disabled={isLoadingCheckout}
+              >
+                {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Assinar Mais Cuidado
+              </Button>
             </div>
           </div>
 
@@ -254,6 +340,35 @@ export default function PaywallScreen() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isConfirmReplaceModalOpen} onOpenChange={setIsConfirmReplaceModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Você já possui assinatura ativa</DialogTitle>
+            <DialogDescription>
+              Já identificamos uma assinatura ativa na sua conta. Se continuar, a assinatura atual
+              será substituída por uma nova.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsConfirmReplaceModalOpen(false)}
+              disabled={isLoadingCheckout}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="gradient-primary"
+              onClick={handleConfirmReplace}
+              disabled={isLoadingCheckout}
+            >
+              {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Continuar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
