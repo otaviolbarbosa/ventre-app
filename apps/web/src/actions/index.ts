@@ -5,5 +5,6 @@ export { createInviteAction } from "./create-invite-action";
 export { respondInviteAction } from "./respond-invite-action";
 export { leaveTeamAction } from "./leave-team-action";
 export { setProfessionalTypeAction } from "./set-professional-type-action";
+export { joinEnterpriseAction } from "./join-enterprise-action";
 export { markNotificationsReadAction } from "./mark-notifications-read-action";
 export { updateNotificationSettingsAction } from "./update-notification-settings-action";

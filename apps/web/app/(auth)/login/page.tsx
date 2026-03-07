@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -42,6 +42,19 @@ function LoginForm() {
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
+  useEffect(() => {
+    if (searchParams.get("confirmation") === "success") {
+      toast.success("Cadastro confirmado com sucesso!", {
+        description: "Agora você já pode fazer login.",
+      });
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("confirmation");
+      const newUrl = params.size > 0 ? `?${params.toString()}` : window.location.pathname;
+      router.replace(newUrl);
+    }
+  }, []);
 
   async function onSubmit(data: LoginFormData) {
     setIsLoading(true);

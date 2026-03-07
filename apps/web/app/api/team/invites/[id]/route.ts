@@ -15,6 +15,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
+    // Verify user is a professional
+    const { data: profile } = await supabase
+      .from("users")
+      .select("user_type, professional_type")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile) {
+      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 401 });
+    }
+
     const supabaseAdmin = await createServerSupabaseAdmin();
     const body = await request.json();
     const { action } = body; // 'accept' or 'reject'
@@ -46,20 +57,20 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       let professionalType = invite[0].professional_type;
 
       if (!professionalType) {
-        const { data: userProfile } = await supabase
+        const { data: profile } = await supabase
           .from("users")
           .select("professional_type")
           .eq("id", user.id)
           .single();
 
-        if (!userProfile?.professional_type) {
+        if (!profile?.professional_type) {
           return NextResponse.json(
             { error: "Tipo de profissional não definido no perfil" },
             { status: 400 },
           );
         }
 
-        professionalType = userProfile.professional_type;
+        professionalType = profile.professional_type;
       }
 
       // Check if there's already a team member with this professional type
@@ -102,7 +113,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .from("team_invites")
       .update({
         invited_professional_id: user.id,
-        professional_type: user.user_metadata.professional_type,
+        professional_type: profile.professional_type,
         status: "rejeitado",
       })
       .eq("id", id);

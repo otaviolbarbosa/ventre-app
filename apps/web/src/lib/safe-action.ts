@@ -13,5 +13,9 @@ export const authActionClient = actionClient.use(async ({ next }) => {
 
   if (!user) throw new Error("Não autorizado");
 
-  return next({ ctx: { supabase, supabaseAdmin, user } });
+  const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single();
+
+  if (!profile) throw new Error("Usuário não encontrado");
+
+  return next({ ctx: { supabase, supabaseAdmin, user, profile } });
 });

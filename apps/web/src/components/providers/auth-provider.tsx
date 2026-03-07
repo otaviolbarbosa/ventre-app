@@ -15,7 +15,7 @@ interface AuthContextType {
   signUp: (
     email: string,
     password: string,
-    metadata: { name: string; professional_type: string },
+    metadata: { name: string },
   ) => Promise<{ data: unknown; error: unknown }>;
   signOut: () => Promise<{ error: unknown }>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
@@ -79,16 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
-  const signUp = async (
-    email: string,
-    password: string,
-    metadata: { name: string; professional_type: string },
-  ) => {
+  const signUp = async (email: string, password: string, metadata: { name: string }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login?confirmation=success`,
       },
     });
     return { data, error };

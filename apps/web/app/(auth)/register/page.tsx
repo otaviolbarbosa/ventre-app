@@ -19,22 +19,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 
 const registerSchema = z
   .object({
     name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
     email: z.string().email("Email inválido"),
-    professional_type: z.enum(["obstetra", "enfermeiro", "doula"], {
-      required_error: "Selecione o tipo de profissional",
-    }),
     password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     confirmPassword: z.string(),
   })
@@ -66,7 +56,6 @@ export default function RegisterPage() {
     setIsLoading(true);
     const { error } = await signUp(data.email, data.password, {
       name: data.name,
-      professional_type: data.professional_type,
     });
 
     if (error) {
@@ -80,10 +69,7 @@ export default function RegisterPage() {
       return;
     }
 
-    toast.success("Conta criada com sucesso!", {
-      description: "Verifique seu email para confirmar sua conta.",
-    });
-    router.push("/login");
+    router.push("/register-confirmation");
   }
 
   return (
@@ -136,31 +122,6 @@ export default function RegisterPage() {
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="professional_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="font-medium text-foreground/60 text-xs uppercase tracking-wide">
-                  Especialidade
-                </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="h-11 rounded-xl border-border/60 bg-muted/30">
-                      <SelectValue placeholder="Selecione sua especialidade" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="obstetra">Obstetra</SelectItem>
-                    <SelectItem value="enfermeiro">Enfermeiro(a)</SelectItem>
-                    <SelectItem value="doula">Doula</SelectItem>
-                  </SelectContent>
-                </Select>
                 <FormMessage />
               </FormItem>
             )}

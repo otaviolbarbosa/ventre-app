@@ -18,6 +18,8 @@ export default function BottomNav() {
 
   const { execute, result } = useAction(getPendingInvitesAction);
 
+  console.log(profile);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     execute();
@@ -41,7 +43,7 @@ export default function BottomNav() {
     setMoreOpen((prev) => !prev);
   }, []);
 
-  if (pathname === "/select-type") {
+  if (pathname === "/onboarding") {
     return null;
   }
 

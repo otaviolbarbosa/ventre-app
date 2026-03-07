@@ -172,6 +172,72 @@ export type Database = {
           },
         ]
       }
+      enterprises: {
+        Row: {
+          city: string | null
+          cnpj: string | null
+          complement: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          legal_name: string | null
+          name: string
+          neighborhood: string | null
+          number: string | null
+          phone: string | null
+          professionals_amount: number
+          slug: string
+          state: string | null
+          street: string | null
+          token: string
+          whatsapp: string | null
+          zipcode: string | null
+        }
+        Insert: {
+          city?: string | null
+          cnpj?: string | null
+          complement?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          legal_name?: string | null
+          name: string
+          neighborhood?: string | null
+          number?: string | null
+          phone?: string | null
+          professionals_amount?: number
+          slug: string
+          state?: string | null
+          street?: string | null
+          token: string
+          whatsapp?: string | null
+          zipcode?: string | null
+        }
+        Update: {
+          city?: string | null
+          cnpj?: string | null
+          complement?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          legal_name?: string | null
+          name?: string
+          neighborhood?: string | null
+          number?: string | null
+          phone?: string | null
+          professionals_amount?: number
+          slug?: string
+          state?: string | null
+          street?: string | null
+          token?: string
+          whatsapp?: string | null
+          zipcode?: string | null
+        }
+        Relationships: []
+      }
       installments: {
         Row: {
           amount: number
@@ -742,6 +808,7 @@ export type Database = {
         Row: {
           cancelation_reason: string | null
           created_at: string
+          enterprise_id: string | null
           expires_at: string | null
           frequence: Database["public"]["Enums"]["subscription_frequence"]
           id: string
@@ -750,11 +817,12 @@ export type Database = {
           status: Database["public"]["Enums"]["subscription_status"]
           subscription_id: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           cancelation_reason?: string | null
           created_at?: string
+          enterprise_id?: string | null
           expires_at?: string | null
           frequence: Database["public"]["Enums"]["subscription_frequence"]
           id?: string
@@ -763,11 +831,12 @@ export type Database = {
           status?: Database["public"]["Enums"]["subscription_status"]
           subscription_id: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           cancelation_reason?: string | null
           created_at?: string
+          enterprise_id?: string | null
           expires_at?: string | null
           frequence?: Database["public"]["Enums"]["subscription_frequence"]
           id?: string
@@ -776,9 +845,16 @@ export type Database = {
           status?: Database["public"]["Enums"]["subscription_status"]
           subscription_id?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_plan_id_fkey"
             columns: ["plan_id"]
@@ -900,6 +976,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           email: string
+          enterprise_id: string | null
           id: string
           name: string
           phone: string | null
@@ -913,6 +990,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           email: string
+          enterprise_id?: string | null
           id: string
           name: string
           phone?: string | null
@@ -926,6 +1004,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           email?: string
+          enterprise_id?: string | null
           id?: string
           name?: string
           phone?: string | null
@@ -935,7 +1014,15 @@ export type Database = {
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "users_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1019,7 +1106,7 @@ export type Database = {
         | "expired"
         | "failed"
         | "replaced"
-      user_type: "professional" | "patient"
+      user_type: "professional" | "patient" | "manager" | "secretary"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1197,7 +1284,7 @@ export const Constants = {
         "failed",
         "replaced",
       ],
-      user_type: ["professional", "patient"],
+      user_type: ["professional", "patient", "manager", "secretary"],
     },
   },
 } as const

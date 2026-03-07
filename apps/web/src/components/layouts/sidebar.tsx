@@ -23,7 +23,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { signOut, profile } = useAuth();
 
-  if (pathname === "/select-type") {
+  if (pathname === "/onboarding") {
     return null;
   }
 

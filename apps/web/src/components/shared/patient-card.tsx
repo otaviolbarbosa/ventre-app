@@ -20,7 +20,7 @@ export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }
 
   return (
     <div className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50">
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">
+      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground shadow">
         {getInitials(patient.name)}
         <div className={`absolute right-1 bottom-1 h-2 w-2 shrink-0 rounded-full ${statusColor}`} />
       </div>
@@ -35,7 +35,7 @@ export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }
           </span>
         </p>
         <div className="mt-2 flex items-center gap-2">
-          <div className="relative flex-1 overflow-hidden rounded-full bg-muted p-0.5">
+          <div className="relative flex-1 overflow-hidden rounded-full bg-[url('/images/bg-pattern-2.svg')] bg-muted bg-repeat p-0.5 shadow">
             <div
               className="inset-y-0 left-0 h-2 rounded-full bg-primary"
               style={{ width: `${patient.progress}%` }}

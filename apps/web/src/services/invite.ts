@@ -1,9 +1,6 @@
 import type { Invite } from "@/types";
-import {
-  createServerSupabaseAdmin,
-  createServerSupabaseClient,
-} from "@nascere/supabase/server";
-import type { Database, TablesInsert } from "@nascere/supabase/types";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import type { Database, Tables, TablesInsert } from "@nascere/supabase/types";
 import dayjs from "dayjs";
 
 type ProfessionalType = Database["public"]["Enums"]["professional_type"];
@@ -134,8 +131,7 @@ export async function createInviteForPatient(
 export async function respondToInvite(
   supabase: SupabaseClient,
   supabaseAdmin: SupabaseAdminClient,
-  userId: string,
-  userMetadata: Record<string, unknown>,
+  profile: Tables<"users">,
   inviteId: string,
   action: "accept" | "reject",
 ) {
@@ -162,7 +158,7 @@ export async function respondToInvite(
       const { data: userProfile } = await supabase
         .from("users")
         .select("professional_type")
-        .eq("id", userId)
+        .eq("id", profile.id)
         .single();
 
       if (!userProfile?.professional_type) {
@@ -184,13 +180,11 @@ export async function respondToInvite(
       throw new Error(`Já existe um ${professionalType} na equipe desta paciente`);
     }
 
-    const { error: teamError } = await supabaseAdmin
-      .from("team_members")
-      .insert({
-        patient_id: invite[0].patient_id,
-        professional_id: userId,
-        professional_type: professionalType,
-      } satisfies TablesInsert<"team_members">);
+    const { error: teamError } = await supabaseAdmin.from("team_members").insert({
+      patient_id: invite[0].patient_id,
+      professional_id: profile.id,
+      professional_type: professionalType,
+    } satisfies TablesInsert<"team_members">);
 
     if (teamError) {
       throw new Error(teamError.message);
@@ -204,8 +198,8 @@ export async function respondToInvite(
   await supabaseAdmin
     .from("team_invites")
     .update({
-      invited_professional_id: userId,
-      professional_type: (userMetadata.professional_type as ProfessionalType) ?? null,
+      invited_professional_id: profile.id,
+      professional_type: (profile.professional_type as ProfessionalType) ?? null,
       status: "rejeitado",
     })
     .eq("id", inviteId);

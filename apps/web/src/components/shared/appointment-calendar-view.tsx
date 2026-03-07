@@ -112,20 +112,29 @@ export function AppointmentCalendarView({
                 type="button"
                 onClick={() => setSelectedDate(day.key)}
                 className={cn(
-                  "flex shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-sm transition-colors",
-                  isSelected
-                    ? "gradient-primary border-transparent text-white"
-                    : "border hover:bg-muted",
+                  "relative flex shrink-0 flex-col items-center gap-1 rounded-full border p-1.5 text-sm transition-colors",
+                  isSelected ? "gradient-primary border-transparent text-white" : "hover:bg-muted",
                 )}
               >
-                <span className="font-semibold">{day.dayNumber}</span>
-                <span className="text-xs capitalize">{day.month}</span>
+                <span
+                  className={cn(
+                    "font-medium text-[11px] text-primary capitalize",
+                    isSelected && "text-white",
+                  )}
+                >
+                  {day.month}
+                </span>
+                <span
+                  className={cn(
+                    "flex h-[32px] w-[32px] items-center justify-center rounded-full font-bold",
+                    isSelected && "bg-white text-accent-foreground",
+                  )}
+                >
+                  {day.dayNumber}
+                </span>
                 {hasAppointments && (
                   <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      isSelected ? "bg-white" : "bg-primary",
-                    )}
+                    className={cn("absolute bottom-2 h-1.5 w-1.5 rounded-full", "bg-primary")}
                   />
                 )}
               </button>
@@ -165,7 +174,7 @@ export function AppointmentCalendarView({
               <span className="-left-6 absolute top-[37px] size-3 rounded-full border-2 border-primary bg-primary" />
 
               <Link href={`/patients/${appointment.patient_id}/appointments`} className="block">
-                <Card className="transition-colors hover:bg-muted/50">
+                <Card className="shadow transition-colors hover:bg-muted/50">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-2">

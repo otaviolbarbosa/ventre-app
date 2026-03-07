@@ -26,6 +26,35 @@ export const POST = async (req: Request) => {
     );
     const supabaseAdmin = await createServerSupabaseAdmin();
 
+    if (event.type === "customer.subscription.updated") {
+      const stripeSubscription = event.data.object as Stripe.Subscription;
+
+      if (stripeSubscription.cancel_at_period_end) {
+        await supabaseAdmin
+          .from("subscriptions")
+          .update({
+            status: "canceling",
+            ...(stripeSubscription.cancel_at && {
+              expires_at: dayjs.unix(stripeSubscription.cancel_at).toISOString(),
+            }),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("subscription_id", stripeSubscription.id);
+      }
+    }
+
+    if (event.type === "customer.subscription.deleted") {
+      const stripeSubscription = event.data.object as Stripe.Subscription;
+
+      await supabaseAdmin
+        .from("subscriptions")
+        .update({
+          status: "canceled",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("subscription_id", stripeSubscription.id);
+    }
+
     if (event.type === "checkout.session.completed") {
       console.log("#1");
       const session = event.data.object;

@@ -300,12 +300,12 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
           <MenuItem
             icon={<CreditCard className="h-5 w-5" />}
             label="Minha Assinatura"
-            href="/billing"
+            href="/profile/subscription"
           />
           <MenuItem
             icon={<Bell className="h-5 w-5" />}
             label="Minhas Notificações"
-            href="/notifications"
+            href="/profile/notifications"
           />
         </div>
 

@@ -26,7 +26,7 @@ interface ConfirmModalProps {
   description: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  variant?: "default" | "destructive";
+  variant?: "default" | "destructive" | "destructive-inverted";
   loading?: boolean;
   onConfirm: () => void;
 }
@@ -53,7 +53,7 @@ export function ConfirmModal({
         </SheetHeader>
         <SheetFooter className="mt-4 flex-row gap-2">
           <Button
-            variant="outline"
+            variant={variant === "destructive-inverted" ? "default" : "outline"}
             onClick={() => onOpenChange(false)}
             disabled={loading}
             className="flex-1"
@@ -61,7 +61,13 @@ export function ConfirmModal({
             {cancelLabel}
           </Button>
           <Button
-            variant={variant === "destructive" ? "destructive" : "default"}
+            variant={
+              variant === "destructive-inverted"
+                ? "destructive-outline"
+                : variant === "destructive"
+                  ? "destructive"
+                  : "default"
+            }
             onClick={onConfirm}
             disabled={loading}
             className="flex-1"
@@ -80,11 +86,21 @@ export function ConfirmModal({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+          <Button
+            variant={variant === "destructive-inverted" ? "default" : "outline"}
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
             {cancelLabel}
           </Button>
           <Button
-            variant={variant === "destructive" ? "destructive" : "default"}
+            variant={
+              variant === "destructive-inverted"
+                ? "destructive-outline"
+                : variant === "destructive"
+                  ? "destructive"
+                  : "default"
+            }
             onClick={onConfirm}
             disabled={loading}
           >

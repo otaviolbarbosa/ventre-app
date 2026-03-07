@@ -67,12 +67,21 @@ export default function PaywallScreen() {
   const proceedToCheckout = async (plan: string) => {
     setIsLoadingCheckout(true);
     try {
-      const { data: checkoutSessionUrl } = await executeCreateStripeCheckoutSession({
+      const {
+        data: checkoutSessionUrl,
+        serverError,
+        validationErrors,
+      } = await executeCreateStripeCheckoutSession({
         slug: `${plan}-${billing}`,
       });
 
-      if (!checkoutSessionUrl) {
-        toast.error("Erro na criação da sessão de pagamento");
+      if (validationErrors) {
+        toast.error(validationErrors._errors?.[0] ?? "Erro de validação nos dados de pagamento.");
+        return;
+      }
+
+      if (serverError || !checkoutSessionUrl) {
+        toast.error(serverError ?? "Erro na criação da sessão de pagamento.");
         return;
       }
 

@@ -11,12 +11,11 @@ const schema = z.object({
 
 export const respondInviteAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, profile } }) => {
     const result = await respondToInvite(
       supabase,
       supabaseAdmin,
-      user.id,
-      user.user_metadata,
+      profile,
       parsedInput.inviteId,
       parsedInput.action,
     );
