@@ -4,13 +4,14 @@ import { joinEnterpriseAction } from "@/actions/join-enterprise-action";
 import { requestEnterpriseAction } from "@/actions/request-enterprise-action";
 import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
 import { setUserTypeAction } from "@/actions/set-user-type-action";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@nascere/supabase/types";
 import { InputMask } from "@react-input/mask";
-import { Baby, Briefcase, Building2, ClipboardList, Heart, Stethoscope } from "lucide-react";
+import { Baby, Building2, ClipboardList, Heart, LockKeyhole, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 type UserRoleType = Tables<"users">["user_type"];
@@ -39,7 +40,7 @@ const userRoles: {
   {
     type: "manager",
     label: "Gestor",
-    description: "Gerenciamento da empresa",
+    description: "Gerenciamento da organização",
     icon: Building2,
   },
   {
@@ -78,7 +79,9 @@ const professionalTypes: {
 
 export default function OnboardingScreen() {
   const [selectedRole, setSelectedRole] = useState<UserRoleType | null>(null);
-  const [token, setToken] = useState("");
+  const [tokenDigits, setTokenDigits] = useState<string[]>(Array(5).fill(""));
+  const tokenInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const token = tokenDigits.join("");
 
   // Create new enterprise state
   const [createNewEnterprise, setCreateNewEnterprise] = useState(false);
@@ -108,7 +111,7 @@ export default function OnboardingScreen() {
     joinEnterpriseAction,
     {
       onError: ({ error }) => {
-        toast.error(error.serverError ?? "Erro ao entrar na empresa.");
+        toast.error(error.serverError ?? "Erro ao entrar na organização.");
       },
     },
   );
@@ -117,7 +120,7 @@ export default function OnboardingScreen() {
     requestEnterpriseAction,
     {
       onError: ({ error }) => {
-        toast.error(error.serverError ?? "Erro ao solicitar criação da empresa.");
+        toast.error(error.serverError ?? "Erro ao solicitar criação da organização.");
       },
     },
   );
@@ -134,6 +137,49 @@ export default function OnboardingScreen() {
 
   function handleProfessionalTypeSelect(type: ProfessionalType) {
     executeProfessionalType({ type });
+  }
+
+  function handleTokenChange(index: number, value: string) {
+    const char = value
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(-1);
+    const next = [...tokenDigits];
+    next[index] = char;
+    setTokenDigits(next);
+    if (char && index < 4) {
+      tokenInputRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleTokenKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace") {
+      if (tokenDigits[index]) {
+        const next = [...tokenDigits];
+        next[index] = "";
+        setTokenDigits(next);
+      } else if (index > 0) {
+        tokenInputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      tokenInputRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 4) {
+      tokenInputRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleTokenPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 5);
+    const next = Array(5).fill("");
+    for (let i = 0; i < pasted.length; i++) next[i] = pasted[i];
+    setTokenDigits(next);
+    const focusIndex = Math.min(pasted.length, 4);
+    tokenInputRefs.current[focusIndex]?.focus();
   }
 
   function handleJoinEnterprise(e: React.FormEvent) {
@@ -239,16 +285,18 @@ export default function OnboardingScreen() {
       <div className="mb-6 text-center">
         <div className="mb-4 flex justify-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Briefcase className="h-8 w-8 text-primary" />
+            <LockKeyhole className="h-8 w-8 text-primary" />
           </div>
         </div>
         <h1 className="font-poppins font-semibold text-2xl tracking-tight">
-          {createNewEnterprise ? "Solicitar criação de empresa" : "Insira o token da empresa"}
+          {createNewEnterprise
+            ? "Solicitar criação de organização"
+            : "Insira o token da organização"}
         </h1>
         <p className="mt-2 text-muted-foreground text-sm">
           {createNewEnterprise
-            ? "Preencha os dados da empresa para enviar a solicitação"
-            : "Digite o código de 5 dígitos fornecido pela sua empresa"}
+            ? "Preencha os dados da organização para enviar a solicitação"
+            : "Digite o código de 5 dígitos fornecido pela sua organização"}
         </p>
       </div>
 
@@ -260,7 +308,7 @@ export default function OnboardingScreen() {
             onChange={(e) => setCreateNewEnterprise(e.target.checked)}
             className="h-4 w-4 rounded border-input accent-primary"
           />
-          <span className="text-sm">Criar um novo perfil empresarial</span>
+          <span className="text-sm">Criar um novo perfil organizacional</span>
         </label>
       )}
 
@@ -268,7 +316,7 @@ export default function OnboardingScreen() {
         <form onSubmit={handleRequestEnterprise} className="flex w-full max-w-sm flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label htmlFor="name" className="font-medium text-xs">
-              Nome da empresa *
+              Nome da organização *
             </label>
             <Input
               id="name"
@@ -319,7 +367,7 @@ export default function OnboardingScreen() {
                 type="email"
                 value={enterpriseForm.email}
                 onChange={(e) => updateEnterpriseField("email", e.target.value)}
-                placeholder="contato@empresa.com"
+                placeholder="contato@minhaorganizacao.com"
                 disabled={isPending}
               />
             </div>
@@ -485,22 +533,31 @@ export default function OnboardingScreen() {
         </form>
       ) : (
         <form onSubmit={handleJoinEnterprise} className="flex w-full max-w-xs flex-col gap-4">
-          <Input
-            value={token}
-            onChange={(e) => setToken(e.target.value.toUpperCase())}
-            placeholder="Ex: A1B2C"
-            maxLength={5}
-            className="text-center font-mono text-lg tracking-widest"
-            disabled={isPending}
-            autoFocus
-          />
-          <button
-            type="submit"
-            disabled={isPending || token.length !== 5}
-            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isPending ? "Entrando..." : "Entrar na empresa"}
-          </button>
+          <div className="flex justify-center gap-3">
+            {tokenDigits.map((digit, index) => (
+              <input
+                // biome-ignore lint/suspicious/noArrayIndexKey: order is fixed
+                key={index}
+                ref={(el) => {
+                  tokenInputRefs.current[index] = el;
+                }}
+                type="text"
+                inputMode="text"
+                maxLength={1}
+                value={digit}
+                autoFocus={index === 0}
+                disabled={isPending}
+                onChange={(e) => handleTokenChange(index, e.target.value)}
+                onKeyDown={(e) => handleTokenKeyDown(index, e)}
+                onPaste={handleTokenPaste}
+                onFocus={(e) => e.target.select()}
+                className="h-14 w-12 rounded-xl border-2 border-input bg-background text-center font-mono font-semibold text-xl transition-colors focus:border-primary focus:outline-none disabled:opacity-50"
+              />
+            ))}
+          </div>
+          <Button size="lg" disabled={isPending || token.length !== 5}>
+            {isPending ? "Entrando..." : "Entrar na organização"}
+          </Button>
         </form>
       )}
 

@@ -1,8 +1,8 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
-import { z } from "zod";
 import Stripe from "stripe";
+import { z } from "zod";
 
 const schema = z.object({
   subscriptionId: z.string().uuid("ID da assinatura inválido"),
@@ -17,7 +17,7 @@ export const cancelSubscriptionAction = authActionClient
 
     // Apenas assinaturas individuais (não empresariais)
     if (profile.enterprise_id) {
-      throw new Error("Cancelamento de assinaturas empresariais deve ser feito pelo gestor.");
+      throw new Error("Cancelamento de assinaturas de organizações deve ser feito pelo gestor.");
     }
 
     // Busca a assinatura no banco, garantindo que pertence ao usuário

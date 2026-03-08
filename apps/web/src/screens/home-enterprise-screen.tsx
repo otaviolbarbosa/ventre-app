@@ -1,8 +1,9 @@
 "use client";
-import { getHomePatientsAction } from "@/actions/get-home-patients-action";
-import { getPatientsAction } from "@/actions/get-patients-action";
+
+import { getEnterpriseHomePatientsAction } from "@/actions/get-enterprise-home-patients-action";
 import { Header } from "@/components/layouts/header";
 import { PatientCard } from "@/components/shared/patient-card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,23 +12,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
-import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { HomeAppointment, HomeData } from "@/services/home";
+import type { EnterpriseAppointment, HomeEnterpriseData } from "@/services/home-enterprise";
 import type { PatientWithGestationalInfo } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
 import {
   Activity,
   Baby,
-  CalendarPlus,
+  CalendarDays,
   Check,
-  Eye,
   Heart,
   ListFilter,
   Search,
   SmilePlus,
+  Stethoscope,
   UserPlusIcon,
+  Users,
   X,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -35,18 +36,34 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type HomeScreenProps = {
+type HomeEnterpriseScreenProps = {
   profile: Tables<"users">;
-  homeData: HomeData;
+  homeData: HomeEnterpriseData;
 };
 
 type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
+
+const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
+  obstetra: "Obstetra",
+  enfermeiro: "Enfermeiro(a)",
+  doula: "Doula",
+};
 
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Bom dia";
   if (hour < 18) return "Boa tarde";
   return "Boa noite";
+}
+
+function getInitials(name: string | null): string {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 function PatientCardSkeleton() {
@@ -62,10 +79,7 @@ function PatientCardSkeleton() {
   );
 }
 
-function AppointmentTimeline({
-  appointments,
-  onNewAppointment,
-}: { appointments: HomeAppointment[]; onNewAppointment: () => void }) {
+function AppointmentTimeline({ appointments }: { appointments: EnterpriseAppointment[] }) {
   const today = dayjs().format("YYYY-MM-DD");
 
   function formatAppointmentDate(date: string) {
@@ -80,45 +94,27 @@ function AppointmentTimeline({
     return "Encontro Preparatório";
   }
 
-  const handleOpenAppointments = () => {
-    redirect("/appointments");
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-poppins font-semibold text-xl">Agenda</h2>
-        <div className="flex items-center gap-2">
-          <Button size="icon" variant="outline" onClick={handleOpenAppointments}>
-            <Eye />
-          </Button>
-          <Button size="icon" onClick={onNewAppointment} className="gradient-primary">
-            <CalendarPlus />
-          </Button>
-        </div>
+        <Button size="icon" variant="outline" onClick={() => redirect("/appointments")}>
+          <CalendarDays />
+        </Button>
       </div>
       <Card className="h-fit">
         <CardContent className="space-y-4">
           {appointments.length === 0 ? (
             <div className="flex flex-col items-center gap-2 text-center">
-              <p className="text-muted-foreground text-sm">Sua agenda está livre.</p>
-              <p className="text-muted-foreground text-sm">
-                Aproveite para adicionar um novo agendamento.
-              </p>
-              <Button className="gradient-primary mt-4" onClick={onNewAppointment}>
-                <CalendarPlus />
-                Novo Agendamento
-              </Button>
+              <p className="text-muted-foreground text-sm">Nenhuma consulta agendada.</p>
             </div>
           ) : (
             <div className="space-y-0">
               {appointments.map((appointment, index) => (
                 <div key={appointment.id} className="relative flex gap-3 pb-6 last:pb-0">
-                  {/* Timeline line */}
                   {index < appointments.length - 1 && (
                     <div className="absolute top-5 left-[9px] h-[calc(100%-12px)] w-px bg-border" />
                   )}
-                  {/* Timeline dot */}
                   <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
                     <div
                       className={`h-3 w-3 rounded-full border-2 ${
@@ -128,7 +124,6 @@ function AppointmentTimeline({
                       }`}
                     />
                   </div>
-                  {/* Content */}
                   <div className="min-w-0 flex-1">
                     <p
                       className={`font-medium text-xs ${
@@ -140,6 +135,9 @@ function AppointmentTimeline({
                     <p className="font-medium text-sm">{appointment.patient.name}</p>
                     <p className="text-muted-foreground text-xs">
                       {getTypeLabel(appointment.type, appointment.patient.dum)}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      com {appointment.professional.name}
                     </p>
                   </div>
                 </div>
@@ -161,13 +159,12 @@ const FILTER_LABELS: Record<FilterType, string> = {
   final: "Bebê a Termo",
 };
 
-export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
-  const { trimesterCounts, upcomingAppointments } = homeData;
+export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpriseScreenProps) {
+  const { trimesterCounts, upcomingAppointments, professionals } = homeData;
 
+  const [showNewPatient, setShowNewPatient] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showNewPatient, setShowNewPatient] = useState(false);
-  const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -178,16 +175,10 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     execute: fetchPatients,
     result: patientsResult,
     isPending: isLoading,
-  } = useAction(getHomePatientsAction);
-  const { execute: fetchAllPatients, result: allPatientsResult } = useAction(getPatientsAction);
-
-  useEffect(() => {
-    fetchAllPatients();
-  }, [fetchAllPatients]);
+  } = useAction(getEnterpriseHomePatientsAction);
 
   const patients = (patientsResult.data?.patients ??
     homeData.patients) as PatientWithGestationalInfo[];
-  const allPatients = allPatientsResult.data?.patients ?? [];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -200,10 +191,6 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilters]);
-
-  const handleFilterToggle = useCallback(() => {
-    setShowFilters((prev) => !prev);
-  }, []);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchPatients on deps
   const handleSearchToggle = useCallback(() => {
@@ -224,8 +211,6 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     fetchPatients({ filter, search: searchQuery });
   };
 
-  const activeLabel = FILTER_LABELS[activeFilter];
-
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -239,6 +224,8 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, []);
+
+  const activeLabel = FILTER_LABELS[activeFilter];
 
   const trimesterCards = [
     {
@@ -267,7 +254,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     },
   ];
 
-  const hasAnyPatients = homeData.patients.length > 0;
+  const hasAnyPatients = homeData.allPatientIds.length > 0;
 
   if (!hasAnyPatients) {
     return (
@@ -278,18 +265,20 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
           <div>
             <p className="font-semibold text-lg">Nenhuma gestante cadastrada</p>
             <p className="mt-1 text-muted-foreground text-sm">
-              Adicione sua primeira gestante para começar o acompanhamento.
+              Os profissionais da organização ainda não possuem gestantes associadas.
             </p>
           </div>
-          <Button className="gradient-primary mt-2" onClick={() => setShowNewPatient(true)}>
-            <UserPlusIcon />
-            Adicionar Gestante
-          </Button>
+          {professionals.length > 0 && (
+            <Button className="gradient-primary mt-2" onClick={() => setShowNewPatient(true)}>
+              <UserPlusIcon />
+              Adicionar Gestante
+            </Button>
+          )}
         </div>
         <NewPatientModal
           showModal={showNewPatient}
           setShowModal={setShowNewPatient}
-          callback={() => fetchPatients({ filter: activeFilter, search: searchQuery })}
+          professionals={professionals}
         />
       </div>
     );
@@ -320,153 +309,158 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
           ))}
         </div>
 
-        {/* Main Content: Two columns */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Left: Patient List */}
-          <div className="space-y-4">
-            {/* Title + Filters */}
-            <div className="flex items-center justify-between">
-              <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
-              <div className="flex items-center gap-2">
-                {activeFilter !== "all" && (
-                  <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
-                    {activeLabel}
-                    <button type="button" onClick={() => handleFilterChange("all")}>
-                      <X className="size-3" />
-                    </button>
-                  </Badge>
-                )}
-
-                <Button
-                  size="icon"
-                  variant={showSearch ? "secondary" : "outline"}
-                  onClick={handleSearchToggle}
-                >
-                  {showSearch ? <X /> : <Search />}
-                </Button>
-                <div ref={filterRef} className="relative">
-                  <Button
-                    size="icon"
-                    variant={activeFilter !== "all" ? "secondary" : "outline"}
-                    onClick={handleFilterToggle}
-                  >
-                    <ListFilter />
-                  </Button>
-                  <div
-                    className={cn(
-                      "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                      showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                    )}
-                  >
-                    {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
-                      <button
-                        key={filter}
-                        type="button"
-                        onClick={() => handleFilterChange(filter)}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                          activeFilter === filter && "font-medium text-primary",
-                        )}
-                      >
-                        <Check
-                          className={cn(
-                            "size-4 shrink-0",
-                            activeFilter === filter ? "opacity-100" : "opacity-0",
-                          )}
-                        />
-                        {FILTER_LABELS[filter]}
-                      </button>
-                    ))}
-                  </div>
+          {/* Left: Professionals + Patient List */}
+          <div className="space-y-6">
+            {/* Professionals */}
+            {professionals.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="font-poppins font-semibold text-xl">Profissionais</h2>
                 </div>
-                <Button
-                  className="gradient-primary hidden gap-2 md:flex"
-                  onClick={() => setShowNewPatient(true)}
-                >
-                  <UserPlusIcon />
-                  Nova Gestante
-                </Button>
-                <Button
-                  className="gradient-primary md:hidden"
-                  size="icon"
-                  onClick={() => setShowNewPatient(true)}
-                >
-                  <UserPlusIcon />
-                </Button>
-              </div>
-            </div>
-
-            {/* Search */}
-            {showSearch && (
-              <div className="relative">
-                <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  placeholder="Buscar por nome"
-                  className="h-11 rounded-full bg-white pl-10"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                />
+                <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+                  {professionals.map((prof) => (
+                    <Card key={prof.id} className="w-44 shrink-0 sm:w-auto">
+                      <CardContent className="flex items-center gap-3 p-4">
+                        <Avatar className="h-10 w-10 shrink-0">
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                            {getInitials(prof.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-sm">{prof.name ?? "—"}</p>
+                          <p className="text-muted-foreground text-xs">
+                            {prof.professional_type
+                              ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
+                                prof.professional_type)
+                              : "Profissional"}
+                          </p>
+                          <div className="mt-1 flex items-center gap-1">
+                            <Stethoscope className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-muted-foreground text-xs">
+                              {prof.patient_count}{" "}
+                              {prof.patient_count === 1 ? "gestante" : "gestantes"}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Patient List */}
-            <Card>
-              <CardContent className="p-0">
-                {isLoading ? (
-                  <>
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                  </>
-                ) : patients.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-12 text-center">
-                    <Baby className="h-10 w-10 text-muted-foreground/50" />
-                    <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-poppins font-semibold text-xl">Gestantes</h2>
+                <div className="flex items-center gap-2">
+                  {activeFilter !== "all" && (
+                    <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+                      {activeLabel}
+                      <button type="button" onClick={() => handleFilterChange("all")}>
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  )}
+
+                  <Button
+                    size="icon"
+                    variant={showSearch ? "secondary" : "outline"}
+                    onClick={handleSearchToggle}
+                  >
+                    {showSearch ? <X /> : <Search />}
+                  </Button>
+                  <div ref={filterRef} className="relative">
+                    <Button
+                      size="icon"
+                      variant={activeFilter !== "all" ? "secondary" : "outline"}
+                      onClick={() => setShowFilters((prev) => !prev)}
+                    >
+                      <ListFilter />
+                    </Button>
+                    <div
+                      className={cn(
+                        "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
+                        showFilters ? "opacity-100" : "pointer-events-none opacity-0",
+                      )}
+                    >
+                      {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
+                        <button
+                          key={filter}
+                          type="button"
+                          onClick={() => handleFilterChange(filter)}
+                          className={cn(
+                            "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                            activeFilter === filter && "font-medium text-primary",
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              "size-4 shrink-0",
+                              activeFilter === filter ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          {FILTER_LABELS[filter]}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <div className="divider-y-1">
-                    {patients.map((patient) => (
-                      <Link key={patient.id} href={`/patients/${patient.id}`}>
-                        <PatientCard patient={patient} />
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              </div>
+
+              {showSearch && (
+                <div className="relative">
+                  <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    placeholder="Buscar por nome"
+                    className="h-11 rounded-full bg-white pl-10"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <Card>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <>
+                      <PatientCardSkeleton />
+                      <PatientCardSkeleton />
+                      <PatientCardSkeleton />
+                    </>
+                  ) : patients.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-12 text-center">
+                      <Baby className="h-10 w-10 text-muted-foreground/50" />
+                      <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
+                    </div>
+                  ) : (
+                    <div className="divider-y-1">
+                      {patients.map((patient) => (
+                        <Link key={patient.id} href={`/patients/${patient.id}`}>
+                          <PatientCard patient={patient} />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
-          {/* Right: Upcoming Appointments */}
+          {/* Right: Agenda */}
           <div className="hidden lg:block">
-            <AppointmentTimeline
-              appointments={upcomingAppointments}
-              onNewAppointment={() => setShowNewAppointment(true)}
-            />
+            <AppointmentTimeline appointments={upcomingAppointments} />
           </div>
         </div>
 
-        {/* Mobile: Upcoming Appointments */}
+        {/* Mobile: Agenda */}
         <div className="lg:hidden">
-          <AppointmentTimeline
-            appointments={upcomingAppointments}
-            onNewAppointment={() => setShowNewAppointment(true)}
-          />
+          <AppointmentTimeline appointments={upcomingAppointments} />
         </div>
       </div>
-
-      <NewPatientModal
-        showModal={showNewPatient}
-        setShowModal={setShowNewPatient}
-        callback={() => fetchPatients({ filter: activeFilter, search: searchQuery })}
-      />
-      <NewAppointmentModal
-        patients={allPatients}
-        showModal={showNewAppointment}
-        setShowModal={setShowNewAppointment}
-      />
     </div>
   );
 }

@@ -80,14 +80,17 @@ export async function createPatient(
   userId: string,
   data: CreatePatientInput,
 ) {
-  const { data: profile } = await supabase
+  // Determine which professional will own this patient
+  const targetProfessionalId = data.professional_id ?? userId;
+
+  const { data: profile } = await supabaseAdmin
     .from("users")
     .select("user_type, professional_type")
-    .eq("id", userId)
+    .eq("id", targetProfessionalId)
     .single();
 
   if (profile?.user_type !== "professional") {
-    throw new Error("Apenas profissionais podem cadastrar pacientes");
+    throw new Error("Apenas profissionais podem ser responsáveis por pacientes");
   }
 
   const insertData: TablesInsert<"patients"> = {
@@ -98,7 +101,7 @@ export async function createPatient(
     dum: data.dum,
     address: data.address,
     observations: data.observations,
-    created_by: userId,
+    created_by: targetProfessionalId,
   };
 
   const { data: patient, error: patientError } = await supabaseAdmin
@@ -114,7 +117,7 @@ export async function createPatient(
   if (profile.professional_type) {
     const { error: teamError } = await supabaseAdmin.from("team_members").insert({
       patient_id: patient.id,
-      professional_id: userId,
+      professional_id: targetProfessionalId,
       professional_type: profile.professional_type,
     } satisfies TablesInsert<"team_members">);
 

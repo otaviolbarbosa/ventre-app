@@ -12,6 +12,7 @@ export const createPatientSchema = z.object({
   }),
   address: z.string().optional(),
   observations: z.string().optional(),
+  professional_id: z.string().uuid().optional(),
 });
 
 export const updatePatientSchema = createPatientSchema.partial();

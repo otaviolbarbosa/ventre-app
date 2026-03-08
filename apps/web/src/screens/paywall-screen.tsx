@@ -315,7 +315,7 @@ export default function PaywallScreen() {
 
         {/* Trust columns */}
         <div className="hero-animate hero-animate-4 mt-12 grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <div className="flex flex-col gap-2 px-6 py-4 first:pl-0 last:pr-0">
+          <div className="flex flex-col gap-2 px-6 py-4">
             <div className="flex items-center gap-2">
               <Lock className="h-4 w-4 shrink-0 text-green-600" />
               <p className="font-medium text-sm">Pagamento 100% seguro</p>
@@ -337,7 +337,7 @@ export default function PaywallScreen() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 px-6 py-4 first:pl-0 last:pr-0">
+          <div className="flex flex-col gap-2 px-6 py-4">
             <div className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4 shrink-0 text-primary" />
               <p className="font-medium text-sm">Cancele quando quiser</p>

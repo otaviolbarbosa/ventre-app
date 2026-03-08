@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import type { Tables } from "@nascere/supabase/types";
 import { Building2, Calendar, CheckCircle2, CreditCard, RefreshCw, User } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -99,6 +100,9 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
         <p className="mt-2 text-center text-muted-foreground text-sm">
           Você ainda não possui uma assinatura ativa.
         </p>
+        <Button className="gradient-primary mt-6" asChild>
+          <Link href="/paywall">Assine o plano Mais Cuidado</Link>
+        </Button>
       </div>
     );
   }
@@ -176,7 +180,7 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
               <User className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
             <span className="text-sm">
-              {isEnterprise ? "Empresa" : (profile.name ?? profile.email)}
+              {isEnterprise ? "Organização" : (profile.name ?? profile.email)}
             </span>
           </CardContent>
         </Card>

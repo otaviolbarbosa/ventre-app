@@ -13,8 +13,8 @@ export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }
 
     return output;
   };
-  //  {patient.weeks} semanas {patient.days ? ` e ${patient.days} dias` : ""}
-  const dppFormatted = dayjs(patient.due_date).format("DD [de] MMMM");
+
+  const dppFormatted = dayjs(patient.due_date).format("DD/MM");
   const statusColor =
     patient.weeks >= 37 ? "bg-orange-400" : patient.weeks >= 28 ? "bg-blue-400" : "bg-green-400";
 

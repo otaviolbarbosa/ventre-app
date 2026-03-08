@@ -66,7 +66,7 @@ export const requestEnterpriseAction = authActionClient
       .single();
 
     if (error || !enterprise) {
-      throw new Error("Erro ao solicitar criação da empresa. Tente novamente.");
+      throw new Error("Erro ao solicitar criação da organização. Tente novamente.");
     }
 
     const { error: userError } = await supabaseAdmin
