@@ -119,7 +119,13 @@ export async function createPatient(
     name: data.name,
     email: data.email,
     phone: data.phone,
-    address: data.address,
+    street: data.street,
+    neighborhood: data.neighborhood,
+    complement: data.complement,
+    number: data.number,
+    city: data.city,
+    state: data.state,
+    zipcode: data.zipcode,
     created_by: targetProfessionalId,
   };
 

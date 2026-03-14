@@ -60,7 +60,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         name: validation.data.name,
         email: validation.data.email,
         phone: validation.data.phone,
-        address: validation.data.address,
+        street: validation.data.street,
+        neighborhood: validation.data.neighborhood,
+        complement: validation.data.complement,
+        number: validation.data.number,
+        city: validation.data.city,
+        state: validation.data.state,
+        zipcode: validation.data.zipcode,
       })
       .eq("id", id)
       .select()

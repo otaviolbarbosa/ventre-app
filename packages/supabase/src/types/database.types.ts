@@ -582,40 +582,58 @@ export type Database = {
       }
       patients: {
         Row: {
-          address: string | null
+          city: string | null
+          complement: string | null
           created_at: string | null
           created_by: string
           date_of_birth: string | null
           email: string | null
           id: string
           name: string
+          neighborhood: string | null
+          number: string | null
           phone: string
+          state: string | null
+          street: string | null
           updated_at: string | null
           user_id: string | null
+          zipcode: string | null
         }
         Insert: {
-          address?: string | null
+          city?: string | null
+          complement?: string | null
           created_at?: string | null
           created_by: string
           date_of_birth?: string | null
           email?: string | null
           id?: string
           name: string
+          neighborhood?: string | null
+          number?: string | null
           phone: string
+          state?: string | null
+          street?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zipcode?: string | null
         }
         Update: {
-          address?: string | null
+          city?: string | null
+          complement?: string | null
           created_at?: string | null
           created_by?: string
           date_of_birth?: string | null
           email?: string | null
           id?: string
           name?: string
+          neighborhood?: string | null
+          number?: string | null
           phone?: string
+          state?: string | null
+          street?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zipcode?: string | null
         }
         Relationships: [
           {
@@ -1078,7 +1096,8 @@ export type Database = {
           search_query?: string
         }
         Returns: {
-          address: string
+          city: string
+          complement: string
           created_at: string
           created_by: string
           date_of_birth: string
@@ -1087,11 +1106,16 @@ export type Database = {
           email: string
           id: string
           name: string
+          neighborhood: string
+          number: string
           observations: string
           phone: string
+          state: string
+          street: string
           total_count: number
           updated_at: string
           user_id: string
+          zipcode: string
         }[]
       }
       is_professional: { Args: never; Returns: boolean }
