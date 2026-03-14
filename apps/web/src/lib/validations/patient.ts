@@ -10,7 +10,13 @@ export const createPatientSchema = z.object({
   dum: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
     message: "Data da última menstruação inválida",
   }),
-  address: z.string().optional(),
+  street: z.string().optional(),
+  neighborhood: z.string().optional(),
+  complement: z.string().optional(),
+  number: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipcode: z.string().optional(),
   observations: z.string().optional(),
   professional_id: z.string().uuid().optional(),
 });

@@ -39,7 +39,13 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       phone: "",
       due_date: "",
       dum: "",
-      address: "",
+      street: "",
+      neighborhood: "",
+      complement: "",
+      number: "",
+      city: "",
+      state: "",
+      zipcode: "",
       observations: "",
     },
   });
@@ -51,7 +57,13 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       phone: patient?.phone || "",
       due_date: patient?.due_date ?? "",
       dum: patient?.dum || "",
-      address: patient?.address || "",
+      street: patient?.street || "",
+      neighborhood: patient?.neighborhood || "",
+      complement: patient?.complement || "",
+      number: patient?.number || "",
+      city: patient?.city || "",
+      state: patient?.state || "",
+      zipcode: patient?.zipcode || "",
       observations: patient?.observations || "",
     });
     setShowEditModal(true);
@@ -83,7 +95,13 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       phone: patient.phone,
       due_date: patient.due_date ?? undefined,
       dum: patient.dum || "",
-      address: patient.address || "",
+      street: patient.street || "",
+      neighborhood: patient.neighborhood || "",
+      complement: patient.complement || "",
+      number: patient.number || "",
+      city: patient.city || "",
+      state: patient.state || "",
+      zipcode: patient.zipcode || "",
       observations: patient.observations || "",
     });
   }, [patient]);
@@ -114,7 +132,19 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         />
       </div>
 
-      <InfoItem label="Endereço" value={patient.address} />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <InfoItem label="CEP" value={patient.zipcode} />
+        <InfoItem label="Estado" value={patient.state} />
+        <InfoItem label="Cidade" value={patient.city} />
+      </div>
+
+      <InfoItem label="Rua" value={patient.street} />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <InfoItem label="Número" value={patient.number} />
+        <InfoItem label="Complemento" value={patient.complement} />
+        <InfoItem label="Bairro" value={patient.neighborhood} />
+      </div>
 
       <InfoItem label="Observações" value={patient.observations} />
 
@@ -243,19 +273,103 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
               />
             </div>
 
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="zipcode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CEP</FormLabel>
+                    <FormControl>
+                      <Input placeholder="00000-000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Estado</FormLabel>
+                    <FormControl>
+                      <Input placeholder="SP" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cidade</FormLabel>
+                    <FormControl>
+                      <Input placeholder="São Paulo" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="address"
+              name="street"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Endereço</FormLabel>
+                  <FormLabel>Rua</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Rua das Flores" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <FormField
+                control={form.control}
+                name="number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número</FormLabel>
+                    <FormControl>
+                      <Input placeholder="123" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="complement"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Complemento</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Apto 45" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="neighborhood"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bairro</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Centro" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

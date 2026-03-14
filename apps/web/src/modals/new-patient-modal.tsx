@@ -1,5 +1,6 @@
 "use client";
 import { addPatientAction } from "@/actions/add-patient-action";
+import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import { InputMask } from "@react-input/mask";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -33,6 +35,36 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   doula: "Doula",
 };
 
+const ESTADOS_BR = [
+  { sigla: "AC", nome: "Acre" },
+  { sigla: "AL", nome: "Alagoas" },
+  { sigla: "AP", nome: "Amapá" },
+  { sigla: "AM", nome: "Amazonas" },
+  { sigla: "BA", nome: "Bahia" },
+  { sigla: "CE", nome: "Ceará" },
+  { sigla: "DF", nome: "Distrito Federal" },
+  { sigla: "ES", nome: "Espírito Santo" },
+  { sigla: "GO", nome: "Goiás" },
+  { sigla: "MA", nome: "Maranhão" },
+  { sigla: "MT", nome: "Mato Grosso" },
+  { sigla: "MS", nome: "Mato Grosso do Sul" },
+  { sigla: "MG", nome: "Minas Gerais" },
+  { sigla: "PA", nome: "Pará" },
+  { sigla: "PB", nome: "Paraíba" },
+  { sigla: "PR", nome: "Paraná" },
+  { sigla: "PE", nome: "Pernambuco" },
+  { sigla: "PI", nome: "Piauí" },
+  { sigla: "RJ", nome: "Rio de Janeiro" },
+  { sigla: "RN", nome: "Rio Grande do Norte" },
+  { sigla: "RS", nome: "Rio Grande do Sul" },
+  { sigla: "RO", nome: "Rondônia" },
+  { sigla: "RR", nome: "Roraima" },
+  { sigla: "SC", nome: "Santa Catarina" },
+  { sigla: "SP", nome: "São Paulo" },
+  { sigla: "SE", nome: "Sergipe" },
+  { sigla: "TO", nome: "Tocantins" },
+];
+
 type NewPatientModalProps = {
   showModal: boolean;
   setShowModal: (open: boolean) => void;
@@ -46,10 +78,29 @@ export default function NewPatientModal({
   onSuccess,
   professionals,
 }: NewPatientModalProps) {
+  const [addressVisible, setAddressVisible] = useState(false);
+
+  const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.street) form.setValue("street", data.street);
+      if (data.neighborhood) form.setValue("neighborhood", data.neighborhood);
+      if (data.city) form.setValue("city", data.city);
+      if (data.state) form.setValue("state", data.state);
+      setAddressVisible(true);
+    },
+    onError: () => {
+      toast.error("CEP não encontrado");
+    },
+  });
+
+  const isFetchingCep = cepStatus === "executing";
+
   const { execute, status } = useAction(addPatientAction, {
     onSuccess: () => {
       toast.success("Paciente cadastrada com sucesso!");
       form.reset();
+      setAddressVisible(false);
       onSuccess?.();
       setShowModal(false);
     },
@@ -69,7 +120,13 @@ export default function NewPatientModal({
       phone: "",
       due_date: "",
       dum: "",
-      address: "",
+      street: "",
+      neighborhood: "",
+      complement: "",
+      number: "",
+      city: "",
+      state: "",
+      zipcode: "",
       observations: "",
       professional_id: professionals?.[0]?.id ?? undefined,
     },
@@ -82,7 +139,13 @@ export default function NewPatientModal({
   return (
     <ContentModal
       open={showModal}
-      onOpenChange={setShowModal}
+      onOpenChange={(open) => {
+        if (!open) {
+          form.reset();
+          setAddressVisible(false);
+        }
+        setShowModal(open);
+      }}
       title="Nova Gestante"
       description="Preencha os dados da gestante. O profissional selecionado será adicionado automaticamente como membro da equipe."
     >
@@ -208,19 +271,142 @@ export default function NewPatientModal({
             />
           </div>
 
-          <FormField
-            control={form.control}
-            name="address"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Endereço (opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Endereço completo" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <FormField
+              control={form.control}
+              name="zipcode"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-1">
+                  <FormLabel>CEP (opcional)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <InputMask
+                        component={Input}
+                        mask="_____-___"
+                        replacement={{ _: /\d/ }}
+                        placeholder="00000-000"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          const digits = e.target.value.replace(/\D/g, "");
+                          if (digits.length === 8) {
+                            lookupCep({ cep: digits });
+                          }
+                          if (digits.length < 8) {
+                            setAddressVisible(false);
+                          }
+                        }}
+                      />
+                      {isFetchingCep && (
+                        <Loader2 className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 animate-spin text-muted-foreground" />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {addressVisible && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado (opcional)</FormLabel>
+                      <FormControl>
+                        <select
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          className="flex h-10 w-full rounded-full border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="">Selecione</option>
+                          {ESTADOS_BR.map((estado) => (
+                            <option key={estado.sigla} value={estado.sigla}>
+                              {estado.nome}
+                            </option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>Cidade (opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="São Paulo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="street"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rua (opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Rua das Flores" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número (opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Complemento (opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Apto 45" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bairro (opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Centro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          )}
 
           <FormField
             control={form.control}

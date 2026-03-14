@@ -55,7 +55,13 @@ export const getEnterpriseHomePatientsAction = authActionClient
       name: string;
       phone: string;
       email: string | null;
-      address: string | null;
+      street: string | null;
+      neighborhood: string | null;
+      complement: string | null;
+      number: string | null;
+      city: string | null;
+      state: string | null;
+      zipcode: string | null;
       date_of_birth: string | null;
       created_at: string | null;
       updated_at: string | null;
