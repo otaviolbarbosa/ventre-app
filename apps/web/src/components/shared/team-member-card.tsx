@@ -2,7 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TeamMember } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
-import { Star } from "lucide-react";
 import Avatar from "./avatar";
 
 type TeamMemberCardProps = {
@@ -22,7 +21,7 @@ export default function TeamMemberCard({ member, isOwner }: TeamMemberCardProps)
               size={12}
             />
             {isOwner && (
-              <Star fill="#16a34a" className="-right-1 absolute bottom-0 size-5 text-green-600" />
+              <span className="-right-0.5 absolute bottom-0 block size-3 rounded-full border-2 border-white bg-green-500" />
             )}
           </div>
           <div className="flex flex-1 flex-col">

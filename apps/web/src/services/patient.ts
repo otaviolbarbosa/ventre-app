@@ -7,7 +7,6 @@ import {
 } from "@nascere/supabase/server";
 import type { Tables, TablesInsert } from "@nascere/supabase/types";
 
-type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
 type Patient = Tables<"patients">;
@@ -33,6 +32,8 @@ export async function getMyPatients(
   filter: PatientFilter = "all",
   search = "",
   page = 1,
+  dppMonth?: number,
+  dppYear?: number,
 ): Promise<GetMyPatientsResult> {
   const { supabase, user } = await getServerUser();
 
@@ -52,18 +53,59 @@ export async function getMyPatients(
     return { patients: [], totalCount: 0, teamMembersMap: {} };
   }
 
-  const offset = (page - 1) * PATIENTS_PER_PAGE;
+  let rows: PatientWithPregnancyFields[] = [];
+  let totalCount = 0;
 
-  const { data } = await supabase.rpc("get_filtered_patients", {
-    patient_ids: patientIds,
-    filter_type: filter,
-    search_query: search,
-    page_limit: PATIENTS_PER_PAGE,
-    page_offset: offset,
-  });
+  if (dppMonth !== undefined && dppYear !== undefined) {
+    // DPP filter path: query pregnancies directly
+    const month1Indexed = dppMonth + 1;
+    const startDate = `${dppYear}-${String(month1Indexed).padStart(2, "0")}-01`;
+    const lastDay = new Date(dppYear, dppMonth + 1, 0).getDate();
+    const endDate = `${dppYear}-${String(month1Indexed).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
-  const rows = (data as (PatientWithPregnancyFields & { total_count: number })[]) || [];
-  const totalCount = rows.length > 0 ? Number(rows[0]?.total_count) : 0;
+    const { data: pregnancies } = await supabase
+      .from("pregnancies")
+      .select("patient_id, due_date, dum, has_finished, born_at, observations")
+      .in("patient_id", patientIds)
+      .gte("due_date", startDate)
+      .lte("due_date", endDate);
+
+    const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
+    const filteredIds = (pregnancies ?? []).map((p) => p.patient_id);
+
+    if (filteredIds.length === 0) {
+      return { patients: [], totalCount: 0, teamMembersMap: {} };
+    }
+
+    let patientsQuery = supabase.from("patients").select("*").in("id", filteredIds);
+    if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
+    const { data: patientsData } = await patientsQuery;
+
+    rows = (patientsData ?? []).map((p) => ({
+      ...p,
+      due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
+      dum: pregnancyByPatient.get(p.id)?.dum ?? null,
+      has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
+      born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
+      observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+    }));
+    totalCount = rows.length;
+  } else {
+    // Standard RPC path
+    const offset = (page - 1) * PATIENTS_PER_PAGE;
+
+    const { data } = await supabase.rpc("get_filtered_patients", {
+      patient_ids: patientIds,
+      filter_type: filter,
+      search_query: search,
+      page_limit: PATIENTS_PER_PAGE,
+      page_offset: offset,
+    });
+
+    const rpcRows = (data as (PatientWithPregnancyFields & { total_count: number })[]) || [];
+    totalCount = rpcRows.length > 0 ? Number(rpcRows[0]?.total_count) : 0;
+    rows = rpcRows;
+  }
 
   const pagePatientIds = rows.map((r) => r.id);
   const teamMembersMap: Record<string, TeamMember[]> = {};
@@ -71,7 +113,9 @@ export async function getMyPatients(
   if (pagePatientIds.length > 0) {
     const { data: teamMembersData } = await supabase
       .from("team_members")
-      .select("id, patient_id, professional_id, professional_type, joined_at, professional:users(id, name, email, avatar_url)")
+      .select(
+        "id, patient_id, professional_id, professional_type, joined_at, professional:users(id, name, email, avatar_url)",
+      )
       .in("patient_id", pagePatientIds);
 
     for (const tm of teamMembersData ?? []) {
@@ -82,6 +126,21 @@ export async function getMyPatients(
   }
 
   return { patients: rows, totalCount, teamMembersMap };
+}
+
+export async function getDueDatesForUser(userId: string): Promise<{ due_date: string | null }[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data: teamMembers } = await supabase
+    .from("team_members")
+    .select("patient_id")
+    .eq("professional_id", userId);
+  const patientIds = teamMembers?.map((tm) => tm.patient_id) ?? [];
+  if (patientIds.length === 0) return [];
+  const { data } = await supabase
+    .from("pregnancies")
+    .select("due_date")
+    .in("patient_id", patientIds);
+  return (data ?? []).map((p) => ({ due_date: p.due_date ?? null }));
 }
 
 export async function getPatientById(patientId: string): Promise<Patient | null> {
@@ -97,7 +156,6 @@ export async function getPatientById(patientId: string): Promise<Patient | null>
 }
 
 export async function createPatient(
-  supabase: SupabaseClient,
   supabaseAdmin: SupabaseAdminClient,
   userId: string,
   data: CreatePatientInput,
@@ -140,14 +198,12 @@ export async function createPatient(
   }
 
   // Create pregnancy record with due_date, dum, observations
-  const { error: pregnancyError } = await supabaseAdmin
-    .from("pregnancies")
-    .insert({
-      patient_id: patient.id,
-      due_date: data.due_date,
-      dum: data.dum,
-      observations: data.observations,
-    } satisfies TablesInsert<"pregnancies">);
+  const { error: pregnancyError } = await supabaseAdmin.from("pregnancies").insert({
+    patient_id: patient.id,
+    due_date: data.due_date,
+    dum: data.dum,
+    observations: data.observations,
+  } satisfies TablesInsert<"pregnancies">);
 
   if (pregnancyError) {
     await supabaseAdmin.from("patients").delete().eq("id", patient.id);

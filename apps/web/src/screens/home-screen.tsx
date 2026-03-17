@@ -448,7 +448,7 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
                       </div>
                       <div className="flex items-baseline gap-4">
                         <p className="font-bold font-poppins text-xl">{item.count}</p>
-                        <span className="text-muted-foreground text-xs">Gestates</span>
+                        <span className="text-muted-foreground text-xs">Gestantes</span>
                       </div>
                     </div>
                   </CardContent>
