@@ -2,6 +2,7 @@
 
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
+import { createBilling } from "@/services/billing";
 import { createPatient } from "@/services/patient";
 
 export const addPatientAction = authActionClient
@@ -25,5 +26,13 @@ export const addPatientAction = authActionClient
     }
 
     const patient = await createPatient(supabase, supabaseAdmin, user.id, parsedInput);
+
+    if (parsedInput.billing) {
+      await createBilling(supabase, supabaseAdmin, user.id, {
+        ...parsedInput.billing,
+        patient_id: patient.id,
+      });
+    }
+
     return { patient };
   });

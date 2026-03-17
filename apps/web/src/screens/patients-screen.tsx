@@ -17,8 +17,8 @@ import {
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { PatientFilter, TeamMember } from "@/types";
 import type { PatientWithPregnancyFields } from "@/services/patient";
+import type { PatientFilter, TeamMember } from "@/types";
 import { Baby, Check, ListFilter, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -236,7 +236,7 @@ export default function PatientsScreen({
           )
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="flex flex-col gap-3">
               {patients.map((patient) => {
                 const weekInfo = calculateGestationalAge(patient?.dum);
                 return (

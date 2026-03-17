@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { Tables } from "@nascere/supabase/types";
 import { InputMask } from "@react-input/mask";
-import { Baby, Building2, ClipboardList, Heart, LockKeyhole, Stethoscope } from "lucide-react";
+import { Baby, Building2, Heart, LockKeyhole, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -34,21 +34,21 @@ const userRoles: {
   {
     type: "professional",
     label: "Profissional",
-    description: "Obstetra, enfermeiro ou doula",
+    description: "Obstetra, enfermeira ou doula",
     icon: Stethoscope,
   },
   {
     type: "manager",
-    label: "Gestor",
+    label: "Empresa",
     description: "Gerenciamento da organização",
     icon: Building2,
   },
-  {
-    type: "secretary",
-    label: "Secretário(a)",
-    description: "Suporte administrativo",
-    icon: ClipboardList,
-  },
+  // {
+  //   type: "secretary",
+  //   label: "Secretário(a)",
+  //   description: "Suporte administrativo",
+  //   icon: ClipboardList,
+  // },
 ];
 
 const professionalTypes: {
@@ -60,12 +60,12 @@ const professionalTypes: {
   {
     type: "obstetra",
     label: "Obstetra",
-    description: "Médico especializado em gestação e parto",
+    description: "Médica especializada em gestação e parto",
     icon: Stethoscope,
   },
   {
     type: "enfermeiro",
-    label: "Enfermeiro(a)",
+    label: "Enfermeira",
     description: "Profissional de enfermagem obstétrica",
     icon: Heart,
   },

@@ -1,6 +1,7 @@
 "use client";
 import { addPatientAction } from "@/actions/add-patient-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
+import { CurrencyInput } from "@/components/billing/currency-input";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,7 +39,7 @@ type Professional = {
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
-  enfermeiro: "Enfermeiro(a)",
+  enfermeiro: "Enfermeira",
   doula: "Doula",
 };
 
@@ -79,6 +87,7 @@ export default function NewPatientModal({
   professionals,
 }: NewPatientModalProps) {
   const [addressVisible, setAddressVisible] = useState(false);
+  const [showBilling, setShowBilling] = useState(false);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
@@ -101,6 +110,7 @@ export default function NewPatientModal({
       toast.success("Paciente cadastrada com sucesso!");
       form.reset();
       setAddressVisible(false);
+      setShowBilling(false);
       onSuccess?.();
       setShowModal(false);
     },
@@ -132,6 +142,23 @@ export default function NewPatientModal({
     },
   });
 
+  function toggleBilling(enabled: boolean) {
+    setShowBilling(enabled);
+    if (enabled) {
+      form.setValue("billing", {
+        description: "",
+        total_amount: 0,
+        payment_method: undefined as unknown,
+        installment_count: 1,
+        installment_interval: 1,
+        first_due_date: "",
+        notes: "",
+      } as CreatePatientInput["billing"]);
+    } else {
+      form.setValue("billing", undefined as CreatePatientInput["billing"]);
+    }
+  }
+
   function onSubmit(data: CreatePatientInput) {
     execute(data);
   }
@@ -143,6 +170,7 @@ export default function NewPatientModal({
         if (!open) {
           form.reset();
           setAddressVisible(false);
+          setShowBilling(false);
         }
         setShowModal(open);
       }}
@@ -185,7 +213,7 @@ export default function NewPatientModal({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome completo</FormLabel>
+                <FormLabel>Nome completo *</FormLabel>
                 <FormControl>
                   <Input placeholder="Nome da paciente" {...field} />
                 </FormControl>
@@ -200,7 +228,7 @@ export default function NewPatientModal({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email (opcional)</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="email@exemplo.com" {...field} />
                   </FormControl>
@@ -214,7 +242,7 @@ export default function NewPatientModal({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone</FormLabel>
+                  <FormLabel>Telefone *</FormLabel>
                   <FormControl>
                     <InputMask
                       component={Input}
@@ -235,7 +263,7 @@ export default function NewPatientModal({
               name="due_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data prevista do parto (DPP)</FormLabel>
+                  <FormLabel>Data prevista do parto (DPP) *</FormLabel>
                   <FormControl>
                     <Input
                       type="date"
@@ -277,7 +305,7 @@ export default function NewPatientModal({
               name="zipcode"
               render={({ field }) => (
                 <FormItem className="sm:col-span-1">
-                  <FormLabel>CEP (opcional)</FormLabel>
+                  <FormLabel>CEP</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <InputMask
@@ -298,7 +326,9 @@ export default function NewPatientModal({
                         }}
                       />
                       {isFetchingCep && (
-                        <Loader2 className="-translate-y-1/2 absolute top-1/2 right-3 h-4 w-4 animate-spin text-muted-foreground" />
+                        <div className="absolute inset-y-0 right-3 flex items-center">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
                       )}
                     </div>
                   </FormControl>
@@ -316,7 +346,7 @@ export default function NewPatientModal({
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estado (opcional)</FormLabel>
+                      <FormLabel>Estado</FormLabel>
                       <FormControl>
                         <select
                           value={field.value ?? ""}
@@ -340,7 +370,7 @@ export default function NewPatientModal({
                   name="city"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-2">
-                      <FormLabel>Cidade (opcional)</FormLabel>
+                      <FormLabel>Cidade</FormLabel>
                       <FormControl>
                         <Input placeholder="São Paulo" {...field} />
                       </FormControl>
@@ -355,7 +385,7 @@ export default function NewPatientModal({
                 name="street"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rua (opcional)</FormLabel>
+                    <FormLabel>Rua</FormLabel>
                     <FormControl>
                       <Input placeholder="Rua das Flores" {...field} />
                     </FormControl>
@@ -370,7 +400,7 @@ export default function NewPatientModal({
                   name="number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número (opcional)</FormLabel>
+                      <FormLabel>Número</FormLabel>
                       <FormControl>
                         <Input placeholder="123" {...field} />
                       </FormControl>
@@ -383,7 +413,7 @@ export default function NewPatientModal({
                   name="complement"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Complemento (opcional)</FormLabel>
+                      <FormLabel>Complemento</FormLabel>
                       <FormControl>
                         <Input placeholder="Apto 45" {...field} />
                       </FormControl>
@@ -396,7 +426,7 @@ export default function NewPatientModal({
                   name="neighborhood"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bairro (opcional)</FormLabel>
+                      <FormLabel>Bairro</FormLabel>
                       <FormControl>
                         <Input placeholder="Centro" {...field} />
                       </FormControl>
@@ -413,7 +443,7 @@ export default function NewPatientModal({
             name="observations"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Observações (opcional)</FormLabel>
+                <FormLabel>Observações</FormLabel>
                 <FormControl>
                   <Textarea
                     placeholder="Informações adicionais sobre a paciente"
@@ -425,6 +455,163 @@ export default function NewPatientModal({
               </FormItem>
             )}
           />
+
+          <div className="border-t pt-2">
+            <button
+              type="button"
+              onClick={() => toggleBilling(!showBilling)}
+              className="flex w-full items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
+            >
+              <span className="font-medium">
+                {showBilling ? "− Remover dados de pagamento" : "+ Adicionar dados de pagamentos"}
+              </span>
+            </button>
+          </div>
+
+          {showBilling && (
+            <div className="space-y-4 rounded-md border p-4">
+              <p className="font-medium text-sm">Dados da Cobrança</p>
+
+              <FormField
+                control={form.control}
+                name="billing.description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Acompanhamento pré-natal" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="billing.total_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor Total *</FormLabel>
+                    <FormControl>
+                      <CurrencyInput value={field.value ?? 0} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="billing.payment_method"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Método de Pagamento *</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o método" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="credito">Cartão de Crédito</SelectItem>
+                        <SelectItem value="debito">Cartão de Débito</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                        <SelectItem value="outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="billing.installment_count"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parcelas *</FormLabel>
+                      <Select
+                        value={String(field.value ?? 1)}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n}x
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="billing.installment_interval"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Intervalo *</FormLabel>
+                      <Select
+                        value={String(field.value ?? 1)}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1">Mensal</SelectItem>
+                          <SelectItem value="2">Bimestral</SelectItem>
+                          <SelectItem value="3">Trimestral</SelectItem>
+                          <SelectItem value="4">Quadrimestral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="billing.first_due_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vencimento da 1ª parcela *</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="billing.notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações da cobrança</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Notas sobre a cobrança" rows={2} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button

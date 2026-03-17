@@ -25,7 +25,7 @@ export default async function HomePage() {
       Icon: Users,
       title: "Equipe Multidisciplinar",
       description:
-        "Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada gestante.",
+        "Convide obstetras, enfermeiras e doulas para colaborar no cuidado de cada gestante.",
     },
     {
       Icon: Shield,
@@ -44,7 +44,7 @@ export default async function HomePage() {
     {
       number: "02",
       title: "Monte sua equipe",
-      description: "Convide obstetras, enfermeiros e doulas para colaborar no cuidado.",
+      description: "Convide obstetras, enfermeiras e doulas para colaborar no cuidado.",
     },
     {
       number: "03",

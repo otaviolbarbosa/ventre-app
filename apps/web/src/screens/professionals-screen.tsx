@@ -24,7 +24,7 @@ import { toast } from "sonner";
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
-  enfermeiro: "Enfermeiro(a)",
+  enfermeiro: "Enfermeira",
   doula: "Doula",
 };
 
