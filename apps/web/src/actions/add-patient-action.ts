@@ -25,7 +25,7 @@ export const addPatientAction = authActionClient
       }
     }
 
-    const patient = await createPatient(supabase, supabaseAdmin, user.id, parsedInput);
+    const patient = await createPatient(supabaseAdmin, user.id, parsedInput);
 
     if (parsedInput.billing) {
       await createBilling(supabase, supabaseAdmin, user.id, {
