@@ -45,7 +45,7 @@ export default function PaymentConfirmationPage() {
 
           {/* Body */}
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Obrigado pela sua assinatura. Seja bem-vindo ao{" "}
+            Obrigado pela sua assinatura. Seja bem-vinda ao{" "}
             <span className="font-semibold text-primary">Ventre Premium</span> — agora você tem
             acesso completo a todas as ferramentas para cuidar das suas gestantes com ainda mais
             carinho e eficiência.

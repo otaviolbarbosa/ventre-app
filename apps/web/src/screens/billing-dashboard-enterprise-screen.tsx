@@ -125,11 +125,6 @@ export default function BillingDashboardEnterpriseScreen({
     fetchData(newFilter, period);
   };
 
-  const handleClearProfessional = () => {
-    setProfessionalFilter(null);
-    fetchData(null, period);
-  };
-
   const handleFilterClick = useCallback((filter: FilterKey) => {
     setActiveFilter((prev) => (prev === filter ? null : filter));
   }, []);
@@ -162,7 +157,6 @@ export default function BillingDashboardEnterpriseScreen({
 
   const activePeriodLabel = PERIOD_OPTIONS.find((o) => o.key === period)?.label;
   const sectionTitle = activeFilter ? FILTER_LABELS[activeFilter] : "Cobranças Recentes";
-  const selectedProfessional = professionals.find((p) => p.id === professionalFilter);
 
   return (
     <div>

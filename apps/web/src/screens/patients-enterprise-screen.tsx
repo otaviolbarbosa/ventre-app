@@ -266,7 +266,7 @@ export default function PatientsEnterpriseScreen({
           )
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="flex flex-col gap-3">
               {patients.map((patient) => {
                 const weekInfo = calculateGestationalAge(patient?.dum);
                 return (

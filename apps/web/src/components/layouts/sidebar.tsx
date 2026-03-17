@@ -33,14 +33,12 @@ const navigationStaff = [
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Financeiro", href: "/billing", icon: DollarSign },
-  { name: "Convites", href: "/invites", icon: Mail },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { signOut, profile } = useAuth();
 
-  // const navigation = useMemo(() => navigationTest, []);
   const navigation = useMemo(
     () => (isStaff(profile) ? navigationStaff : navigationProfessionals),
     [profile],

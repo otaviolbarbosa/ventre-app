@@ -11,11 +11,7 @@ export default function TeamMembersAvatars({ teamMembers }: TeamMembersAvatarsPr
           key={teamMember.id}
           className={`-ml-1.5 rounded-full border border-white z-${50 - 10 * index}`}
         >
-          <Avatar
-            size={5}
-            src={teamMember.professional?.avatar_url ?? ""}
-            name={teamMember.professional?.name ?? ""}
-          />
+          <Avatar size={5} src={teamMember.professional?.avatar_url ?? ""} name={""} />
         </div>
       ))}
     </div>

@@ -17,7 +17,9 @@ export const cancelSubscriptionAction = authActionClient
 
     // Apenas assinaturas individuais (não empresariais)
     if (profile.enterprise_id) {
-      throw new Error("Cancelamento de assinaturas de organizações deve ser feito pelo gestor.");
+      throw new Error(
+        "Cancelamento de assinaturas de organizações deve ser feito por uma gestora.",
+      );
     }
 
     // Busca a assinatura no banco, garantindo que pertence ao usuário

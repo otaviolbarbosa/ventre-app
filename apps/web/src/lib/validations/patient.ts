@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { createBillingSchema } from "./billing";
 
 export const createPatientSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido").optional(),
+  email: z.union([z.string().email("Email inválido"), z.literal("")]).optional(),
   phone: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
   due_date: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
     message: "Data prevista do parto inválida",
@@ -19,6 +20,7 @@ export const createPatientSchema = z.object({
   zipcode: z.string().optional(),
   observations: z.string().optional(),
   professional_id: z.string().uuid().optional(),
+  billing: createBillingSchema.omit({ patient_id: true }).optional(),
 });
 
 export const updatePatientSchema = createPatientSchema.partial();

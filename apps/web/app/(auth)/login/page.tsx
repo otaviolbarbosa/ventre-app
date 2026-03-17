@@ -89,7 +89,7 @@ function LoginForm() {
       {/* Heading */}
       <div className="hero-animate hero-animate-1">
         <h1 className="font-poppins font-semibold text-2xl text-foreground">
-          Boas-vindas de volta!
+          Seja bem-vinda novamente!
         </h1>
         <p className="mt-1 text-muted-foreground text-sm">Acesse sua conta para continuar</p>
       </div>

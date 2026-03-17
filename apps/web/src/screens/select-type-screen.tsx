@@ -17,12 +17,12 @@ const professionalTypes: {
   {
     type: "obstetra",
     label: "Obstetra",
-    description: "Médico especializado em gestação e parto",
+    description: "Médica especializada em gestação e parto",
     icon: Stethoscope,
   },
   {
     type: "enfermeiro",
-    label: "Enfermeiro(a)",
+    label: "Enfermeira",
     description: "Profissional de enfermagem obstétrica",
     icon: Heart,
   },
