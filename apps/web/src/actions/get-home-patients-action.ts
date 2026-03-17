@@ -1,16 +1,14 @@
 "use server";
 
-import { authActionClient } from "@/lib/safe-action";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
+import { authActionClient } from "@/lib/safe-action";
 import type { PatientFilter, PatientWithGestationalInfo } from "@/types";
 import type { Tables } from "@nascere/supabase";
 import { z } from "zod";
 
 const schema = z.object({
-  filter: z
-    .enum(["all", "recent", "trim1", "trim2", "trim3", "final"])
-    .default("all"),
+  filter: z.enum(["all", "recent", "trim1", "trim2", "trim3", "final"]).default("all"),
   search: z.string().default(""),
   dppMonth: z.number().optional(), // 0-indexed (0 = January)
   dppYear: z.number().optional(),
@@ -49,7 +47,7 @@ export const getHomePatientsAction = authActionClient
       const endDate = dayjs().year(dppYear).month(dppMonth).endOf("month").format("YYYY-MM-DD");
 
       // Filter via pregnancies: get pregnancy ids in date range, then fetch patients
-      let pregnancyQuery = supabase
+      const pregnancyQuery = supabase
         .from("pregnancies")
         .select("patient_id, due_date, dum, has_finished, born_at, observations")
         .in("patient_id", patientIds)
@@ -60,18 +58,13 @@ export const getHomePatientsAction = authActionClient
       const { data: pregnancies, error: pregError } = await pregnancyQuery;
       if (pregError) throw new Error(pregError.message);
 
-      const pregnancyByPatient = new Map(
-        (pregnancies ?? []).map((p) => [p.patient_id, p]),
-      );
+      const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
       const filteredPatientIds = (pregnancies ?? []).map((p) => p.patient_id);
 
       if (filteredPatientIds.length === 0) {
         rawPatients = [];
       } else {
-        let patientsQuery = supabase
-          .from("patients")
-          .select("*")
-          .in("id", filteredPatientIds);
+        let patientsQuery = supabase.from("patients").select("*").in("id", filteredPatientIds);
 
         if (search) {
           patientsQuery = patientsQuery.ilike("name", `%${search}%`);

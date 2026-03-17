@@ -10,11 +10,13 @@
     "check-types": "turbo run check-types",
     "db:push": "pnpm --filter @nascere/supabase db:push",
     "db:pull": "pnpm --filter @nascere/supabase db:pull",
-    "db:types": "pnpm --filter @nascere/supabase types"
+    "db:types": "pnpm --filter @nascere/supabase types",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@serwist/next": "^9.5.5",
+    "husky": "^9.1.7",
     "turbo": "^2.7.5",
     "typescript": "5.9.2"
   },

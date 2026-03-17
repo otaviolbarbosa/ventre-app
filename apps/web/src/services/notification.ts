@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import type { createServerSupabaseClient } from "@nascere/supabase/server";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 

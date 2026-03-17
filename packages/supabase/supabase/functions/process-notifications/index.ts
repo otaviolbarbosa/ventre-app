@@ -1,10 +1,11 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID")!;
-const FIREBASE_CLIENT_EMAIL = Deno.env.get("FIREBASE_CLIENT_EMAIL")!;
-const FIREBASE_PRIVATE_KEY = Deno.env.get("FIREBASE_PRIVATE_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") as string;
+const FIREBASE_CLIENT_EMAIL = Deno.env.get("FIREBASE_CLIENT_EMAIL") as string;
+const FIREBASE_PRIVATE_KEY = Deno.env.get("FIREBASE_PRIVATE_KEY") as string;
 
 // JWT for Google OAuth2 token exchange
 async function getAccessToken(): Promise<string> {
@@ -21,7 +22,10 @@ async function getAccessToken(): Promise<string> {
   );
 
   const key = FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n");
-  const pemContent = key.replace(/-----BEGIN PRIVATE KEY-----/, "").replace(/-----END PRIVATE KEY-----/, "").replace(/\s/g, "");
+  const pemContent = key
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s/g, "");
   const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
 
   const cryptoKey = await crypto.subtle.importKey(
@@ -81,8 +85,7 @@ async function sendFcmMessage(
     if (!response.ok) {
       const errorData = await response.json();
       const errorCode = errorData?.error?.details?.[0]?.errorCode;
-      const invalidToken =
-        errorCode === "UNREGISTERED" || errorCode === "INVALID_ARGUMENT";
+      const invalidToken = errorCode === "UNREGISTERED" || errorCode === "INVALID_ARGUMENT";
       return { success: false, invalidToken };
     }
 

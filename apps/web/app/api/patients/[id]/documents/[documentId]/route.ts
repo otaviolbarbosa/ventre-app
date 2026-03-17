@@ -1,9 +1,9 @@
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
 
 type Params = { params: Promise<{ id: string; documentId: string }> };
 
-export async function GET(request: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params) {
   try {
     const { documentId } = await params;
     const supabase = await createServerSupabaseClient();
@@ -43,7 +43,7 @@ export async function GET(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(request: Request, { params }: Params) {
+export async function DELETE(_request: Request, { params }: Params) {
   try {
     const { documentId } = await params;
     const supabase = await createServerSupabaseClient();

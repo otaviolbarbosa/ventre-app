@@ -146,6 +146,7 @@ export default async function HomePage() {
             viewBox="0 0 1440 60"
             xmlns="http://www.w3.org/2000/svg"
           >
+            <title>divider</title>
             <path d="M0 30C360 60 1080 0 1440 30V60H0V30Z" />
           </svg>
         </div>

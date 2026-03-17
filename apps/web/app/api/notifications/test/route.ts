@@ -1,5 +1,5 @@
-import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { sendPushNotification } from "@/lib/firebase/admin";
+import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { NextResponse } from "next/server";
 
 // DELETE THIS FILE after testing - only for development
@@ -27,9 +27,12 @@ export async function POST() {
       .eq("is_active", true);
 
     if (!subscriptions || subscriptions.length === 0) {
-      return NextResponse.json({
-        error: "Nenhum token FCM encontrado. Ative as notificações primeiro.",
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          error: "Nenhum token FCM encontrado. Ative as notificações primeiro.",
+        },
+        { status: 404 },
+      );
     }
 
     const results = [];
@@ -40,9 +43,13 @@ export async function POST() {
           body: "Se você está vendo isso, as notificações push estão funcionando!",
           data: { url: "/notifications" },
         });
-        results.push({ token: sub.fcm_token.slice(0, 10) + "...", status: "sent" });
+        results.push({ token: `${sub.fcm_token.slice(0, 10)}...`, status: "sent" });
       } catch (err) {
-        results.push({ token: sub.fcm_token.slice(0, 10) + "...", status: "failed", error: String(err) });
+        results.push({
+          token: `${sub.fcm_token.slice(0, 10)}...`,
+          status: "failed",
+          error: String(err),
+        });
       }
     }
 

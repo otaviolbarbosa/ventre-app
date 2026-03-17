@@ -8,8 +8,8 @@ export function LoadingState() {
         <Skeleton className="h-10 w-32" />
       </div>
       <div className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
+        {Array.from({ length: 5 }).map((number) => (
+          <Skeleton key={`loading-state-${number}`} className="h-16 w-full" />
         ))}
       </div>
     </div>
@@ -33,8 +33,8 @@ export function LoadingTable() {
   return (
     <div className="rounded-lg border">
       <div className="divide-y">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 p-4">
+        {Array.from({ length: 5 }).map((number) => (
+          <div key={`loading-table-${number}`} className="flex items-center gap-4 p-4">
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-48" />

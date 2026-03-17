@@ -99,7 +99,8 @@
       ".next",
       "dist",
       ".turbo",
-      "*.gen.ts"
+      "*.gen.ts",
+      "**/public/sw.js"
     ]
   }
 }

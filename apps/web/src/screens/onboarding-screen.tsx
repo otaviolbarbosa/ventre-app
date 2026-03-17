@@ -11,7 +11,7 @@ import type { Tables } from "@nascere/supabase/types";
 import { InputMask } from "@react-input/mask";
 import { Baby, Building2, Heart, LockKeyhole, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type UserRoleType = Tables<"users">["user_type"];
@@ -124,6 +124,12 @@ export default function OnboardingScreen() {
       },
     },
   );
+
+  useEffect(() => {
+    if (!createNewEnterprise) {
+      tokenInputRefs.current[0]?.focus();
+    }
+  }, [createNewEnterprise]);
 
   const isPending =
     professionalTypeStatus === "executing" ||
@@ -545,7 +551,6 @@ export default function OnboardingScreen() {
                 inputMode="text"
                 maxLength={1}
                 value={digit}
-                autoFocus={index === 0}
                 disabled={isPending}
                 onChange={(e) => handleTokenChange(index, e.target.value)}
                 onKeyDown={(e) => handleTokenKeyDown(index, e)}
