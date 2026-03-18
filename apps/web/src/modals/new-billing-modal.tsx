@@ -72,7 +72,7 @@ export default function NewBillingModal({
 
   const installmentCount = form.watch("installment_count");
 
-  const { fields, replace } = useFieldArray({
+  const { replace } = useFieldArray({
     control: form.control,
     name: "payment_links" as never,
   });

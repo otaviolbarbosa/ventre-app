@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
   if (code) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
       {
         cookies: {
           getAll() {
@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
           },
           setAll(cookiesToSet: CookieToSet[]) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options),
-              );
+              for (const { name, value, options } of cookiesToSet) {
+                cookieStore.set(name, value, options);
+              }
             } catch {
               // The `setAll` method was called from a Server Component.
               // This can be ignored if you have middleware refreshing user sessions.

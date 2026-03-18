@@ -158,7 +158,7 @@ export default function ProfessionalsScreen({
               <Input
                 readOnly
                 value={enterpriseToken ?? "—"}
-                className="font-mono text-center text-lg tracking-widest"
+                className="text-center font-mono text-lg tracking-widest"
               />
               <Button size="icon" variant="outline" onClick={handleCopyToken}>
                 <Copy className="size-4" />
