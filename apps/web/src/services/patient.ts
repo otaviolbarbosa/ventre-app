@@ -1,3 +1,5 @@
+import { PATIENTS_PER_PAGE } from "@/lib/constants";
+import { getDppDateRange } from "@/lib/dpp-filter";
 import { getServerUser } from "@/lib/server-auth";
 import type { CreatePatientInput } from "@/lib/validations/patient";
 import type { PatientFilter, TeamMember } from "@/types";
@@ -18,8 +20,6 @@ export type PatientWithPregnancyFields = Patient & {
   born_at?: string | null;
   observations?: string | null;
 };
-
-const PATIENTS_PER_PAGE = 10;
 
 type GetMyPatientsResult = {
   patients: PatientWithPregnancyFields[];
@@ -58,10 +58,7 @@ export async function getMyPatients(
 
   if (dppMonth !== undefined && dppYear !== undefined) {
     // DPP filter path: query pregnancies directly
-    const month1Indexed = dppMonth + 1;
-    const startDate = `${dppYear}-${String(month1Indexed).padStart(2, "0")}-01`;
-    const lastDay = new Date(dppYear, dppMonth + 1, 0).getDate();
-    const endDate = `${dppYear}-${String(month1Indexed).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
     const { data: pregnancies } = await supabase
       .from("pregnancies")

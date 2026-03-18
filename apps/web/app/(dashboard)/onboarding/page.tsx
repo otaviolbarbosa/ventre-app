@@ -1,10 +1,10 @@
 import { isStaff } from "@/lib/access-control";
+import { getServerAuth } from "@/lib/server-auth";
 import OnboardingScreen from "@/screens/onboarding-screen";
-import { getProfile } from "@/services";
 import { redirect } from "next/navigation";
 
 export default async function Onboarding() {
-  const { profile } = await getProfile();
+  const { profile } = await getServerAuth();
 
   const isComplete =
     (profile?.user_type === "professional" && profile?.professional_type !== null) ||

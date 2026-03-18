@@ -1,6 +1,7 @@
 "use server";
 
 import { dayjs } from "@/lib/dayjs";
+import { getDppDateRange } from "@/lib/dpp-filter";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { authActionClient } from "@/lib/safe-action";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
@@ -78,8 +79,7 @@ export const getEnterpriseHomePatientsAction = authActionClient
     let rawPatients: RawPatient[] = [];
 
     if (dppMonth !== undefined && dppYear !== undefined) {
-      const startDate = dayjs().year(dppYear).month(dppMonth).startOf("month").format("YYYY-MM-DD");
-      const endDate = dayjs().year(dppYear).month(dppMonth).endOf("month").format("YYYY-MM-DD");
+      const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
       // Filter via pregnancies: get pregnancies in date range, then fetch patients
       const pregnancyQuery = supabase

@@ -5,8 +5,6 @@ import BillingDashboardEnterpriseScreen from "@/screens/billing-dashboard-enterp
 import BillingDashboardScreen from "@/screens/billing-dashboard-screen";
 import { getEnterpriseBillings, getBillings, getDashboardMetrics } from "@/services/billing";
 
-export const revalidate = 300;
-
 export default async function BillingDashboardPage({
   searchParams,
 }: {

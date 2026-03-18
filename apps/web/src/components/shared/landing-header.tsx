@@ -1,7 +1,7 @@
 import { LandingHeaderClient } from "@/components/shared/landing-header-client";
-import { getCurrentUser } from "@/services";
+import { getServerUser } from "@/lib/server-auth";
 
 export async function LandingHeader() {
-  const { user } = await getCurrentUser();
+  const { user } = await getServerUser();
   return <LandingHeaderClient userId={user?.id} />;
 }

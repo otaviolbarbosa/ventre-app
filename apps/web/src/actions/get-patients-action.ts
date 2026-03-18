@@ -1,28 +1,17 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
+import type { Tables } from "@nascere/supabase/types";
 
 export const getPatientsAction = authActionClient.action(async ({ ctx: { supabase, user } }) => {
-  const { data: teamMembers, error: teamError } = await supabase
-    .from("team_members")
-    .select("patient_id")
-    .eq("professional_id", user.id);
-
-  if (teamError) throw new Error(teamError.message);
-
-  const patientIds = teamMembers?.map((tm) => tm.patient_id) ?? [];
-
-  if (patientIds.length === 0) {
-    return { patients: [] };
-  }
-
-  const { data: patients, error } = await supabase
+  const { data, error } = await supabase
     .from("patients")
-    .select("*")
-    .in("id", patientIds)
-    .order("due_date", { ascending: true });
+    .select("*, team_members!inner(professional_id), pregnancies!inner(has_finished)")
+    .eq("team_members.professional_id", user.id)
+    .eq("pregnancies.has_finished", false)
+    .order("name", { ascending: true });
 
   if (error) throw new Error(error.message);
 
-  return { patients: patients ?? [] };
+  return { patients: (data ?? []) as Tables<"patients">[] };
 });

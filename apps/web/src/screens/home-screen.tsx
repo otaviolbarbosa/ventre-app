@@ -11,36 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
-import { cn } from "@/lib/utils";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
-import { MONTH_LABELS_FULL } from "@/services/home";
+import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
+import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import type { HomeAppointment } from "@/services/home";
-import type { PatientWithGestationalInfo } from "@/types";
+import { MONTH_LABELS_FULL } from "@/services/home";
+import type { PatientFilter, PatientWithGestationalInfo } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
-import {
-  Baby,
-  CalendarPlus,
-  Check,
-  Eye,
-  ListFilter,
-  Search,
-  TrendingDown,
-  TrendingUp,
-  UserPlusIcon,
-  X,
-} from "lucide-react";
+import { Baby, CalendarPlus, Eye, Search, UserPlusIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type HomeScreenProps = {
   profile: Tables<"users">;
 };
 
-type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
+type FilterType = Exclude<PatientFilter, "finished">;
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -159,6 +149,7 @@ function AppointmentTimeline({
   appointments,
   onNewAppointment,
 }: { appointments: HomeAppointment[]; onNewAppointment: () => void }) {
+  const router = useRouter();
   const today = dayjs().format("YYYY-MM-DD");
 
   function formatAppointmentDate(date: string) {
@@ -174,7 +165,7 @@ function AppointmentTimeline({
   }
 
   const handleOpenAppointments = () => {
-    redirect("/appointments");
+    router.push("/appointments");
   };
 
   return (
@@ -262,10 +253,8 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const filterRef = useRef<HTMLDivElement>(null);
 
   const {
     execute: fetchHomeData,
@@ -294,26 +283,9 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
     []) as PatientWithGestationalInfo[];
   const allPatients = allPatientsResult.data?.patients ?? [];
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setShowFilters(false);
-      }
-    }
-    if (showFilters) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFilters]);
-
-  const handleFilterToggle = useCallback(() => {
-    setShowFilters((prev) => !prev);
-  }, []);
-
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
     setDppFilter(null);
-    setShowFilters(false);
     fetchPatients({ filter, search: searchQuery });
   };
 
@@ -400,63 +372,12 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* DPP by Month Cards */}
-        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-          {dppByMonth.map((item) => {
-            const isSelected = dppFilter?.month === item.month && dppFilter?.year === item.year;
-            return (
-              <button
-                key={`${item.year}-${item.month}`}
-                type="button"
-                onClick={() => handleDppFilterChange(item.month, item.year)}
-              >
-                <Card
-                  className={cn(
-                    "shrink-0 transition-colors",
-                    isSelected
-                      ? "border-primary bg-primary/5"
-                      : "hover:border-primary/40 hover:bg-muted/40",
-                  )}
-                >
-                  <CardContent className="flex items-center justify-between px-4 py-3">
-                    <div className="space-y-1">
-                      <div className="flex min-w-[120px] items-center justify-between gap-3">
-                        <p
-                          className={cn(
-                            "font-bold font-poppings text-lg",
-                            isSelected ? "text-primary" : "text-muted-foreground",
-                          )}
-                        >
-                          {MONTH_LABELS_FULL[item.month]}
-                        </p>
-                        {item.percentage !== 0 && (
-                          <div
-                            className={cn(
-                              "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
-                              item.percentage >= 0
-                                ? "border-green-600/20 text-green-600"
-                                : "border-destructive/20 text-destructive",
-                            )}
-                          >
-                            {Math.abs(item.percentage)}%
-                            {item.percentage >= 0 ? (
-                              <TrendingUp className="size-3.5" />
-                            ) : (
-                              <TrendingDown className="size-3.5" />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-baseline gap-4">
-                        <p className="font-bold font-poppins text-xl">{item.count}</p>
-                        <span className="text-muted-foreground text-xs">Gestantes</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </button>
-            );
-          })}
-        </div>
+        <DppMonthCarousel
+          items={dppByMonth}
+          selectedMonth={dppFilter?.month ?? null}
+          selectedYear={dppFilter?.year ?? null}
+          onSelect={handleDppFilterChange}
+        />
 
         {/* Main Content: Two columns */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
@@ -512,41 +433,11 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
                   onChange={(e) => handleSearchChange(e.target.value)}
                 />
               </div>
-              <div ref={filterRef} className="relative">
-                <Button
-                  size="icon"
-                  variant={activeFilter !== "all" ? "secondary" : "outline"}
-                  onClick={handleFilterToggle}
-                >
-                  <ListFilter />
-                </Button>
-                <div
-                  className={cn(
-                    "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                    showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                  )}
-                >
-                  {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
-                    <button
-                      key={filter}
-                      type="button"
-                      onClick={() => handleFilterChange(filter)}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                        activeFilter === filter && "font-medium text-primary",
-                      )}
-                    >
-                      <Check
-                        className={cn(
-                          "size-4 shrink-0",
-                          activeFilter === filter ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      {FILTER_LABELS[filter]}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <FilterDropdown
+                options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(([value, label]) => ({ value, label }))}
+                value={activeFilter}
+                onChange={(v) => handleFilterChange(v as FilterType)}
+              />
             </div>
 
             {/* Patient List */}

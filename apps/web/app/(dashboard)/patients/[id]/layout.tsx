@@ -13,7 +13,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   const params = useParams();
   const pathname = usePathname();
 
-  const patientId = params.id as string;
+  const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const currentTab = pathname.includes("/billing")
     ? "billing"
     : pathname.includes("/appointments")

@@ -56,13 +56,9 @@ export const POST = async (req: Request) => {
     }
 
     if (event.type === "checkout.session.completed") {
-      console.log("#1");
       const session = event.data.object;
-      console.log("#2");
       const userId = session.metadata?.user_id as string | undefined;
-      console.log("#3");
       const planId = session.metadata?.plan_id as string | undefined;
-      console.log("#4");
 
       if (!userId || !planId) {
         return NextResponse.json(
@@ -79,7 +75,6 @@ export const POST = async (req: Request) => {
       if (userError) {
         throw new Error(`Failed to fetch user: ${userError.message}`);
       }
-      console.log("#5");
       if (!user) {
         return NextResponse.json(
           { error: "User not found for checkout session." },
@@ -95,7 +90,6 @@ export const POST = async (req: Request) => {
       if (planError) {
         throw new Error(`Failed to fetch plan: ${planError.message}`);
       }
-      console.log("#6");
       if (!plan) {
         return NextResponse.json(
           { error: "Plan not found for checkout session." },
@@ -106,14 +100,10 @@ export const POST = async (req: Request) => {
       // set subscription data object
       const frequence = session.metadata
         ?.frequence as Database["public"]["Enums"]["subscription_frequence"];
-      console.log("#7");
 
       const subscriptionId = session.subscription as string;
-      console.log("#8");
       const paidAt = dayjs.unix(session.created).toISOString();
-      console.log("#9");
       const expiresAt = dayjs.unix(session.expires_at).toISOString();
-      console.log("#10");
 
       const subscriptionData: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
         user_id: user.id,
@@ -124,9 +114,6 @@ export const POST = async (req: Request) => {
         paid_at: paidAt,
         expires_at: expiresAt,
       };
-
-      console.log("#11");
-      console.log(subscriptionData);
 
       const { error: insertError } = await supabaseAdmin
         .from("subscriptions")

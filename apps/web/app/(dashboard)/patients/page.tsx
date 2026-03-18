@@ -1,11 +1,12 @@
 import { getEnterpriseDueDates, getEnterprisePatients } from "@/actions/get-enterprise-patients-action";
 import { isStaff } from "@/lib/access-control";
 import { dayjs } from "@/lib/dayjs";
+import { getServerAuth } from "@/lib/server-auth";
 import { PatientsEnterpriseScreen, PatientsScreen } from "@/screens";
-import { getEnterpriseProfessionals } from "@/services/professional";
-import { getMyPatients, getProfile } from "@/services";
-import { getDueDatesForUser } from "@/services/patient";
 import { buildDppByMonth } from "@/services/home";
+import { getMyPatients } from "@/services/patient";
+import { getDueDatesForUser } from "@/services/patient";
+import { getEnterpriseProfessionals } from "@/services/professional";
 import type { PatientFilter } from "@/types";
 
 const VALID_FILTERS: PatientFilter[] = ["all", "recent", "trim1", "trim2", "trim3", "final"];
@@ -27,7 +28,7 @@ export default async function PatientsPage({
   const initialDppMonth = dppMonth !== undefined ? dppMonth : null;
   const initialDppYear = dppYear !== undefined ? dppYear : null;
 
-  const { profile } = await getProfile();
+  const { profile } = await getServerAuth();
 
   let patients: Awaited<ReturnType<typeof getMyPatients>>["patients"] = [];
   let totalCount = 0;

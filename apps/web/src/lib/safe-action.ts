@@ -5,7 +5,6 @@ export const actionClient = createSafeActionClient();
 
 export const authActionClient = actionClient.use(async ({ next }) => {
   const supabase = await createServerSupabaseClient();
-  const supabaseAdmin = await createServerSupabaseAdmin();
 
   const {
     data: { user },
@@ -16,6 +15,8 @@ export const authActionClient = actionClient.use(async ({ next }) => {
   const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single();
 
   if (!profile) throw new Error("Usuário não encontrado");
+
+  const supabaseAdmin = await createServerSupabaseAdmin();
 
   return next({ ctx: { supabase, supabaseAdmin, user, profile } });
 });
