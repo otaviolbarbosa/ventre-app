@@ -87,7 +87,6 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
     toast.success("Gestante atualizada com sucesso!");
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     form.reset({
       name: patient.name,

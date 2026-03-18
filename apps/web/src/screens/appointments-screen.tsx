@@ -1,5 +1,6 @@
 "use client";
 
+import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
 import { getAppointmentsAction } from "@/actions/get-appointments-action";
 import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-professionals-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
@@ -58,6 +59,7 @@ export default function AppointmentsScreen({
   const { execute: fetchProfessionals, result: professionalsResult } = useAction(
     getEnterpriseProfessionalsAction,
   );
+  const { executeAsync: cancelDay } = useAction(cancelDayAppointmentsAction);
 
   useEffect(() => {
     fetchPatients();
@@ -75,6 +77,11 @@ export default function AppointmentsScreen({
     const newFilter = isSame ? null : id;
     setProfessionalFilter(newFilter);
     fetchAppointments({ professionalId: newFilter ?? undefined });
+  }
+
+  async function handleCancelDay(date: string) {
+    await cancelDay({ date });
+    fetchAppointments({ professionalId: professionalFilter ?? undefined });
   }
 
   function handleOpenNewModal() {
@@ -151,6 +158,7 @@ export default function AppointmentsScreen({
             endDate={calendarEndDate}
             appointments={appointments}
             showProfessional={isStaff}
+            onCancelDay={handleCancelDay}
           />
         ) : (
           <AppointmentListView appointments={appointments} showProfessional={isStaff} />

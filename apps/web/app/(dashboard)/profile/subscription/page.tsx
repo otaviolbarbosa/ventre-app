@@ -1,13 +1,13 @@
 import { getSubscriptionAction } from "@/actions/get-subscription-action";
 import { Header } from "@/components/layouts/header";
+import { getServerAuth } from "@/lib/server-auth";
 import SubscriptionScreen from "@/screens/subscription-screen";
-import { getProfile } from "@/services/auth";
 import { redirect } from "next/navigation";
 
 export default async function SubscriptionPage() {
-  const { profile, error } = await getProfile();
+  const { profile } = await getServerAuth();
 
-  if (error || !profile) {
+  if (!profile) {
     redirect("/login");
   }
 

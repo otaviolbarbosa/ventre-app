@@ -1,16 +1,14 @@
 import { isStaff } from "@/lib/access-control";
+import { getServerAuth } from "@/lib/server-auth";
 import { HomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
-import { getProfile } from "@/services";
 import type { Tables } from "@nascere/supabase";
 import { redirect } from "next/navigation";
 
 type Profile = Tables<"users">;
 
-export const revalidate = 600;
-
 export default async function Home() {
-  const { profile } = await getProfile();
+  const { profile } = await getServerAuth();
 
   const isOnboardingComplete =
     (profile?.user_type === "professional" && profile?.professional_type !== null) ||

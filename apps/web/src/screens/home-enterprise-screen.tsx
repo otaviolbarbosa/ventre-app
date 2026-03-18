@@ -12,34 +12,25 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
-import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
+import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
+import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import type { EnterpriseAppointment, EnterpriseProfessional } from "@/services/home-enterprise";
 import { MONTH_LABELS_FULL } from "@/services/home";
-import type { PatientWithGestationalInfo, TeamMember } from "@/types";
+import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
-import {
-  Baby,
-  CalendarDays,
-  Check,
-  ListFilter,
-  Search,
-  TrendingDown,
-  TrendingUp,
-  UserPlusIcon,
-  X,
-} from "lucide-react";
+import { Baby, CalendarDays, Search, UserPlusIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type HomeEnterpriseScreenProps = {
   profile: Tables<"users">;
 };
 
-type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
+type FilterType = Exclude<PatientFilter, "finished">;
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -157,6 +148,7 @@ function HomeEnterpriseScreenSkeleton({ profile }: { profile: Tables<"users"> })
 }
 
 function AppointmentTimeline({ appointments }: { appointments: EnterpriseAppointment[] }) {
+  const router = useRouter();
   const today = dayjs().format("YYYY-MM-DD");
 
   function formatAppointmentDate(date: string) {
@@ -175,7 +167,7 @@ function AppointmentTimeline({ appointments }: { appointments: EnterpriseAppoint
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-poppins font-semibold text-xl">Agenda</h2>
-        <Button size="icon" variant="outline" onClick={() => redirect("/appointments")}>
+        <Button size="icon" variant="outline" onClick={() => router.push("/appointments")}>
           <CalendarDays />
         </Button>
       </div>
@@ -244,10 +236,8 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
   const [professionalFilter, setProfessionalFilter] = useState<string | null>(null);
   const [dppFilter, setDppFilter] = useState<DppFilter>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const filterRef = useRef<HTMLDivElement>(null);
 
   const {
     execute: fetchHomeData,
@@ -275,22 +265,9 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
     homeData?.patients?.map((p) => ({ patient: p as PatientWithGestationalInfo, teamMembers: [] as TeamMember[] })) ??
     []) as { patient: PatientWithGestationalInfo; teamMembers: TeamMember[] }[];
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setShowFilters(false);
-      }
-    }
-    if (showFilters) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFilters]);
-
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
     setDppFilter(null);
-    setShowFilters(false);
     fetchPatients({
       filter,
       search: searchQuery,
@@ -422,65 +399,12 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
 
         <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
           {/* DPP by Month Cards */}
-          {dppByMonth.length > 0 && (
-            <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-              {dppByMonth.map((item) => {
-                const isSelected = dppFilter?.month === item.month && dppFilter?.year === item.year;
-                return (
-                  <button
-                    key={`${item.year}-${item.month}`}
-                    type="button"
-                    onClick={() => handleDppFilterChange(item.month, item.year)}
-                  >
-                    <Card
-                      className={cn(
-                        "shrink-0 transition-colors",
-                        isSelected
-                          ? "border-primary bg-primary/5"
-                          : "hover:border-primary/40 hover:bg-muted/40",
-                      )}
-                    >
-                      <CardContent className="px-4 py-3">
-                        <div className="space-y-1">
-                          <div className="flex min-w-[120px] items-center justify-between gap-3">
-                            <p
-                              className={cn(
-                                "font-bold font-poppins text-lg",
-                                isSelected ? "text-primary" : "text-muted-foreground",
-                              )}
-                            >
-                              {MONTH_LABELS_FULL[item.month]}
-                            </p>
-                            {item.percentage !== 0 && (
-                              <div
-                                className={cn(
-                                  "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
-                                  item.percentage >= 0
-                                    ? "border-green-600/20 text-green-600"
-                                    : "border-destructive/20 text-destructive",
-                                )}
-                              >
-                                {Math.abs(item.percentage)}%
-                                {item.percentage >= 0 ? (
-                                  <TrendingUp className="size-3.5" />
-                                ) : (
-                                  <TrendingDown className="size-3.5" />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-baseline gap-4">
-                            <p className="font-bold font-poppins text-xl">{item.count}</p>
-                            <span className="text-muted-foreground text-xs">Gestantes</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <DppMonthCarousel
+            items={dppByMonth}
+            selectedMonth={dppFilter?.month ?? null}
+            selectedYear={dppFilter?.year ?? null}
+            onSelect={handleDppFilterChange}
+          />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
             {/* Left: Patient List */}
@@ -519,41 +443,11 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
                     onChange={(e) => handleSearchChange(e.target.value)}
                   />
                 </div>
-                <div ref={filterRef} className="relative">
-                  <Button
-                    size="icon"
-                    variant={activeFilter !== "all" ? "secondary" : "outline"}
-                    onClick={() => setShowFilters((prev) => !prev)}
-                  >
-                    <ListFilter />
-                  </Button>
-                  <div
-                    className={cn(
-                      "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                      showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                    )}
-                  >
-                    {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
-                      <button
-                        key={filter}
-                        type="button"
-                        onClick={() => handleFilterChange(filter)}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                          activeFilter === filter && "font-medium text-primary",
-                        )}
-                      >
-                        <Check
-                          className={cn(
-                            "size-4 shrink-0",
-                            activeFilter === filter ? "opacity-100" : "opacity-0",
-                          )}
-                        />
-                        {FILTER_LABELS[filter]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <FilterDropdown
+                  options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(([value, label]) => ({ value, label }))}
+                  value={activeFilter}
+                  onChange={(v) => handleFilterChange(v as FilterType)}
+                />
               </div>
 
               <Card>

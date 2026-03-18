@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type NewBillingModalProps = {
@@ -69,23 +69,6 @@ export default function NewBillingModal({
       notes: "",
     },
   });
-
-  const installmentCount = form.watch("installment_count");
-
-  const { replace } = useFieldArray({
-    control: form.control,
-    name: "payment_links" as never,
-  });
-
-  // Sync payment_links array with installment_count
-  useEffect(() => {
-    const currentLinks = form.getValues("payment_links") || [];
-    const count = installmentCount || 1;
-    if (currentLinks.length !== count) {
-      const newLinks = Array.from({ length: count }, (_, i) => currentLinks[i] || "");
-      replace(newLinks as never[]);
-    }
-  }, [installmentCount, form, replace]);
 
   function onSubmit(data: CreateBillingInput) {
     const cleanedData = {

@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithPatient } from "@/services/appointment";
-import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, Stethoscope } from "lucide-react";
+import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, Stethoscope, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
@@ -47,6 +48,7 @@ type AppointmentCalendarViewProps = {
   endDate: string;
   appointments: AppointmentWithPatient[];
   showProfessional?: boolean;
+  onCancelDay?: (date: string) => Promise<void>;
 };
 
 export function AppointmentCalendarView({
@@ -54,9 +56,12 @@ export function AppointmentCalendarView({
   endDate,
   appointments,
   showProfessional = false,
+  onCancelDay,
 }: AppointmentCalendarViewProps) {
   const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
 
   const days = useMemo(() => {
@@ -85,6 +90,14 @@ export function AppointmentCalendarView({
 
   const isToday = selectedDate === today;
   const selectedDayjs = dayjs(selectedDate);
+
+  async function handleCancelDay() {
+    if (!onCancelDay) return;
+    setIsCancelling(true);
+    await onCancelDay(selectedDate);
+    setIsCancelling(false);
+    setShowCancelConfirm(false);
+  }
 
   function scrollStrip(direction: "left" | "right") {
     if (!stripRef.current) return;
@@ -154,11 +167,24 @@ export function AppointmentCalendarView({
       </div>
 
       {/* Date header */}
-      <div className="space-y-0.5">
-        {isToday && <span className="font-medium text-primary text-sm">Hoje</span>}
-        <h3 className="font-medium text-muted-foreground text-sm capitalize">
-          {selectedDayjs.format("dddd, DD [de] MMMM [de] YYYY")}
-        </h3>
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-0.5">
+          {isToday && <span className="font-medium text-primary text-sm">Hoje</span>}
+          <h3 className="font-medium text-muted-foreground text-sm capitalize">
+            {selectedDayjs.format("dddd, DD [de] MMMM [de] YYYY")}
+          </h3>
+        </div>
+        {onCancelDay && dayAppointments.some((a) => a.status === "agendada") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0 text-destructive hover:text-destructive"
+            onClick={() => setShowCancelConfirm(true)}
+          >
+            <X className="mr-1 h-3.5 w-3.5" />
+            Cancelar dia
+          </Button>
+        )}
       </div>
 
       {/* Timeline */}
@@ -169,11 +195,11 @@ export function AppointmentCalendarView({
           description="Não há agendamentos para este dia."
         />
       ) : (
-        <div className="relative space-y-2 pl-6">
-          <span className="absolute left-[5px] mt-[43px] h-[calc(100%-86px)] border-primary border-l-2" />
+        <div className="relative space-y-2">
+          {/* <span className="absolute left-[5px] mt-[43px] h-[calc(100%-86px)] border-primary border-l-2" /> */}
           {dayAppointments.map((appointment) => (
             <div key={appointment.id} className="relative">
-              <span className="-left-6 absolute top-[37px] size-3 rounded-full border-2 border-primary bg-primary" />
+              {/* <span className="-left-6 absolute top-[37px] size-3 rounded-full border-2 border-primary bg-primary" /> */}
 
               <Link href={`/patients/${appointment.patient_id}/appointments`} className="block">
                 <Card className="shadow transition-colors hover:bg-muted/50">
@@ -221,6 +247,16 @@ export function AppointmentCalendarView({
           ))}
         </div>
       )}
+      <ConfirmModal
+        open={showCancelConfirm}
+        onOpenChange={setShowCancelConfirm}
+        title="Cancelar todos os agendamentos do dia"
+        description={`Tem certeza que deseja cancelar todos os agendamentos de ${selectedDayjs.format("DD [de] MMMM")}? Esta ação não pode ser desfeita.`}
+        confirmLabel="Cancelar agendamentos"
+        variant="destructive"
+        loading={isCancelling}
+        onConfirm={handleCancelDay}
+      />
     </div>
   );
 }

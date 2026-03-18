@@ -61,7 +61,6 @@ export async function getEnterpriseBillings(
   professionals: EnterpriseBillingProfessional[];
 }> {
   const supabase = await createServerSupabaseClient();
-  const supabaseAdmin = await createServerSupabaseAdmin();
 
   const { data: professionalsData } = await supabase
     .from("users")
@@ -77,7 +76,7 @@ export async function getEnterpriseBillings(
     return { billings: [], metrics: null, professionals: [] };
   }
 
-  let query = supabaseAdmin
+  let query = supabase
     .from("billings")
     .select(`
       *,
@@ -260,7 +259,7 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
   //   .split("T")[0] as string;
 
   for (const billing of typedBillings) {
-    metrics.pending_amount += billing.total_amount - billing.paid_amount;
+    metrics.total_amount += billing.total_amount;
     metrics.paid_amount += billing.paid_amount;
 
     metrics.by_status[billing.status] = (metrics.by_status[billing.status] || 0) + 1;

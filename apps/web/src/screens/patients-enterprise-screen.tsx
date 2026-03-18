@@ -1,11 +1,13 @@
 "use client";
 import { Header } from "@/components/layouts/header";
+import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
 import { EmptyState } from "@/components/shared/empty-state";
+import { FilterDropdown } from "@/components/shared/filter-dropdown";
+import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { PatientCard } from "@/components/shared/patient-card";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -17,17 +19,16 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { calculateGestationalAge } from "@/lib/gestational-age";
-import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { DppByMonth } from "@/services/home";
 import { MONTH_LABELS_FULL } from "@/services/home";
 import type { PatientWithPregnancyFields } from "@/services/patient";
 import type { EnterpriseProfessional } from "@/services/professional";
 import type { PatientFilter, TeamMember } from "@/types";
-import { Baby, Check, ListFilter, Plus, Search, TrendingDown, TrendingUp, X } from "lucide-react";
+import { Baby, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 function PatientCardSkeleton() {
   return (
@@ -50,8 +51,6 @@ const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
   { key: "trim3", label: "3º Trimestre" },
   { key: "final", label: "Bebê a Termo" },
 ];
-
-const PATIENTS_PER_PAGE = 10;
 
 type PatientsEnterpriseScreenProps = {
   patients: PatientWithPregnancyFields[];
@@ -91,25 +90,7 @@ export default function PatientsEnterpriseScreen({
       ? { month: initialDppMonth, year: initialDppYear }
       : null,
   );
-  const [showFilters, setShowFilters] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setShowFilters(false);
-      }
-    }
-    if (showFilters) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showFilters]);
-
-  const handleFilterToggle = useCallback(() => {
-    setShowFilters((prev) => !prev);
-  }, []);
 
   const buildUrl = useCallback(
     (
@@ -137,7 +118,6 @@ export default function PatientsEnterpriseScreen({
   const handleFilterClick = (filter: PatientFilter) => {
     setActiveFilter(filter);
     setDppFilter(null);
-    setShowFilters(false);
     startTransition(() => router.push(buildUrl(filter, searchQuery, professionalId)));
   };
 
@@ -183,6 +163,26 @@ export default function PatientsEnterpriseScreen({
 
   const activeLabel = FILTER_OPTIONS.find((o) => o.key === activeFilter)?.label;
 
+  const patientsWithGestAge = useMemo(
+    () =>
+      patients.map((patient) => {
+        const weekInfo = calculateGestationalAge(patient?.dum);
+        return {
+          ...patient,
+          due_date: patient.due_date ?? null,
+          dum: patient.dum ?? null,
+          has_finished: false as const,
+          born_at: null,
+          observations: null,
+          weeks: weekInfo?.weeks ?? 0,
+          days: weekInfo?.days ?? 0,
+          remainingDays: 280 - (weekInfo?.totalDays ?? 0),
+          progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
+        };
+      }),
+    [patients],
+  );
+
   return (
     <div>
       <Header title="Gestantes" />
@@ -201,62 +201,13 @@ export default function PatientsEnterpriseScreen({
         )}
 
         {dppByMonth.length > 0 && (
-          <div className="-mx-4 no-scrollbar mb-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-            {dppByMonth.map((item) => {
-              const isSelected = dppFilter?.month === item.month && dppFilter?.year === item.year;
-              return (
-                <button
-                  key={`${item.year}-${item.month}`}
-                  type="button"
-                  onClick={() => handleDppFilterChange(item.month, item.year)}
-                >
-                  <Card
-                    className={cn(
-                      "shrink-0 transition-colors",
-                      isSelected
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-primary/40 hover:bg-muted/40",
-                    )}
-                  >
-                    <CardContent className="flex items-center justify-between px-4 py-3">
-                      <div className="space-y-1">
-                        <div className="flex min-w-[120px] items-center justify-between gap-3">
-                          <p
-                            className={cn(
-                              "font-bold font-poppins text-lg",
-                              isSelected ? "text-primary" : "text-muted-foreground",
-                            )}
-                          >
-                            {MONTH_LABELS_FULL[item.month]}
-                          </p>
-                          {item.percentage !== 0 && (
-                            <div
-                              className={cn(
-                                "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
-                                item.percentage >= 0
-                                  ? "border-green-600/20 text-green-600"
-                                  : "border-destructive/20 text-destructive",
-                              )}
-                            >
-                              {Math.abs(item.percentage)}%
-                              {item.percentage >= 0 ? (
-                                <TrendingUp className="size-3.5" />
-                              ) : (
-                                <TrendingDown className="size-3.5" />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-baseline gap-4">
-                          <p className="font-bold font-poppins text-xl">{item.count}</p>
-                          <span className="text-muted-foreground text-xs">Gestantes</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </button>
-              );
-            })}
+          <div className="mb-4">
+            <DppMonthCarousel
+              items={dppByMonth}
+              selectedMonth={dppFilter?.month ?? null}
+              selectedYear={dppFilter?.year ?? null}
+              onSelect={handleDppFilterChange}
+            />
           </div>
         )}
 
@@ -308,41 +259,11 @@ export default function PatientsEnterpriseScreen({
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
-            <div ref={filterRef} className="relative">
-              <Button
-                size="icon"
-                variant={activeFilter !== "all" ? "secondary" : "outline"}
-                onClick={handleFilterToggle}
-              >
-                <ListFilter className="size-4" />
-              </Button>
-              <div
-                className={cn(
-                  "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                  showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                )}
-              >
-                {FILTER_OPTIONS.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => handleFilterClick(option.key)}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                      activeFilter === option.key && "font-medium text-primary",
-                    )}
-                  >
-                    <Check
-                      className={cn(
-                        "size-4 shrink-0",
-                        activeFilter === option.key ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <FilterDropdown
+              options={FILTER_OPTIONS.map((o) => ({ value: o.key, label: o.label }))}
+              value={activeFilter}
+              onChange={(v) => handleFilterClick(v as PatientFilter)}
+            />
           </div>
         </div>
 
@@ -381,32 +302,18 @@ export default function PatientsEnterpriseScreen({
         ) : (
           <>
             <div className="flex flex-col gap-3">
-              {patients.map((patient) => {
-                const weekInfo = calculateGestationalAge(patient?.dum);
-                return (
-                  <Link
-                    key={patient.id}
-                    href={`/patients/${patient.id}`}
-                    className="rounded-xl border bg-white"
-                  >
-                    <PatientCard
-                      patient={{
-                        ...patient,
-                        due_date: patient.due_date ?? null,
-                        dum: patient.dum ?? null,
-                        has_finished: false,
-                        born_at: null,
-                        observations: null,
-                        weeks: weekInfo?.weeks ?? 0,
-                        days: weekInfo?.days ?? 0,
-                        remainingDays: 280 - (weekInfo?.totalDays ?? 0),
-                        progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
-                      }}
-                      teamMembers={teamMembersMap[patient.id] ?? []}
-                    />
-                  </Link>
-                );
-              })}
+              {patientsWithGestAge.map((patient) => (
+                <Link
+                  key={patient.id}
+                  href={`/patients/${patient.id}`}
+                  className="rounded-xl border bg-white"
+                >
+                  <PatientCard
+                    patient={patient}
+                    teamMembers={teamMembersMap[patient.id] ?? []}
+                  />
+                </Link>
+              ))}
             </div>
 
             {totalPages > 1 && (

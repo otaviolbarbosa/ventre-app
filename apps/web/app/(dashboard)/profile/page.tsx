@@ -1,12 +1,12 @@
 import { Header } from "@/components/layouts/header";
+import { getServerAuth } from "@/lib/server-auth";
 import ProfileScreen from "@/screens/profile-screen";
-import { getProfile } from "@/services/auth";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-  const { profile, error } = await getProfile();
+  const { profile } = await getServerAuth();
 
-  if (error || !profile) {
+  if (!profile) {
     redirect("/login");
   }
 

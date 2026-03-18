@@ -2,6 +2,7 @@
 import { deletePatientAction } from "@/actions/delete-patient-action";
 import { getPatientAction } from "@/actions/get-patient-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
 import { LoadingPatientProfile } from "@/components/shared/loading-state";
 import PatientDocuments from "@/components/shared/patient-documents";
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Trash2 } from "lucide-react";
+import { CheckCircle2, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -27,7 +28,7 @@ export default function PatientProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
 
-  const patientId = params.id as string;
+  const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
   const { executeAsync: deletePatient, isPending: isDeleting } = useAction(deletePatientAction);
@@ -56,7 +57,13 @@ export default function PatientProfilePage() {
   }
 
   if (!patient) {
-    return null;
+    return (
+      <EmptyState
+        icon={SearchX}
+        title="Paciente não encontrada"
+        description="A paciente solicitada não foi encontrada ou você não tem permissão para visualizá-la."
+      />
+    );
   }
 
   return (

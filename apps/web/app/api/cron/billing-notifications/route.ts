@@ -36,7 +36,20 @@ export async function GET(request: Request) {
     let sent = 0;
     let skipped = 0;
 
-    for (const notification of notifications ?? []) {
+    const notificationList = notifications ?? [];
+
+    // Batch-fetch all preferences in a single query to avoid N+1
+    const userIds = [...new Set(notificationList.map((n) => n.user_id))];
+    const { data: allPrefs } = await supabaseAdmin
+      .from("billing_notification_preferences")
+      .select("user_id, enable_billing_reminders")
+      .in("user_id", userIds);
+
+    const prefsMap = new Map(
+      (allPrefs ?? []).map((p) => [p.user_id, p.enable_billing_reminders]),
+    );
+
+    for (const notification of notificationList) {
       const installment = notification.installment as unknown as {
         id: string;
         amount: number;
@@ -59,14 +72,9 @@ export async function GET(request: Request) {
         continue;
       }
 
-      // Check billing notification preferences
-      const { data: prefs } = await supabaseAdmin
-        .from("billing_notification_preferences")
-        .select("enable_billing_reminders")
-        .eq("user_id", notification.user_id)
-        .single();
-
-      if (prefs && !prefs.enable_billing_reminders) {
+      // Check billing notification preferences (from pre-fetched map)
+      const enableReminders = prefsMap.get(notification.user_id);
+      if (enableReminders === false) {
         await supabaseAdmin
           .from("installments_scheduled_notifications")
           .update({ status: "cancelled" })
