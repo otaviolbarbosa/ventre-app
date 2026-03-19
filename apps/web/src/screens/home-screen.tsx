@@ -3,6 +3,8 @@ import { getHomeDataAction } from "@/actions/get-home-data-action";
 import { getHomePatientsAction } from "@/actions/get-home-patients-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
 import { Header } from "@/components/layouts/header";
+import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
+import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import { PatientCard } from "@/components/shared/patient-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +15,6 @@ import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
-import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
-import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import type { HomeAppointment } from "@/services/home";
 import { MONTH_LABELS_FULL } from "@/services/home";
 import type { PatientFilter, PatientWithGestationalInfo } from "@/types";
@@ -113,11 +113,13 @@ function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
             <div className="flex items-center justify-between">
               <Skeleton className="h-7 w-44" />
               <div className="flex items-center gap-2">
-                <Skeleton className="h-9 w-9 rounded-md" />
-                <Skeleton className="h-9 w-9 rounded-md" />
-                <Skeleton className="hidden h-9 w-36 rounded-md md:block" />
-                <Skeleton className="h-9 w-9 rounded-md md:hidden" />
+                <Skeleton className="hidden h-9 w-36 rounded-full md:block" />
+                <Skeleton className="h-9 w-9 rounded-full md:hidden" />
               </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 flex-1 rounded-full" />
+              <Skeleton className="h-9 w-9 rounded-md" />
             </div>
             <Card>
               <CardContent className="p-0">
@@ -434,7 +436,9 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
                 />
               </div>
               <FilterDropdown
-                options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(([value, label]) => ({ value, label }))}
+                options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(
+                  ([value, label]) => ({ value, label }),
+                )}
                 value={activeFilter}
                 onChange={(v) => handleFilterChange(v as FilterType)}
               />

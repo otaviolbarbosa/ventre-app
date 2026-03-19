@@ -10,6 +10,7 @@ import { z } from "zod";
 
 const schema = z.object({
   filter: z.enum(["all", "recent", "trim1", "trim2", "trim3", "final"]).default("all"),
+  showFinished: z.boolean().optional().default(false),
   search: z.string().default(""),
   dppMonth: z.number().optional(), // 0-indexed (0 = January)
   dppYear: z.number().optional(),
@@ -47,13 +48,17 @@ export const getHomePatientsAction = authActionClient
       const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
       // Filter via pregnancies: get pregnancy ids in date range, then fetch patients
-      const pregnancyQuery = supabase
+      let pregnancyQuery = supabase
         .from("pregnancies")
         .select("patient_id, due_date, dum, has_finished, born_at, observations")
         .in("patient_id", patientIds)
         .gte("due_date", startDate)
         .lte("due_date", endDate)
         .order("due_date", { ascending: true });
+
+      if (!parsedInput.showFinished) {
+        pregnancyQuery = pregnancyQuery.eq("has_finished", false);
+      }
 
       const { data: pregnancies, error: pregError } = await pregnancyQuery;
       if (pregError) throw new Error(pregError.message);

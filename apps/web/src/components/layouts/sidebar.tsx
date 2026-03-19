@@ -6,20 +6,19 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
-import { Calendar, DollarSign, Home, LogOut, Mail, Users } from "lucide-react";
+import {
+  BriefcaseMedicalIcon,
+  Calendar,
+  DollarSign,
+  Home,
+  LogOut,
+  Mail,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 
-// const navigationTest = [
-//   { name: "Home", href: "/home", icon: Home },
-//   { name: "Gestantes", href: "/patients", icon: Users },
-//   { name: "Agenda", href: "/appointments", icon: Calendar },
-//   { name: "Financeiro", href: "/billing", icon: DollarSign },
-//   { name: "Convites", href: "/invites", icon: Mail },
-//   { name: "Notificações", href: "/notifications", icon: Bell },
-//   { name: "Configurações", href: "/settings", icon: Settings },
-// ];
 const navigationProfessionals = [
   { name: "Home", href: "/home", icon: Home },
   { name: "Gestantes", href: "/patients", icon: Users },
@@ -30,6 +29,7 @@ const navigationProfessionals = [
 
 const navigationStaff = [
   { name: "Home", href: "/home", icon: Home },
+  { name: "Colaboradores", href: "/users", icon: BriefcaseMedicalIcon },
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Financeiro", href: "/billing", icon: DollarSign },

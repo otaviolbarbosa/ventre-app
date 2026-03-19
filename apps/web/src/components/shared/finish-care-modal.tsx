@@ -10,8 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -21,11 +28,22 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const schema = z.object({
+  addBornAt: z.boolean().default(false),
+  bornAt: z.string().optional(),
+  deliveryMethod: z.enum(["cesarean", "vaginal"]).optional(),
+  description: z.string().max(5000).optional(),
+});
+
+type FormValues = z.infer<typeof schema>;
 
 interface FinishCareModalProps {
   open: boolean;
@@ -40,18 +58,27 @@ export function FinishCareModal({
   patientId,
   onSuccess,
 }: FinishCareModalProps) {
-  const [addBornAt, setAddBornAt] = useState(false);
-  const [bornAt, setBornAt] = useState("");
-  const [description, setDescription] = useState("");
-
   const router = useRouter();
   const { executeAsync, isPending } = useAction(finishPatientCareAction);
 
-  async function handleSubmit() {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      addBornAt: false,
+      bornAt: "",
+      deliveryMethod: undefined,
+      description: "",
+    },
+  });
+
+  const addBornAt = form.watch("addBornAt");
+
+  async function onSubmit(values: FormValues) {
     const res = await executeAsync({
       patientId,
-      bornAt: addBornAt && bornAt ? bornAt : undefined,
-      description: description || undefined,
+      bornAt: values.addBornAt && values.bornAt ? values.bornAt : undefined,
+      deliveryMethod: values.addBornAt ? values.deliveryMethod : undefined,
+      description: values.description || undefined,
     });
 
     if (res?.serverError) {
@@ -60,9 +87,7 @@ export function FinishCareModal({
     }
 
     toast.success("Acompanhamento finalizado com sucesso!");
-    setAddBornAt(false);
-    setBornAt("");
-    setDescription("");
+    form.reset();
     onOpenChange(false);
     onSuccess();
     router.push("/patients");
@@ -71,41 +96,106 @@ export function FinishCareModal({
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
   const fields = (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label htmlFor="addBornAt" className="flex cursor-pointer items-center gap-2">
-          <input
-            id="addBornAt"
-            type="checkbox"
-            checked={addBornAt}
-            onChange={(e) => {
-              setAddBornAt(e.target.checked);
-              if (!e.target.checked) setBornAt("");
-            }}
-            className="size-4 rounded border-input accent-primary"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" id="finish-care-form">
+        <div className="space-y-2">
+          <FormField
+            control={form.control}
+            name="addBornAt"
+            render={({ field }) => (
+              <label htmlFor="addBornAt" className="flex cursor-pointer items-center gap-2">
+                <input
+                  id="addBornAt"
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={(e) => {
+                    field.onChange(e.target.checked);
+                    if (!e.target.checked) {
+                      form.setValue("bornAt", "");
+                      form.setValue("deliveryMethod", undefined);
+                    }
+                  }}
+                  className="size-4 rounded border-input accent-primary"
+                />
+                <span className="font-medium text-sm leading-none">
+                  Adicionar data de nascimento
+                </span>
+              </label>
+            )}
           />
-          <span className="font-medium text-sm leading-none">Adicionar data de nascimento</span>
-        </label>
-        {addBornAt && (
-          <Input
-            id="bornAt"
-            type="date"
-            value={bornAt}
-            onChange={(e) => setBornAt(e.target.value)}
-          />
-        )}
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
-        <Textarea
-          id="description"
-          placeholder="Descreva como foi o acompanhamento..."
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
+
+          {addBornAt && (
+            <>
+              <FormField
+                control={form.control}
+                name="bornAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="deliveryMethod"
+                render={({ field }) => (
+                  <FormItem className="mt-3 space-y-2">
+                    <FormLabel>Via de parto</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-4">
+                        <label className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="radio"
+                            value="vaginal"
+                            checked={field.value === "vaginal"}
+                            onChange={() => field.onChange("vaginal")}
+                            className="accent-primary"
+                          />
+                          Parto normal
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-2 text-sm">
+                          <input
+                            type="radio"
+                            value="cesarean"
+                            checked={field.value === "cesarean"}
+                            onChange={() => field.onChange("cesarean")}
+                            className="accent-primary"
+                          />
+                          Cesárea
+                        </label>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+        </div>
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Descreva como foi o acompanhamento..."
+                  rows={4}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-      </div>
-    </div>
+      </form>
+    </Form>
   );
 
   if (isMobile) {
@@ -128,7 +218,12 @@ export function FinishCareModal({
             >
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} disabled={isPending} className="flex-1">
+            <Button
+              type="submit"
+              form="finish-care-form"
+              disabled={isPending}
+              className="flex-1"
+            >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Finalizar
             </Button>
@@ -152,7 +247,12 @@ export function FinishCareModal({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} className="gradient-primary" disabled={isPending}>
+          <Button
+            type="submit"
+            form="finish-care-form"
+            className="gradient-primary"
+            disabled={isPending}
+          >
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Finalizar
           </Button>

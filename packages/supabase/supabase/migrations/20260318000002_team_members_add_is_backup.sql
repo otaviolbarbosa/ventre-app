@@ -1,0 +1,1 @@
+ALTER TABLE team_members ADD COLUMN is_backup BOOLEAN DEFAULT FALSE;

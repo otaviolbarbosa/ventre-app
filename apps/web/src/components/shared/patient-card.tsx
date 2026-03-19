@@ -51,7 +51,7 @@ export function PatientCard({
           </div>
           {teamMembers && teamMembers.length > 0 && (
             <div>
-              <TeamMembersAvatars teamMembers={teamMembers} />
+              <TeamMembersAvatars teamMembers={teamMembers} patientId={patient.id} />
             </div>
           )}
         </div>

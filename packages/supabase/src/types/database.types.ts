@@ -652,50 +652,6 @@ export type Database = {
           },
         ]
       }
-      pregnancies: {
-        Row: {
-          born_at: string | null
-          created_at: string
-          due_date: string
-          dum: string | null
-          has_finished: boolean
-          id: string
-          observations: string | null
-          patient_id: string
-          updated_at: string
-        }
-        Insert: {
-          born_at?: string | null
-          created_at?: string
-          due_date: string
-          dum?: string | null
-          has_finished?: boolean
-          id?: string
-          observations?: string | null
-          patient_id: string
-          updated_at?: string
-        }
-        Update: {
-          born_at?: string | null
-          created_at?: string
-          due_date?: string
-          dum?: string | null
-          has_finished?: boolean
-          id?: string
-          observations?: string | null
-          patient_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pregnancies_patient_id_fkey"
-            columns: ["patient_id"]
-            isOneToOne: false
-            referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       payments: {
         Row: {
           created_at: string
@@ -779,6 +735,67 @@ export type Database = {
           value?: number | null
         }
         Relationships: []
+      }
+      pregnancies: {
+        Row: {
+          born_at: string | null
+          created_at: string
+          created_by: string | null
+          delivery_method: Database["public"]["Enums"]["delivery_method"] | null
+          due_date: string
+          dum: string | null
+          has_finished: boolean
+          id: string
+          observations: string | null
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          born_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_method?:
+            | Database["public"]["Enums"]["delivery_method"]
+            | null
+          due_date: string
+          dum?: string | null
+          has_finished?: boolean
+          id?: string
+          observations?: string | null
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          born_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_method?:
+            | Database["public"]["Enums"]["delivery_method"]
+            | null
+          due_date?: string
+          dum?: string | null
+          has_finished?: boolean
+          id?: string
+          observations?: string | null
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pregnancies_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pregnancies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -982,6 +999,7 @@ export type Database = {
       team_members: {
         Row: {
           id: string
+          is_backup: boolean | null
           joined_at: string | null
           patient_id: string
           pregnancy_id: string | null
@@ -990,6 +1008,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_backup?: boolean | null
           joined_at?: string | null
           patient_id: string
           pregnancy_id?: string | null
@@ -998,6 +1017,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_backup?: boolean | null
           joined_at?: string | null
           patient_id?: string
           pregnancy_id?: string | null
@@ -1118,7 +1138,13 @@ export type Database = {
           zipcode: string
         }[]
       }
+      is_enterprise_patient: {
+        Args: { p_patient_id: string }
+        Returns: boolean
+      }
+      is_enterprise_staff: { Args: never; Returns: boolean }
       is_professional: { Args: never; Returns: boolean }
+      is_same_enterprise: { Args: { p_user_id: string }; Returns: boolean }
       is_team_member: { Args: { p_patient_id: string }; Returns: boolean }
       process_scheduled_notifications: { Args: never; Returns: undefined }
       schedule_dpp_reminders: { Args: never; Returns: undefined }
@@ -1127,6 +1153,7 @@ export type Database = {
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro"
       billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      delivery_method: "cesarean" | "vaginal"
       installment_status: "pendente" | "pago" | "atrasado" | "cancelado"
       installments_notification_status:
         | "pending"
@@ -1300,6 +1327,7 @@ export const Constants = {
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro"],
       billing_status: ["pendente", "pago", "atrasado", "cancelado"],
+      delivery_method: ["cesarean", "vaginal"],
       installment_status: ["pendente", "pago", "atrasado", "cancelado"],
       installments_notification_status: [
         "pending",
