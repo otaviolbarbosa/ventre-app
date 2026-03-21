@@ -30,6 +30,7 @@ type Installment = Tables<"installments"> & {
   description: string;
   patient_name: string;
   patient_id: string;
+  billing_installment_count: number;
 };
 
 type PeriodOption = {
@@ -129,6 +130,10 @@ export default function BillingDashboardEnterpriseScreen({
     setActiveFilter((prev) => (prev === filter ? null : filter));
   }, []);
 
+  const professionalsMap = Object.fromEntries(
+    professionals.map((p) => [p.id, p.name ?? p.id]),
+  );
+
   const filteredInstallments = (() => {
     const installments = billings.flatMap((billing) =>
       billing.installments.map((installment) => ({
@@ -136,6 +141,7 @@ export default function BillingDashboardEnterpriseScreen({
         patient_name: billing.patient.name,
         description: billing.description,
         patient_id: billing.patient_id,
+        billing_installment_count: billing.installments.length,
       })),
     );
 
@@ -283,7 +289,8 @@ export default function BillingDashboardEnterpriseScreen({
                   <InstallmentCard
                     key={installment.id}
                     installment={installment}
-                    installmentCount={filteredInstallments.length}
+                    installmentCount={installment.billing_installment_count}
+                    professionals={professionalsMap}
                   />
                 ))}
               </div>

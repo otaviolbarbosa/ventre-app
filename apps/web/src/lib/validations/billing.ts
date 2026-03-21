@@ -21,7 +21,11 @@ export const createBillingSchema = z.object({
   total_amount: z
     .number()
     .int("Valor deve ser inteiro (centavos)")
-    .positive("Valor deve ser positivo"),
+    .positive("Valor deve ser positivo")
+    .optional(),
+  splitted_billing: z
+    .record(z.string().uuid(), z.number().int().positive())
+    .optional(),
   payment_method: z.enum(paymentMethods, {
     required_error: "Método de pagamento é obrigatório",
   }),
@@ -36,10 +40,22 @@ export const createBillingSchema = z.object({
     .int()
     .min(1, "Intervalo mínimo de 1 mês")
     .max(4, "Intervalo máximo de 4 meses")
-    .default(1),
-  first_due_date: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
-    message: "Data de vencimento inválida",
-  }),
+    .nullable()
+    .optional(),
+  first_due_date: z
+    .string()
+    .refine((date) => !Number.isNaN(Date.parse(date)), {
+      message: "Data de vencimento inválida",
+    })
+    .nullable()
+    .optional(),
+  installments_dates: z
+    .array(
+      z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
+        message: "Data de vencimento inválida",
+      }),
+    )
+    .optional(),
   payment_links: z
     .array(z.union([z.string().url("URL de pagamento inválida"), z.literal("")]))
     .max(10, "Máximo de 10 links de pagamento")

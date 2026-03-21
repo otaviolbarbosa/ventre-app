@@ -1,6 +1,7 @@
 "use client";
 
 import { getBillingAction } from "@/actions/get-billing-action";
+import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-professionals-action";
 import { updateBillingAction } from "@/actions/update-billing-action";
 import { InstallmentList } from "@/components/billing/installment-list";
 import { PaymentMethodBadge } from "@/components/billing/payment-method-badge";
@@ -10,6 +11,7 @@ import { LoadingState } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/billing/calculations";
+import { useAuth } from "@/hooks/use-auth";
 import RecordPaymentModal from "@/modals/record-payment-modal";
 import type { Tables } from "@nascere/supabase/types";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -31,6 +33,7 @@ export default function BillingDetailPage() {
   const router = useRouter();
   const billingId = params.billingId as string;
   const patientId = params.id as string;
+  const { isStaff } = useAuth();
 
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -38,12 +41,22 @@ export default function BillingDetailPage() {
 
   const { execute: fetchBilling, result, isPending } = useAction(getBillingAction);
   const { executeAsync: cancelBilling, isPending: cancelling } = useAction(updateBillingAction);
+  const { execute: fetchProfessionals, result: professionalsResult } = useAction(
+    getEnterpriseProfessionalsAction,
+  );
 
   useEffect(() => {
     fetchBilling({ billingId });
-  }, [fetchBilling, billingId]);
+    if (isStaff) fetchProfessionals({});
+  }, [fetchBilling, fetchProfessionals, isStaff, billingId]);
 
   const billing = result.data?.billing as Billing | undefined;
+
+  const professionalsMap = isStaff
+    ? Object.fromEntries(
+        (professionalsResult.data?.professionals ?? []).map((p) => [p.id, p.name ?? p.id]),
+      )
+    : undefined;
 
   const handleRecordPayment = (installment: Installment) => {
     setSelectedInstallment(installment);
@@ -150,6 +163,7 @@ export default function BillingDetailPage() {
         installments={billing.installments}
         onRecordPayment={handleRecordPayment}
         onUpdate={() => fetchBilling({ billingId })}
+        professionals={professionalsMap}
       />
 
       <RecordPaymentModal

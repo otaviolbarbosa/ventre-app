@@ -6,6 +6,7 @@ import { z } from "zod";
 const schema = z.object({
   patientId: z.string().uuid("ID do paciente inválido"),
   bornAt: z.string().optional(),
+  deliveryMethod: z.enum(["cesarean", "vaginal"]).optional(),
   description: z.string().max(5000).optional(),
 });
 
@@ -17,6 +18,7 @@ export const finishPatientCareAction = authActionClient
       .update({
         has_finished: true,
         born_at: parsedInput.bornAt ?? null,
+        delivery_method: parsedInput.deliveryMethod ?? null,
       })
       .eq("patient_id", parsedInput.patientId);
 

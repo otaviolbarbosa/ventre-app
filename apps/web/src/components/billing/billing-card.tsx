@@ -12,7 +12,13 @@ type Billing = Tables<"billings"> & {
   patient: { id: string; name: string };
 };
 
-export function BillingCard({ billing }: { billing: Billing }) {
+export function BillingCard({
+  billing,
+  professionals,
+}: {
+  billing: Billing;
+  professionals?: Record<string, string>;
+}) {
   const paidCount = billing.installments.filter((i) => i.status === "pago").length;
   const totalCount = billing.installments.length;
   const progressPercent =
@@ -41,6 +47,19 @@ export function BillingCard({ billing }: { billing: Billing }) {
             </div>
             <PaymentMethodBadge method={billing.payment_method} />
           </div>
+
+          {professionals && billing.splitted_billing && (
+            <div className="mt-2 space-y-0.5 border-t pt-2">
+              {Object.entries(billing.splitted_billing as Record<string, number>).map(
+                ([profId, amount]) => (
+                  <div key={profId} className="flex justify-between text-muted-foreground text-xs">
+                    <span>{professionals[profId] ?? profId}</span>
+                    <span>{formatCurrency(amount)}</span>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
 
           {totalCount > 1 && (
             <div className="mt-3">

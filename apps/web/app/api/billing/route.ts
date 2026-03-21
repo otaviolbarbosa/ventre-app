@@ -1,6 +1,3 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
-import { createBillingSchema } from "@/lib/validations/billing";
 import {
   calculateInstallmentAmount,
   calculateInstallmentDates,
@@ -9,6 +6,9 @@ import {
 import { scheduleBillingNotifications } from "@/lib/billing/notifications";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { createBillingSchema } from "@/lib/validations/billing";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   try {
@@ -45,10 +45,7 @@ export async function GET(request: Request) {
     }
 
     if (status) {
-      query = query.eq(
-        "status",
-        status as "pendente" | "pago" | "atrasado" | "cancelado",
-      );
+      query = query.eq("status", status as "pendente" | "pago" | "atrasado" | "cancelado");
     }
 
     const { data: billings, error, count } = await query;
@@ -59,10 +56,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ billings, total: count });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
@@ -83,72 +77,79 @@ export async function POST(request: Request) {
     const validation = createBillingSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.errors },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
     const {
       patient_id,
       description,
-      total_amount,
       payment_method,
       installment_count,
       installment_interval,
       first_due_date,
+      installments_dates,
       payment_links,
       notes,
     } = validation.data;
+
+    const splittedBilling: Record<string, number> = validation.data.splitted_billing
+      ? validation.data.splitted_billing
+      : { [user.id]: validation.data.total_amount as number };
+
+    const total_amount = Object.values(splittedBilling).reduce((a, b) => a + b, 0);
+
+    const dates: string[] =
+      installment_interval == null
+        ? (installments_dates ?? [])
+        : calculateInstallmentDates(first_due_date ?? "", installment_count, installment_interval);
 
     // Create billing
     const { data: billing, error: billingError } = await supabase
       .from("billings")
       .insert({
         patient_id,
-        professional_id: user.id,
+        splitted_billing: splittedBilling,
         description,
         total_amount,
         payment_method,
         installment_count,
-        installment_interval,
+        installment_interval: installment_interval ?? null,
+        installments_dates: dates.length > 0 ? dates : null,
         notes,
       })
       .select()
       .single();
 
     if (billingError) {
-      return NextResponse.json(
-        { error: billingError.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: billingError.message }, { status: 500 });
     }
 
     // Calculate and create installments (using admin to bypass RLS)
     const amounts = calculateInstallmentAmount(total_amount, installment_count);
-    const dates = calculateInstallmentDates(
-      first_due_date,
-      installment_count,
-      installment_interval,
-    );
 
-    const installmentRows = amounts.map((amount, i) => ({
-      billing_id: billing.id,
-      installment_number: i + 1,
-      amount,
-      due_date: dates[i] as string,
-      payment_link: payment_links?.[i] || null,
-    }));
+    const installmentRows = amounts.map((amount, i) => {
+      const splitted_installment = Object.fromEntries(
+        Object.entries(splittedBilling).map(([profId, profAmount]) => [
+          profId,
+          Math.round((profAmount / total_amount) * amount),
+        ]),
+      );
+      return {
+        billing_id: billing.id,
+        installment_number: i + 1,
+        amount,
+        due_date: dates[i] as string,
+        payment_link: payment_links?.[i] || null,
+        splitted_installment,
+      };
+    });
 
     const { error: installmentError } = await supabaseAdmin
       .from("installments")
       .insert(installmentRows);
 
     if (installmentError) {
-      return NextResponse.json(
-        { error: installmentError.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: installmentError.message }, { status: 500 });
     }
 
     // Fire-and-forget: schedule notifications
@@ -164,7 +165,7 @@ export async function POST(request: Request) {
     if (patient) {
       const template = getNotificationTemplate("billing_created", {
         description,
-        amount: formatCurrency(total_amount),
+        amount: formatCurrency(total_amount as number),
       });
       sendNotificationToTeam(patient_id, user.id, {
         type: "billing_created",
@@ -175,9 +176,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ billing }, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

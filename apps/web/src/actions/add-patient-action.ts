@@ -1,5 +1,6 @@
 "use server";
 
+import { isStaff } from "@/lib/access-control";
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
 import { createBilling } from "@/services/billing";
@@ -10,7 +11,7 @@ export const addPatientAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     // When creating on behalf of a professional, verify they belong to the same enterprise
     if (parsedInput.professional_id) {
-      if (!profile.enterprise_id) {
+      if (!isStaff(profile) || parsedInput.professional_id !== profile.id) {
         throw new Error("Sem permissão para criar pacientes em nome de outro profissional.");
       }
 

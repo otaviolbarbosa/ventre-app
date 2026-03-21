@@ -113,12 +113,10 @@ function HomeEnterpriseScreenSkeleton({ profile }: { profile: Tables<"users"> })
 
             {/* Patient list skeleton */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-7 w-32" />
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                </div>
+              <Skeleton className="h-7 w-32" />
+              <div className="flex gap-2">
+                <Skeleton className="h-9 flex-1 rounded-full" />
+                <Skeleton className="h-9 w-9 rounded-md" />
               </div>
               <Card>
                 <CardContent className="p-0">

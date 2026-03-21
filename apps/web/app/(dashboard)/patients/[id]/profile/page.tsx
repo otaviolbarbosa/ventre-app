@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { CheckCircle2, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
@@ -77,7 +78,12 @@ export default function PatientProfilePage() {
               </div>
             </AccordionTrigger>
             <AccordionContent className="relative space-y-4 pt-4">
-              <PatientInfo patient={patient} onChange={async () => { fetchPatient({ patientId }); }} />
+              <PatientInfo
+                patient={patient}
+                onChange={async () => {
+                  fetchPatient({ patientId });
+                }}
+              />
             </AccordionContent>
           </AccordionItem>
 
@@ -109,39 +115,51 @@ export default function PatientProfilePage() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           {patient.has_finished ? (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-2">
               <Badge variant="success" className="w-fit gap-1.5 px-3 py-1.5 text-sm">
                 <CheckCircle2 className="h-4 w-4" />
                 Acompanhamento Finalizado
               </Badge>
               {patient.born_at && (
-                <p className="text-muted-foreground text-sm">
-                  Nascimento:{" "}
-                  {new Date(patient.born_at).toLocaleDateString("pt-BR", {
-                    timeZone: "UTC",
-                  })}
-                </p>
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    Nascimento:{" "}
+                    {new Date(patient.born_at).toLocaleDateString("pt-BR", {
+                      timeZone: "UTC",
+                    })}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Via de parto:{" "}
+                    {patient.delivery_method
+                      ? PREGNANCY_DELIVERY_METHOD[patient.delivery_method]
+                      : "Não informado"}
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Obs: {patient.observations || "-"}
+                  </p>
+                </>
               )}
             </div>
           ) : (
-            <Button
-              variant="outline"
-              className="w-full border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700 sm:w-auto"
-              onClick={() => setShowFinishModal(true)}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Finalizar Acompanhamento
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                className="w-full border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700 sm:w-auto"
+                onClick={() => setShowFinishModal(true)}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Finalizar Acompanhamento
+              </Button>
+              <Button
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir Gestante
+              </Button>
+            </>
           )}
-
-          <Button
-            variant="destructive"
-            className="w-full sm:w-auto"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Excluir Gestante
-          </Button>
         </div>
       </div>
 

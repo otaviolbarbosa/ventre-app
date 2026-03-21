@@ -18,12 +18,6 @@ function formatDisplay(cents: number): string {
   });
 }
 
-function parseToCents(displayValue: string): number {
-  const cleaned = displayValue.replace(/\./g, "").replace(",", ".");
-  const num = Number.parseFloat(cleaned);
-  if (Number.isNaN(num)) return 0;
-  return Math.round(num * 100);
-}
 
 export function CurrencyInput({
   value,
@@ -35,11 +29,9 @@ export function CurrencyInput({
 
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value;
-      // Allow only digits, comma, and dot
-      const filtered = raw.replace(/[^\d.,]/g, "");
-      setDisplay(filtered);
-      const cents = parseToCents(filtered);
+      const digits = e.target.value.replace(/\D/g, "");
+      const cents = Number.parseInt(digits || "0", 10);
+      setDisplay(formatDisplay(cents));
       onChange(cents);
     },
     [onChange],

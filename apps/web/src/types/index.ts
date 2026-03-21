@@ -21,6 +21,7 @@ export type TeamMember = {
   professional_id: string;
   professional_type: ProfessionalType;
   joined_at: string | null;
+  is_backup: boolean | null;
   professional: { id: string; name: string; email: string; avatar_url: string } | null;
 };
 
