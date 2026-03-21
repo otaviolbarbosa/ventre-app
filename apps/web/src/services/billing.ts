@@ -9,7 +9,8 @@ import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { getServerUser } from "@/lib/server-auth";
 import type { CreateBillingInput } from "@/lib/validations/billing";
 import {
-  createServerSupabaseAdmin,
+  type createServerSupabaseAdmin,
+  createServerSupabaseAdmin as createAdmin,
   createServerSupabaseClient,
 } from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
@@ -61,6 +62,7 @@ export async function getEnterpriseBillings(
   professionals: EnterpriseBillingProfessional[];
 }> {
   const supabase = await createServerSupabaseClient();
+  const supabaseAdmin = await createAdmin();
 
   const { data: professionalsData } = await supabase
     .from("users")
@@ -76,14 +78,14 @@ export async function getEnterpriseBillings(
     return { billings: [], metrics: null, professionals: [] };
   }
 
-  let query = supabase
+  let query = supabaseAdmin
     .from("billings")
     .select(`
       *,
       installments(*),
       patient:patients!billings_patient_id_fkey(id, name)
     `)
-    .in("professional_id", targetIds)
+    .or(targetIds.map((id) => `splitted_billing->>${id}.not.is.null`).join(","))
     .order("created_at", { ascending: false })
     .order("installment_number", { ascending: true, referencedTable: "installments" });
 
@@ -107,6 +109,10 @@ export async function getEnterpriseBillings(
   };
 
   for (const billing of billings) {
+    const splitted = billing.splitted_billing as Record<string, number> | null;
+    const professionalTotal = targetIds.reduce((sum, id) => sum + (splitted?.[id] ?? 0), 0);
+
+    metrics.total_amount += professionalTotal;
     metrics.paid_amount += billing.paid_amount;
     metrics.by_status[billing.status] = (metrics.by_status[billing.status] || 0) + 1;
     metrics.by_payment_method[billing.payment_method] =
@@ -122,10 +128,14 @@ export async function getEnterpriseBillings(
     }
   }
 
+  metrics.pending_amount = metrics.total_amount - metrics.paid_amount;
+
   const billingCountByProfessional: Record<string, number> = {};
   for (const billing of billings) {
-    billingCountByProfessional[billing.professional_id] =
-      (billingCountByProfessional[billing.professional_id] ?? 0) + 1;
+    for (const professionalId of Object.keys(billing.splitted_billing ?? {})) {
+      billingCountByProfessional[professionalId] =
+        (billingCountByProfessional[professionalId] ?? 0) + 1;
+    }
   }
 
   const professionalsWithCount: EnterpriseBillingProfessional[] = professionals.map((p) => ({
@@ -184,7 +194,7 @@ export async function getAllBillings() {
       installments(*),
       patient:patients!billings_patient_id_fkey(id, name)
     `)
-    .eq("professional_id", user.id)
+    .not(`splitted_billing->>${user.id}`, "is", null)
     .order("created_at", { ascending: false });
 
   if (error) return { billings: [], error: error.message };
@@ -203,7 +213,7 @@ export async function getBillings(startDate?: string, endDate?: string) {
       installments(*),
       patient:patients!billings_patient_id_fkey(id, name)
     `)
-    .eq("professional_id", user.id)
+    .not(`splitted_billing->>${user.id}`, "is", null)
     .order("created_at", { ascending: false })
     .order("installment_number", { ascending: true, referencedTable: "installments" });
 
@@ -226,7 +236,7 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
       *,
       installments(*)
     `)
-    .eq("professional_id", user.id);
+    .not(`splitted_billing->>${user.id}`, "is", null);
 
   if (startDate) {
     query = query.gte("created_at", startDate);
@@ -290,25 +300,37 @@ export async function createBilling(
   const {
     patient_id,
     description,
-    total_amount,
     payment_method,
     installment_count,
     installment_interval,
     first_due_date,
+    installments_dates,
     payment_links,
     notes,
   } = data;
+
+  const splittedBilling: Record<string, number> = data.splitted_billing
+    ? data.splitted_billing
+    : { [userId]: data.total_amount as number };
+
+  const total_amount = Object.values(splittedBilling).reduce((a, b) => a + b, 0);
+
+  const dates: string[] =
+    installment_interval == null
+      ? (installments_dates ?? [])
+      : calculateInstallmentDates(first_due_date ?? "", installment_count, installment_interval);
 
   const { data: billing, error: billingError } = await supabase
     .from("billings")
     .insert({
       patient_id,
-      professional_id: userId,
+      splitted_billing: splittedBilling,
       description,
       total_amount,
       payment_method,
       installment_count,
-      installment_interval,
+      installment_interval: installment_interval ?? null,
+      installments_dates: dates.length > 0 ? dates : null,
       notes,
     })
     .select()
@@ -319,15 +341,23 @@ export async function createBilling(
   }
 
   const amounts = calculateInstallmentAmount(total_amount, installment_count);
-  const dates = calculateInstallmentDates(first_due_date, installment_count, installment_interval);
 
-  const installmentRows = amounts.map((amount, i) => ({
-    billing_id: billing.id,
-    installment_number: i + 1,
-    amount,
-    due_date: dates[i] as string,
-    payment_link: payment_links?.[i] || null,
-  }));
+  const installmentRows = amounts.map((amount, i) => {
+    const splitted_installment = Object.fromEntries(
+      Object.entries(splittedBilling).map(([profId, profAmount]) => [
+        profId,
+        Math.round((profAmount / total_amount) * amount),
+      ]),
+    );
+    return {
+      billing_id: billing.id,
+      installment_number: i + 1,
+      amount,
+      due_date: dates[i] as string,
+      payment_link: payment_links?.[i] || null,
+      splitted_installment,
+    };
+  });
 
   const { error: installmentError } = await supabaseAdmin
     .from("installments")

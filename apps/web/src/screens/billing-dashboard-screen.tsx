@@ -25,6 +25,7 @@ type Installment = Tables<"installments"> & {
   description: string;
   patient_name: string;
   patient_id: string;
+  billing_installment_count: number;
 };
 
 type PeriodOption = {
@@ -65,6 +66,27 @@ export default function BillingDashboardScreen({
   const filterRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLHeadingElement>(null);
 
+  const billingMetrics = [
+    {
+      key: "paid",
+      title: "Recebido",
+      amount: metrics?.paid_amount ?? 0,
+      icon: TrendingUp,
+    },
+    {
+      key: "upcoming",
+      title: "Próx. Vencimentos",
+      amount: metrics?.upcoming_due ?? 0,
+      icon: Clock,
+    },
+    {
+      key: "overdue",
+      title: "Em Atraso",
+      amount: metrics?.overdue_amount ?? 0,
+      icon: AlertTriangle,
+    },
+  ] satisfies MetricItem[];
+
   const handlePeriodSelect = useCallback(
     (period: BillingPeriod) => {
       setShowPeriodFilter(false);
@@ -92,13 +114,11 @@ export default function BillingDashboardScreen({
         patient_name: billing.patient.name,
         description: billing.description,
         patient_id: billing.patient_id,
+        billing_installment_count: billing.installments.length,
       })),
     );
 
     if (!activeFilter) return installments;
-
-    // const now = dayjs();
-    // const in7Days = dayjs(now).add(7, "day");
 
     return installments.filter((installment) => {
       switch (activeFilter) {
@@ -176,28 +196,7 @@ export default function BillingDashboardScreen({
 
         {metrics && (
           <DashboardMetrics
-            metrics={
-              [
-                {
-                  key: "paid",
-                  title: "Recebido",
-                  amount: metrics.paid_amount,
-                  icon: TrendingUp,
-                },
-                {
-                  key: "upcoming",
-                  title: "Próx. Vencimentos",
-                  amount: metrics.upcoming_due,
-                  icon: Clock,
-                },
-                {
-                  key: "overdue",
-                  title: "Em Atraso",
-                  amount: metrics.overdue_amount,
-                  icon: AlertTriangle,
-                },
-              ] satisfies MetricItem[]
-            }
+            metrics={billingMetrics}
             activeFilter={activeFilter}
             onFilterClick={handleFilterClick}
           />
@@ -221,7 +220,7 @@ export default function BillingDashboardScreen({
                 <InstallmentCard
                   key={installment.id}
                   installment={installment}
-                  installmentCount={filteredInstallments.length}
+                  installmentCount={installment.billing_installment_count}
                 />
               ))}
             </div>

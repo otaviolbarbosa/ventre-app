@@ -590,7 +590,7 @@ export default function NewPatientModal({
                   <FormItem>
                     <FormLabel>Vencimento da 1ª parcela *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input type="date" {...field} value={field.value ?? ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

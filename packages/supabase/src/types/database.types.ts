@@ -115,12 +115,13 @@ export type Database = {
           description: string
           id: string
           installment_count: number
-          installment_interval: number
+          installment_interval: number | null
+          installments_dates: string[] | null
           notes: string | null
           paid_amount: number
           patient_id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
-          professional_id: string
+          splitted_billing: Json
           status: Database["public"]["Enums"]["billing_status"]
           total_amount: number
           updated_at: string
@@ -130,12 +131,13 @@ export type Database = {
           description: string
           id?: string
           installment_count?: number
-          installment_interval?: number
+          installment_interval?: number | null
+          installments_dates?: string[] | null
           notes?: string | null
           paid_amount?: number
           patient_id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
-          professional_id: string
+          splitted_billing?: Json
           status?: Database["public"]["Enums"]["billing_status"]
           total_amount: number
           updated_at?: string
@@ -145,12 +147,13 @@ export type Database = {
           description?: string
           id?: string
           installment_count?: number
-          installment_interval?: number
+          installment_interval?: number | null
+          installments_dates?: string[] | null
           notes?: string | null
           paid_amount?: number
           patient_id?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
-          professional_id?: string
+          splitted_billing?: Json
           status?: Database["public"]["Enums"]["billing_status"]
           total_amount?: number
           updated_at?: string
@@ -161,13 +164,6 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "billings_professional_id_fkey"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -251,6 +247,7 @@ export type Database = {
           paid_at: string | null
           payment_link: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          splitted_installment: Json
           status: Database["public"]["Enums"]["installment_status"]
           updated_at: string
         }
@@ -266,6 +263,7 @@ export type Database = {
           paid_at?: string | null
           payment_link?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          splitted_installment?: Json
           status?: Database["public"]["Enums"]["installment_status"]
           updated_at?: string
         }
@@ -281,6 +279,7 @@ export type Database = {
           paid_at?: string | null
           payment_link?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          splitted_installment?: Json
           status?: Database["public"]["Enums"]["installment_status"]
           updated_at?: string
         }

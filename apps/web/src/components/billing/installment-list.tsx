@@ -20,6 +20,7 @@ type InstallmentListProps = {
   installments: Installment[];
   onRecordPayment: (installment: Installment) => void;
   onUpdate: () => void;
+  professionals?: Record<string, string>;
 };
 
 export function InstallmentList({
@@ -27,6 +28,7 @@ export function InstallmentList({
   installments,
   onRecordPayment,
   onUpdate,
+  professionals,
 }: InstallmentListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [linkValue, setLinkValue] = useState("");
@@ -134,6 +136,21 @@ export function InstallmentList({
                 )}
               </div>
             </div>
+            {professionals && installment.splitted_installment && (
+              <div className="space-y-0.5 border-t pt-2">
+                {Object.entries(installment.splitted_installment as Record<string, number>).map(
+                  ([profId, amount]) => (
+                    <div
+                      key={profId}
+                      className="flex justify-between text-muted-foreground text-xs"
+                    >
+                      <span>{professionals[profId] ?? profId}</span>
+                      <span>{formatCurrency(amount)}</span>
+                    </div>
+                  ),
+                )}
+              </div>
+            )}
             {editingId === installment.id && (
               <div className="flex items-center gap-2">
                 <Input

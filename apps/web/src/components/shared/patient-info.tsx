@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import { Loader2, Pencil } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -16,7 +17,6 @@ import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { ContentModal } from "./content-modal";
 import InfoItem from "./info-item";
-import { useState } from "react";
 
 type PatientInfoProps = {
   patient: Tables<"patients"> & {
@@ -87,6 +87,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
     toast.success("Gestante atualizada com sucesso!");
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to overload dependencies
   useEffect(() => {
     form.reset({
       name: patient.name,

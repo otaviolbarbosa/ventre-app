@@ -17,7 +17,12 @@ type Installment = Tables<"installments"> & {
 export function InstallmentCard({
   installment,
   installmentCount,
-}: { installment: Installment; installmentCount: number }) {
+  professionals,
+}: {
+  installment: Installment;
+  installmentCount: number;
+  professionals?: Record<string, string>;
+}) {
   return (
     <Link
       href={`/patients/${installment.patient_id}/billing/${installment.billing_id}`}
@@ -48,6 +53,19 @@ export function InstallmentCard({
           <div className="text-muted-foreground text-xs">
             Venc.: {dayjs(installment.due_date).format("DD/MM/YYYY")}
           </div>
+
+          {professionals && installment.splitted_installment && (
+            <div className="mt-2 space-y-0.5 border-t pt-2">
+              {Object.entries(installment.splitted_installment as Record<string, number>).map(
+                ([profId, amount]) => (
+                  <div key={profId} className="flex justify-between text-muted-foreground text-xs">
+                    <span>{professionals[profId] ?? profId}</span>
+                    <span>{formatCurrency(amount)}</span>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </Link>
