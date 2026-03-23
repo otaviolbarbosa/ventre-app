@@ -174,6 +174,7 @@ export async function createPatient(
     name: data.name,
     email: data.email,
     phone: data.phone,
+    partner_name: data.partner_name || null,
     street: data.street,
     neighborhood: data.neighborhood,
     complement: data.complement,

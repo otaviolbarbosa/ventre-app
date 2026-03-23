@@ -8,6 +8,7 @@ import { LoadingPatientProfile } from "@/components/shared/loading-state";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
+import PrenatalCard from "@/components/shared/prenatal-card";
 import {
   Accordion,
   AccordionContent,
@@ -39,6 +40,7 @@ export default function PatientProfilePage() {
   }, [fetchPatient, patientId]);
 
   const patient = result.data?.patient;
+  const pregnancy = result.data?.pregnancy;
 
   async function handleDelete() {
     const res = await deletePatient({ patientId });
@@ -89,10 +91,10 @@ export default function PatientProfilePage() {
 
           <AccordionItem value="cartao-prenatal">
             <AccordionTrigger className="font-semibold text-base">
-              Cartão Pré-natal
+              Cartão Pré-natal Digital
             </AccordionTrigger>
             <AccordionContent>
-              <p className="text-muted-foreground">Em breve...</p>
+              <PrenatalCard patientId={patient.id} pregnancyId={pregnancy?.id} />
             </AccordionContent>
           </AccordionItem>
 
