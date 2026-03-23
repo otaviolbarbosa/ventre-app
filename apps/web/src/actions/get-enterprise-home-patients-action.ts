@@ -73,6 +73,16 @@ export const getEnterpriseHomePatientsAction = authActionClient
       has_finished?: boolean;
       born_at?: string | null;
       observations?: string | null;
+      // Prenatal fields (may be null when not selected in query)
+      partner_name?: string | null;
+      blood_type?: string | null;
+      height_cm?: number | null;
+      allergies?: string[] | null;
+      personal_notes?: string | null;
+      family_history_diabetes?: boolean | null;
+      family_history_hypertension?: boolean | null;
+      family_history_twin?: boolean | null;
+      family_history_others?: string | null;
     };
 
     const today = dayjs();
@@ -145,7 +155,7 @@ export const getEnterpriseHomePatientsAction = authActionClient
       const dueDate = dayjs(patient.due_date);
       const remainingDays = dueDate.diff(today, "day");
 
-      const patientWithInfo: PatientWithGestationalInfo = {
+      const patientWithInfo = {
         ...patient,
         due_date: patient.due_date ?? null,
         dum: patient.dum ?? null,
@@ -156,7 +166,16 @@ export const getEnterpriseHomePatientsAction = authActionClient
         days: gestationalAge?.days ?? 0,
         remainingDays: Math.max(remainingDays, 0),
         progress: gestationalAge ? Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100) : 0,
-      };
+        allergies: patient.allergies ?? null,
+        blood_type: patient.blood_type ?? null,
+        height_cm: patient.height_cm ?? null,
+        personal_notes: patient.personal_notes ?? null,
+        family_history_diabetes: patient.family_history_diabetes ?? null,
+        family_history_hypertension: patient.family_history_hypertension ?? null,
+        family_history_twin: patient.family_history_twin ?? null,
+        family_history_others: patient.family_history_others ?? null,
+        partner_name: patient.partner_name ?? null,
+      } as PatientWithGestationalInfo;
 
       return {
         patient: patientWithInfo,

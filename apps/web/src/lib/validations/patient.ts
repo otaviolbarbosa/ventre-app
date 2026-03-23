@@ -5,6 +5,7 @@ export const createPatientSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.union([z.string().email("Email inválido"), z.literal("")]).optional(),
   phone: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
+  partner_name: z.string().optional(),
   due_date: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
     message: "Data prevista do parto inválida",
   }),
