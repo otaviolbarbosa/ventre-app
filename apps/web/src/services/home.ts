@@ -162,11 +162,12 @@ export async function getHomeData(): Promise<HomeData> {
     };
   }
 
-  // Get all patients with their active pregnancy
+  // Get all patients with their active (non-finished) pregnancy
   const { data: patients } = await supabase
     .from("patients")
-    .select("*, pregnancies(due_date, dum, has_finished, born_at, observations)")
-    .in("id", patientIds);
+    .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, observations)")
+    .in("id", patientIds)
+    .eq("pregnancies.has_finished", false);
 
   // Sort by due_date from pregnancy
   const sortedPatients = (patients || []).slice().sort((a, b) => {

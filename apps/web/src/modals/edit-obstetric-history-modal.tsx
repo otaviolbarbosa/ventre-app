@@ -21,6 +21,10 @@ import {
 } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase";
+type PregnancyCounts = Pick<
+  Tables<"pregnancies">,
+  "gestations_count" | "deliveries_count" | "cesareans_count" | "abortions_count"
+> | null;
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -31,7 +35,9 @@ type EditObstetricHistoryModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   patientId: string;
+  pregnancyId: string;
   history: Tables<"patient_obstetric_history"> | null;
+  pregnancyCounts: PregnancyCounts;
   onSuccess: () => void;
 };
 
@@ -39,7 +45,9 @@ export function EditObstetricHistoryModal({
   open,
   onOpenChange,
   patientId,
+  pregnancyId,
   history,
+  pregnancyCounts,
   onSuccess,
 }: EditObstetricHistoryModalProps) {
   const { executeAsync, isPending } = useAction(upsertObstetricHistoryAction);
@@ -52,6 +60,10 @@ export function EditObstetricHistoryModal({
   useEffect(() => {
     if (open) {
       form.reset({
+        gestations_count: pregnancyCounts?.gestations_count ?? undefined,
+        deliveries_count: pregnancyCounts?.deliveries_count ?? undefined,
+        cesareans_count: pregnancyCounts?.cesareans_count ?? undefined,
+        abortions_count: pregnancyCounts?.abortions_count ?? undefined,
         diabetes: history?.diabetes ?? false,
         urinary_infection: history?.urinary_infection ?? false,
         infertility: history?.infertility ?? false,
@@ -66,10 +78,10 @@ export function EditObstetricHistoryModal({
         other_surgery_notes: history?.other_surgery_notes ?? "",
       });
     }
-  }, [open, history]);
+  }, [open, history, pregnancyCounts]);
 
   async function onSubmit(values: ObstetricHistoryInput) {
-    const result = await executeAsync({ patientId, data: values });
+    const result = await executeAsync({ patientId, pregnancyId, data: values });
     if (result?.serverError) {
       toast.error(result.serverError);
       return;
@@ -88,6 +100,35 @@ export function EditObstetricHistoryModal({
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <p className="font-medium text-sm">Histórico obstétrico</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["gestations_count", "Nº de gestações"],
+                ["deliveries_count", "Nº de partos"],
+                ["cesareans_count", "Nº de cesáreas"],
+                ["abortions_count", "Nº de abortos"],
+              ] as const
+            ).map(([name, label]) => (
+              <FormField
+                key={name}
+                control={form.control}
+                name={name}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{label}</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
+
+          <Separator />
+
           <p className="font-medium text-sm">Antecedentes clínicos</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {CLINICAL_FIELDS.map((f) => (

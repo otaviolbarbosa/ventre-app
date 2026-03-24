@@ -41,7 +41,7 @@ export const VACCINE_LABELS: Record<string, string> = {
 export const VACCINE_STATUS_LABELS: Record<string, string> = {
   applied: "Aplicada",
   immunized: "Imune",
-  not_applicable: "Não indicada",
+  not_applicable: "Não aplicada",
 };
 
 export const VACCINE_NAMES = [
@@ -78,10 +78,10 @@ export const RISK_GROUPS: RiskGroup[] = [
   {
     label: "Estilo de vida",
     fields: [
-      { name: "smoking", label: "Tabagismo" },
       { name: "alcohol", label: "Álcool" },
       { name: "other_drugs", label: "Outras drogas" },
       { name: "domestic_violence", label: "Violência doméstica" },
+      { name: "smoking", label: "Tabagismo" },
     ],
   },
   {

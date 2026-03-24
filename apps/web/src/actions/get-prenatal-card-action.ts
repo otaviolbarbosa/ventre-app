@@ -34,7 +34,7 @@ export const getPrenatalCardAction = authActionClient
       supabase
         .from("pregnancies")
         .select(
-          "gestations_count, deliveries_count, cesareans_count, abortions_count, initial_weight_kg, initial_bmi",
+          "gestations_count, deliveries_count, cesareans_count, abortions_count, initial_weight_kg, initial_bmi, baby_name, reference_hospital",
         )
         .eq("id", pregnancyId)
         .single(),

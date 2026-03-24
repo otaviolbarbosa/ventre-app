@@ -72,7 +72,7 @@ export default function PatientProfilePage() {
   return (
     <>
       <div className="space-y-6">
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="multiple" className="w-full">
           <AccordionItem value="informacoes">
             <AccordionTrigger className="font-semibold text-base">
               <div className="flex w-full items-center justify-between pr-4">

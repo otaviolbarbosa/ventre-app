@@ -13,17 +13,19 @@ export const updatePatientPrenatalSchema = z.object({
   family_history_hypertension: z.boolean().optional().nullable(),
   family_history_twin: z.boolean().optional().nullable(),
   family_history_others: z.string().optional(),
-  // Pregnancy obstetric counts
-  gestations_count: z.coerce.number().int().min(0).optional().nullable(),
-  deliveries_count: z.coerce.number().int().min(0).optional().nullable(),
-  cesareans_count: z.coerce.number().int().min(0).optional().nullable(),
-  abortions_count: z.coerce.number().int().min(0).optional().nullable(),
   initial_weight_kg: z.coerce.number().positive().optional().nullable(),
+  baby_name: z.string().optional(),
+  reference_hospital: z.string().optional(),
 });
 export type UpdatePatientPrenatalInput = z.infer<typeof updatePatientPrenatalSchema>;
 
 // ── Obstetric History ────────────────────────────────────────────────────────
 export const obstetricHistorySchema = z.object({
+  // Pregnancy obstetric counts
+  gestations_count: z.coerce.number().int().min(0).optional().nullable(),
+  deliveries_count: z.coerce.number().int().min(0).optional().nullable(),
+  cesareans_count: z.coerce.number().int().min(0).optional().nullable(),
+  abortions_count: z.coerce.number().int().min(0).optional().nullable(),
   diabetes: z.boolean().optional().nullable(),
   urinary_infection: z.boolean().optional().nullable(),
   infertility: z.boolean().optional().nullable(),
@@ -132,7 +134,7 @@ export type LabExamInput = z.infer<typeof labExamSchema>;
 export const vaccineRecordSchema = z.object({
   vaccine_name: z.enum(["covid", "influenza", "hepatitis_b", "dtpa", "abrysvo", "rhogam"]),
   dose_number: z.coerce.number().int().min(1).max(3).optional().nullable(),
-  applied_date: z.string().optional(),
+  applied_date: z.string().optional().transform((v) => v || null).nullable(),
   status: z.enum(["applied", "immunized", "not_applicable"]).optional().nullable(),
   notes: z.string().optional(),
 });
