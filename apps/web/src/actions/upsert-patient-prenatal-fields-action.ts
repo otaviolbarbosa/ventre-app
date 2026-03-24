@@ -41,11 +41,9 @@ export const upsertPatientPrenatalFieldsAction = authActionClient
     const { error: pregnancyError } = await supabase
       .from("pregnancies")
       .update({
-        gestations_count: data.gestations_count ?? null,
-        deliveries_count: data.deliveries_count ?? null,
-        cesareans_count: data.cesareans_count ?? null,
-        abortions_count: data.abortions_count ?? null,
         initial_weight_kg: data.initial_weight_kg ?? null,
+        baby_name: data.baby_name || null,
+        reference_hospital: data.reference_hospital || null,
       })
       .eq("id", pregnancyId);
 

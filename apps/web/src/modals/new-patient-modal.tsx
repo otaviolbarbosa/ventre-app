@@ -129,6 +129,7 @@ export default function NewPatientModal({
       email: "",
       phone: "",
       partner_name: "",
+      baby_name: "",
       due_date: "",
       dum: "",
       street: "",
@@ -231,6 +232,20 @@ export default function NewPatientModal({
                 <FormLabel>Nome do parceiro</FormLabel>
                 <FormControl>
                   <Input placeholder="Nome do parceiro" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="baby_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome do bebê</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nome escolhido para o bebê" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

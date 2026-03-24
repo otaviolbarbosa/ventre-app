@@ -19,6 +19,7 @@ export const createPatientSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   zipcode: z.string().optional(),
+  baby_name: z.string().optional(),
   observations: z.string().optional(),
   professional_id: z.string().uuid().optional(),
   billing: createBillingSchema.omit({ patient_id: true }).optional(),

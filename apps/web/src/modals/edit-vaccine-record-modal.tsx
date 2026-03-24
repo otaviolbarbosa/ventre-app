@@ -105,7 +105,7 @@ export function EditVaccineRecordModal({
                     <SelectContent>
                       <SelectItem value="applied">Aplicada</SelectItem>
                       <SelectItem value="immunized">Imune</SelectItem>
-                      <SelectItem value="not_applicable">Não indicada</SelectItem>
+                      <SelectItem value="not_applicable">Não aplicada</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

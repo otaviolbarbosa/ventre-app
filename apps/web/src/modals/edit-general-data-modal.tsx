@@ -49,12 +49,10 @@ type PatientData = Pick<
 
 type PregnancyData = Pick<
   Tables<"pregnancies">,
-  | "gestations_count"
-  | "deliveries_count"
-  | "cesareans_count"
-  | "abortions_count"
   | "initial_weight_kg"
   | "initial_bmi"
+  | "baby_name"
+  | "reference_hospital"
 > | null;
 
 type EditGeneralDataModalProps = {
@@ -94,11 +92,9 @@ export function EditGeneralDataModal({
         family_history_hypertension: patientData?.family_history_hypertension ?? false,
         family_history_twin: patientData?.family_history_twin ?? false,
         family_history_others: patientData?.family_history_others ?? "",
-        gestations_count: pregnancyData?.gestations_count ?? undefined,
-        deliveries_count: pregnancyData?.deliveries_count ?? undefined,
-        cesareans_count: pregnancyData?.cesareans_count ?? undefined,
-        abortions_count: pregnancyData?.abortions_count ?? undefined,
         initial_weight_kg: pregnancyData?.initial_weight_kg ?? undefined,
+        baby_name: pregnancyData?.baby_name ?? "",
+        reference_hospital: pregnancyData?.reference_hospital ?? "",
       });
     }
   }, [open, patientData, pregnancyData]);
@@ -153,6 +149,35 @@ export function EditGeneralDataModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
+              name="baby_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome do bebê</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Nome escolhido para o bebê" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="reference_hospital"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hospital de referência</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Hospital onde pretende parir" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField
+              control={form.control}
               name="height_cm"
               render={({ field }) => (
                 <FormItem>
@@ -196,33 +221,6 @@ export function EditGeneralDataModal({
               </FormItem>
             )}
           />
-
-          <p className="font-medium text-sm">Histórico obstétrico</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(
-              [
-                ["gestations_count", "Nº de gestações"],
-                ["deliveries_count", "Nº de partos"],
-                ["cesareans_count", "Nº de cesáreas"],
-                ["abortions_count", "Nº de abortos"],
-              ] as const
-            ).map(([name, label]) => (
-              <FormField
-                key={name}
-                control={form.control}
-                name={name}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{label}</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" {...field} value={field.value ?? ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ))}
-          </div>
 
           <p className="font-medium text-sm">Histórico familiar</p>
           <div className="grid gap-2 sm:grid-cols-3">
