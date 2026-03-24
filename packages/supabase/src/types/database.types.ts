@@ -906,6 +906,7 @@ export type Database = {
       pregnancies: {
         Row: {
           abortions_count: number | null
+          baby_name: string | null
           born_at: string | null
           cesareans_count: number | null
           created_at: string
@@ -921,10 +922,12 @@ export type Database = {
           initial_weight_kg: number | null
           observations: string | null
           patient_id: string
+          reference_hospital: string | null
           updated_at: string
         }
         Insert: {
           abortions_count?: number | null
+          baby_name?: string | null
           born_at?: string | null
           cesareans_count?: number | null
           created_at?: string
@@ -942,10 +945,12 @@ export type Database = {
           initial_weight_kg?: number | null
           observations?: string | null
           patient_id: string
+          reference_hospital?: string | null
           updated_at?: string
         }
         Update: {
           abortions_count?: number | null
+          baby_name?: string | null
           born_at?: string | null
           cesareans_count?: number | null
           created_at?: string
@@ -963,6 +968,7 @@ export type Database = {
           initial_weight_kg?: number | null
           observations?: string | null
           patient_id?: string
+          reference_hospital?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1431,7 +1437,9 @@ export type Database = {
       }
       ultrasounds: {
         Row: {
-          amniotic_fluid_index: Database["public"]["Enums"]["amniotic_fluid_index"] | null
+          amniotic_fluid_index:
+            | Database["public"]["Enums"]["amniotic_fluid_index"]
+            | null
           ccn_mm: number | null
           cervical_length_cm: number | null
           created_at: string
@@ -1450,7 +1458,9 @@ export type Database = {
           pregnancy_id: string
         }
         Insert: {
-          amniotic_fluid_index?: Database["public"]["Enums"]["amniotic_fluid_index"] | null
+          amniotic_fluid_index?:
+            | Database["public"]["Enums"]["amniotic_fluid_index"]
+            | null
           ccn_mm?: number | null
           cervical_length_cm?: number | null
           created_at?: string
@@ -1469,7 +1479,9 @@ export type Database = {
           pregnancy_id: string
         }
         Update: {
-          amniotic_fluid_index?: Database["public"]["Enums"]["amniotic_fluid_index"] | null
+          amniotic_fluid_index?:
+            | Database["public"]["Enums"]["amniotic_fluid_index"]
+            | null
           ccn_mm?: number | null
           cervical_length_cm?: number | null
           created_at?: string
@@ -1644,7 +1656,11 @@ export type Database = {
       schedule_dpp_reminders: { Args: never; Returns: undefined }
     }
     Enums: {
-      amniotic_fluid_index: "severe_oligohydramnios" | "oligohydramnios" | "normal" | "polyhydramnios"
+      amniotic_fluid_index:
+        | "severe_oligohydramnios"
+        | "oligohydramnios"
+        | "normal"
+        | "polyhydramnios"
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro"
       billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
@@ -1837,6 +1853,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      amniotic_fluid_index: [
+        "severe_oligohydramnios",
+        "oligohydramnios",
+        "normal",
+        "polyhydramnios",
+      ],
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro"],
       billing_status: ["pendente", "pago", "atrasado", "cancelado"],

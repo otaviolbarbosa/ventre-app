@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface HeaderProps {
-  title?: string;
+  title?: React.ReactNode;
   back?: string | boolean;
 }
 

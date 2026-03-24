@@ -125,23 +125,24 @@ export function EditRiskFactorsModal({
                   />
                 ))}
               </div>
+              {group.label === "Estilo de vida" && form.watch("smoking") && (
+                <FormField
+                  control={form.control}
+                  name="cigarettes_per_day"
+                  render={({ field }) => (
+                    <FormItem className="mt-3">
+                      <FormLabel>Cigarros por dia</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <Separator className="mt-3" />
             </div>
           ))}
-
-          <FormField
-            control={form.control}
-            name="cigarettes_per_day"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cigarros por dia</FormLabel>
-                <FormControl>
-                  <Input type="number" min="0" {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <FormField
             control={form.control}

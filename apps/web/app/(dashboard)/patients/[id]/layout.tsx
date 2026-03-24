@@ -4,6 +4,7 @@ import { getPatientAction } from "@/actions/get-patient-action";
 import { Header } from "@/components/layouts/header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
@@ -30,6 +31,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   }, [patientId]);
 
   const patient = result.data?.patient;
+  const pregnancy = result.data?.pregnancy;
   // Treat pre-fetch state as loading to avoid a "not found" flash before execute runs
   const isLoading = isPending || result.data === undefined;
 
@@ -58,7 +60,17 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         </>
       ) : (
         <>
-          <Header title={patient.name} back />
+          <Header
+            title={
+              <div className="flex items-baseline gap-2">
+                <span>{patient.name}</span>
+                <span className="font-medium font-sans text-sm">
+                  {calculateGestationalAge(pregnancy?.due_date)?.label}
+                </span>
+              </div>
+            }
+            back
+          />
           <div className="p-4 pt-0 md:p-6 md:pt-0">
             <Tabs value={currentTab} className="mb-6 w-full">
               <TabsList>

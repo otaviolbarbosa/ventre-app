@@ -33,8 +33,10 @@ import type { Tables } from "@nascere/supabase";
 import {
   Activity,
   Baby,
+  CheckCircle2,
   ClipboardList,
   FlaskConical,
+  HelpCircle,
   Pencil,
   Plus,
   ShieldAlert,
@@ -43,11 +45,11 @@ import {
   TestTube2,
   Trash2,
   User,
+  XCircle,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import InfoItem from "./info-item";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,6 +73,8 @@ type PrenatalData = {
     | "abortions_count"
     | "initial_weight_kg"
     | "initial_bmi"
+    | "baby_name"
+    | "reference_hospital"
   > | null;
   obstetricHistory: Tables<"patient_obstetric_history"> | null;
   riskFactors: Tables<"pregnancy_risk_factors"> | null;
@@ -127,8 +131,14 @@ function GeneralDataSection({
 }) {
   const [showModal, setShowModal] = useState(false);
 
-  const p = data.patient;
-  const preg = data.pregnancy;
+  const patient = data.patient;
+  const pregnancy = data.pregnancy;
+
+  const hasFamilyHistory =
+    patient?.family_history_diabetes ||
+    patient?.family_history_hypertension ||
+    patient?.family_history_twin ||
+    patient?.family_history_others;
 
   return (
     <div>
@@ -136,63 +146,114 @@ function GeneralDataSection({
         icon={User}
         title="Dados Gerais"
         action={
-          <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
-            <Pencil className="mr-1 h-3 w-3" />
-            Editar
-          </Button>
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              className="sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Pencil className="h-3 w-3" />
+              Editar
+            </Button>
+          </>
         }
       />
 
-      <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InfoItem label="Tipo sanguíneo" value={p?.blood_type} />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InfoItem
-            label="Altura"
-            value={p?.height_cm ? `${p.height_cm} cm` : null}
-          />
-          <InfoItem
-            label="Peso inicial"
-            value={preg?.initial_weight_kg ? `${preg.initial_weight_kg} kg` : null}
-          />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InfoItem label="IMC inicial" value={preg?.initial_bmi?.toString()} />
-          <InfoItem
-            label="Alergias"
-            value={p?.allergies?.join(", ") || null}
-          />
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-4">
-          <InfoItem label="Gestações" value={preg?.gestations_count?.toString()} />
-          <InfoItem label="Partos" value={preg?.deliveries_count?.toString()} />
-          <InfoItem label="Cesáreas" value={preg?.cesareans_count?.toString()} />
-          <InfoItem label="Abortos" value={preg?.abortions_count?.toString()} />
+      <div className="overflow-hidden rounded-lg border">
+        {/* Métricas principais */}
+        <div className="grid grid-cols-2 divide-x sm:grid-cols-4">
+          <div className="px-3 py-2.5 text-center">
+            <p className="mb-0.5 text-muted-foreground text-xs">Tipo sanguíneo</p>
+            <p className="font-medium text-sm">{patient?.blood_type ?? "-"}</p>
+          </div>
+          <div className="px-3 py-2.5 text-center">
+            <p className="mb-0.5 text-muted-foreground text-xs">Altura</p>
+            <p className="font-medium text-sm">
+              {patient?.height_cm ? `${patient.height_cm} cm` : "-"}
+            </p>
+          </div>
+          <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+            <p className="mb-0.5 text-muted-foreground text-xs">Peso inicial</p>
+            <p className="font-medium text-sm">
+              {pregnancy?.initial_weight_kg ? `${pregnancy.initial_weight_kg} kg` : "-"}
+            </p>
+          </div>
+          <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+            <p className="mb-0.5 text-muted-foreground text-xs">IMC inicial</p>
+            <p className="font-medium text-sm">{pregnancy?.initial_bmi?.toString() ?? "-"}</p>
+          </div>
         </div>
 
-        {(p?.family_history_diabetes ||
-          p?.family_history_hypertension ||
-          p?.family_history_twin ||
-          p?.family_history_others) && (
-          <div>
-            <p className="mb-1 text-muted-foreground text-sm">Histórico familiar</p>
+        {/* Nome do bebê / Hospital de referência */}
+        {(pregnancy?.baby_name || pregnancy?.reference_hospital) && (
+          <div className="border-t">
+            <div
+              className={`grid divide-x ${pregnancy?.baby_name && pregnancy?.reference_hospital ? "grid-cols-2" : "grid-cols-1"}`}
+            >
+              {pregnancy?.baby_name && (
+                <div className="px-4 py-2.5">
+                  <p className="mb-0.5 font-medium text-muted-foreground text-xs">Nome do bebê</p>
+                  <p className="font-medium text-sm">{pregnancy.baby_name}</p>
+                </div>
+              )}
+              {pregnancy?.reference_hospital && (
+                <div className="px-4 py-2.5">
+                  <p className="mb-0.5 font-medium text-muted-foreground text-xs">
+                    Hospital de referência
+                  </p>
+                  <p className="font-medium text-sm">{pregnancy.reference_hospital}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Alergias */}
+        {patient?.allergies && patient.allergies.length > 0 && (
+          <div className="border-t px-4 py-2.5">
+            <p className="mb-1 font-medium text-muted-foreground text-xs">Alergias</p>
             <div className="flex flex-wrap gap-1.5">
-              <BooleanBadge value={p?.family_history_diabetes} label="Diabetes" />
-              <BooleanBadge value={p?.family_history_hypertension} label="Hipertensão" />
-              <BooleanBadge value={p?.family_history_twin} label="Gemelar" />
-              {p?.family_history_others && (
+              {patient.allergies.map((a) => (
+                <Badge key={a} variant="secondary" className="text-xs">
+                  {a}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Histórico familiar */}
+        {hasFamilyHistory && (
+          <div className="border-t bg-muted/20 px-4 py-2.5">
+            <p className="mb-1.5 font-medium text-muted-foreground text-xs">Histórico familiar</p>
+            <div className="flex flex-wrap gap-1.5">
+              <BooleanBadge value={patient?.family_history_diabetes} label="Diabetes" />
+              <BooleanBadge value={patient?.family_history_hypertension} label="Hipertensão" />
+              <BooleanBadge value={patient?.family_history_twin} label="Gemelar" />
+              {patient?.family_history_others && (
                 <Badge variant="secondary" className="text-xs">
-                  {p.family_history_others}
+                  {patient.family_history_others}
                 </Badge>
               )}
             </div>
           </div>
         )}
 
-        {p?.personal_notes && (
-          <InfoItem label="Observações pessoais" value={p.personal_notes} />
+        {/* Observações pessoais */}
+        {patient?.personal_notes && (
+          <div className="border-t px-4 py-2.5">
+            <p className="mb-0.5 font-medium text-muted-foreground text-xs">Observações pessoais</p>
+            <p className="text-sm">{patient.personal_notes}</p>
+          </div>
         )}
       </div>
 
@@ -213,18 +274,27 @@ function GeneralDataSection({
 
 function ObstetricHistorySection({
   patientId,
+  pregnancyId,
   history,
+  pregnancy,
   onRefresh,
 }: {
   patientId: string;
+  pregnancyId: string;
   history: Tables<"patient_obstetric_history"> | null;
+  pregnancy: PrenatalData["pregnancy"];
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
 
   const activeClinical = CLINICAL_FIELDS.filter((f) => history?.[f.name as keyof typeof history]);
   const activeSurgical = SURGICAL_FIELDS.filter((f) => history?.[f.name as keyof typeof history]);
-  const hasData = activeClinical.length > 0 || activeSurgical.length > 0;
+  const hasPregnancyCounts =
+    pregnancy?.gestations_count != null ||
+    pregnancy?.deliveries_count != null ||
+    pregnancy?.cesareans_count != null ||
+    pregnancy?.abortions_count != null;
+  const hasData = activeClinical.length > 0 || activeSurgical.length > 0 || hasPregnancyCounts;
 
   return (
     <div>
@@ -232,20 +302,58 @@ function ObstetricHistorySection({
         icon={ClipboardList}
         title="Antecedentes Obstétricos"
         action={
-          <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
-            <Pencil className="mr-1 h-3 w-3" />
-            Editar
-          </Button>
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              className="sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Pencil className="h-3 w-3" />
+              Editar
+            </Button>
+          </>
         }
       />
 
       {!hasData ? (
         <p className="text-muted-foreground text-sm italic">Nenhum antecedente registrado.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="overflow-hidden rounded-lg border">
+          {/* Contagens obstétricas */}
+          {hasPregnancyCounts && (
+            <div className="grid grid-cols-2 divide-x sm:grid-cols-4">
+              <div className="px-3 py-2.5 text-center">
+                <p className="mb-0.5 text-muted-foreground text-xs">Gestações</p>
+                <p className="font-medium text-sm">{pregnancy?.gestations_count ?? "-"}</p>
+              </div>
+              <div className="px-3 py-2.5 text-center">
+                <p className="mb-0.5 text-muted-foreground text-xs">Partos</p>
+                <p className="font-medium text-sm">{pregnancy?.deliveries_count ?? "-"}</p>
+              </div>
+              <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+                <p className="mb-0.5 text-muted-foreground text-xs">Cesáreas</p>
+                <p className="font-medium text-sm">{pregnancy?.cesareans_count ?? "-"}</p>
+              </div>
+              <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+                <p className="mb-0.5 text-muted-foreground text-xs">Abortos</p>
+                <p className="font-medium text-sm">{pregnancy?.abortions_count ?? "-"}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Antecedentes clínicos */}
           {activeClinical.length > 0 && (
-            <div>
-              <p className="mb-1 text-muted-foreground text-xs">Clínicos</p>
+            <div className="border-t px-4 py-2.5">
+              <p className="mb-1.5 font-medium text-muted-foreground text-xs">Clínicos</p>
               <div className="flex flex-wrap gap-1.5">
                 {activeClinical.map((f) => (
                   <Badge key={f.name} variant="secondary" className="text-xs">
@@ -254,13 +362,15 @@ function ObstetricHistorySection({
                 ))}
               </div>
               {history?.other_clinical_notes && (
-                <p className="mt-1 text-sm">{history.other_clinical_notes}</p>
+                <p className="mt-1.5 text-sm">{history.other_clinical_notes}</p>
               )}
             </div>
           )}
+
+          {/* Antecedentes cirúrgicos */}
           {activeSurgical.length > 0 && (
-            <div>
-              <p className="mb-1 text-muted-foreground text-xs">Cirúrgicos</p>
+            <div className="border-t bg-muted/20 px-4 py-2.5">
+              <p className="mb-1.5 font-medium text-muted-foreground text-xs">Cirúrgicos</p>
               <div className="flex flex-wrap gap-1.5">
                 {activeSurgical.map((f) => (
                   <Badge key={f.name} variant="secondary" className="text-xs">
@@ -269,7 +379,7 @@ function ObstetricHistorySection({
                 ))}
               </div>
               {history?.other_surgery_notes && (
-                <p className="mt-1 text-sm">{history.other_surgery_notes}</p>
+                <p className="mt-1.5 text-sm">{history.other_surgery_notes}</p>
               )}
             </div>
           )}
@@ -280,7 +390,9 @@ function ObstetricHistorySection({
         open={showModal}
         onOpenChange={setShowModal}
         patientId={patientId}
+        pregnancyId={pregnancyId}
         history={history}
+        pregnancyCounts={pregnancy}
         onSuccess={onRefresh}
       />
     </div>
@@ -310,25 +422,40 @@ function RiskFactorsSection({
         icon={ShieldAlert}
         title="Fatores de Risco da Gestação"
         action={
-          <Button size="sm" variant="outline" onClick={() => setShowModal(true)}>
-            <Pencil className="mr-1 h-3 w-3" />
-            Editar
-          </Button>
+          <>
+            <Button
+              size="icon"
+              variant="outline"
+              className="sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Pencil className="h-3 w-3" />
+              Editar
+            </Button>
+          </>
         }
       />
 
       {activeRisks.length === 0 && !riskFactors?.other_notes ? (
         <p className="text-muted-foreground text-sm italic">Nenhum fator de risco registrado.</p>
       ) : (
-        <div className="space-y-2">
-          {RISK_GROUPS.map((group) => {
+        <div className="overflow-hidden rounded-lg border">
+          {RISK_GROUPS.map((group, idx) => {
             const active = group.fields.filter(
               (f) => riskFactors?.[f.name as keyof typeof riskFactors],
             );
             if (active.length === 0) return null;
             return (
-              <div key={group.label}>
-                <p className="mb-1 text-muted-foreground text-xs">{group.label}</p>
+              <div key={group.label} className={idx > 0 ? "border-t px-4 py-2.5" : "px-4 py-2.5"}>
+                <p className="mb-1.5 font-medium text-muted-foreground text-xs">{group.label}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {active.map((f) => (
                     <Badge key={f.name} variant="destructive" className="font-normal text-xs">
@@ -336,14 +463,24 @@ function RiskFactorsSection({
                     </Badge>
                   ))}
                 </div>
+                {riskFactors?.smoking &&
+                  riskFactors?.cigarettes_per_day &&
+                  group.label === "Estilo de vida" && (
+                    <p className="mt-1.5 text-muted-foreground text-sm">
+                      Cigarros/dia:{" "}
+                      <span className="font-medium text-foreground">
+                        {riskFactors.cigarettes_per_day}
+                      </span>
+                    </p>
+                  )}
               </div>
             );
           })}
-          {riskFactors?.smoking && riskFactors?.cigarettes_per_day && (
-            <p className="text-sm">Cigarros/dia: {riskFactors.cigarettes_per_day}</p>
-          )}
           {riskFactors?.other_notes && (
-            <p className="text-sm">Obs: {riskFactors.other_notes}</p>
+            <div className="border-t bg-muted/20 px-4 py-2.5">
+              <p className="mb-0.5 font-medium text-muted-foreground text-xs">Observações</p>
+              <p className="text-sm">{riskFactors.other_notes}</p>
+            </div>
           )}
         </div>
       )}
@@ -378,10 +515,23 @@ function EvolutionsSection({
         icon={Activity}
         title="Evoluções da Gestação"
         action={
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-1 h-3 w-3" />
-            <span className="hidden sm:inline">Adicionar</span>
-          </Button>
+          <>
+            <Button
+              size="icon"
+              className="gradient-primary sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              className="gradient-primary hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Adicionar
+            </Button>
+          </>
         }
       />
 
@@ -392,7 +542,7 @@ function EvolutionsSection({
           description="Registre as consultas pré-natais da gestante."
         >
           <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Adicionar evolução
           </Button>
         </EmptyState>
@@ -456,9 +606,7 @@ function EvolutionsSection({
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Apresentação</p>
                   <p className="font-medium text-sm">
-                    {ev.fetal_presentation
-                      ? FETAL_PRESENTATION_LABELS[ev.fetal_presentation]
-                      : "-"}
+                    {ev.fetal_presentation ? FETAL_PRESENTATION_LABELS[ev.fetal_presentation] : "-"}
                   </p>
                 </div>
                 <div className="px-3 py-2.5">
@@ -475,9 +623,7 @@ function EvolutionsSection({
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Exame de colo</p>
-                  <p className="truncate font-medium text-sm">
-                    {ev.cervical_exam ?? "-"}
-                  </p>
+                  <p className="truncate font-medium text-sm">{ev.cervical_exam ?? "-"}</p>
                 </div>
               </div>
 
@@ -485,15 +631,15 @@ function EvolutionsSection({
               {(ev.complaint || ev.observations || ev.responsible) && (
                 <div className="grid grid-cols-4 divide-x border-t bg-muted/20">
                   <div className="px-3 py-2.5">
-                    <p className="mb-0.5 text-muted-foreground text-xs font-medium">Queixa</p>
+                    <p className="mb-0.5 font-medium text-muted-foreground text-xs">Queixa</p>
                     <p className="text-xs">{ev.complaint || "-"}</p>
                   </div>
                   <div className="col-span-2 px-3 py-2.5">
-                    <p className="mb-0.5 text-muted-foreground text-xs font-medium">Conduta</p>
+                    <p className="mb-0.5 font-medium text-muted-foreground text-xs">Conduta</p>
                     <p className="whitespace-pre-wrap text-xs">{ev.observations || "-"}</p>
                   </div>
                   <div className="px-3 py-2.5">
-                    <p className="mb-0.5 text-muted-foreground text-xs font-medium">Responsável</p>
+                    <p className="mb-0.5 font-medium text-muted-foreground text-xs">Responsável</p>
                     <p className="text-xs">{ev.responsible || "-"}</p>
                   </div>
                 </div>
@@ -532,10 +678,23 @@ function UltrasoundsSection({
         icon={Baby}
         title="Ultrassonografias"
         action={
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-1 h-3 w-3" />
-            <span className="hidden sm:inline">Adicionar</span>
-          </Button>
+          <>
+            <Button
+              size="icon"
+              className="gradient-primary sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              className="gradient-primary hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Adicionar
+            </Button>
+          </>
         }
       />
 
@@ -546,7 +705,7 @@ function UltrasoundsSection({
           description="Registre os exames de imagem da gestante."
         >
           <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Adicionar USG
           </Button>
         </EmptyState>
@@ -575,9 +734,7 @@ function UltrasoundsSection({
               <div className="grid grid-cols-4 divide-x text-center">
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">FCF (bpm)</p>
-                  <p className="font-medium text-sm">
-                    {usg.fetal_heart_rate_bpm ?? "-"}
-                  </p>
+                  <p className="font-medium text-sm">{usg.fetal_heart_rate_bpm ?? "-"}</p>
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">CCN (mm)</p>
@@ -585,15 +742,11 @@ function UltrasoundsSection({
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">TN (mm)</p>
-                  <p className="font-medium text-sm">
-                    {usg.nuchal_translucency_mm ?? "-"}
-                  </p>
+                  <p className="font-medium text-sm">{usg.nuchal_translucency_mm ?? "-"}</p>
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Colo (cm)</p>
-                  <p className="font-medium text-sm">
-                    {usg.cervical_length_cm ?? "-"}
-                  </p>
+                  <p className="font-medium text-sm">{usg.cervical_length_cm ?? "-"}</p>
                 </div>
               </div>
 
@@ -601,9 +754,7 @@ function UltrasoundsSection({
               <div className="grid grid-cols-4 divide-x border-t text-center">
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Peso est. (g)</p>
-                  <p className="font-medium text-sm">
-                    {usg.estimated_weight_g ?? "-"}
-                  </p>
+                  <p className="font-medium text-sm">{usg.estimated_weight_g ?? "-"}</p>
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">ILA</p>
@@ -615,16 +766,12 @@ function UltrasoundsSection({
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Placenta</p>
-                  <p className="truncate font-medium text-sm">
-                    {usg.placenta_position ?? "-"}
-                  </p>
+                  <p className="truncate font-medium text-sm">{usg.placenta_position ?? "-"}</p>
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Doppler</p>
                   <p className="font-medium text-sm">
-                    {usg.doppler_result
-                      ? DOPPLER_RESULT_LABELS[usg.doppler_result]
-                      : "-"}
+                    {usg.doppler_result ? DOPPLER_RESULT_LABELS[usg.doppler_result] : "-"}
                   </p>
                 </div>
               </div>
@@ -632,7 +779,7 @@ function UltrasoundsSection({
               {/* Linha 3: flags booleanas */}
               <div className="flex items-center gap-3 border-t bg-muted/20 px-4 py-2">
                 <span className="text-muted-foreground text-xs">Osso nasal:</span>
-                <span className="text-xs font-medium">
+                <span className="font-medium text-xs">
                   {usg.nasal_bone_present == null
                     ? "-"
                     : usg.nasal_bone_present
@@ -642,13 +789,13 @@ function UltrasoundsSection({
                 <span className="mx-1 text-muted-foreground/40">·</span>
                 <span className="text-muted-foreground text-xs">CIUR:</span>
                 {usg.iugr == null ? (
-                  <span className="text-xs font-medium">-</span>
+                  <span className="font-medium text-xs">-</span>
                 ) : usg.iugr ? (
                   <Badge variant="destructive" className="text-xs">
                     Sim
                   </Badge>
                 ) : (
-                  <span className="text-xs font-medium">Não</span>
+                  <span className="font-medium text-xs">Não</span>
                 )}
               </div>
 
@@ -656,8 +803,7 @@ function UltrasoundsSection({
               {usg.notes && (
                 <div className="border-t px-4 py-2.5">
                   <p className="text-xs">
-                    <span className="font-medium text-muted-foreground">Obs:</span>{" "}
-                    {usg.notes}
+                    <span className="font-medium text-muted-foreground">Obs:</span> {usg.notes}
                   </p>
                 </div>
               )}
@@ -710,10 +856,23 @@ function LabExamsSection({
         icon={FlaskConical}
         title="Exames Laboratoriais"
         action={
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-1 h-3 w-3" />
-            <span className="hidden sm:inline">Adicionar</span>
-          </Button>
+          <>
+            <Button
+              size="icon"
+              className="gradient-primary sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              className="gradient-primary hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Adicionar
+            </Button>
+          </>
         }
       />
 
@@ -724,7 +883,7 @@ function LabExamsSection({
           description="Registre os exames laboratoriais da gestante."
         >
           <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Adicionar exame
           </Button>
         </EmptyState>
@@ -743,7 +902,7 @@ function LabExamsSection({
             <tbody>
               {labExams.map((exam) => (
                 <tr key={exam.id} className="group border-b last:border-0">
-                  <td className="py-2 pr-4 font-medium">{exam.exam_name}</td>
+                  <td className="truncate py-2 pr-4 font-medium">{exam.exam_name}</td>
                   <td className="py-2 pr-4 text-muted-foreground">
                     {dayjs(exam.exam_date).format("DD/MM/YYYY")}
                   </td>
@@ -756,7 +915,7 @@ function LabExamsSection({
                   </td>
                   <td className="py-2 pr-4 text-muted-foreground">{exam.unit || "-"}</td>
                   <td className="py-2">
-                    <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="flex items-center justify-end gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                       <Button
                         size="icon"
                         variant="ghost"
@@ -838,9 +997,16 @@ function VaccinesSection({
               key={vName}
               type="button"
               onClick={() => setEditingVaccineName(vName)}
-              className="flex items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+              className="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
             >
-              <div>
+              {!record || !record.status ? (
+                <HelpCircle className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+              ) : record.status === "applied" || record.status === "immunized" ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+              ) : (
+                <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+              )}
+              <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm">{VACCINE_LABELS[vName]}</p>
                 {record ? (
                   <p className="text-muted-foreground text-xs">
@@ -893,10 +1059,23 @@ function OtherExamsSection({
         icon={TestTube2}
         title="Outros Exames"
         action={
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-1 h-3 w-3" />
-            <span className="hidden sm:inline">Adicionar</span>
-          </Button>
+          <>
+            <Button
+              size="icon"
+              className="gradient-primary sm:hidden"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              className="gradient-primary hidden sm:flex"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-3 w-3" />
+              Adicionar
+            </Button>
+          </>
         }
       />
 
@@ -907,7 +1086,7 @@ function OtherExamsSection({
           description="Registre exames como CTG, NST e outros não estruturados."
         >
           <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Adicionar exame
           </Button>
         </EmptyState>
@@ -999,7 +1178,9 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
 
       <ObstetricHistorySection
         patientId={patientId}
+        pregnancyId={pregnancyId}
         history={data.obstetricHistory}
+        pregnancy={data.pregnancy}
         onRefresh={refresh}
       />
 
@@ -1029,19 +1210,11 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
 
       <Separator />
 
-      <LabExamsSection
-        pregnancyId={pregnancyId}
-        labExams={data.labExams}
-        onRefresh={refresh}
-      />
+      <LabExamsSection pregnancyId={pregnancyId} labExams={data.labExams} onRefresh={refresh} />
 
       <Separator />
 
-      <VaccinesSection
-        pregnancyId={pregnancyId}
-        vaccines={data.vaccines}
-        onRefresh={refresh}
-      />
+      <VaccinesSection pregnancyId={pregnancyId} vaccines={data.vaccines} onRefresh={refresh} />
 
       <Separator />
 

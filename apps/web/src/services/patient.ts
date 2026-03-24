@@ -201,6 +201,7 @@ export async function createPatient(
     due_date: data.due_date,
     dum: data.dum,
     created_by: targetProfessionalId,
+    baby_name: data.baby_name || null,
     observations: data.observations,
   } satisfies TablesInsert<"pregnancies">);
 
