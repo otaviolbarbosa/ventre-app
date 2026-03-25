@@ -5,6 +5,7 @@ import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
 import { createBilling } from "@/services/billing";
 import { createPatient } from "@/services/patient";
+import { revalidateTag } from "next/cache";
 
 export const addPatientAction = authActionClient
   .inputSchema(createPatientSchema)
@@ -33,6 +34,13 @@ export const addPatientAction = authActionClient
         ...parsedInput.billing,
         patient_id: patient.id,
       });
+    }
+
+    revalidateTag(`home-patients-${user.id}`, { expire: 300 });
+    revalidateTag(`home-data-${user.id}`, { expire: 300 });
+
+    if (profile.enterprise_id) {
+      revalidateTag(`enterprise-patients-${profile.enterprise_id}`, { expire: 300 });
     }
 
     return { patient };

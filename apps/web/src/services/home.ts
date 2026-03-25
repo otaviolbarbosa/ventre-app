@@ -1,8 +1,9 @@
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
-import { getServerUser } from "@/lib/server-auth";
 import type { PatientWithGestationalInfo } from "@/types";
+import { createServerSupabaseAdmin } from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
+import { unstable_cache } from "next/cache";
 
 type Patient = Tables<"patients">;
 type Pregnancy = Tables<"pregnancies">;
@@ -132,26 +133,16 @@ function getTrimester(weeks: number): 1 | 2 | 3 | null {
   return 3;
 }
 
-export async function getHomeData(): Promise<HomeData> {
-  const { supabase, user } = await getServerUser();
+async function fetchHomeData(userId: string): Promise<HomeData> {
+  const supabase = await createServerSupabaseAdmin();
+  const today = dayjs();
 
-  if (!user) {
-    return {
-      trimesterCounts: { first: 0, second: 0, third: 0 },
-      dppByMonth: [],
-      patients: [],
-      upcomingAppointments: [],
-    };
-  }
-
-  // Get patients where user is a team member
   const { data: teamMembers } = await supabase
     .from("team_members")
     .select("patient_id")
-    .eq("professional_id", user.id);
+    .eq("professional_id", userId);
 
   const patientIds = teamMembers?.map((tm) => tm.patient_id) || [];
-  const today = dayjs();
 
   if (patientIds.length === 0) {
     return {
@@ -162,23 +153,19 @@ export async function getHomeData(): Promise<HomeData> {
     };
   }
 
-  // Get all patients with their active (non-finished) pregnancy
   const { data: patients } = await supabase
     .from("patients")
     .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, observations)")
     .in("id", patientIds)
     .eq("pregnancies.has_finished", false);
 
-  // Sort by due_date from pregnancy
   const sortedPatients = (patients || []).slice().sort((a, b) => {
     const aDate = a.pregnancies?.[0]?.due_date ?? "";
     const bDate = b.pregnancies?.[0]?.due_date ?? "";
     return aDate.localeCompare(bDate);
   });
 
-  // Calculate trimester counts and prepare patient list
   const trimesterCounts: TrimesterCounts = { first: 0, second: 0, third: 0 };
-
   const patientsWithInfo: PatientWithGestationalInfo[] = [];
 
   for (const patient of sortedPatients) {
@@ -208,7 +195,6 @@ export async function getHomeData(): Promise<HomeData> {
     }
   }
 
-  // Get upcoming appointments
   const { data: appointments } = await supabase
     .from("appointments")
     .select(
@@ -217,7 +203,7 @@ export async function getHomeData(): Promise<HomeData> {
       patient:patients!appointments_patient_id_fkey(id, name, pregnancies(dum))
     `,
     )
-    .eq("professional_id", user.id)
+    .eq("professional_id", userId)
     .gte("date", today.format("YYYY-MM-DD"))
     .eq("status", "agendada")
     .order("date", { ascending: true })
@@ -234,4 +220,11 @@ export async function getHomeData(): Promise<HomeData> {
     patients: patientsWithInfo.slice(0, 5),
     upcomingAppointments: (appointments as HomeAppointment[]) || [],
   };
+}
+
+export function getCachedHomeData(userId: string): Promise<HomeData> {
+  return unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
+    tags: [`home-data-${userId}`],
+    revalidate: 3600,
+  })();
 }

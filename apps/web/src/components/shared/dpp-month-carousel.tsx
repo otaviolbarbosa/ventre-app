@@ -59,10 +59,8 @@ export function DppMonthCarousel({
                     {item.percentage !== 0 && (
                       <div
                         className={cn(
-                          "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
-                          item.percentage >= 0
-                            ? "border-green-600/20 text-green-600"
-                            : "border-destructive/20 text-destructive",
+                          "flex items-start gap-0.5 rounded-full font-medium text-[10px]",
+                          item.percentage >= 0 ? "text-green-600" : "text-destructive",
                         )}
                       >
                         {Math.abs(item.percentage)}%
