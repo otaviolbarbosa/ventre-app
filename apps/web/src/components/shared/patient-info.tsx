@@ -1,11 +1,12 @@
 "use client";
-import type { Tables } from "@ventre/supabase";
-import dayjs from "dayjs";
-import { Pencil } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@ventre/ui/button";
-import InfoItem from "./info-item";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import dayjs from "dayjs";
+import { MapPinned, Pencil } from "lucide-react";
+import { useMemo, useState } from "react";
+import InfoItem from "./info-item";
 
 type PatientInfoProps = {
   patient: Tables<"patients"> & {
@@ -18,6 +19,23 @@ type PatientInfoProps = {
 
 export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
+
+  const resolveGoogleMapsLink = useMemo(() => {
+    const address = [
+      patient.street,
+      patient.number,
+      patient.complement,
+      patient.neighborhood,
+      patient.city,
+      patient.state,
+      patient.zipcode,
+    ]
+      .filter(Boolean)
+      .join(", ")
+      .replaceAll(" ", "+");
+    return `https://www.google.com/maps/search/${address}`;
+  }, [patient]);
 
   return (
     <>
@@ -47,19 +65,41 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <InfoItem label="CEP" value={patient.zipcode} />
-        <InfoItem label="Estado" value={patient.state} />
-        <InfoItem label="Cidade" value={patient.city} />
-      </div>
-
-      <InfoItem label="Rua" value={patient.street} />
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <InfoItem label="Número" value={patient.number} />
-        <InfoItem label="Complemento" value={patient.complement} />
-        <InfoItem label="Bairro" value={patient.neighborhood} />
-      </div>
+      <InfoItem
+        label="Endereço"
+        value={
+          <div className="flex justify-between gap-4">
+            <div>
+              <div>{[patient.street, patient.number].filter(Boolean).join(", ")}</div>
+              <div>{patient.complement}</div>
+              <div>{patient.neighborhood}</div>
+              <div>{[patient.city, patient.state].filter(Boolean).join("-")}</div>
+              <div>{patient.zipcode}</div>
+            </div>
+            {resolveGoogleMapsLink ? (
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="-top-4 absolute right-0 hidden sm:flex"
+                  onClick={() => setShowMapModal(true)}
+                >
+                  Navegar para o endereço
+                  <MapPinned />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="-top-4 absolute right-0 flex sm:hidden"
+                  onClick={() => setShowMapModal(true)}
+                >
+                  <MapPinned />
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        }
+      />
 
       <InfoItem label="Observações" value={patient.observations} />
 
@@ -93,6 +133,31 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         patient={patient}
         onSuccess={onChange}
       />
+
+      <ContentModal
+        open={showMapModal}
+        onOpenChange={setShowMapModal}
+        title="Endereço da gestante"
+        description="Como deseja abrir o endereço?"
+      >
+        <div className="flex flex-col gap-3">
+          <Button variant="outline" asChild>
+            <a href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
+              <MapPinned />
+              Abrir no mapa
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Compartilhado pelo VentreApp: Este é o endereço de ${patient.name}: ${resolveGoogleMapsLink}`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Compartilhar pelo WhatsApp
+            </a>
+          </Button>
+        </div>
+      </ContentModal>
     </>
   );
 }

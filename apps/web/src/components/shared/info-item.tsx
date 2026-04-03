@@ -3,11 +3,11 @@
 export default function InfoItem({
   label,
   value,
-}: { label: string; value: string | null | undefined }) {
+}: { label: string; value: React.ReactElement | string | null | undefined }) {
   return (
     <div>
       <p className="text-muted-foreground text-sm">{label}</p>
-      <p className="font-medium">{value || "-"}</p>
+      {!!value || typeof value === "string" ? <p className="font-medium">{value || "-"}</p> : value}
     </div>
   );
 }
