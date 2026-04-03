@@ -30,7 +30,6 @@ export async function requestFcmToken(): Promise<string | null> {
       serviceWorkerRegistration: swRegistration,
     });
 
-    console.log("FCM token: ", token);
     return token;
   } catch (err) {
     console.error("[FCM] getToken falhou:", err);

@@ -1,28 +1,15 @@
 "use client";
 
 import { upsertVaccineRecordAction } from "@/actions/upsert-vaccine-record-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@repo/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { VACCINE_LABELS } from "@/lib/prenatal-constants";
 import { type VaccineRecordInput, vaccineRecordSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";

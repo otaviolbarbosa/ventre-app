@@ -1,7 +1,6 @@
 "use client";
 import { deletePatientAction } from "@/actions/delete-patient-action";
 import { getPatientAction } from "@/actions/get-patient-action";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
 import { LoadingPatientProfile } from "@/components/shared/loading-state";
@@ -9,15 +8,11 @@ import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
 import PrenatalCard from "@/components/shared/prenatal-card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@repo/ui/accordion";
-import { Badge } from "@repo/ui/badge";
-import { Button } from "@repo/ui/button";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { CheckCircle2, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
@@ -27,13 +22,13 @@ import { toast } from "sonner";
 export default function PatientProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const { confirm } = useConfirmModal();
 
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
-  const { executeAsync: deletePatient, isPending: isDeleting } = useAction(deletePatientAction);
+  const { executeAsync: deletePatient } = useAction(deletePatientAction);
 
   useEffect(() => {
     fetchPatient({ patientId });
@@ -42,17 +37,23 @@ export default function PatientProfilePage() {
   const patient = result.data?.patient;
   const pregnancy = result.data?.pregnancy;
 
-  async function handleDelete() {
-    const res = await deletePatient({ patientId });
-
-    if (res?.serverError) {
-      toast.error(res.serverError);
-      setShowDeleteDialog(false);
-      return;
-    }
-
-    toast.success("Paciente excluída com sucesso!");
-    router.push("/patients");
+  function handleConfirmDelete() {
+    confirm({
+      title: "Excluir gestante",
+      description:
+        "Tem certeza que deseja excluir esta paciente? Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.",
+      confirmLabel: "Excluir",
+      variant: "destructive",
+      onConfirm: async () => {
+        const res = await deletePatient({ patientId });
+        if (res?.serverError) {
+          toast.error(res.serverError);
+          return;
+        }
+        toast.success("Paciente excluída com sucesso!");
+        router.push("/patients");
+      },
+    });
   }
 
   if (isPending && !patient) {
@@ -155,7 +156,7 @@ export default function PatientProfilePage() {
               <Button
                 variant="destructive"
                 className="w-full sm:w-auto"
-                onClick={() => setShowDeleteDialog(true)}
+                onClick={handleConfirmDelete}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Excluir Gestante
@@ -170,17 +171,6 @@ export default function PatientProfilePage() {
         onOpenChange={setShowFinishModal}
         patientId={patientId}
         onSuccess={() => fetchPatient({ patientId })}
-      />
-
-      <ConfirmModal
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        title="Excluir paciente"
-        description="Tem certeza que deseja excluir esta paciente? Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos."
-        confirmLabel="Excluir"
-        variant="destructive"
-        loading={isDeleting}
-        onConfirm={handleDelete}
       />
     </>
   );

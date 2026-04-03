@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@repo/ui/button";
+import { Button } from "@ventre/ui/button";
 import { useEffect } from "react";
 
 export default function DashboardError({

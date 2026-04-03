@@ -1,5 +1,5 @@
 import type { TeamMember } from "@/types";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 

@@ -1640,6 +1640,10 @@ export type Database = {
           zipcode: string
         }[]
       }
+      get_paginated_users: {
+        Args: { page?: number; size?: number }
+        Returns: Json
+      }
       is_enterprise_patient: {
         Args: { p_patient_id: string }
         Returns: boolean
@@ -1718,7 +1722,7 @@ export type Database = {
         | "expired"
         | "failed"
         | "replaced"
-      user_type: "professional" | "patient" | "manager" | "secretary"
+      user_type: "professional" | "patient" | "manager" | "secretary" | "admin"
       vaccine_name:
         | "covid"
         | "influenza"
@@ -1922,7 +1926,7 @@ export const Constants = {
         "failed",
         "replaced",
       ],
-      user_type: ["professional", "patient", "manager", "secretary"],
+      user_type: ["professional", "patient", "manager", "secretary", "admin"],
       vaccine_name: [
         "covid",
         "influenza",

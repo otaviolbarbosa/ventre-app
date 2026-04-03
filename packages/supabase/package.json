@@ -1,5 +1,5 @@
 {
-  "name": "@nascere/supabase",
+  "name": "@ventre/supabase",
   "type": "module",
   "version": "0.0.1",
   "private": true,

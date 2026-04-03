@@ -6,11 +6,6 @@ import { Header } from "@/components/layouts/header";
 import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
 import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import { PatientCard } from "@/components/shared/patient-card";
-import { Badge } from "@repo/ui/badge";
-import { Button } from "@repo/ui/button";
-import { Card, CardContent } from "@repo/ui/card";
-import { Input } from "@repo/ui/input";
-import { Skeleton } from "@repo/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
@@ -19,7 +14,12 @@ import type { HomeAppointment } from "@/services/home";
 import { MONTH_LABELS_FULL } from "@/services/home";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getFirstName } from "@/utils";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
+import { Input } from "@ventre/ui/input";
+import { Skeleton } from "@ventre/ui/skeleton";
 import { Baby, CalendarPlus, Eye, Search, UserPlusIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -272,10 +272,12 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
 
   const { execute: fetchAllPatients, result: allPatientsResult } = useAction(getPatientsAction);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: running it once
   useEffect(() => {
     fetchHomeData({});
+    fetchPatients({ filter: activeFilter, search: searchQuery });
     fetchAllPatients();
-  }, [fetchHomeData, fetchAllPatients]);
+  }, []);
 
   const homeData = homeDataResult.data;
   const dppByMonth = homeData?.dppByMonth ?? [];

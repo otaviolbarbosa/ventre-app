@@ -1,5 +1,5 @@
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
 import { sendMulticastNotification } from "@/lib/firebase/admin";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type NotificationType =
   | "appointment_created"
@@ -49,7 +49,11 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
 
       if (billingPrefs) {
         if (payload.type === "billing_reminder" && !billingPrefs.enable_billing_reminders) return;
-        if (payload.type === "billing_payment_received" && !billingPrefs.enable_payment_confirmations) return;
+        if (
+          payload.type === "billing_payment_received" &&
+          !billingPrefs.enable_payment_confirmations
+        )
+          return;
       }
     }
 

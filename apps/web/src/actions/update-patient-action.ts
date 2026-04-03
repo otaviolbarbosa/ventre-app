@@ -24,8 +24,18 @@ export const updatePatientAction = authActionClient
     if (error) throw new Error(error.message);
 
     // Update pregnancy fields if any pregnancy-specific fields were provided
-    if (due_date !== undefined || dum !== undefined || baby_name !== undefined || observations !== undefined) {
-      const pregnancyUpdate: { due_date?: string; dum?: string; baby_name?: string | null; observations?: string } = {};
+    if (
+      due_date !== undefined ||
+      dum !== undefined ||
+      baby_name !== undefined ||
+      observations !== undefined
+    ) {
+      const pregnancyUpdate: {
+        due_date?: string;
+        dum?: string;
+        baby_name?: string | null;
+        observations?: string;
+      } = {};
       if (due_date !== undefined) pregnancyUpdate.due_date = due_date;
       if (dum !== undefined) pregnancyUpdate.dum = dum;
       if (baby_name !== undefined) pregnancyUpdate.baby_name = baby_name || null;

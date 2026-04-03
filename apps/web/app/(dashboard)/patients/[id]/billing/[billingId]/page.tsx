@@ -6,14 +6,14 @@ import { updateBillingAction } from "@/actions/update-billing-action";
 import { InstallmentList } from "@/components/billing/installment-list";
 import { PaymentMethodBadge } from "@/components/billing/payment-method-badge";
 import { StatusBadge } from "@/components/billing/status-badge";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { LoadingState } from "@/components/shared/loading-state";
-import { Button } from "@repo/ui/button";
-import { Card, CardContent } from "@repo/ui/card";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { useAuth } from "@/hooks/use-auth";
 import RecordPaymentModal from "@/modals/record-payment-modal";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -37,10 +37,10 @@ export default function BillingDetailPage() {
 
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  const { confirm } = useConfirmModal();
 
   const { execute: fetchBilling, result, isPending } = useAction(getBillingAction);
-  const { executeAsync: cancelBilling, isPending: cancelling } = useAction(updateBillingAction);
+  const { executeAsync: cancelBilling } = useAction(updateBillingAction);
   const { execute: fetchProfessionals, result: professionalsResult } = useAction(
     getEnterpriseProfessionalsAction,
   );
@@ -63,18 +63,23 @@ export default function BillingDetailPage() {
     setShowPaymentModal(true);
   };
 
-  const handleCancelBilling = async () => {
-    const result = await cancelBilling({ billingId, status: "cancelado" });
-
-    if (result?.serverError) {
-      toast.error("Erro ao cancelar cobrança");
-      return;
-    }
-
-    toast.success("Cobrança cancelada com sucesso!");
-    setShowCancelModal(false);
-    router.push(`/patients/${patientId}/billing`);
-  };
+  function handleConfirmCancelBilling() {
+    confirm({
+      title: "Cancelar Cobrança",
+      description: "Tem certeza que deseja cancelar esta cobrança? Esta ação não pode ser desfeita.",
+      confirmLabel: "Cancelar Cobrança",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await cancelBilling({ billingId, status: "cancelado" });
+        if (result?.serverError) {
+          toast.error("Erro ao cancelar cobrança");
+          return;
+        }
+        toast.success("Cobrança cancelada com sucesso!");
+        router.push(`/patients/${patientId}/billing`);
+      },
+    });
+  }
 
   if (isPending && !billing) return <LoadingState />;
 
@@ -150,7 +155,7 @@ export default function BillingDetailPage() {
             variant="outline"
             size="sm"
             className="text-destructive"
-            onClick={() => setShowCancelModal(true)}
+            onClick={handleConfirmCancelBilling}
           >
             <Trash2 className="mr-1 h-4 w-4" />
             Cancelar Cobrança
@@ -174,16 +179,6 @@ export default function BillingDetailPage() {
         callback={() => fetchBilling({ billingId })}
       />
 
-      <ConfirmModal
-        open={showCancelModal}
-        onOpenChange={setShowCancelModal}
-        title="Cancelar Cobrança"
-        description="Tem certeza que deseja cancelar esta cobrança? Esta ação não pode ser desfeita."
-        confirmLabel="Cancelar Cobrança"
-        variant="destructive"
-        loading={cancelling}
-        onConfirm={handleCancelBilling}
-      />
     </div>
   );
 }

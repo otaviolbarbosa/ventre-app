@@ -1,4 +1,4 @@
-import { Skeleton } from "@repo/ui/skeleton";
+import { Skeleton } from "@ventre/ui/skeleton";
 
 export function LoadingState() {
   return (

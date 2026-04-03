@@ -1,16 +1,10 @@
-import { NextResponse } from "next/server";
-import {
-  createServerSupabaseClient,
-  createServerSupabaseAdmin,
-} from "@nascere/supabase/server";
-import { recordPaymentSchema } from "@/lib/validations/billing";
-import {
-  calculateBillingStatus,
-  formatCurrency,
-} from "@/lib/billing/calculations";
+import { calculateBillingStatus, formatCurrency } from "@/lib/billing/calculations";
 import { cancelInstallmentNotifications } from "@/lib/billing/notifications";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { recordPaymentSchema } from "@/lib/validations/billing";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import { NextResponse } from "next/server";
 
 const ALLOWED_RECEIPT_TYPES = [
   "image/jpeg",
@@ -24,10 +18,7 @@ const ALLOWED_RECEIPT_TYPES = [
 
 const MAX_RECEIPT_SIZE = 10 * 1024 * 1024; // 10MB
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -51,9 +42,7 @@ export async function GET(
     }
 
     // Generate signed URLs for payments with receipts
-    const paymentsWithReceipts = (payments ?? []).filter(
-      (p) => p.receipt_path,
-    );
+    const paymentsWithReceipts = (payments ?? []).filter((p) => p.receipt_path);
 
     const receiptUrls: Record<string, string> = {};
     if (paymentsWithReceipts.length > 0) {
@@ -66,9 +55,7 @@ export async function GET(
       if (signedUrls) {
         for (const entry of signedUrls) {
           if (entry.signedUrl) {
-            const payment = paymentsWithReceipts.find(
-              (p) => p.receipt_path === entry.path,
-            );
+            const payment = paymentsWithReceipts.find((p) => p.receipt_path === entry.path);
             if (payment) receiptUrls[payment.id] = entry.signedUrl;
           }
         }
@@ -82,17 +69,11 @@ export async function GET(
 
     return NextResponse.json({ payments: paymentsWithUrls });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: installmentId } = await params;
     const supabase = await createServerSupabaseClient();
@@ -119,10 +100,7 @@ export async function POST(
     const validation = recordPaymentSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.errors },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
     // Validate receipt file if provided
@@ -130,8 +108,7 @@ export async function POST(
       if (!ALLOWED_RECEIPT_TYPES.includes(receipt.type)) {
         return NextResponse.json(
           {
-            error:
-              "Tipo de arquivo não permitido. Envie imagens ou PDF.",
+            error: "Tipo de arquivo não permitido. Envie imagens ou PDF.",
           },
           { status: 400 },
         );
@@ -157,10 +134,7 @@ export async function POST(
         });
 
       if (uploadError) {
-        return NextResponse.json(
-          { error: uploadError.message },
-          { status: 500 },
-        );
+        return NextResponse.json({ error: uploadError.message }, { status: 500 });
       }
     }
 
@@ -184,10 +158,7 @@ export async function POST(
       if (receiptPath) {
         await supabaseAdmin.storage.from("payments").remove([receiptPath]);
       }
-      return NextResponse.json(
-        { error: paymentError.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: paymentError.message }, { status: 500 });
     }
 
     // Get all payments for this installment to sum up
@@ -196,8 +167,7 @@ export async function POST(
       .select("paid_amount")
       .eq("installment_id", installmentId);
 
-    const totalPaid =
-      allPayments?.reduce((sum, p) => sum + p.paid_amount, 0) ?? 0;
+    const totalPaid = allPayments?.reduce((sum, p) => sum + p.paid_amount, 0) ?? 0;
 
     // Get installment to check amount
     const { data: installment } = await supabaseAdmin
@@ -207,10 +177,7 @@ export async function POST(
       .single();
 
     if (!installment) {
-      return NextResponse.json(
-        { error: "Parcela não encontrada" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Parcela não encontrada" }, { status: 404 });
     }
 
     // Update installment paid_amount and status
@@ -237,10 +204,7 @@ export async function POST(
       .eq("billing_id", installment.billing_id);
 
     if (allInstallments) {
-      const billingPaidAmount = allInstallments.reduce(
-        (sum, i) => sum + i.paid_amount,
-        0,
-      );
+      const billingPaidAmount = allInstallments.reduce((sum, i) => sum + i.paid_amount, 0);
       const billingStatus = calculateBillingStatus(allInstallments);
 
       await supabaseAdmin
@@ -274,9 +238,6 @@ export async function POST(
 
     return NextResponse.json({ payment }, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

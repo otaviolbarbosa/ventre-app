@@ -2,28 +2,15 @@
 import { addPatientAction } from "@/actions/add-patient-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@repo/ui/select";
-import { Textarea } from "@repo/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Textarea } from "@ventre/ui/textarea";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";

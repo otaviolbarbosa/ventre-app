@@ -25,14 +25,14 @@ After writing migrations, always run `pnpm db:types` to keep `database.types.ts`
 
 ### Supabase clients
 
-Exported from `@nascere/supabase/server`:
+Exported from `@ventre/supabase/server`:
 
 ```ts
 createServerSupabaseClient()  // anon key, respects RLS — use for most queries
 createServerSupabaseAdmin()   // service_role key, bypasses RLS — use only after manual auth check
 ```
 
-Browser client: `@nascere/supabase` (or `/client`). Types: `@nascere/supabase/types`.
+Browser client: `@ventre/supabase` (or `/client`). Types: `@ventre/supabase/types`.
 
 **When to use admin:** Only for cross-user writes (e.g. creating a patient and adding the creator as team member) after explicitly verifying authorization. Never use it to silently skip RLS.
 

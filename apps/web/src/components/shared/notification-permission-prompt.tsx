@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@repo/ui/button";
-import { useNotificationsContext } from "@/components/providers/notifications-provider";
+import { useNotificationsContext } from "@/providers/notifications-provider";
+import { Button } from "@ventre/ui/button";
 import { Bell, X } from "lucide-react";
 import { useEffect, useState } from "react";
 

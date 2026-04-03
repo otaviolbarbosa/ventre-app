@@ -1,24 +1,17 @@
 "use client";
 
 import { upsertRiskFactorsAction } from "@/actions/upsert-risk-factors-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import { Checkbox } from "@repo/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import { Separator } from "@repo/ui/separator";
-import { Textarea } from "@repo/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RISK_GROUPS } from "@/lib/prenatal-constants";
 import { type RiskFactorsInput, riskFactorsSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Separator } from "@ventre/ui/separator";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";

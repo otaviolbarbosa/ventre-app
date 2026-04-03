@@ -1,5 +1,5 @@
 import { getServerAuth } from "@/lib/server-auth";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type EnterpriseProfessional = {
   id: string;

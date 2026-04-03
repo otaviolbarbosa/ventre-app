@@ -14,10 +14,7 @@ export const updateLabExamAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase } }) => {
     const { examId, data } = parsedInput;
 
-    const { error } = await supabase
-      .from("lab_exam_results")
-      .update(data)
-      .eq("id", examId);
+    const { error } = await supabase.from("lab_exam_results").update(data).eq("id", examId);
 
     if (error) throw new Error(error.message);
 

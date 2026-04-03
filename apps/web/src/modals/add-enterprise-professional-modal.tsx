@@ -1,10 +1,10 @@
 "use client";
 
 import { addEnterpriseProfessionalAction } from "@/actions/add-enterprise-professional-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import { Input } from "@repo/ui/input";
-import { Label } from "@repo/ui/label";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
+import { Label } from "@ventre/ui/label";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";

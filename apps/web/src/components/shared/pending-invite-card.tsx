@@ -1,6 +1,6 @@
-import { Badge } from "@repo/ui/badge";
-import { Card, CardContent } from "@repo/ui/card";
 import { professionalTypeLabels } from "@/utils/team";
+import { Badge } from "@ventre/ui/badge";
+import { Card, CardContent } from "@ventre/ui/card";
 import { Clock } from "lucide-react";
 import Avatar from "./avatar";
 

@@ -2,20 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
+  /* Color scheme based on Ventre logo — warm terracotta, burgundy & cream */
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 25 40% 97%;
+    --foreground: 15 20% 22%;
+    --card: 0 0% 100%;
+    --card-foreground: 15 20% 22%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 15 20% 22%;
+    --primary: 12 55% 48%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 22 55% 92%;
+    --secondary-foreground: 10 30% 30%;
+    --muted: 25 45% 95%;
+    --muted-foreground: 15 10% 46%;
+    --accent: 18 50% 90%;
+    --accent-foreground: 15 20% 22%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 22 40% 90%;
+    --input: 22 40% 90%;
+    --ring: 12 55% 48%;
+    --sidebar: 22 50% 93%;
+    --sidebar-foreground: 15 20% 22%;
+    --sidebar-primary: 12 55% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 18 50% 90%;
+    --sidebar-accent-foreground: 15 20% 22%;
+    --sidebar-border: 22 40% 90%;
+    --sidebar-ring: 12 55% 48%;
+
+    --radius: 0.5rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(355, 50%, 32%));
+    --gradient-soft: linear-gradient(180deg, hsl(25, 40%, 97%), hsl(22, 55%, 92%));
+    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(25, 45%, 95%));
+    --gradient-cta: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(355, 45%, 35%));
+
+    /* Shadows */
+    --shadow-soft: 0 4px 20px -4px hsl(12 55% 48% / 0.2);
+    --shadow-card: 0 2px 12px -2px hsl(15 20% 22% / 0.08);
+    --shadow-nav: 0 -4px 20px -4px hsl(12 55% 48% / 0.1);
+  }
+
+  .dark {
+    --background: 15 18% 10%;
+    --foreground: 25 60% 92%;
+    --card: 12 15% 16%;
+    --card-foreground: 25 60% 92%;
+    --popover: 12 15% 16%;
+    --popover-foreground: 25 60% 92%;
+    --primary: 14 60% 62%;
+    --primary-foreground: 15 18% 10%;
+    --secondary: 12 15% 22%;
+    --secondary-foreground: 22 40% 82%;
+    --muted: 12 12% 18%;
+    --muted-foreground: 18 12% 60%;
+    --accent: 10 18% 26%;
+    --accent-foreground: 22 40% 82%;
+    --destructive: 0 91% 72%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 12 15% 22%;
+    --input: 12 15% 22%;
+    --ring: 14 60% 62%;
+    --sidebar: 12 15% 14%;
+    --sidebar-foreground: 25 60% 92%;
+    --sidebar-primary: 14 60% 62%;
+    --sidebar-primary-foreground: 15 18% 10%;
+    --sidebar-accent: 10 18% 26%;
+    --sidebar-accent-foreground: 22 40% 82%;
+    --sidebar-border: 12 15% 22%;
+    --sidebar-ring: 14 60% 62%;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-soft {
+    background: var(--gradient-soft);
+  }
+
+  .gradient-cta {
+    background: var(--gradient-cta);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-nav {
+    box-shadow: var(--shadow-nav);
+  }
 }

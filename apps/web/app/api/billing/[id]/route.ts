@@ -1,14 +1,8 @@
-import { NextResponse } from "next/server";
-import {
-  createServerSupabaseClient,
-  createServerSupabaseAdmin,
-} from "@nascere/supabase/server";
 import { updateBillingSchema } from "@/lib/validations/billing";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import { NextResponse } from "next/server";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -36,10 +30,7 @@ export async function GET(
     }
 
     if (!billing) {
-      return NextResponse.json(
-        { error: "Cobrança não encontrada" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Cobrança não encontrada" }, { status: 404 });
     }
 
     // Generate signed URLs for payments with receipts
@@ -49,9 +40,7 @@ export async function GET(
     const receiptUrls: Record<string, string> = {};
     if (paymentsWithReceipts.length > 0) {
       const supabaseAdmin = await createServerSupabaseAdmin();
-      const paths = paymentsWithReceipts.map(
-        (p) => p.receipt_path as string,
-      );
+      const paths = paymentsWithReceipts.map((p) => p.receipt_path as string);
       const { data: signedUrls } = await supabaseAdmin.storage
         .from("payments")
         .createSignedUrls(paths, 3600);
@@ -59,9 +48,7 @@ export async function GET(
       if (signedUrls) {
         for (const entry of signedUrls) {
           if (entry.signedUrl) {
-            const payment = paymentsWithReceipts.find(
-              (p) => p.receipt_path === entry.path,
-            );
+            const payment = paymentsWithReceipts.find((p) => p.receipt_path === entry.path);
             if (payment) receiptUrls[payment.id] = entry.signedUrl;
           }
         }
@@ -82,17 +69,11 @@ export async function GET(
 
     return NextResponse.json({ billing: billingWithUrls });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -109,10 +90,7 @@ export async function PUT(
     const validation = updateBillingSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: validation.error.errors },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
     const { data: billing, error } = await supabase
@@ -128,17 +106,11 @@ export async function PUT(
 
     return NextResponse.json({ billing });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -159,9 +131,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

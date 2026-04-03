@@ -1,5 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
-import { type Database, createServerSupabaseAdmin } from "@nascere/supabase";
+import { type Database, createServerSupabaseAdmin } from "@ventre/supabase";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 

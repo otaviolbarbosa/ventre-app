@@ -5,11 +5,14 @@ import { InstallmentCard } from "@/components/billing/installment-card";
 import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdown";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@repo/ui/badge";
-import { Button } from "@repo/ui/button";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
 import type { BillingPeriod } from "@/lib/billing/period-range";
-import type { BillingWithInstallments, DashboardMetrics as DashboardMetricsType } from "@/services/billing";
+import type {
+  BillingWithInstallments,
+  DashboardMetrics as DashboardMetricsType,
+} from "@/services/billing";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
 import { Receipt, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback } from "react";
@@ -27,8 +30,14 @@ export default function BillingDashboardScreen({
 }: BillingDashboardScreenProps) {
   const router = useRouter();
 
-  const { activeFilter, handleFilterClick, filteredInstallments, billingMetrics, activePeriodLabel, sectionTitle } =
-    useBillingDashboard({ billings, metrics, activePeriod });
+  const {
+    activeFilter,
+    handleFilterClick,
+    filteredInstallments,
+    billingMetrics,
+    activePeriodLabel,
+    sectionTitle,
+  } = useBillingDashboard({ billings, metrics, activePeriod });
 
   const handlePeriodSelect = useCallback(
     (period: BillingPeriod) => {

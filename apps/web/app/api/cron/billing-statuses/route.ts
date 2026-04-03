@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
 import { calculateBillingStatus } from "@/lib/billing/calculations";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   try {
@@ -21,9 +21,7 @@ export async function GET(request: Request) {
       .select("billing_id");
 
     // Get unique billing IDs to recalculate
-    const billingIds = [
-      ...new Set(overdueInstallments?.map((i) => i.billing_id) ?? []),
-    ];
+    const billingIds = [...new Set(overdueInstallments?.map((i) => i.billing_id) ?? [])];
 
     let updated = 0;
 
@@ -35,10 +33,7 @@ export async function GET(request: Request) {
 
       if (installments) {
         const newStatus = calculateBillingStatus(installments);
-        await supabaseAdmin
-          .from("billings")
-          .update({ status: newStatus })
-          .eq("id", billingId);
+        await supabaseAdmin.from("billings").update({ status: newStatus }).eq("id", billingId);
         updated++;
       }
     }
@@ -83,9 +78,6 @@ export async function GET(request: Request) {
       billings_updated: updated,
     });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

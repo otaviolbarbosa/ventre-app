@@ -1,8 +1,8 @@
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo } from "@/types";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 import { unstable_cache } from "next/cache";
 
 type Patient = Tables<"patients">;
@@ -17,12 +17,6 @@ export type HomeAppointment = Appointment & {
   patient: PatientForHome;
 };
 
-export type TrimesterCounts = {
-  first: number;
-  second: number;
-  third: number;
-};
-
 export type DppByMonth = {
   month: number;
   year: number;
@@ -31,7 +25,6 @@ export type DppByMonth = {
 };
 
 export type HomeData = {
-  trimesterCounts: TrimesterCounts;
   dppByMonth: DppByMonth[];
   patients: PatientWithGestationalInfo[];
   upcomingAppointments: HomeAppointment[];
@@ -66,7 +59,10 @@ export const MONTH_LABELS_SHORT = [
   "Dez",
 ];
 
-export function buildDppByMonth(patients: { due_date?: string | null }[], today: ReturnType<typeof dayjs>): DppByMonth[] {
+export function buildDppByMonth(
+  patients: { due_date?: string | null }[],
+  today: ReturnType<typeof dayjs>,
+): DppByMonth[] {
   const currentMonth = today.month(); // 0-indexed
   const currentYear = today.year();
 
@@ -126,13 +122,6 @@ export function buildDppByMonth(patients: { due_date?: string | null }[], today:
   return result;
 }
 
-function getTrimester(weeks: number): 1 | 2 | 3 | null {
-  if (weeks < 0 || weeks > 42) return null;
-  if (weeks < 14) return 1;
-  if (weeks < 28) return 2;
-  return 3;
-}
-
 async function fetchHomeData(userId: string): Promise<HomeData> {
   const supabase = await createServerSupabaseAdmin();
   const today = dayjs();
@@ -146,7 +135,6 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
 
   if (patientIds.length === 0) {
     return {
-      trimesterCounts: { first: 0, second: 0, third: 0 },
       dppByMonth: buildDppByMonth([], today),
       patients: [],
       upcomingAppointments: [],
@@ -165,18 +153,12 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
     return aDate.localeCompare(bDate);
   });
 
-  const trimesterCounts: TrimesterCounts = { first: 0, second: 0, third: 0 };
   const patientsWithInfo: PatientWithGestationalInfo[] = [];
 
   for (const patient of sortedPatients) {
     const pregnancy = patient.pregnancies?.[0];
     const gestationalAge = calculateGestationalAge(pregnancy?.dum ?? null);
     if (gestationalAge) {
-      const trimester = getTrimester(gestationalAge.weeks);
-      if (trimester === 1) trimesterCounts.first++;
-      else if (trimester === 2) trimesterCounts.second++;
-      else if (trimester === 3) trimesterCounts.third++;
-
       const dueDate = dayjs(pregnancy?.due_date);
       const remainingDays = Math.max(dueDate.diff(today, "day"), 0);
 
@@ -215,7 +197,6 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
   }));
 
   return {
-    trimesterCounts,
     dppByMonth: buildDppByMonth(patientsForDpp, today),
     patients: patientsWithInfo.slice(0, 5),
     upcomingAppointments: (appointments as HomeAppointment[]) || [],

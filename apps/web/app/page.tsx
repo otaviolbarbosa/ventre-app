@@ -2,7 +2,7 @@
 import heroBG from "@/assets/hero-bg.jpg";
 import { LandingFooter } from "@/components/shared/landing-footer";
 import { LandingHeader } from "@/components/shared/landing-header";
-import { Button } from "@repo/ui/button";
+import { Button } from "@ventre/ui/button";
 import { ArrowRight, Baby, Calendar, CheckCircle2, Heart, Shield, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

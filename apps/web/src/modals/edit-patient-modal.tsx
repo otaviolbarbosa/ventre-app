@@ -1,22 +1,15 @@
 "use client";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { updatePatientAction } from "@/actions/update-patient-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import { Textarea } from "@repo/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type UpdatePatientInput, updatePatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
 import { InputMask } from "@react-input/mask";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 
 const ESTADOS_BR = [

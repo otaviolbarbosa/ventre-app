@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
+import { createServerSupabaseClient, createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 

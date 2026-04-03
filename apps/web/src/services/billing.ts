@@ -12,8 +12,8 @@ import {
   type createServerSupabaseAdmin,
   createServerSupabaseAdmin as createAdmin,
   createServerSupabaseClient,
-} from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
+} from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;

@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent } from "@repo/ui/card";
 import { cn } from "@/lib/utils";
 import { MONTH_LABELS_FULL } from "@/services/home";
+import { Card, CardContent } from "@ventre/ui/card";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 type DppMonthItem = {

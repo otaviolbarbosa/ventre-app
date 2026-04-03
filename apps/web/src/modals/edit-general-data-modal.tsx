@@ -1,32 +1,19 @@
 "use client";
 
 import { upsertPatientPrenatalFieldsAction } from "@/actions/upsert-patient-prenatal-fields-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import { Checkbox } from "@repo/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@repo/ui/select";
-import { Textarea } from "@repo/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import {
   type UpdatePatientPrenatalInput,
   updatePatientPrenatalSchema,
 } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -49,10 +36,7 @@ type PatientData = Pick<
 
 type PregnancyData = Pick<
   Tables<"pregnancies">,
-  | "initial_weight_kg"
-  | "initial_bmi"
-  | "baby_name"
-  | "reference_hospital"
+  "initial_weight_kg" | "initial_bmi" | "baby_name" | "reference_hospital"
 > | null;
 
 type EditGeneralDataModalProps = {
@@ -154,7 +138,11 @@ export function EditGeneralDataModal({
                 <FormItem>
                   <FormLabel>Nome do bebê</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome escolhido para o bebê" {...field} value={field.value ?? ""} />
+                    <Input
+                      placeholder="Nome escolhido para o bebê"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,7 +155,11 @@ export function EditGeneralDataModal({
                 <FormItem>
                   <FormLabel>Hospital de referência</FormLabel>
                   <FormControl>
-                    <Input placeholder="Hospital onde pretende parir" {...field} value={field.value ?? ""} />
+                    <Input
+                      placeholder="Hospital onde pretende parir"
+                      {...field}
+                      value={field.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -238,10 +230,7 @@ export function EditGeneralDataModal({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
                     </FormControl>
                     <FormLabel className="font-normal">{label}</FormLabel>
                   </FormItem>

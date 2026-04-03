@@ -1,5 +1,5 @@
-import { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { Enums, TablesInsert } from "@nascere/supabase/types";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { Enums, TablesInsert } from "@ventre/supabase/types";
 import { NextResponse } from "next/server";
 import { sendNotificationToUser } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";

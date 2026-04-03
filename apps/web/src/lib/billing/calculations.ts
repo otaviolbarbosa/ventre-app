@@ -1,5 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
-import type { Database } from "@nascere/supabase/types";
+import type { Database } from "@ventre/supabase/types";
 
 type BillingStatus = Database["public"]["Enums"]["billing_status"];
 type InstallmentStatus = Database["public"]["Enums"]["installment_status"];

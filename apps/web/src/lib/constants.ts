@@ -1,4 +1,4 @@
-import type { Enums } from "@nascere/supabase";
+import type { Enums } from "@ventre/supabase";
 
 export const PATIENTS_PER_PAGE = 10;
 

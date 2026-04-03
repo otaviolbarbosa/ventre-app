@@ -1,4 +1,4 @@
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { createSafeActionClient } from "next-safe-action";
 
 export const actionClient = createSafeActionClient();

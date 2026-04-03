@@ -1,7 +1,7 @@
 import type { FilterKey, MetricItem } from "@/components/billing/dashboard-metrics";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 import { AlertTriangle, Clock, TrendingUp } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

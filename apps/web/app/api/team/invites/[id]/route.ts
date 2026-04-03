@@ -1,5 +1,5 @@
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
-import type { TablesInsert } from "@nascere/supabase/types";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import type { TablesInsert } from "@ventre/supabase/types";
 import { NextResponse } from "next/server";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {

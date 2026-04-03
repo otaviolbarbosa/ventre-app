@@ -1,5 +1,5 @@
-import { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 import { cache } from "react";
 
 export type UserProfile = Tables<"users">;
@@ -34,11 +34,7 @@ export const getServerAuth = cache(async () => {
 
   if (!user) return { supabase, user: null, profile: null as UserProfile | null };
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single();
 
   return { supabase, user, profile: profile ?? null };
 });

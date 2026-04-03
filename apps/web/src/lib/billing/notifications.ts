@@ -1,10 +1,9 @@
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
-import type { Database } from "@nascere/supabase/types";
 import { dayjs } from "@/lib/dayjs";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Database } from "@ventre/supabase/types";
 import { formatCurrency } from "./calculations";
 
-type InstallmentsNotificationType =
-  Database["public"]["Enums"]["installments_notification_type"];
+type InstallmentsNotificationType = Database["public"]["Enums"]["installments_notification_type"];
 
 type NotificationMessage = {
   title: string;
@@ -88,12 +87,13 @@ export async function scheduleBillingNotifications(billingId: string) {
     }
 
     if (rows.length > 0) {
-      await supabaseAdmin
-        .from("installments_scheduled_notifications")
-        .insert(rows);
+      await supabaseAdmin.from("installments_scheduled_notifications").insert(rows);
     }
   } catch {
-    console.error("[billing-notifications] Failed to schedule notifications for billing:", billingId);
+    console.error(
+      "[billing-notifications] Failed to schedule notifications for billing:",
+      billingId,
+    );
   }
 }
 
@@ -106,7 +106,10 @@ export async function cancelInstallmentNotifications(installmentId: string) {
       .eq("installment_id", installmentId)
       .eq("status", "pending");
   } catch {
-    console.error("[billing-notifications] Failed to cancel notifications for installment:", installmentId);
+    console.error(
+      "[billing-notifications] Failed to cancel notifications for installment:",
+      installmentId,
+    );
   }
 }
 

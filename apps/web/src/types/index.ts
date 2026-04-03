@@ -1,4 +1,4 @@
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
 
 export type ProfessionalType = "obstetra" | "enfermeiro" | "doula";
 

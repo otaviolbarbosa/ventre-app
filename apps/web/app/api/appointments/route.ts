@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 import { createAppointmentSchema } from "@/lib/validations/appointment";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
-import type { TablesInsert } from "@nascere/supabase/types";
+import type { TablesInsert } from "@ventre/supabase/types";
 
 export async function GET(request: Request) {
   try {

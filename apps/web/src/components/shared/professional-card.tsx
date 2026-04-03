@@ -1,16 +1,16 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
-import { Button } from "@repo/ui/button";
-import { Card } from "@repo/ui/card";
+import type { EnterpriseProfessional } from "@/services/professional";
+import { Button } from "@ventre/ui/button";
+import { Card } from "@ventre/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@repo/ui/dropdown-menu";
-import type { EnterpriseProfessional } from "@/services/professional";
-import { getInitials } from "@/utils";
+} from "@ventre/ui/dropdown-menu";
+import { Separator } from "@ventre/ui/separator";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
 import {
   CalendarPlus,
   ChevronRight,
@@ -23,7 +23,6 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { Separator } from "@repo/ui/separator";
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
@@ -53,16 +52,11 @@ export function ProfessionalCard({
       {/* Header */}
       <div className="relative flex justify-end bg-muted/50 px-4 py-3">
         <div className="absolute top-5 left-4 flex items-center gap-2">
-          <Avatar className="h-16 w-16 bg-white p-1">
-            <AvatarImage
-              src={professional.avatar_url || undefined}
-              alt={professional.name || ""}
-              className="rounded-full object-cover"
-            />
-            <AvatarFallback className="bg-muted font-semibold text-lg text-primary">
-              {getInitials(professional.name ?? "")}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            user={professional as { name: string; avatar_url: string | null }}
+            size={16}
+            className="bg-white p-1"
+          />
         </div>
 
         <div className="flex justify-end">

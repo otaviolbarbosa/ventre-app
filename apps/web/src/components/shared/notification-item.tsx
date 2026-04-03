@@ -1,18 +1,18 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { dayjs } from "@/lib/dayjs";
+import { cn } from "@/lib/utils";
+import type { Notification } from "@/services/notification";
 import {
-  Calendar,
-  CalendarX,
-  FileText,
-  ClipboardPlus,
-  UserPlus,
-  UserCheck,
   Baby,
   Bell,
+  Calendar,
+  CalendarX,
+  ClipboardPlus,
+  FileText,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
-import type { Notification } from "@/services/notification";
 
 const typeIcons: Record<string, typeof Bell> = {
   appointment_created: Calendar,
@@ -63,9 +63,7 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
         <p className="mt-0.5 truncate text-gray-500 text-xs">{notification.body}</p>
         <p className="mt-1 text-gray-400 text-xs">{dayjs(notification.created_at).fromNow()}</p>
       </div>
-      {!notification.is_read && (
-        <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-      )}
+      {!notification.is_read && <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
     </button>
   );
 }

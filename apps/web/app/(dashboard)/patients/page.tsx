@@ -1,4 +1,7 @@
-import { getEnterpriseDueDates, getEnterprisePatients } from "@/actions/get-enterprise-patients-action";
+import {
+  getEnterpriseDueDates,
+  getEnterprisePatients,
+} from "@/actions/get-enterprise-patients-action";
 import { isStaff } from "@/lib/access-control";
 import { dayjs } from "@/lib/dayjs";
 import { getServerAuth } from "@/lib/server-auth";
@@ -14,9 +17,23 @@ const VALID_FILTERS: PatientFilter[] = ["all", "recent", "trim1", "trim2", "trim
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; search?: string; page?: string; professional?: string; dppMonth?: string; dppYear?: string }>;
+  searchParams: Promise<{
+    filter?: string;
+    search?: string;
+    page?: string;
+    professional?: string;
+    dppMonth?: string;
+    dppYear?: string;
+  }>;
 }) {
-  const { filter, search, page, professional, dppMonth: dppMonthParam, dppYear: dppYearParam } = await searchParams;
+  const {
+    filter,
+    search,
+    page,
+    professional,
+    dppMonth: dppMonthParam,
+    dppYear: dppYearParam,
+  } = await searchParams;
   const validFilter = VALID_FILTERS.includes(filter as PatientFilter)
     ? (filter as PatientFilter)
     : "all";
