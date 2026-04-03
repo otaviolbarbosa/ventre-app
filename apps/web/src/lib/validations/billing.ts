@@ -1,5 +1,5 @@
+import type { Database } from "@ventre/supabase/types";
 import { z } from "zod";
-import type { Database } from "@nascere/supabase/types";
 
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 
@@ -23,9 +23,7 @@ export const createBillingSchema = z.object({
     .int("Valor deve ser inteiro (centavos)")
     .positive("Valor deve ser positivo")
     .optional(),
-  splitted_billing: z
-    .record(z.string().uuid(), z.number().int().positive())
-    .optional(),
+  splitted_billing: z.record(z.string().uuid(), z.number().int().positive()).optional(),
   payment_method: z.enum(paymentMethods, {
     required_error: "Método de pagamento é obrigatório",
   }),

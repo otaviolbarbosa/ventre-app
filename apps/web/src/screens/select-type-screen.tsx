@@ -1,8 +1,8 @@
 "use client";
 
 import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
-import { Card } from "@repo/ui/card";
-import type { Tables } from "@nascere/supabase";
+import { Card } from "@ventre/ui/card";
+import type { Tables } from "@ventre/supabase";
 import { Baby, Heart, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 

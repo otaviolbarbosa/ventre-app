@@ -2,7 +2,7 @@
 
 import { authActionClient } from "@/lib/safe-action";
 import { setUserType } from "@/services/profile";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 import { z } from "zod";
 
 type UserType = NonNullable<Tables<"users">["user_type"]>;

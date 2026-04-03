@@ -3,8 +3,8 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import { getServerAuth } from "@/lib/server-auth";
 import { type DppByMonth, buildDppByMonth } from "@/services/home";
 import type { PatientWithGestationalInfo } from "@/types";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 
 type Patient = Tables<"patients">;
 type Pregnancy = Tables<"pregnancies">;

@@ -16,6 +16,7 @@ const schema = z.object({
 export const getHomePatientsAction = authActionClient
   .inputSchema(schema)
   .action(async ({ parsedInput, ctx: { user } }) => {
+    console.log("###", parsedInput);
     const items = await getCachedHomePatients({
       userId: user.id,
       filter: parsedInput.filter as PatientFilter,

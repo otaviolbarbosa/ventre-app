@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Database } from "@nascere/supabase/types";
+import type { Database } from "@ventre/supabase/types";
 
 type AppointmentType = Database["public"]["Enums"]["appointment_type"];
 type AppointmentStatus = Database["public"]["Enums"]["appointment_status"];

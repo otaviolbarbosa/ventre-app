@@ -1,7 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
 
 export const addEnterpriseProfessionalAction = authActionClient

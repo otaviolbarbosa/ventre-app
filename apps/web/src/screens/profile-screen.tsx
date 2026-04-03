@@ -1,23 +1,16 @@
 "use client";
 
 import { updateProfileAction } from "@/actions/update-profile-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
-import { Button } from "@repo/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import { Separator } from "@repo/ui/separator";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 import { InputMask } from "@react-input/mask";
+import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Separator } from "@ventre/ui/separator";
 import {
   Bell,
   Camera,

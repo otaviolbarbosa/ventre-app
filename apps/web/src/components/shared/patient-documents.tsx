@@ -3,11 +3,11 @@
 import { deleteDocumentAction } from "@/actions/delete-document-action";
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
 import { getPatientDocumentsAction } from "@/actions/get-patient-documents-action";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@repo/ui/button";
-import { Card, CardContent } from "@repo/ui/card";
-import { Skeleton } from "@repo/ui/skeleton";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
+import { Skeleton } from "@ventre/ui/skeleton";
 import {
   Download,
   File,
@@ -67,12 +67,15 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
   const [uploading, setUploading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [dragging, setDragging] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
-  const [deleting, setDeleting] = useState(false);
+  const { confirm } = useConfirmModal();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
 
-  const { execute: fetchDocuments, result: documentsResult, isPending: isFetchingDocs } = useAction(getPatientDocumentsAction);
+  const {
+    execute: fetchDocuments,
+    result: documentsResult,
+    isPending: isFetchingDocs,
+  } = useAction(getPatientDocumentsAction);
   const { executeAsync: downloadDocument } = useAction(getDocumentDownloadUrlAction);
   const { executeAsync: deleteDocument } = useAction(deleteDocumentAction);
 
@@ -133,23 +136,23 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
     window.open(result.data.url, "_blank");
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-
-    const result = await deleteDocument({ documentId: deleteTarget.id });
-
-    if (!result?.data?.success) {
-      toast.error(result?.serverError ?? "Erro ao excluir documento");
-      setDeleting(false);
-      return;
-    }
-
-    toast.success("Documento excluído com sucesso");
-    fetchDocuments({ patientId });
-    setDeleting(false);
-    setDeleteTarget(null);
-  };
+  function handleConfirmDelete(doc: Document) {
+    confirm({
+      title: "Excluir documento",
+      description: `Tem certeza que deseja excluir "${doc.file_name}"? Esta ação não pode ser desfeita.`,
+      confirmLabel: "Excluir",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await deleteDocument({ documentId: doc.id });
+        if (!result?.data?.success) {
+          toast.error(result?.serverError ?? "Erro ao excluir documento");
+          return;
+        }
+        toast.success("Documento excluído com sucesso");
+        fetchDocuments({ patientId });
+      },
+    });
+  }
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -318,7 +321,7 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(doc)}
+                      onClick={() => handleConfirmDelete(doc)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -369,7 +372,23 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteTarget(doc)}
+                        onClick={() =>
+                          confirm({
+                            title: "Excluir documento",
+                            description: `Tem certeza que deseja excluir "${doc.file_name}"? Esta ação não pode ser desfeita.`,
+                            confirmLabel: "Excluir",
+                            variant: "destructive",
+                            onConfirm: async () => {
+                              const result = await deleteDocument({ documentId: doc.id });
+                              if (!result?.data?.success) {
+                                toast.error(result?.serverError ?? "Erro ao excluir documento");
+                                return;
+                              }
+                              toast.success("Documento excluído com sucesso");
+                              fetchDocuments({ patientId });
+                            },
+                          })
+                        }
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -381,20 +400,6 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
           })}
         </div>
       )}
-
-      {/* Delete confirmation modal */}
-      <ConfirmModal
-        open={!!deleteTarget}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        title="Excluir documento"
-        description={`Tem certeza que deseja excluir "${deleteTarget?.file_name}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Excluir"
-        variant="destructive"
-        loading={deleting}
-        onConfirm={handleDelete}
-      />
     </div>
   );
 }

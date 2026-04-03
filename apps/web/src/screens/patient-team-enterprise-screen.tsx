@@ -7,10 +7,10 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientTeam } from "@/components/shared/loading-state";
 import PendingInviteCard from "@/components/shared/pending-invite-card";
 import TeamMemberCard from "@/components/shared/team-member-card";
-import { Button } from "@repo/ui/button";
 import AddBackupProfessionalModal from "@/modals/add-backup-professional-modal";
 import AddProfessionalModal from "@/modals/add-professional-modal";
 import type { ProfessionalType } from "@/types";
+import { Button } from "@ventre/ui/button";
 import { ShieldAlert, UserPlus, Users } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams } from "next/navigation";
@@ -83,9 +83,7 @@ export default function PatientTeamEnterpriseScreen() {
     ]),
   ) as Record<ProfessionalType, (typeof rawInvites)[0] | undefined>;
 
-  const activeRoles = ROLE_ORDER.filter(
-    (role) => primaryByType[role] || pendingInviteByType[role],
-  );
+  const activeRoles = ROLE_ORDER.filter((role) => primaryByType[role] || pendingInviteByType[role]);
 
   const usedTypes = teamMembers.filter((m) => !m.is_backup).map((m) => m.professional_type);
   const availableTypes = ROLE_ORDER.filter((t) => !usedTypes.includes(t));
@@ -103,10 +101,7 @@ export default function PatientTeamEnterpriseScreen() {
             >
               <UserPlus />
             </Button>
-            <Button
-              className="gradient-primary hidden md:flex"
-              onClick={() => setIsAddOpen(true)}
-            >
+            <Button className="gradient-primary hidden md:flex" onClick={() => setIsAddOpen(true)}>
               <UserPlus className="h-4 w-4" />
               <span className="ml-2">Adicionar</span>
             </Button>
@@ -191,7 +186,9 @@ export default function PatientTeamEnterpriseScreen() {
           patientId={patientId}
           professionalType={backupRole}
           isOpen={backupRole !== null}
-          setIsOpen={(open) => { if (!open) setBackupRole(null); }}
+          setIsOpen={(open) => {
+            if (!open) setBackupRole(null);
+          }}
           onSuccess={() => fetchTeamMembers({ patientId })}
         />
       )}

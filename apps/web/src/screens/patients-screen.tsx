@@ -4,18 +4,6 @@ import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import { PatientCard } from "@/components/shared/patient-card";
-import { Badge } from "@repo/ui/badge";
-import { Button } from "@repo/ui/button";
-import { Input } from "@repo/ui/input";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@repo/ui/pagination";
-import { Skeleton } from "@repo/ui/skeleton";
 import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";
@@ -23,6 +11,18 @@ import type { DppByMonth } from "@/services/home";
 import { MONTH_LABELS_FULL } from "@/services/home";
 import type { PatientWithPregnancyFields } from "@/services/patient";
 import type { PatientFilter, TeamMember } from "@/types";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@ventre/ui/pagination";
+import { Skeleton } from "@ventre/ui/skeleton";
 import { Baby, Plus, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

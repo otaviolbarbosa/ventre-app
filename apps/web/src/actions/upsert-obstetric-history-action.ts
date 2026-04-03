@@ -1,7 +1,7 @@
 "use server";
 
-import { obstetricHistorySchema } from "@/lib/validations/prenatal";
 import { authActionClient } from "@/lib/safe-action";
+import { obstetricHistorySchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
 
 const schema = z.object({
@@ -14,7 +14,13 @@ export const upsertObstetricHistoryAction = authActionClient
   .inputSchema(schema)
   .action(async ({ parsedInput, ctx: { supabase } }) => {
     const { patientId, pregnancyId, data } = parsedInput;
-    const { gestations_count, deliveries_count, cesareans_count, abortions_count, ...historyFields } = data;
+    const {
+      gestations_count,
+      deliveries_count,
+      cesareans_count,
+      abortions_count,
+      ...historyFields
+    } = data;
 
     const { error } = await supabase.from("patient_obstetric_history").upsert(
       {

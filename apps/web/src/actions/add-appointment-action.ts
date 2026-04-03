@@ -9,9 +9,7 @@ export const addAppointmentAction = authActionClient
   .inputSchema(createAppointmentSchema)
   .action(async ({ parsedInput, ctx: { supabase, user, profile } }) => {
     const professionalId =
-      isStaff(profile) && parsedInput.professional_id
-        ? parsedInput.professional_id
-        : user.id;
+      isStaff(profile) && parsedInput.professional_id ? parsedInput.professional_id : user.id;
     const appointment = await createAppointment(supabase, professionalId, parsedInput);
     return { appointment };
   });

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -19,18 +19,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Token FCM obrigatório" }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from("push_subscriptions")
-      .upsert(
-        {
-          user_id: user.id,
-          fcm_token,
-          device_info: device_info || {},
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "fcm_token" },
-      );
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        user_id: user.id,
+        fcm_token,
+        device_info: device_info || {},
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "fcm_token" },
+    );
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

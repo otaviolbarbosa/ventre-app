@@ -6,8 +6,8 @@ import type { PatientFilter, TeamMember } from "@/types";
 import {
   type createServerSupabaseAdmin,
   createServerSupabaseClient,
-} from "@nascere/supabase/server";
-import type { Tables, TablesInsert } from "@nascere/supabase/types";
+} from "@ventre/supabase/server";
+import type { Tables, TablesInsert } from "@ventre/supabase/types";
 
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 

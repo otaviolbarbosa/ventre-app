@@ -13,7 +13,5 @@ export default async function ProfessionalsPage() {
 
   const { professionals, enterpriseToken } = await getEnterpriseProfessionals();
 
-  return (
-    <ProfessionalsScreen professionals={professionals} enterpriseToken={enterpriseToken} />
-  );
+  return <ProfessionalsScreen professionals={professionals} enterpriseToken={enterpriseToken} />;
 }

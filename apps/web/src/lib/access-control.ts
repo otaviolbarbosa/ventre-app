@@ -1,4 +1,4 @@
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 
 type UserProfile = Tables<"users"> | null | undefined;
 

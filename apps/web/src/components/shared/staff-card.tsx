@@ -1,8 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
-import { Badge } from "@repo/ui/badge";
-import { Card, CardContent } from "@repo/ui/card";
 import type { EnterpriseStaffMember } from "@/services/enterprise-users";
 import { getInitials } from "@/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
+import { Badge } from "@ventre/ui/badge";
+import { Card, CardContent } from "@ventre/ui/card";
 
 const STAFF_TYPE_LABELS: Record<string, string> = {
   manager: "Gestora",

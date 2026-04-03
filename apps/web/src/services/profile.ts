@@ -1,5 +1,5 @@
-import type { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
+import type { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type ProfessionalType = NonNullable<Tables<"users">["professional_type"]>;

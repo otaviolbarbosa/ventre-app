@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@repo/ui/input";
+import { Input } from "@ventre/ui/input";
 import { type ChangeEvent, useCallback, useState } from "react";
 
 type CurrencyInputProps = {
@@ -17,7 +17,6 @@ function formatDisplay(cents: number): string {
     maximumFractionDigits: 2,
   });
 }
-
 
 export function CurrencyInput({
   value,

@@ -3,12 +3,12 @@ import { respondInviteAction } from "@/actions/respond-invite-action";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
-import { Badge } from "@repo/ui/badge";
-import { Button } from "@repo/ui/button";
-import { Card, CardContent } from "@repo/ui/card";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { Invite } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
 import dayjs from "dayjs";
 import { Baby, Calendar, Mail } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -72,7 +72,9 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
         ) : (
           <div className="space-y-4">
             {invites.map((invite) => {
-              const gestationalAge = calculateGestationalAge(invite.patient?.pregnancies?.[0]?.dum ?? null);
+              const gestationalAge = calculateGestationalAge(
+                invite.patient?.pregnancies?.[0]?.dum ?? null,
+              );
 
               return (
                 <Card key={invite.id}>
@@ -104,7 +106,10 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
                         {invite.patient?.pregnancies?.[0]?.due_date && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            <span>DPP: {dayjs(invite.patient.pregnancies[0].due_date).format("DD/MM/YYYY")}</span>
+                            <span>
+                              DPP:{" "}
+                              {dayjs(invite.patient.pregnancies[0].due_date).format("DD/MM/YYYY")}
+                            </span>
                           </div>
                         )}
                         <span>Expira em {dayjs(invite.expires_at).format("DD/MM/YYYY")}</span>

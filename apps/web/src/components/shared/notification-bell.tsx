@@ -2,10 +2,10 @@
 
 import { getNotificationsAction } from "@/actions/get-notifications-action";
 import { markNotificationsReadAction } from "@/actions/mark-notifications-read-action";
-import { Button } from "@repo/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
-import { useNotificationsContext } from "@/components/providers/notifications-provider";
+import { useNotificationsContext } from "@/providers/notifications-provider";
 import type { Notification } from "@/services/notification";
+import { Button } from "@ventre/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { Bell } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";

@@ -21,10 +21,5 @@ export const getEnterpriseBillingAction = authActionClient
       return { billings: [], metrics: null, professionals: [] };
     }
 
-    return getEnterpriseBillings(
-      profile.enterprise_id,
-      startDate,
-      endDate,
-      professionalId,
-    );
+    return getEnterpriseBillings(profile.enterprise_id, startDate, endDate, professionalId);
   });

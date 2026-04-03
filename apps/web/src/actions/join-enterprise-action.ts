@@ -1,7 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -12,6 +12,7 @@ const userTypes = [
   "patient",
   "professional",
   "secretary",
+  "admin",
 ] as const satisfies readonly UserType[];
 
 const schema = z.object({

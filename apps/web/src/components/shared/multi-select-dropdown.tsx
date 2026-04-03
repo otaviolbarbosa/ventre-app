@@ -1,6 +1,6 @@
 "use client";
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { Check, ChevronDown, X } from "lucide-react";
 import { useState } from "react";
 

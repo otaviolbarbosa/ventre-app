@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent } from "@repo/ui/card";
 import { formatCurrency } from "@/lib/billing/calculations";
+import { Card, CardContent } from "@ventre/ui/card";
 import type { LucideIcon } from "lucide-react";
 
 export type FilterKey = "total" | "paid" | "overdue" | "upcoming";

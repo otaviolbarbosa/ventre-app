@@ -7,7 +7,7 @@ import { scheduleBillingNotifications } from "@/lib/billing/notifications";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { createBillingSchema } from "@/lib/validations/billing";
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {

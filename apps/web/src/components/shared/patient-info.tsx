@@ -1,9 +1,9 @@
 "use client";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
 import dayjs from "dayjs";
 import { Pencil } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@repo/ui/button";
+import { Button } from "@ventre/ui/button";
 import InfoItem from "./info-item";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
 

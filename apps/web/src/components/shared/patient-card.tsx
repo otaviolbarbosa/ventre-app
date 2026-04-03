@@ -1,9 +1,8 @@
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
-import { getInitials } from "@/utils";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
 import { Flame } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
 import TeamMembersAvatars from "./team-members-avatars";
 
 export function PatientCard({
@@ -36,16 +35,7 @@ export function PatientCard({
           />
         </svg>
         <div className="relative flex h-12 w-12 items-center justify-center rounded-full font-semibold text-muted-foreground">
-          <Avatar className="h-12 w-12 bg-white shadow-md">
-            <AvatarImage
-              src={undefined}
-              alt={patient.name || ""}
-              className="rounded-full object-cover"
-            />
-            <AvatarFallback className="font-semibold text-lg text-primary">
-              {getInitials(patient.name ?? "")}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar user={patient} size={12} />
         </div>
       </div>
       <div className="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 import type { Invite } from "@/types";
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
-import type { Database, Tables, TablesInsert } from "@nascere/supabase/types";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import type { Database, Tables, TablesInsert } from "@ventre/supabase/types";
 import dayjs from "dayjs";
 
 type ProfessionalType = Database["public"]["Enums"]["professional_type"];

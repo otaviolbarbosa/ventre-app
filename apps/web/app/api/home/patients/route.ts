@@ -1,6 +1,6 @@
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 const VALID_FILTERS = ["all", "recent", "trim1", "trim2", "trim3", "final"];

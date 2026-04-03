@@ -1,6 +1,6 @@
 "use server";
 import { authActionClient } from "@/lib/safe-action";
-import { getCachedEnterpriseHomePatients } from "@/services/enterprise-patients-cache";
+import { getCachedEnterpriseHomePatients } from "@/services/enterprise-home-patients-cache";
 import type { PatientFilter } from "@/types";
 import { z } from "zod";
 

@@ -2,10 +2,7 @@ import { z } from "zod";
 
 // ── Patient prenatal fields ──────────────────────────────────────────────────
 export const updatePatientPrenatalSchema = z.object({
-  blood_type: z
-    .enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
-    .optional()
-    .nullable(),
+  blood_type: z.enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"]).optional().nullable(),
   height_cm: z.coerce.number().positive().optional().nullable(),
   allergies: z.string().optional(), // comma-separated in form, parsed to array
   personal_notes: z.string().optional(),
@@ -107,7 +104,10 @@ export const ultrasoundSchema = z.object({
   nuchal_translucency_mm: z.coerce.number().positive().optional().nullable(),
   cervical_length_cm: z.coerce.number().positive().optional().nullable(),
   estimated_weight_g: z.coerce.number().int().min(0).optional().nullable(),
-  amniotic_fluid_index: z.enum(["severe_oligohydramnios", "oligohydramnios", "normal", "polyhydramnios"]).optional().nullable(),
+  amniotic_fluid_index: z
+    .enum(["severe_oligohydramnios", "oligohydramnios", "normal", "polyhydramnios"])
+    .optional()
+    .nullable(),
   nasal_bone_present: z.boolean().optional().nullable(),
   placenta_position: z.string().optional(),
   iugr: z.boolean().optional().nullable(),
@@ -134,7 +134,11 @@ export type LabExamInput = z.infer<typeof labExamSchema>;
 export const vaccineRecordSchema = z.object({
   vaccine_name: z.enum(["covid", "influenza", "hepatitis_b", "dtpa", "abrysvo", "rhogam"]),
   dose_number: z.coerce.number().int().min(1).max(3).optional().nullable(),
-  applied_date: z.string().optional().transform((v) => v || null).nullable(),
+  applied_date: z
+    .string()
+    .optional()
+    .transform((v) => v || null)
+    .nullable(),
   status: z.enum(["applied", "immunized", "not_applicable"]).optional().nullable(),
   notes: z.string().optional(),
 });

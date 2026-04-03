@@ -8,9 +8,9 @@
     "format": "biome format . --write",
     "check": "biome check .",
     "check-types": "turbo run check-types",
-    "db:push": "pnpm --filter @nascere/supabase db:push",
-    "db:pull": "pnpm --filter @nascere/supabase db:pull",
-    "db:types": "pnpm --filter @nascere/supabase types",
+    "db:push": "pnpm --filter @ventre/supabase db:push",
+    "db:pull": "pnpm --filter @ventre/supabase db:pull",
+    "db:types": "pnpm --filter @ventre/supabase types",
     "prepare": "husky"
   },
   "devDependencies": {

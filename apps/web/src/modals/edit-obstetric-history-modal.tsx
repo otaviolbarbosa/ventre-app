@@ -1,26 +1,16 @@
 "use client";
 
 import { upsertObstetricHistoryAction } from "@/actions/upsert-obstetric-history-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@repo/ui/button";
-import { Checkbox } from "@repo/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@repo/ui/form";
-import { Input } from "@repo/ui/input";
-import { Separator } from "@repo/ui/separator";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { CLINICAL_FIELDS, SURGICAL_FIELDS } from "@/lib/prenatal-constants";
-import {
-  type ObstetricHistoryInput,
-  obstetricHistorySchema,
-} from "@/lib/validations/prenatal";
+import { type ObstetricHistoryInput, obstetricHistorySchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Separator } from "@ventre/ui/separator";
 type PregnancyCounts = Pick<
   Tables<"pregnancies">,
   "gestations_count" | "deliveries_count" | "cesareans_count" | "abortions_count"

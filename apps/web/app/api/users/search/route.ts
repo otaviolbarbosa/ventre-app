@@ -1,5 +1,5 @@
 import type { ProfessionalType } from "@/types";
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {

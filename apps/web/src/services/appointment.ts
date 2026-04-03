@@ -3,8 +3,8 @@ import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { getServerAuth } from "@/lib/server-auth";
 import type { CreateAppointmentInput } from "@/lib/validations/appointment";
-import type { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { Tables, TablesInsert } from "@nascere/supabase/types";
+import type { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { Tables, TablesInsert } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 

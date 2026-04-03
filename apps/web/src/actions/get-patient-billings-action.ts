@@ -23,11 +23,7 @@ export const getPatientBillingsAction = authActionClient
       .eq("patient_id", parsedInput.patientId);
 
     if (selectedProfessionalId) {
-      billingsQuery = billingsQuery.not(
-        `splitted_billing->>${selectedProfessionalId}`,
-        "is",
-        null,
-      );
+      billingsQuery = billingsQuery.not(`splitted_billing->>${selectedProfessionalId}`, "is", null);
     }
 
     const { data: billings, error } = await billingsQuery.order("created_at", { ascending: false });

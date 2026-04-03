@@ -1,8 +1,8 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { ChevronDown, Stethoscope, Users, X } from "lucide-react";
 import { useState } from "react";
 
