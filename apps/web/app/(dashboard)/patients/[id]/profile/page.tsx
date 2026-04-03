@@ -77,7 +77,7 @@ export default function PatientProfilePage() {
           <AccordionItem value="informacoes">
             <AccordionTrigger className="font-semibold text-base">
               <div className="flex w-full items-center justify-between pr-4">
-                <span>Informações da Paciente</span>
+                <span>Informações da Gestante</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="relative space-y-4 pt-4">

@@ -29,7 +29,7 @@ const navigationProfessionals = [
 
 const navigationStaff = [
   { name: "Home", href: "/home", icon: Home },
-  { name: "Colaboradores", href: "/users", icon: BriefcaseMedicalIcon },
+  { name: "Profissionais", href: "/users", icon: BriefcaseMedicalIcon },
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Financeiro", href: "/billing", icon: DollarSign },

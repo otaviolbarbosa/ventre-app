@@ -53,7 +53,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
 
   return (
     <div>
-      <Header title="Colaboradoras" />
+      <Header title="Profissionais" />
       <div className="p-4 pt-0 md:p-6 md:pt-0">
         <PageHeader description="">
           <div className="flex items-center gap-2">

@@ -76,7 +76,7 @@ export default function BottomNav() {
     ? [
         { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
         {
-          name: "Colaboradoras",
+          name: "Profissionais",
           href: "/users",
           icon: BriefcaseMedicalIcon,
           isActive: pathname.startsWith("/users"),
