@@ -2,9 +2,9 @@
 import { EditPatientModal } from "@/modals/edit-patient-modal";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import dayjs from "dayjs";
 import { MapPinned, Pencil } from "lucide-react";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import InfoItem from "./info-item";
 
@@ -19,6 +19,7 @@ type PatientInfoProps = {
 
 export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showMapModal, setShowMapModal] = useState(false);
 
   const resolveGoogleMapsLink = useMemo(() => {
     const address = [
@@ -31,7 +32,8 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       patient.zipcode,
     ]
       .filter(Boolean)
-      .join(", ");
+      .join(", ")
+      .replaceAll(" ", "+");
     return `https://www.google.com/maps/search/${address}`;
   }, [patient]);
 
@@ -80,22 +82,18 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   variant="outline"
                   size="sm"
                   className="-top-4 absolute right-0 hidden sm:flex"
-                  asChild
+                  onClick={() => setShowMapModal(true)}
                 >
-                  <Link href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
-                    Navegar para o endereço
-                    <MapPinned />
-                  </Link>
+                  Navegar para o endereço
+                  <MapPinned />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
                   className="-top-4 absolute right-0 flex sm:hidden"
-                  asChild
+                  onClick={() => setShowMapModal(true)}
                 >
-                  <Link href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
-                    <MapPinned />
-                  </Link>
+                  <MapPinned />
                 </Button>
               </div>
             ) : null}
@@ -135,6 +133,31 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         patient={patient}
         onSuccess={onChange}
       />
+
+      <ContentModal
+        open={showMapModal}
+        onOpenChange={setShowMapModal}
+        title="Endereço da gestante"
+        description="Como deseja abrir o endereço?"
+      >
+        <div className="flex flex-col gap-3">
+          <Button variant="outline" asChild>
+            <a href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
+              <MapPinned />
+              Abrir no mapa
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Compartilhado pelo VentreApp: Este é o endereço de ${patient.name}: ${resolveGoogleMapsLink}`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Compartilhar pelo WhatsApp
+            </a>
+          </Button>
+        </div>
+      </ContentModal>
     </>
   );
 }
