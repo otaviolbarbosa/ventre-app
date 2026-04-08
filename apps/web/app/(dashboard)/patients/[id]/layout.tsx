@@ -2,9 +2,9 @@
 
 import { getPatientAction } from "@/actions/get-patient-action";
 import { Header } from "@/components/layouts/header";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import { Skeleton } from "@ventre/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@ventre/ui/tabs";
-import { calculateGestationalAge } from "@/lib/gestational-age";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
@@ -65,7 +65,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
               <div className="flex items-baseline gap-2">
                 <span>{patient.name}</span>
                 <span className="font-medium font-sans text-sm">
-                  {calculateGestationalAge(pregnancy?.due_date)?.label}
+                  {calculateGestationalAge(pregnancy?.dum)?.label}
                 </span>
               </div>
             }

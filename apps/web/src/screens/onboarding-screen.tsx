@@ -1,17 +1,24 @@
 "use client";
 
 import { joinEnterpriseAction } from "@/actions/join-enterprise-action";
+import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { requestEnterpriseAction } from "@/actions/request-enterprise-action";
 import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
 import { setUserTypeAction } from "@/actions/set-user-type-action";
+import { ESTADOS_BR } from "@/lib/constants";
+import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
+import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Card } from "@ventre/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
-import type { Tables } from "@ventre/supabase/types";
-import { InputMask } from "@react-input/mask";
-import { Baby, Building2, Heart, LockKeyhole, Stethoscope } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Baby, Building2, Heart, Loader2, LockKeyhole, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type UserRoleType = Tables<"users">["user_type"];
@@ -40,7 +47,7 @@ const userRoles: {
   {
     type: "manager",
     label: "Empresa",
-    description: "Gerenciamento da organização",
+    description: "Gerenciamento de múltiplas profissionais",
     icon: Building2,
   },
   // {
@@ -85,21 +92,27 @@ export default function OnboardingScreen() {
 
   // Create new enterprise state
   const [createNewEnterprise, setCreateNewEnterprise] = useState(false);
-  const [enterpriseForm, setEnterpriseForm] = useState({
-    name: "",
-    legal_name: "",
-    cnpj: "",
-    email: "",
-    phone: "",
-    whatsapp: "",
-    street: "",
-    number: "",
-    complement: "",
-    neighborhood: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    professionals_amount: 5,
+  const [whatsappSameAsPhone, setWhatsappSameAsPhone] = useState(true);
+  const [addressVisible, setAddressVisible] = useState(false);
+
+  const enterpriseForm = useForm<RequestEnterpriseInput>({
+    resolver: zodResolver(requestEnterpriseSchema),
+    defaultValues: {
+      name: "",
+      legal_name: "",
+      cnpj: "",
+      email: "",
+      phone: "",
+      whatsapp: "",
+      zipcode: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      professionals_amount: 5,
+    },
   });
 
   const { execute: executeProfessionalType, status: professionalTypeStatus } =
@@ -124,6 +137,22 @@ export default function OnboardingScreen() {
       },
     },
   );
+
+  const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.street) enterpriseForm.setValue("street", data.street);
+      if (data.neighborhood) enterpriseForm.setValue("neighborhood", data.neighborhood);
+      if (data.city) enterpriseForm.setValue("city", data.city);
+      if (data.state) enterpriseForm.setValue("state", data.state);
+      setAddressVisible(true);
+    },
+    onError: () => {
+      toast.error("CEP não encontrado");
+    },
+  });
+
+  const isFetchingCep = cepStatus === "executing";
 
   useEffect(() => {
     if (!createNewEnterprise) {
@@ -194,19 +223,19 @@ export default function OnboardingScreen() {
     executeJoinEnterprise({ token, userType: selectedRole });
   }
 
-  function handleRequestEnterprise(e: React.FormEvent) {
-    e.preventDefault();
-    // set userType
+  function handleRequestEnterprise(data: RequestEnterpriseInput) {
     if (!selectedRole || selectedRole !== "manager") return;
     executeUserType({ type: selectedRole });
-    executeRequestEnterprise({
-      ...enterpriseForm,
-      professionals_amount: Number(enterpriseForm.professionals_amount),
-    });
+    executeRequestEnterprise(data);
   }
 
-  function updateEnterpriseField(field: keyof typeof enterpriseForm, value: string | number) {
-    setEnterpriseForm((prev) => ({ ...prev, [field]: value }));
+  function handleWhatsappSameAsPhone(checked: boolean) {
+    setWhatsappSameAsPhone(checked);
+    if (checked) {
+      enterpriseForm.setValue("whatsapp", enterpriseForm.getValues("phone"));
+    } else {
+      enterpriseForm.setValue("whatsapp", "");
+    }
   }
 
   if (!selectedRole) {
@@ -287,7 +316,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <div className="flex h-full flex-col items-center justify-center px-4 py-8">
+    <div className="flex min-h-full flex-col items-center justify-start px-4 py-8">
       <div className="mb-6 text-center">
         <div className="mb-4 flex justify-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
@@ -319,231 +348,324 @@ export default function OnboardingScreen() {
       )}
 
       {createNewEnterprise ? (
-        <form onSubmit={handleRequestEnterprise} className="flex w-full max-w-sm flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="name" className="font-medium text-xs">
-              Nome da organização *
-            </label>
-            <Input
-              id="name"
-              value={enterpriseForm.name}
-              onChange={(e) => updateEnterpriseField("name", e.target.value)}
-              placeholder="Ex: Clínica Nascere"
-              disabled={isPending}
-              required
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="legal_name" className="font-medium text-xs">
-              Razão social
-            </label>
-            <Input
-              id="legal_name"
-              value={enterpriseForm.legal_name}
-              onChange={(e) => updateEnterpriseField("legal_name", e.target.value)}
-              placeholder="Ex: Clínica Nascere Ltda"
-              disabled={isPending}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="cnpj" className="font-medium text-xs">
-              CNPJ
-            </label>
-            <InputMask
-              id="cnpj"
-              component={Input}
-              placeholder="99.999.999/9999-99"
-              mask="__.___.___/____-__"
-              replacement={{ _: /\d/ }}
-              value={enterpriseForm.cnpj}
-              onChange={(e) => updateEnterpriseField("cnpj", e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="font-medium text-xs">
-                E-mail
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={enterpriseForm.email}
-                onChange={(e) => updateEnterpriseField("email", e.target.value)}
-                placeholder="contato@minhaorganizacao.com"
-                disabled={isPending}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="phone" className="font-medium text-xs">
-                Telefone
-              </label>
-              <InputMask
-                id="phone"
-                component={Input}
-                placeholder="(99) 99999-9999"
-                mask="(__) _____-____"
-                replacement={{ _: /\d/ }}
-                value={enterpriseForm.phone}
-                onChange={(e) => updateEnterpriseField("phone", e.target.value)}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="whatsapp" className="font-medium text-xs">
-              WhatsApp
-            </label>
-            <InputMask
-              id="whatsapp"
-              component={Input}
-              placeholder="(99) 99999-9999"
-              mask="(__) _____-____"
-              replacement={{ _: /\d/ }}
-              value={enterpriseForm.whatsapp}
-              onChange={(e) => updateEnterpriseField("whatsapp", e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 flex flex-col gap-1">
-              <label htmlFor="street" className="font-medium text-xs">
-                Endereço
-              </label>
-              <Input
-                id="street"
-                value={enterpriseForm.street}
-                onChange={(e) => updateEnterpriseField("street", e.target.value)}
-                placeholder="Rua / Avenida"
-                disabled={isPending}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="number" className="font-medium text-xs">
-                Número
-              </label>
-              <Input
-                id="number"
-                value={enterpriseForm.number}
-                onChange={(e) => updateEnterpriseField("number", e.target.value)}
-                placeholder="123"
-                disabled={isPending}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="complement" className="font-medium text-xs">
-                Complemento
-              </label>
-              <Input
-                id="complement"
-                value={enterpriseForm.complement}
-                onChange={(e) => updateEnterpriseField("complement", e.target.value)}
-                placeholder="Sala 10"
-                disabled={isPending}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="neighborhood" className="font-medium text-xs">
-                Bairro
-              </label>
-              <Input
-                id="neighborhood"
-                value={enterpriseForm.neighborhood}
-                onChange={(e) => updateEnterpriseField("neighborhood", e.target.value)}
-                placeholder="Centro"
-                disabled={isPending}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 flex flex-col gap-1">
-              <label htmlFor="city" className="font-medium text-xs">
-                Cidade
-              </label>
-              <Input
-                id="city"
-                value={enterpriseForm.city}
-                onChange={(e) => updateEnterpriseField("city", e.target.value)}
-                placeholder="São Paulo"
-                disabled={isPending}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label htmlFor="state" className="font-medium text-xs">
-                UF
-              </label>
-              <Input
-                id="state"
-                value={enterpriseForm.state}
-                onChange={(e) => updateEnterpriseField("state", e.target.value)}
-                placeholder="SP"
-                maxLength={2}
-                disabled={isPending}
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="zipcode" className="font-medium text-xs">
-              CEP
-            </label>
-            <InputMask
-              id="zipcode"
-              component={Input}
-              mask="_____-___"
-              replacement={{ _: /\d/ }}
-              value={enterpriseForm.zipcode}
-              placeholder="00000-000"
-              onChange={(e) => updateEnterpriseField("zipcode", e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label htmlFor="professionals_amount" className="font-medium text-xs">
-              Número de profissionais
-            </label>
-            <select
-              id="professionals_amount"
-              value={enterpriseForm.professionals_amount}
-              onChange={(e) =>
-                updateEnterpriseField("professionals_amount", Number(e.target.value))
-              }
-              disabled={isPending}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {PROFESSIONALS_AMOUNT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isPending || !enterpriseForm.name}
-            className="mt-1 inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        <Form {...enterpriseForm}>
+          <form
+            onSubmit={enterpriseForm.handleSubmit(handleRequestEnterprise)}
+            className="flex w-full max-w-sm flex-col gap-3"
           >
-            {isPending ? "Enviando..." : "Solicitar criação"}
-          </button>
-        </form>
+            <FormField
+              control={enterpriseForm.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da organização *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Clínica Nascere" disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={enterpriseForm.control}
+              name="legal_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Razão social</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Clínica Nascere Ltda" disabled={isPending} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={enterpriseForm.control}
+              name="cnpj"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CNPJ</FormLabel>
+                  <FormControl>
+                    <InputMask
+                      component={Input}
+                      placeholder="99.999.999/9999-99"
+                      mask="__.___.___/____-__"
+                      replacement={{ _: /\d/ }}
+                      disabled={isPending}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={enterpriseForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="contato@minhaorganizacao.com"
+                        disabled={isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={enterpriseForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <FormControl>
+                      <InputMask
+                        component={Input}
+                        placeholder="(99) 99999-9999"
+                        mask="(__) _____-____"
+                        replacement={{ _: /\d/ }}
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          if (whatsappSameAsPhone) {
+                            enterpriseForm.setValue("whatsapp", e.target.value);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={enterpriseForm.control}
+              name="whatsapp"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel className={whatsappSameAsPhone ? "sr-only" : ""}>WhatsApp</FormLabel>
+                    <label className="flex cursor-pointer items-center gap-1.5 text-muted-foreground text-xs">
+                      <input
+                        type="checkbox"
+                        checked={whatsappSameAsPhone}
+                        onChange={(e) => handleWhatsappSameAsPhone(e.target.checked)}
+                        disabled={isPending}
+                        className="accent-primary"
+                      />
+                      Este número é WhatsApp
+                    </label>
+                  </div>
+                  {!whatsappSameAsPhone && (
+                    <FormControl>
+                      <InputMask
+                        component={Input}
+                        placeholder="(99) 99999-9999"
+                        mask="(__) _____-____"
+                        replacement={{ _: /\d/ }}
+                        disabled={isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={enterpriseForm.control}
+              name="zipcode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>CEP</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <InputMask
+                        component={Input}
+                        mask="_____-___"
+                        replacement={{ _: /\d/ }}
+                        placeholder="00000-000"
+                        disabled={isPending}
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          const digits = e.target.value.replace(/\D/g, "");
+                          if (digits.length === 8) lookupCep({ cep: digits });
+                          if (digits.length < 8) setAddressVisible(false);
+                        }}
+                      />
+                      {isFetchingCep && (
+                        <div className="absolute inset-y-0 right-3 flex items-center">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {addressVisible && (
+              <>
+                <div className="grid grid-cols-4 gap-3">
+                  <FormField
+                    control={enterpriseForm.control}
+                    name="street"
+                    render={({ field }) => (
+                      <FormItem className="col-span-3">
+                        <FormLabel>Endereço</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Rua / Avenida" disabled={isPending} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={enterpriseForm.control}
+                    name="number"
+                    render={({ field }) => (
+                      <FormItem className="col-span-1">
+                        <FormLabel>Número</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123" disabled={isPending} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={enterpriseForm.control}
+                    name="complement"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Complemento</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Sala 10" disabled={isPending} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={enterpriseForm.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bairro</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Centro" disabled={isPending} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <FormField
+                    control={enterpriseForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="São Paulo" disabled={isPending} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={enterpriseForm.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem className="col-span-1">
+                        <FormLabel>UF</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={isPending}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="UF" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {ESTADOS_BR.map((estado) => (
+                              <SelectItem key={estado.sigla} value={estado.sigla}>
+                                {estado.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+
+            <FormField
+              control={enterpriseForm.control}
+              name="professionals_amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número de profissionais</FormLabel>
+                  <Select
+                    value={String(field.value)}
+                    onValueChange={(v) => field.onChange(Number(v))}
+                    disabled={isPending}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PROFESSIONALS_AMOUNT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button size="xl" className="mt-4" disabled={isPending}>
+              {isPending ? "Enviando..." : "Solicitar criação"}
+            </Button>
+          </form>
+        </Form>
       ) : (
         <form onSubmit={handleJoinEnterprise} className="flex w-full max-w-xs flex-col gap-4">
           <div className="flex justify-center gap-3">
             {tokenDigits.map((digit, index) => (
               <input
                 // biome-ignore lint/suspicious/noArrayIndexKey: order is fixed
-                key={index}
+                key={`enterprise-token-${index}`}
                 ref={(el) => {
                   tokenInputRefs.current[index] = el;
                 }}
