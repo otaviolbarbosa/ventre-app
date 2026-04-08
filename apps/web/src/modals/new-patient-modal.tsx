@@ -2,7 +2,7 @@
 import { addPatientAction } from "@/actions/add-patient-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { ESTADOS_BR } from "@/lib/constants";
 import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
@@ -10,6 +10,7 @@ import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Textarea } from "@ventre/ui/textarea";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
@@ -29,36 +30,6 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   enfermeiro: "Enfermeira",
   doula: "Doula",
 };
-
-const ESTADOS_BR = [
-  { sigla: "AC", nome: "Acre" },
-  { sigla: "AL", nome: "Alagoas" },
-  { sigla: "AP", nome: "Amapá" },
-  { sigla: "AM", nome: "Amazonas" },
-  { sigla: "BA", nome: "Bahia" },
-  { sigla: "CE", nome: "Ceará" },
-  { sigla: "DF", nome: "Distrito Federal" },
-  { sigla: "ES", nome: "Espírito Santo" },
-  { sigla: "GO", nome: "Goiás" },
-  { sigla: "MA", nome: "Maranhão" },
-  { sigla: "MT", nome: "Mato Grosso" },
-  { sigla: "MS", nome: "Mato Grosso do Sul" },
-  { sigla: "MG", nome: "Minas Gerais" },
-  { sigla: "PA", nome: "Pará" },
-  { sigla: "PB", nome: "Paraíba" },
-  { sigla: "PR", nome: "Paraná" },
-  { sigla: "PE", nome: "Pernambuco" },
-  { sigla: "PI", nome: "Piauí" },
-  { sigla: "RJ", nome: "Rio de Janeiro" },
-  { sigla: "RN", nome: "Rio Grande do Norte" },
-  { sigla: "RS", nome: "Rio Grande do Sul" },
-  { sigla: "RO", nome: "Rondônia" },
-  { sigla: "RR", nome: "Roraima" },
-  { sigla: "SC", nome: "Santa Catarina" },
-  { sigla: "SP", nome: "São Paulo" },
-  { sigla: "SE", nome: "Sergipe" },
-  { sigla: "TO", nome: "Tocantins" },
-];
 
 type NewPatientModalProps = {
   showModal: boolean;

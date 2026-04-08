@@ -1,6 +1,7 @@
 "use client";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { updatePatientAction } from "@/actions/update-patient-action";
+import { ESTADOS_BR } from "@/lib/constants";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type UpdatePatientInput, updatePatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,38 +10,10 @@ import { InputMask } from "@react-input/mask";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 
-const ESTADOS_BR = [
-  { sigla: "AC", nome: "Acre" },
-  { sigla: "AL", nome: "Alagoas" },
-  { sigla: "AP", nome: "Amapá" },
-  { sigla: "AM", nome: "Amazonas" },
-  { sigla: "BA", nome: "Bahia" },
-  { sigla: "CE", nome: "Ceará" },
-  { sigla: "DF", nome: "Distrito Federal" },
-  { sigla: "ES", nome: "Espírito Santo" },
-  { sigla: "GO", nome: "Goiás" },
-  { sigla: "MA", nome: "Maranhão" },
-  { sigla: "MT", nome: "Mato Grosso" },
-  { sigla: "MS", nome: "Mato Grosso do Sul" },
-  { sigla: "MG", nome: "Minas Gerais" },
-  { sigla: "PA", nome: "Pará" },
-  { sigla: "PB", nome: "Paraíba" },
-  { sigla: "PR", nome: "Paraná" },
-  { sigla: "PE", nome: "Pernambuco" },
-  { sigla: "PI", nome: "Piauí" },
-  { sigla: "RJ", nome: "Rio de Janeiro" },
-  { sigla: "RN", nome: "Rio Grande do Norte" },
-  { sigla: "RS", nome: "Rio Grande do Sul" },
-  { sigla: "RO", nome: "Rondônia" },
-  { sigla: "RR", nome: "Roraima" },
-  { sigla: "SC", nome: "Santa Catarina" },
-  { sigla: "SP", nome: "São Paulo" },
-  { sigla: "SE", nome: "Sergipe" },
-  { sigla: "TO", nome: "Tocantins" },
-];
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -301,66 +274,26 @@ export function EditPatientModal({
 
           {addressVisible && (
             <>
-              <div className="grid gap-4 sm:grid-cols-3">
+              {/* Rua (3 cols) | Número (1 col) */}
+              <div className="grid grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
-                  name="state"
+                  name="street"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
+                    <FormItem className="col-span-3">
+                      <FormLabel>Rua</FormLabel>
                       <FormControl>
-                        <select
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="">Selecione</option>
-                          {ESTADOS_BR.map((estado) => (
-                            <option key={estado.sigla} value={estado.sigla}>
-                              {estado.nome}
-                            </option>
-                          ))}
-                        </select>
+                        <Input placeholder="Rua das Flores" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="São Paulo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="street"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rua</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Rua das Flores" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="number"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="col-span-1">
                       <FormLabel>Número</FormLabel>
                       <FormControl>
                         <Input placeholder="123" {...field} />
@@ -369,11 +302,15 @@ export function EditPatientModal({
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Complemento (2 cols) | Bairro (2 cols) */}
+              <div className="grid grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
                   name="complement"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem className="col-span-2">
                       <FormLabel>Complemento</FormLabel>
                       <FormControl>
                         <Input placeholder="Apto 45" {...field} />
@@ -382,21 +319,64 @@ export function EditPatientModal({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Bairro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Centro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <FormField
-                control={form.control}
-                name="neighborhood"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bairro</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Centro" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Cidade (2 cols) | UF (1 col) */}
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="São Paulo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem className="col-span-1">
+                      <FormLabel>UF</FormLabel>
+                      <Select
+                        value={field.value ?? undefined}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="UF" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {ESTADOS_BR.map((estado) => (
+                            <SelectItem key={estado.sigla} value={estado.sigla}>
+                              {estado.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </>
           )}
 

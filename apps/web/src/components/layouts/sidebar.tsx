@@ -53,7 +53,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col border-r bg-white">
+    <div className="hidden h-full w-64 flex-col border-r bg-white md:flex">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
         <Logo href="/home" size="xl" />
