@@ -3,21 +3,9 @@ import { Header } from "@/components/layouts/header";
 import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterDropdown } from "@/components/shared/filter-dropdown";
-import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { PatientCard } from "@/components/shared/patient-card";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { DppByMonth } from "@/services/home";
@@ -25,7 +13,19 @@ import { MONTH_LABELS_FULL } from "@/services/home";
 import type { PatientWithPregnancyFields } from "@/services/patient";
 import type { EnterpriseProfessional } from "@/services/professional";
 import type { PatientFilter, TeamMember } from "@/types";
-import { Baby, Plus, Search, X } from "lucide-react";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@ventre/ui/pagination";
+import { Skeleton } from "@ventre/ui/skeleton";
+import { Baby, Plus, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -243,8 +243,8 @@ export default function PatientsEnterpriseScreen({
                 className="gradient-primary hidden sm:flex"
                 onClick={() => setShowNewPatientModal(true)}
               >
-                <Plus className="size-4" />
-                <span className="hidden sm:block">Adicionar</span>
+                <UserPlus className="size-4" />
+                <span className="hidden sm:block">Adicionar Gestante</span>
               </Button>
             </div>
           </div>
@@ -308,10 +308,7 @@ export default function PatientsEnterpriseScreen({
                   href={`/patients/${patient.id}`}
                   className="rounded-xl border bg-white"
                 >
-                  <PatientCard
-                    patient={patient}
-                    teamMembers={teamMembersMap[patient.id] ?? []}
-                  />
+                  <PatientCard patient={patient} teamMembers={teamMembersMap[patient.id] ?? []} />
                 </Link>
               ))}
             </div>
@@ -322,7 +319,13 @@ export default function PatientsEnterpriseScreen({
                   {currentPage > 1 && (
                     <PaginationItem>
                       <PaginationPrevious
-                        href={buildUrl(activeFilter, searchQuery, professionalId, currentPage - 1, dppFilter)}
+                        href={buildUrl(
+                          activeFilter,
+                          searchQuery,
+                          professionalId,
+                          currentPage - 1,
+                          dppFilter,
+                        )}
                       />
                     </PaginationItem>
                   )}
@@ -346,7 +349,13 @@ export default function PatientsEnterpriseScreen({
                       items.push(
                         <PaginationItem key={page}>
                           <PaginationLink
-                            href={buildUrl(activeFilter, searchQuery, professionalId, page, dppFilter)}
+                            href={buildUrl(
+                              activeFilter,
+                              searchQuery,
+                              professionalId,
+                              page,
+                              dppFilter,
+                            )}
                             isActive={page === currentPage}
                           >
                             {page}
@@ -358,7 +367,13 @@ export default function PatientsEnterpriseScreen({
                   {currentPage < totalPages && (
                     <PaginationItem>
                       <PaginationNext
-                        href={buildUrl(activeFilter, searchQuery, professionalId, currentPage + 1, dppFilter)}
+                        href={buildUrl(
+                          activeFilter,
+                          searchQuery,
+                          professionalId,
+                          currentPage + 1,
+                          dppFilter,
+                        )}
                       />
                     </PaginationItem>
                   )}

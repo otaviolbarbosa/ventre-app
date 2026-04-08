@@ -1,5 +1,5 @@
 import { updatePatientSchema } from "@/lib/validations/patient";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -80,12 +80,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (validation.data.due_date || validation.data.observations !== undefined) {
       const pregnancyUpdate: { due_date?: string; observations?: string } = {};
       if (validation.data.due_date) pregnancyUpdate.due_date = validation.data.due_date;
-      if (validation.data.observations !== undefined) pregnancyUpdate.observations = validation.data.observations;
+      if (validation.data.observations !== undefined)
+        pregnancyUpdate.observations = validation.data.observations;
 
-      await supabase
-        .from("pregnancies")
-        .update(pregnancyUpdate)
-        .eq("patient_id", id);
+      await supabase.from("pregnancies").update(pregnancyUpdate).eq("patient_id", id);
     }
 
     return NextResponse.json({ patient });

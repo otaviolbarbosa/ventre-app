@@ -3,13 +3,13 @@ import { getAppointmentsAction } from "@/actions/get-appointments-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientAppointment } from "@/components/shared/loading-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { professionalTypeLabels } from "@/utils/team";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
 import { Calendar, CalendarPlus, Clock, MapPin, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams } from "next/navigation";
@@ -39,9 +39,11 @@ export default function PatientAppointmentsPage() {
 
   const patientId = params.id as string;
 
-  const { execute: fetchAppointments, result: appointmentsResult, isPending } = useAction(
-    getAppointmentsAction,
-  );
+  const {
+    execute: fetchAppointments,
+    result: appointmentsResult,
+    isPending,
+  } = useAction(getAppointmentsAction);
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
 
   useEffect(() => {

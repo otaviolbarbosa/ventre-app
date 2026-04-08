@@ -1,20 +1,13 @@
 "use client";
 
 import { addOtherExamAction } from "@/actions/add-other-exam-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type OtherExamInput, otherExamSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";

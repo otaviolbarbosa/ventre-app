@@ -8,17 +8,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Email inválido"),

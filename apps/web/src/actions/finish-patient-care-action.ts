@@ -25,13 +25,11 @@ export const finishPatientCareAction = authActionClient
     if (updateError) throw new Error(updateError.message);
 
     if (parsedInput.description) {
-      const { error: evolutionError } = await supabase
-        .from("patient_evolutions")
-        .insert({
-          patient_id: parsedInput.patientId,
-          professional_id: user.id,
-          content: parsedInput.description,
-        });
+      const { error: evolutionError } = await supabase.from("patient_evolutions").insert({
+        patient_id: parsedInput.patientId,
+        professional_id: user.id,
+        content: parsedInput.description,
+      });
 
       if (evolutionError) throw new Error(evolutionError.message);
     }

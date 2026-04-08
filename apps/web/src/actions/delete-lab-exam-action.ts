@@ -12,10 +12,7 @@ export const deleteLabExamAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase } }) => {
     const { examId } = parsedInput;
 
-    const { error } = await supabase
-      .from("lab_exam_results")
-      .delete()
-      .eq("id", examId);
+    const { error } = await supabase.from("lab_exam_results").delete().eq("id", examId);
 
     if (error) throw new Error(error.message);
 

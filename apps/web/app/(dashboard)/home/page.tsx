@@ -2,7 +2,7 @@ import { isStaff } from "@/lib/access-control";
 import { getServerAuth } from "@/lib/server-auth";
 import { HomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
 import { redirect } from "next/navigation";
 
 type Profile = Tables<"users">;

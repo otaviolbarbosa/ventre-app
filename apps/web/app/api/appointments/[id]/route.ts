@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
-import { updateAppointmentSchema } from "@/lib/validations/appointment";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
-import type { TablesUpdate } from "@nascere/supabase/types";
+import { updateAppointmentSchema } from "@/lib/validations/appointment";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { TablesUpdate } from "@ventre/supabase/types";
+import { NextResponse } from "next/server";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -87,15 +87,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         date: appointment.date,
         time: appointment.time,
       });
-      sendNotificationToTeam(
-        (appointment.patient as { id: string }).id,
-        user.id,
-        {
-          type: notificationType,
-          ...template,
-          data: { url: "/appointments" },
-        },
-      );
+      sendNotificationToTeam((appointment.patient as { id: string }).id, user.id, {
+        type: notificationType,
+        ...template,
+        data: { url: "/appointments" },
+      });
     }
 
     return NextResponse.json({ appointment });

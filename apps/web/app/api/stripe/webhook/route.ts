@@ -1,5 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
-import { type Database, createServerSupabaseAdmin } from "@nascere/supabase";
+import { type Database, createServerSupabaseAdmin } from "@ventre/supabase";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -57,39 +57,25 @@ export const POST = async (req: Request) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
+      const enterpriseId = session.metadata?.enterprise_id as string | undefined;
       const userId = session.metadata?.user_id as string | undefined;
       const planId = session.metadata?.plan_id as string | undefined;
+      const frequence = session.metadata
+        ?.frequence as Database["public"]["Enums"]["subscription_frequence"];
 
-      if (!userId || !planId) {
+      if (!planId || !frequence) {
         return NextResponse.json(
-          { error: "Checkout session metadata is missing user_id or plan_id." },
+          { error: "Checkout session metadata is missing plan_id or frequence." },
           { status: 400 },
-        );
-      }
-
-      const { data: user, error: userError } = await supabaseAdmin
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
-      if (userError) {
-        throw new Error(`Failed to fetch user: ${userError.message}`);
-      }
-      if (!user) {
-        return NextResponse.json(
-          { error: "User not found for checkout session." },
-          { status: 404 },
         );
       }
 
       const { data: plan, error: planError } = await supabaseAdmin
         .from("plans")
-        .select("*")
+        .select("id")
         .eq("id", planId)
         .maybeSingle();
-      if (planError) {
-        throw new Error(`Failed to fetch plan: ${planError.message}`);
-      }
+      if (planError) throw new Error(`Failed to fetch plan: ${planError.message}`);
       if (!plan) {
         return NextResponse.json(
           { error: "Plan not found for checkout session." },
@@ -97,29 +83,44 @@ export const POST = async (req: Request) => {
         );
       }
 
-      // set subscription data object
-      const frequence = session.metadata
-        ?.frequence as Database["public"]["Enums"]["subscription_frequence"];
-
       const subscriptionId = session.subscription as string;
       const paidAt = dayjs.unix(session.created).toISOString();
-      const expiresAt = dayjs.unix(session.expires_at).toISOString();
 
-      const subscriptionData: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
-        user_id: user.id,
-        plan_id: plan.id,
-        frequence: frequence,
-        subscription_id: subscriptionId,
-        status: session.payment_status === "paid" ? "active" : "pending",
-        paid_at: paidAt,
-        expires_at: expiresAt,
-      };
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const firstItem = stripeSubscription.items.data[0];
 
-      const { error: insertError } = await supabaseAdmin
-        .from("subscriptions")
-        .insert(subscriptionData);
-      if (insertError) {
-        throw new Error(`Failed to save subscription: ${insertError.message}`);
+      if (!firstItem) throw new Error("Subscription has no items");
+
+      const expiresAt = dayjs.unix(firstItem.current_period_end).toISOString();
+      const status = session.payment_status === "paid" ? "active" : "pending";
+
+      if (enterpriseId) {
+        await handleEnterpriseSubscription({
+          supabaseAdmin,
+          enterpriseId,
+          planId: plan.id,
+          frequence,
+          subscriptionId,
+          status,
+          paidAt,
+          expiresAt,
+        });
+      } else if (userId) {
+        await handleIndividualSubscription({
+          supabaseAdmin,
+          userId,
+          planId: plan.id,
+          frequence,
+          subscriptionId,
+          status,
+          paidAt,
+          expiresAt,
+        });
+      } else {
+        return NextResponse.json(
+          { error: "Checkout session metadata is missing enterprise_id or user_id." },
+          { status: 400 },
+        );
       }
     }
 
@@ -136,3 +137,102 @@ export const POST = async (req: Request) => {
     );
   }
 };
+
+type SupabaseAdmin = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
+type SubscriptionFrequence = Database["public"]["Enums"]["subscription_frequence"];
+type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"];
+
+async function handleEnterpriseSubscription({
+  supabaseAdmin,
+  enterpriseId,
+  planId,
+  frequence,
+  subscriptionId,
+  status,
+  paidAt,
+  expiresAt,
+}: {
+  supabaseAdmin: SupabaseAdmin;
+  enterpriseId: string;
+  planId: string;
+  frequence: SubscriptionFrequence;
+  subscriptionId: string;
+  status: SubscriptionStatus;
+  paidAt: string;
+  expiresAt: string;
+}) {
+  const { data: enterprise, error: enterpriseError } = await supabaseAdmin
+    .from("enterprises")
+    .select("id")
+    .eq("id", enterpriseId)
+    .maybeSingle();
+  if (enterpriseError) throw new Error(`Failed to fetch enterprise: ${enterpriseError.message}`);
+  if (!enterprise) throw new Error(`Enterprise not found: ${enterpriseId}`);
+
+  // Replace any existing active subscription for this enterprise
+  await supabaseAdmin
+    .from("subscriptions")
+    .update({ status: "replaced", updated_at: new Date().toISOString() })
+    .eq("enterprise_id", enterpriseId)
+    .in("status", ["active", "pending"]);
+
+  const { error: insertError } = await supabaseAdmin.from("subscriptions").insert({
+    enterprise_id: enterpriseId,
+    user_id: null,
+    plan_id: planId,
+    frequence,
+    subscription_id: subscriptionId,
+    status,
+    paid_at: paidAt,
+    expires_at: expiresAt,
+  });
+
+  if (insertError)
+    throw new Error(`Failed to save enterprise subscription: ${insertError.message}`);
+}
+
+async function handleIndividualSubscription({
+  supabaseAdmin,
+  userId,
+  planId,
+  frequence,
+  subscriptionId,
+  status,
+  paidAt,
+  expiresAt,
+}: {
+  supabaseAdmin: SupabaseAdmin;
+  userId: string;
+  planId: string;
+  frequence: SubscriptionFrequence;
+  subscriptionId: string;
+  status: SubscriptionStatus;
+  paidAt: string;
+  expiresAt: string;
+}) {
+  const { data: user, error: userError } = await supabaseAdmin
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (userError) throw new Error(`Failed to fetch user: ${userError.message}`);
+  if (!user) throw new Error(`User not found: ${userId}`);
+
+  // Replace any existing active subscription for this user
+  await supabaseAdmin
+    .from("subscriptions")
+    .update({ status: "replaced", updated_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .in("status", ["active", "pending"]);
+
+  const { error: insertError } = await supabaseAdmin.from("subscriptions").insert({
+    user_id: userId,
+    plan_id: planId,
+    frequence,
+    subscription_id: subscriptionId,
+    status,
+    paid_at: paidAt,
+    expires_at: expiresAt,
+  });
+  if (insertError) throw new Error(`Failed to save subscription: ${insertError.message}`);
+}

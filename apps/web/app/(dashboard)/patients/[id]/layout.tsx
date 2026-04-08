@@ -2,8 +2,8 @@
 
 import { getPatientAction } from "@/actions/get-patient-action";
 import { Header } from "@/components/layouts/header";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@ventre/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@ventre/ui/tabs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";

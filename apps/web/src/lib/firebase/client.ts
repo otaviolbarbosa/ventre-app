@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage, type MessagePayload } from "firebase/messaging";
+import { type MessagePayload, getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,25 +21,27 @@ export async function requestFcmToken(): Promise<string | null> {
   if (!messaging) return null;
 
   try {
-    const swRegistration = await navigator.serviceWorker.register(
-      "/firebase-messaging-sw.js",
-      { scope: "/firebase-cloud-messaging-push-scope" },
-    );
+    const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+      scope: "/firebase-cloud-messaging-push-scope",
+    });
 
     const token = await getToken(messaging, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
       serviceWorkerRegistration: swRegistration,
     });
+
     return token;
-  } catch {
+  } catch (err) {
+    console.error("[FCM] getToken falhou:", err);
     return null;
   }
 }
 
 export function onForegroundMessage(callback: (payload: MessagePayload) => void) {
   const messaging = getMessagingInstance();
-  if (!messaging) return () => {
-    /* noop */
-  };
+  if (!messaging)
+    return () => {
+      /* noop */
+    };
   return onMessage(messaging, callback);
 }

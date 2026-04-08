@@ -1,6 +1,6 @@
+import { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
 
 type Installment = Tables<"installments">;
 type Billing = Tables<"billings"> & { installments: Installment[] };
@@ -23,8 +23,7 @@ export async function GET(request: Request) {
     const startDate =
       searchParams.get("start_date") ||
       new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const endDate =
-      searchParams.get("end_date") || now.toISOString();
+    const endDate = searchParams.get("end_date") || now.toISOString();
 
     const { data: billings, error } = await supabase
       .from("billings")
@@ -56,18 +55,13 @@ export async function GET(request: Request) {
       paidAmount += billing.paid_amount;
 
       byStatus[billing.status] = (byStatus[billing.status] || 0) + 1;
-      byPaymentMethod[billing.payment_method] =
-        (byPaymentMethod[billing.payment_method] || 0) + 1;
+      byPaymentMethod[billing.payment_method] = (byPaymentMethod[billing.payment_method] || 0) + 1;
 
       for (const inst of billing.installments) {
         if (inst.status === "atrasado") {
           overdueAmount += inst.amount - inst.paid_amount;
         }
-        if (
-          inst.status === "pendente" &&
-          inst.due_date >= today &&
-          inst.due_date <= nextWeek
-        ) {
+        if (inst.status === "pendente" && inst.due_date >= today && inst.due_date <= nextWeek) {
           upcomingDue.push(inst);
         }
       }
@@ -86,9 +80,6 @@ export async function GET(request: Request) {
       },
     });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

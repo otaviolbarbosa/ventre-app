@@ -1,13 +1,13 @@
 "use client";
 
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithPatient } from "@/services/appointment";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, Stethoscope, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
@@ -60,9 +60,12 @@ export function AppointmentCalendarView({
 }: AppointmentCalendarViewProps) {
   const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
+  const { confirm } = useConfirmModal();
+
+  const confirmedAppointments = useMemo(() => {
+    return appointments.filter((appointment) => appointment.status !== "cancelada");
+  }, [appointments]);
 
   const days = useMemo(() => {
     const start = dayjs(startDate);
@@ -81,7 +84,10 @@ export function AppointmentCalendarView({
     return result;
   }, [startDate, endDate]);
 
-  const appointmentsByDate = useMemo(() => groupAppointmentsByDate(appointments), [appointments]);
+  const appointmentsByDate = useMemo(
+    () => groupAppointmentsByDate(confirmedAppointments),
+    [confirmedAppointments],
+  );
 
   const dayAppointments = useMemo(() => {
     const items = appointmentsByDate[selectedDate] || [];
@@ -90,14 +96,6 @@ export function AppointmentCalendarView({
 
   const isToday = selectedDate === today;
   const selectedDayjs = dayjs(selectedDate);
-
-  async function handleCancelDay() {
-    if (!onCancelDay) return;
-    setIsCancelling(true);
-    await onCancelDay(selectedDate);
-    setIsCancelling(false);
-    setShowCancelConfirm(false);
-  }
 
   function scrollStrip(direction: "left" | "right") {
     if (!stripRef.current) return;
@@ -179,7 +177,15 @@ export function AppointmentCalendarView({
             variant="ghost"
             size="sm"
             className="shrink-0 text-destructive hover:text-destructive"
-            onClick={() => setShowCancelConfirm(true)}
+            onClick={() =>
+              confirm({
+                title: "Cancelar todos os agendamentos do dia",
+                description: `Tem certeza que deseja cancelar todos os agendamentos de ${selectedDayjs.format("DD [de] MMMM")}? Esta ação não pode ser desfeita.`,
+                confirmLabel: "Cancelar agendamentos",
+                variant: "destructive",
+                onConfirm: () => onCancelDay?.(selectedDate),
+              })
+            }
           >
             <X className="mr-1 h-3.5 w-3.5" />
             Cancelar dia
@@ -247,16 +253,6 @@ export function AppointmentCalendarView({
           ))}
         </div>
       )}
-      <ConfirmModal
-        open={showCancelConfirm}
-        onOpenChange={setShowCancelConfirm}
-        title="Cancelar todos os agendamentos do dia"
-        description={`Tem certeza que deseja cancelar todos os agendamentos de ${selectedDayjs.format("DD [de] MMMM")}? Esta ação não pode ser desfeita.`}
-        confirmLabel="Cancelar agendamentos"
-        variant="destructive"
-        loading={isCancelling}
-        onConfirm={handleCancelDay}
-      />
     </div>
   );
 }

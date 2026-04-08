@@ -4,7 +4,7 @@ import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { getDppDateRange } from "@/lib/dpp-filter";
 import type { PatientWithPregnancyFields } from "@/services/patient";
 import type { PatientFilter, TeamMember } from "@/types";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 
 type GetEnterprisePatientsResult = {
   patients: PatientWithPregnancyFields[];
@@ -34,7 +34,10 @@ export async function getEnterpriseDueDates(
   const { data: memberships } = await teamMembersQuery;
   const patientIds = [...new Set(memberships?.map((tm) => tm.patient_id) ?? [])];
   if (patientIds.length === 0) return [];
-  const { data } = await supabase.from("pregnancies").select("due_date").in("patient_id", patientIds);
+  const { data } = await supabase
+    .from("pregnancies")
+    .select("due_date")
+    .in("patient_id", patientIds);
   return (data ?? []).map((p) => ({ due_date: p.due_date ?? null }));
 }
 
@@ -134,7 +137,9 @@ export async function getEnterprisePatients(
   if (pagePatientIds.length > 0) {
     const { data: teamMembersData } = await supabase
       .from("team_members")
-      .select("id, patient_id, professional_id, professional_type, joined_at, professional:users(id, name, email, avatar_url)")
+      .select(
+        "id, patient_id, professional_id, professional_type, joined_at, is_backup, professional:users(id, name, email, avatar_url)",
+      )
       .in("patient_id", pagePatientIds);
 
     for (const tm of teamMembersData ?? []) {

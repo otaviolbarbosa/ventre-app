@@ -7,8 +7,6 @@ import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdow
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import { getPeriodRange } from "@/lib/billing/period-range";
@@ -17,6 +15,8 @@ import type {
   BillingWithInstallments,
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
+import { Badge } from "@ventre/ui/badge";
+import { Skeleton } from "@ventre/ui/skeleton";
 import { Receipt, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useState } from "react";
@@ -76,12 +76,16 @@ export default function BillingDashboardEnterpriseScreen({
     fetchData(newFilter, period);
   };
 
-  const { activeFilter, handleFilterClick, filteredInstallments, billingMetrics, activePeriodLabel, sectionTitle } =
-    useBillingDashboard({ billings, metrics, activePeriod: period });
+  const {
+    activeFilter,
+    handleFilterClick,
+    filteredInstallments,
+    billingMetrics,
+    activePeriodLabel,
+    sectionTitle,
+  } = useBillingDashboard({ billings, metrics, activePeriod: period });
 
-  const professionalsMap = Object.fromEntries(
-    professionals.map((p) => [p.id, p.name ?? p.id]),
-  );
+  const professionalsMap = Object.fromEntries(professionals.map((p) => [p.id, p.name ?? p.id]));
 
   return (
     <div>

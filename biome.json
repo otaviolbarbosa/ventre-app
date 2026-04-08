@@ -5,7 +5,6 @@
     "clientKind": "git",
     "useIgnoreFile": false,
     "defaultBranch": "dev"
-
   },
   "organizeImports": {
     "enabled": true
@@ -94,13 +93,6 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
-      "node_modules",
-      ".next",
-      "dist",
-      ".turbo",
-      "*.gen.ts",
-      "**/public/sw.js"
-    ]
+    "ignore": ["node_modules", ".next", "dist", ".turbo", "*.gen.ts", "**/public/sw.js"]
   }
 }

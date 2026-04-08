@@ -2,28 +2,15 @@
 
 import { addLabExamAction } from "@/actions/add-lab-exam-action";
 import { updateLabExamAction } from "@/actions/update-lab-exam-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { HEMOGLOBIN_LABELS } from "@/lib/prenatal-constants";
 import { type LabExamInput, labExamSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -90,7 +77,9 @@ export function AddLabExamModal({
         result_text: exam?.result_text ?? "",
         result_numeric: exam?.result_numeric ?? undefined,
         unit: exam?.unit ?? "",
-        hemoglobin_electrophoresis: (exam?.hemoglobin_electrophoresis as LabExamInput["hemoglobin_electrophoresis"]) ?? undefined,
+        hemoglobin_electrophoresis:
+          (exam?.hemoglobin_electrophoresis as LabExamInput["hemoglobin_electrophoresis"]) ??
+          undefined,
       });
     }
   }, [open, exam]);

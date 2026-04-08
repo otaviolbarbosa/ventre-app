@@ -4,16 +4,16 @@ import { getPatientAction } from "@/actions/get-patient-action";
 import { getPatientPendingInvitesAction } from "@/actions/get-patient-pending-invites-action";
 import { getTeamMembersAction } from "@/actions/get-team-members-action";
 import { leaveTeamAction } from "@/actions/leave-team-action";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientTeam } from "@/components/shared/loading-state";
 import PendingInviteCard from "@/components/shared/pending-invite-card";
 import TeamMemberCard from "@/components/shared/team-member-card";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import AddBackupProfessionalModal from "@/modals/add-backup-professional-modal";
 import InviteProfessionalModal from "@/modals/invite-professional-modal";
 import type { ProfessionalType } from "@/types";
+import { Button } from "@ventre/ui/button";
 import { ShieldAlert, UserMinus, UserPlus, Users } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { redirect, useParams } from "next/navigation";
@@ -27,7 +27,7 @@ export default function PatientTeamScreen() {
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
-  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const { confirm } = useConfirmModal();
 
   const {
     execute: fetchPatient,
@@ -39,10 +39,9 @@ export default function PatientTeamScreen() {
     result: teamResult,
     status: teamStatus,
   } = useAction(getTeamMembersAction);
-  const {
-    execute: fetchPendingInvites,
-    result: invitesResult,
-  } = useAction(getPatientPendingInvitesAction);
+  const { execute: fetchPendingInvites, result: invitesResult } = useAction(
+    getPatientPendingInvitesAction,
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: execute functions are stable
   useEffect(() => {
@@ -51,14 +50,13 @@ export default function PatientTeamScreen() {
     fetchPendingInvites({ patientId });
   }, [patientId]);
 
-  const { execute: executeLeaveTeam, status: leaveStatus } = useAction(leaveTeamAction, {
+  const { executeAsync: executeLeaveTeam } = useAction(leaveTeamAction, {
     onSuccess: () => {
       toast.success("Você saiu da equipe");
       redirect("/patients");
     },
     onError: ({ error }) => {
       toast.error(error.serverError ?? "Erro ao sair da equipe");
-      setLeaveDialogOpen(false);
     },
   });
 
@@ -67,14 +65,7 @@ export default function PatientTeamScreen() {
   const loading =
     ["idle", "executing"].includes(patientStatus) || ["idle", "executing"].includes(teamStatus);
   const patientOwnerId = patient?.created_by;
-  const isLeaving = leaveStatus === "executing";
-
   const currentUserMember = teamMembers.find((m) => m.professional_id === user?.id);
-
-  function handleLeaveTeam() {
-    if (!user?.id) return;
-    executeLeaveTeam({ patientId });
-  }
 
   if (loading) return <LoadingPatientTeam />;
   if (!patient) return null;
@@ -109,13 +100,25 @@ export default function PatientTeamScreen() {
     ]),
   ) as Record<ProfessionalType, (typeof rawInvites)[0] | undefined>;
 
-  const activeRoles = ROLE_ORDER.filter(
-    (role) => primaryByType[role] || pendingInviteByType[role],
-  );
+  const activeRoles = ROLE_ORDER.filter((role) => primaryByType[role] || pendingInviteByType[role]);
 
   const usedTypes = teamMembers.filter((m) => !m.is_backup).map((m) => m.professional_type);
   const availableTypes = ROLE_ORDER.filter((t) => !usedTypes.includes(t));
   const isUserInTeam = teamMembers.some((m) => m.professional_id === user?.id);
+
+  function handleConfirmLeave() {
+    confirm({
+      title: "Sair da equipe",
+      description:
+        "Tem certeza que deseja sair da equipe desta paciente? Você perderá acesso aos dados e agendamentos.",
+      confirmLabel: "Sair",
+      variant: "destructive",
+      onConfirm: async () => {
+        if (!user?.id) return;
+        await executeLeaveTeam({ patientId });
+      },
+    });
+  }
 
   return (
     <>
@@ -124,7 +127,10 @@ export default function PatientTeamScreen() {
           <h2 className="font-semibold text-lg">Equipe de Cuidado</h2>
           <div className="flex gap-2">
             {isUserInTeam && (
-              <Button variant="outline" onClick={() => setLeaveDialogOpen(true)}>
+              <Button
+                variant="outline"
+                onClick={handleConfirmLeave}
+              >
                 <UserMinus className="mr-2 h-4 w-4" />
                 <span className="hidden sm:block">Sair da Equipe</span>
                 <span className="block sm:hidden">Sair</span>
@@ -224,17 +230,6 @@ export default function PatientTeamScreen() {
           </div>
         )}
       </div>
-
-      <ConfirmModal
-        open={leaveDialogOpen}
-        onOpenChange={setLeaveDialogOpen}
-        title="Sair da equipe"
-        description="Tem certeza que deseja sair da equipe desta paciente? Você perderá acesso aos dados e agendamentos."
-        confirmLabel="Sair"
-        variant="destructive"
-        loading={isLeaving}
-        onConfirm={handleLeaveTeam}
-      />
 
       <InviteProfessionalModal
         patient={patient}

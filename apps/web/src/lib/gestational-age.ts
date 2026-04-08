@@ -5,6 +5,7 @@ interface GestationalAge {
   days: number;
   totalDays: number;
   label: string;
+  fullLabel: string;
 }
 
 export function calculateGestationalAge(
@@ -26,8 +27,9 @@ export function calculateGestationalAge(
   const days = totalDays % 7;
 
   const label = days === 0 ? `${weeks}s` : `${weeks}s ${days}d`;
+  const fullLabel = days === 0 ? `${weeks} semanas` : `${weeks} semanas e ${days} dias`;
 
-  return { weeks, days, totalDays, label };
+  return { weeks, days, totalDays, label, fullLabel };
 }
 
 export const calculateGestationalProgress = (dum: Date | string, referenceDate?: string | Date) => {

@@ -1,30 +1,17 @@
 "use client";
 
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import { type RecordPaymentInput, recordPaymentSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Database, Tables } from "@nascere/supabase/types";
+import type { Database, Tables } from "@ventre/supabase/types";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Textarea } from "@ventre/ui/textarea";
 import { FileText, Loader2, Paperclip, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";

@@ -1,12 +1,14 @@
 import { getServerAuth } from "@/lib/server-auth";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type EnterpriseProfessional = {
   id: string;
   name: string | null;
   email: string | null;
+  phone: string | null;
   professional_type: string | null;
   patient_count: number;
+  avatar_url?: string;
 };
 
 export type GetEnterpriseProfessionalsResult = {
@@ -26,7 +28,7 @@ export async function getEnterpriseProfessionals(): Promise<GetEnterpriseProfess
     supabase.from("enterprises").select("token").eq("id", enterpriseId).single(),
     supabaseAdmin
       .from("users")
-      .select("id, name, email, professional_type")
+      .select("id, name, email, phone, professional_type")
       .eq("enterprise_id", enterpriseId)
       .eq("user_type", "professional"),
   ]);
@@ -56,6 +58,7 @@ export async function getEnterpriseProfessionals(): Promise<GetEnterpriseProfess
     id: p.id,
     name: p.name,
     email: p.email,
+    phone: p.phone,
     professional_type: p.professional_type,
     patient_count: patientCountByProfessional[p.id]?.size ?? 0,
   }));

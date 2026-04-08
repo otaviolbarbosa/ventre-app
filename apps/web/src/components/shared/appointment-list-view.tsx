@@ -1,11 +1,11 @@
 "use client";
 
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dayjs } from "@/lib/dayjs";
 import type { AppointmentWithPatient } from "@/services/appointment";
+import { Badge } from "@ventre/ui/badge";
+import { Card, CardContent } from "@ventre/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
 import { Calendar, Clock, MapPin, Stethoscope } from "lucide-react";
 import Link from "next/link";
 
@@ -149,7 +149,10 @@ type AppointmentListViewProps = {
   showProfessional?: boolean;
 };
 
-export function AppointmentListView({ appointments, showProfessional = false }: AppointmentListViewProps) {
+export function AppointmentListView({
+  appointments,
+  showProfessional = false,
+}: AppointmentListViewProps) {
   const now = dayjs();
 
   const upcomingAppointments = appointments.filter((appointment) => {

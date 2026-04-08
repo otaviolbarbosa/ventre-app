@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import CustomIcon from "@/components/shared/custom-icon";
-import { Button } from "@/components/ui/button";
+import { Button } from "@ventre/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
 interface SocialLoginButtonsProps {

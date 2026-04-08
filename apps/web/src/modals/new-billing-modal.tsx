@@ -2,29 +2,20 @@
 
 import { addBillingAction } from "@/actions/add-billing-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@/components/shared/content-modal";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
-import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { calculateInstallmentAmount, calculateInstallmentDates, formatCurrency } from "@/lib/billing/calculations";
+  calculateInstallmentAmount,
+  calculateInstallmentDates,
+  formatCurrency,
+} from "@/lib/billing/calculations";
 import { type CreateBillingInput, createBillingSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2, Pencil, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useMemo, useState } from "react";
@@ -235,9 +226,7 @@ export default function NewBillingModal({
                         <span className="flex-1 truncate text-sm">{prof?.name ?? profId}</span>
                         <CurrencyInput
                           value={profAmounts[profId] ?? 0}
-                          onChange={(val) =>
-                            setProfAmounts((prev) => ({ ...prev, [profId]: val }))
-                          }
+                          onChange={(val) => setProfAmounts((prev) => ({ ...prev, [profId]: val }))}
                         />
                         <Button
                           type="button"

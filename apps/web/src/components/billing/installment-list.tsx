@@ -1,11 +1,11 @@
 "use client";
 
 import { saveInstallmentLinkAction } from "@/actions/save-installment-link-action";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 import { Check, ExternalLink, FileText, Image, LinkIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";

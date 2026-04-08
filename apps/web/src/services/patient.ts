@@ -6,8 +6,8 @@ import type { PatientFilter, TeamMember } from "@/types";
 import {
   type createServerSupabaseAdmin,
   createServerSupabaseClient,
-} from "@nascere/supabase/server";
-import type { Tables, TablesInsert } from "@nascere/supabase/types";
+} from "@ventre/supabase/server";
+import type { Tables, TablesInsert } from "@ventre/supabase/types";
 
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
@@ -111,7 +111,7 @@ export async function getMyPatients(
     const { data: teamMembersData } = await supabase
       .from("team_members")
       .select(
-        "id, patient_id, professional_id, professional_type, joined_at, professional:users(id, name, email, avatar_url)",
+        "id, patient_id, professional_id, professional_type, joined_at, is_backup, professional:users(id, name, email, avatar_url)",
       )
       .in("patient_id", pagePatientIds);
 

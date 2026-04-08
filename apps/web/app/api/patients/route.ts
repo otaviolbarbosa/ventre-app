@@ -1,6 +1,6 @@
 import { createPatientSchema } from "@/lib/validations/patient";
 import { createPatient } from "@/services/patient";
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {

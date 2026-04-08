@@ -1,6 +1,6 @@
 "use client";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import { Button } from "@/components/ui/button";
+import { Button } from "@ventre/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";

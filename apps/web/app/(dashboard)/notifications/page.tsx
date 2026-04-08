@@ -4,9 +4,9 @@ import { getNotificationsAction } from "@/actions/get-notifications-action";
 import { markNotificationsReadAction } from "@/actions/mark-notifications-read-action";
 import { Header } from "@/components/layouts/header";
 import { NotificationItem } from "@/components/shared/notification-item";
-import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { Notification } from "@/services/notification";
+import { Button } from "@ventre/ui/button";
 import { BellOff } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
@@ -18,9 +18,11 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
-  const { execute: fetchNotifications, result, isPending: loading } = useAction(
-    getNotificationsAction,
-  );
+  const {
+    execute: fetchNotifications,
+    result,
+    isPending: loading,
+  } = useAction(getNotificationsAction);
   const { executeAsync: markRead } = useAction(markNotificationsReadAction);
 
   useEffect(() => {

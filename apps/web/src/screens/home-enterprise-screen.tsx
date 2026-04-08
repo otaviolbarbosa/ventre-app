@@ -3,23 +3,23 @@
 import { getEnterpriseHomePatientsAction } from "@/actions/get-enterprise-home-patients-action";
 import { getHomeEnterpriseDataAction } from "@/actions/get-home-enterprise-data-action";
 import { Header } from "@/components/layouts/header";
+import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
+import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import { PatientCard } from "@/components/shared/patient-card";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";
-import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
-import { FilterDropdown } from "@/components/shared/filter-dropdown";
-import type { EnterpriseAppointment, EnterpriseProfessional } from "@/services/home-enterprise";
 import { MONTH_LABELS_FULL } from "@/services/home";
+import type { EnterpriseAppointment, EnterpriseProfessional } from "@/services/home-enterprise";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getFirstName } from "@/utils";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
+import { Input } from "@ventre/ui/input";
+import { Skeleton } from "@ventre/ui/skeleton";
 import { Baby, CalendarDays, Search, UserPlusIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -110,7 +110,6 @@ function HomeEnterpriseScreenSkeleton({ profile }: { profile: Tables<"users"> })
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
-
             {/* Patient list skeleton */}
             <div className="space-y-4">
               <Skeleton className="h-7 w-32" />
@@ -249,6 +248,8 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
     isPending: isLoadingPatients,
   } = useAction(getEnterpriseHomePatientsAction);
 
+  console.log("patientsResult.data", patientsResult.data);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: running on mount
   useEffect(() => {
     fetchPatients({ filter: activeFilter, search: searchQuery });
@@ -260,7 +261,10 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
   const professionals = (homeData?.professionals ?? []) as EnterpriseProfessional[];
   const dppByMonth = homeData?.dppByMonth ?? [];
   const patientItems = (patientsResult.data?.items ??
-    homeData?.patients?.map((p) => ({ patient: p as PatientWithGestationalInfo, teamMembers: [] as TeamMember[] })) ??
+    homeData?.patients?.map((p) => ({
+      patient: p as PatientWithGestationalInfo,
+      teamMembers: [] as TeamMember[],
+    })) ??
     []) as { patient: PatientWithGestationalInfo; teamMembers: TeamMember[] }[];
 
   const handleFilterChange = (filter: FilterType) => {
@@ -442,7 +446,9 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
                   />
                 </div>
                 <FilterDropdown
-                  options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(([value, label]) => ({ value, label }))}
+                  options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(
+                    ([value, label]) => ({ value, label }),
+                  )}
                   value={activeFilter}
                   onChange={(v) => handleFilterChange(v as FilterType)}
                 />

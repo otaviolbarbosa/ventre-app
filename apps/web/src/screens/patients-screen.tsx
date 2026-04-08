@@ -3,12 +3,17 @@ import { Header } from "@/components/layouts/header";
 import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterDropdown } from "@/components/shared/filter-dropdown";
-import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { PatientCard } from "@/components/shared/patient-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PATIENTS_PER_PAGE } from "@/lib/constants";
+import { calculateGestationalAge } from "@/lib/gestational-age";
+import NewPatientModal from "@/modals/new-patient-modal";
+import type { DppByMonth } from "@/services/home";
+import { MONTH_LABELS_FULL } from "@/services/home";
+import type { PatientWithPregnancyFields } from "@/services/patient";
+import type { PatientFilter, TeamMember } from "@/types";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -16,14 +21,9 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
-import { calculateGestationalAge } from "@/lib/gestational-age";
-import NewPatientModal from "@/modals/new-patient-modal";
-import type { DppByMonth } from "@/services/home";
-import { MONTH_LABELS_FULL } from "@/services/home";
-import type { PatientWithPregnancyFields } from "@/services/patient";
-import type { PatientFilter, TeamMember } from "@/types";
-import { Baby, Plus, Search, X } from "lucide-react";
+} from "@ventre/ui/pagination";
+import { Skeleton } from "@ventre/ui/skeleton";
+import { Baby, Plus, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -86,7 +86,12 @@ export default function PatientsScreen({
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const buildUrl = useCallback(
-    (filter: PatientFilter, search: string, page = 1, dpp?: { month: number; year: number } | null) => {
+    (
+      filter: PatientFilter,
+      search: string,
+      page = 1,
+      dpp?: { month: number; year: number } | null,
+    ) => {
       const params = new URLSearchParams();
       if (filter !== "all") params.set("filter", filter);
       if (search) params.set("search", search);
@@ -208,8 +213,8 @@ export default function PatientsScreen({
                 className="gradient-primary hidden sm:flex"
                 onClick={() => setShowNewPatientModal(true)}
               >
-                <Plus className="size-4" />
-                <span className="hidden sm:block">Adicionar</span>
+                <UserPlus className="size-4" />
+                <span className="hidden sm:block">Adicionar Gestante</span>
               </Button>
             </div>
           </div>
@@ -273,10 +278,7 @@ export default function PatientsScreen({
                   href={`/patients/${patient.id}`}
                   className="rounded-xl border bg-white"
                 >
-                  <PatientCard
-                    patient={patient}
-                    teamMembers={teamMembersMap[patient.id] ?? []}
-                  />
+                  <PatientCard patient={patient} teamMembers={teamMembersMap[patient.id] ?? []} />
                 </Link>
               ))}
             </div>
@@ -322,7 +324,9 @@ export default function PatientsScreen({
                     })}
                   {currentPage < totalPages && (
                     <PaginationItem>
-                      <PaginationNext href={buildUrl(activeFilter, searchQuery, currentPage + 1, dppFilter)} />
+                      <PaginationNext
+                        href={buildUrl(activeFilter, searchQuery, currentPage + 1, dppFilter)}
+                      />
                     </PaginationItem>
                   )}
                 </PaginationContent>

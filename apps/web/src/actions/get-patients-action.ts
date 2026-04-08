@@ -1,7 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 
 export const getPatientsAction = authActionClient.action(async ({ ctx: { supabase, user } }) => {
   const { data, error } = await supabase

@@ -1,0 +1,157 @@
+"use client";
+
+import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
+import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
+import { supabase } from "@ventre/supabase";
+import type { Tables } from "@ventre/supabase/types";
+import type { User } from "@supabase/supabase-js";
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
+
+type UserProfile = Tables<"users">;
+
+interface AuthContextType {
+  user: User | null;
+  profile: UserProfile | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ data: unknown; error: unknown }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata: { name: string },
+  ) => Promise<{ data: unknown; error: unknown }>;
+  signOut: () => Promise<{ error: unknown }>;
+  resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
+  signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>;
+  isAuthenticated: boolean;
+  isProfessional: boolean;
+  isPatient: boolean;
+  isManager: boolean;
+  isSecretary: boolean;
+  isStaff: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+    if (error) {
+      console.error("[fetchProfile] erro ao buscar perfil:", error);
+    }
+    setProfile(data);
+  }, []);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setUser(user);
+      if (user) {
+        await fetchProfile(user.id);
+      }
+      setLoading(false);
+    };
+
+    getUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Use functional update to avoid changing the reference when it's the same user,
+      // preventing unnecessary re-renders and cascading effect re-runs in consumers.
+      setUser((prev) => {
+        if (prev?.id === session?.user?.id) return prev;
+        return session?.user ?? null;
+      });
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
+
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { data, error };
+  };
+
+  const signUp = async (email: string, password: string, metadata: { name: string }) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login?confirmation=success`,
+      },
+    });
+    return { data, error };
+  };
+
+  const signOut = async () => {
+    await invalidateUserCacheAction({});
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      // Hard navigation forces the server to re-read the session from scratch,
+      // evitando que o cache de server components do Next.js App Router
+      // mantenha a sessão antiga após o logout.
+      window.location.href = "/login";
+    }
+    return { error };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+    });
+    return { data, error };
+  };
+
+  const signInWithGoogle = async (redirectTo?: string) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo || "/home"}`,
+      },
+    });
+    return { data, error };
+  };
+
+  const value: AuthContextType = {
+    user,
+    profile,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    signInWithGoogle,
+    isAuthenticated: !!user,
+    isProfessional: isProfessional(profile),
+    isPatient: isPatient(profile),
+    isManager: isManager(profile),
+    isSecretary: isSecretary(profile),
+    isStaff: isStaff(profile),
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}

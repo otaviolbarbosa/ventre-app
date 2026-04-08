@@ -1,4 +1,4 @@
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {

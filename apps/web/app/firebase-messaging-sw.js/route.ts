@@ -8,8 +8,8 @@ export async function GET() {
   };
 
   const swContent = `
-importScripts("https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/12.9.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-compat.js");
 
 firebase.initializeApp(${JSON.stringify(firebaseConfig)});
 
@@ -33,7 +33,8 @@ self.addEventListener("notificationclick", function(event) {
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(function(clientList) {
       for (var i = 0; i < clientList.length; i++) {
-        if (clientList[i].url.includes(url) && "focus" in clientList[i]) {
+        if (clientList[i].url.includes(self.location.origin) && "focus" in clientList[i]) {
+          clientList[i].navigate(url);
           return clientList[i].focus();
         }
       }

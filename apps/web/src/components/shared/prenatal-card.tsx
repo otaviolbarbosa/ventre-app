@@ -2,12 +2,7 @@
 
 import { deleteLabExamAction } from "@/actions/delete-lab-exam-action";
 import { getPrenatalCardAction } from "@/actions/get-prenatal-card-action";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import {
   AMNIOTIC_FLUID_INDEX_LABELS,
@@ -29,7 +24,12 @@ import { EditGeneralDataModal } from "@/modals/edit-general-data-modal";
 import { EditObstetricHistoryModal } from "@/modals/edit-obstetric-history-modal";
 import { EditRiskFactorsModal } from "@/modals/edit-risk-factors-modal";
 import { EditVaccineRecordModal } from "@/modals/edit-vaccine-record-modal";
-import type { Tables } from "@nascere/supabase";
+import type { Tables } from "@ventre/supabase";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
+import { Separator } from "@ventre/ui/separator";
+import { Skeleton } from "@ventre/ui/skeleton";
 import {
   Activity,
   Baby,
@@ -835,19 +835,25 @@ function LabExamsSection({
 }) {
   const [showModal, setShowModal] = useState(false);
   const [editingExam, setEditingExam] = useState<Tables<"lab_exam_results"> | null>(null);
-  const [deletingExamId, setDeletingExamId] = useState<string | null>(null);
-  const { executeAsync: deleteExam, isPending: isDeleting } = useAction(deleteLabExamAction);
+  const { confirm } = useConfirmModal();
+  const { executeAsync: deleteExam } = useAction(deleteLabExamAction);
 
-  async function handleDelete() {
-    if (!deletingExamId) return;
-    const result = await deleteExam({ examId: deletingExamId });
-    if (result?.serverError) {
-      toast.error(result.serverError);
-      return;
-    }
-    toast.success("Exame removido!");
-    setDeletingExamId(null);
-    onRefresh();
+  function handleConfirmDelete(examId: string) {
+    confirm({
+      title: "Remover exame",
+      description: "Tem certeza que deseja remover este exame? Esta ação não pode ser desfeita.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await deleteExam({ examId });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          return;
+        }
+        toast.success("Exame removido!");
+        onRefresh();
+      },
+    });
   }
 
   return (
@@ -928,7 +934,7 @@ function LabExamsSection({
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => setDeletingExamId(exam.id)}
+                        onClick={() => handleConfirmDelete(exam.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -952,17 +958,6 @@ function LabExamsSection({
         pregnancyId={pregnancyId}
         exam={editingExam ?? undefined}
         onSuccess={onRefresh}
-      />
-
-      <ConfirmModal
-        open={!!deletingExamId}
-        onOpenChange={(open) => !open && setDeletingExamId(null)}
-        title="Remover exame"
-        description="Tem certeza que deseja remover este exame? Esta ação não pode ser desfeita."
-        confirmLabel="Remover"
-        variant="destructive"
-        onConfirm={handleDelete}
-        loading={isDeleting}
       />
     </div>
   );

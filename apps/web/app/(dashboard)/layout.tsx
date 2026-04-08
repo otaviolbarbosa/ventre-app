@@ -1,6 +1,8 @@
 import BottomNav from "@/components/layouts/bottom-nav";
 import { Sidebar } from "@/components/layouts/sidebar";
+import { FlashMessage } from "@/components/shared/flash-message";
 import { NotificationPermissionPrompt } from "@/components/shared/notification-permission-prompt";
+import { Suspense } from "react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +18,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <BottomNav />
       <NotificationPermissionPrompt />
+      <Suspense>
+        <FlashMessage />
+      </Suspense>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@ventre/ui/button";
 import { PERIOD_OPTIONS } from "@/lib/billing/dashboard";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import { cn } from "@/lib/utils";

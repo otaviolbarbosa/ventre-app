@@ -2,10 +2,10 @@
 
 import Avatar from "@/components/shared/avatar";
 import { Logo } from "@/components/shared/logo";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
+import { Button } from "@ventre/ui/button";
 import {
   BriefcaseMedicalIcon,
   Calendar,
@@ -29,7 +29,7 @@ const navigationProfessionals = [
 
 const navigationStaff = [
   { name: "Home", href: "/home", icon: Home },
-  { name: "Colaboradores", href: "/users", icon: BriefcaseMedicalIcon },
+  { name: "Profissionais", href: "/users", icon: BriefcaseMedicalIcon },
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Financeiro", href: "/billing", icon: DollarSign },
@@ -73,6 +73,7 @@ export function Sidebar() {
                   ? "bg-muted text-muted-foreground"
                   : "text-gray-800 hover:bg-muted/40 hover:text-muted-foreground",
               )}
+              prefetch
             >
               <item.icon className="h-5 w-5" />
               {item.name}
@@ -83,7 +84,7 @@ export function Sidebar() {
 
       {/* User section */}
       <div className="border-t p-4">
-        <Link href="/profile" className="mb-3 flex items-center gap-3">
+        <Link href="/profile" className="mb-3 flex items-center gap-3" prefetch>
           <Avatar src={profile?.avatar_url ?? ""} name={profile?.name ?? ""} size={10} />
           <div className="flex-1 truncate">
             <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>

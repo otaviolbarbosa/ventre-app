@@ -2,28 +2,15 @@
 import { addPatientAction } from "@/actions/add-patient-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Textarea } from "@ventre/ui/textarea";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -33,8 +20,8 @@ import { toast } from "sonner";
 
 type Professional = {
   id: string;
-  name: string | null;
-  professional_type: string | null;
+  name?: string | null;
+  professional_type?: string | null;
 };
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
@@ -77,14 +64,16 @@ type NewPatientModalProps = {
   showModal: boolean;
   setShowModal: (open: boolean) => void;
   onSuccess?: VoidFunction;
+  professional?: Professional;
   professionals?: Professional[];
 };
 
 export default function NewPatientModal({
   showModal,
+  professional,
+  professionals,
   setShowModal,
   onSuccess,
-  professionals,
 }: NewPatientModalProps) {
   const [addressVisible, setAddressVisible] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
@@ -119,8 +108,11 @@ export default function NewPatientModal({
     },
   });
 
+  const professionalsOptions =
+    professionals && professionals.length > 0 ? professionals : professional ? [professional] : [];
+
   const isSubmitting = status === "executing";
-  const showProfessionalSelector = professionals && professionals.length > 0;
+  const showProfessionalSelector = professionalsOptions.length > 0;
 
   const form = useForm<CreatePatientInput>({
     resolver: zodResolver(createPatientSchema),
@@ -140,7 +132,7 @@ export default function NewPatientModal({
       state: "",
       zipcode: "",
       observations: "",
-      professional_id: professionals?.[0]?.id ?? undefined,
+      professional_id: professional?.id ?? undefined,
     },
   });
 
@@ -188,22 +180,23 @@ export default function NewPatientModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Profissional responsável</FormLabel>
-                  <FormControl>
-                    <select
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {professionals.map((prof) => (
-                        <option key={prof.id} value={prof.id}>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o profissional" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {professionalsOptions?.map((prof) => (
+                        <SelectItem key={prof.id} value={prof.id}>
                           {prof.name ?? "Sem nome"}{" "}
                           {prof.professional_type
                             ? `(${PROFESSIONAL_TYPE_LABELS[prof.professional_type] ?? prof.professional_type})`
                             : ""}
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                  </FormControl>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -245,7 +238,11 @@ export default function NewPatientModal({
               <FormItem>
                 <FormLabel>Nome do bebê</FormLabel>
                 <FormControl>
-                  <Input placeholder="Nome escolhido para o bebê" {...field} value={field.value ?? ""} />
+                  <Input
+                    placeholder="Nome escolhido para o bebê"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -276,6 +273,7 @@ export default function NewPatientModal({
                   <FormControl>
                     <InputMask
                       component={Input}
+                      placeholder="(99) 99999-9999"
                       mask="(__) _____-____"
                       replacement={{ _: /\d/ }}
                       {...field}
@@ -377,20 +375,20 @@ export default function NewPatientModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estado</FormLabel>
-                      <FormControl>
-                        <select
-                          value={field.value ?? ""}
-                          onChange={field.onChange}
-                          className="flex h-10 w-full rounded-full border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="">Selecione</option>
+                      <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
                           {ESTADOS_BR.map((estado) => (
-                            <option key={estado.sigla} value={estado.sigla}>
+                            <SelectItem key={estado.sigla} value={estado.sigla}>
                               {estado.nome}
-                            </option>
+                            </SelectItem>
                           ))}
-                        </select>
-                      </FormControl>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

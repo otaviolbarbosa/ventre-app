@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@ventre/ui/badge";
 import { getStatusConfig } from "@/lib/billing/calculations";
-import type { Database } from "@nascere/supabase/types";
+import type { Database } from "@ventre/supabase/types";
 
 type BillingStatus = Database["public"]["Enums"]["billing_status"];
 type InstallmentStatus = Database["public"]["Enums"]["installment_status"];

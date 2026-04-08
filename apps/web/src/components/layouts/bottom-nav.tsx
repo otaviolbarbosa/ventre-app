@@ -3,6 +3,7 @@ import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
 import { isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import {
+  BriefcaseMedicalIcon,
   Calendar,
   CircleDollarSign,
   Ellipsis,
@@ -22,7 +23,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useAuth } from "../providers/auth-provider";
+import { useAuth } from "../../providers/auth-provider";
 import Avatar from "../shared/avatar";
 
 type MainNavProps = {
@@ -75,6 +76,13 @@ export default function BottomNav() {
     ? [
         { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
         {
+          name: "Profissionais",
+          href: "/users",
+          icon: BriefcaseMedicalIcon,
+          isActive: pathname.startsWith("/users"),
+        },
+
+        {
           name: "Gestantes",
           href: "/patients",
           icon: Users,
@@ -86,12 +94,6 @@ export default function BottomNav() {
           href: "/appointments",
           icon: Calendar,
           isActive: pathname.startsWith("/appointments"),
-        },
-        {
-          name: "Financeiro",
-          href: "/billing",
-          icon: CircleDollarSign,
-          isActive: pathname.startsWith("/billing"),
         },
       ]
     : [
@@ -117,14 +119,23 @@ export default function BottomNav() {
         },
       ];
 
-  const overflowNav = [
-    {
-      name: "Financeiro",
-      href: "/billing",
-      icon: CircleDollarSign,
-      isActive: pathname.startsWith("/billing"),
-    },
-  ];
+  const overflowNav = isStaff(profile)
+    ? [
+        {
+          name: "Financeiro",
+          href: "/billing",
+          icon: CircleDollarSign,
+          isActive: pathname.startsWith("/billing"),
+        },
+      ]
+    : [
+        {
+          name: "Financeiro",
+          href: "/billing",
+          icon: CircleDollarSign,
+          isActive: pathname.startsWith("/billing"),
+        },
+      ];
 
   const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
 
@@ -147,6 +158,7 @@ export default function BottomNav() {
                 "transition-all duration-500 ease-out",
                 navItem.isActive && "gradient-primary shadow-md",
               )}
+              prefetch
             >
               <navItem.icon
                 className={cn(
@@ -199,8 +211,9 @@ export default function BottomNav() {
                 "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
                 "transition-all duration-500 ease-out",
                 navItem.isActive &&
-                  "gradient-primary size-auto flex-1 pr-4 pl-0 opacity-100 shadow-md",
+                  "gradient-primary size-auto flex-1 justify-between px-4 opacity-100 shadow-md",
               )}
+              prefetch
             >
               <navItem.icon
                 className={cn(
@@ -212,7 +225,7 @@ export default function BottomNav() {
               <div
                 className={cn(
                   "flex-1 overflow-hidden text-center font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
-                  navItem.isActive ? "max-w-24 pl-2 opacity-100" : "max-w-0 opacity-0",
+                  navItem.isActive ? "opacity-100" : "max-w-0 opacity-0",
                 )}
               >
                 {navItem.name}
@@ -222,7 +235,7 @@ export default function BottomNav() {
               )}
             </Link>
           ))}
-          {isStaff(profile) ? (
+          {isStaff(profile) && overflowNav.length === 0 ? (
             <Link
               href="/profile"
               className={cn(
@@ -231,6 +244,7 @@ export default function BottomNav() {
                 pathname.startsWith("/profile") &&
                   "gradient-primary size-auto flex-1 pr-4 pl-1 opacity-100 shadow-md",
               )}
+              prefetch
             >
               <Avatar src={profile?.avatar_url ?? ""} size={10} name={profile?.name ?? ""} />
               <div

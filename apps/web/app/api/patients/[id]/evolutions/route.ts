@@ -1,5 +1,5 @@
 import { createEvolutionSchema } from "@/lib/validations/evolution";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";

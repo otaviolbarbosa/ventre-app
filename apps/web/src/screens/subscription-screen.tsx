@@ -1,18 +1,17 @@
 "use client";
 
 import { cancelSubscriptionAction } from "@/actions/cancel-subscription-action";
-import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { isStaff } from "@/lib/access-control";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import type { Tables } from "@nascere/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@ventre/ui/card";
+import { Separator } from "@ventre/ui/separator";
 import { Building2, Calendar, CheckCircle2, CreditCard, RefreshCw, User } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { toast } from "sonner";
 
 type Plan = Tables<"plans">;
@@ -70,25 +69,30 @@ function formatCurrency(value: number | null): string {
 
 export default function SubscriptionScreen({ subscription, profile }: SubscriptionScreenProps) {
   const router = useRouter();
-  const [confirmCancel, setConfirmCancel] = useState(false);
+  const { confirm } = useConfirmModal();
 
-  const { execute: cancelSubscription, status: cancelStatus } = useAction(
-    cancelSubscriptionAction,
-    {
-      onSuccess: () => {
-        toast.success("Cancelamento solicitado. Seu acesso permanece ativo até o fim do período.");
-        setConfirmCancel(false);
-        router.refresh();
-      },
-      onError: ({ error }) => {
-        toast.error(error.serverError ?? "Erro ao cancelar assinatura.");
-        setConfirmCancel(false);
-      },
+  const { executeAsync: cancelSubscription } = useAction(cancelSubscriptionAction, {
+    onSuccess: () => {
+      toast.success("Cancelamento solicitado. Seu acesso permanece ativo até o fim do período.");
+      router.refresh();
     },
-  );
-
-  const isCanceling = cancelStatus === "executing";
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao cancelar assinatura.");
+    },
+  });
   const canCancel = !isStaff(profile) && subscription?.status === "active";
+
+  function handleConfirmCancelSubscription() {
+    if (!subscription) return;
+    confirm({
+      title: "Cancelar assinatura",
+      description: `Tem certeza? Seu acesso ao conteúdo Mais Cuidado não será renovado após ${formatDate(subscription.expires_at)}.`,
+      confirmLabel: "Cancelar assinatura",
+      cancelLabel: "Manter assinatura",
+      variant: "destructive-inverted",
+      onConfirm: async () => { await cancelSubscription({ subscriptionId: subscription.id }); },
+    });
+  }
 
   if (!subscription) {
     return (
@@ -226,21 +230,12 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
               Ao cancelar sua assinatura, ela permanecerá ativa até o fim do período já pago. Após
               essa data, você perderá o acesso aos recursos premium e não será cobrado novamente.
             </p>
-            <Button variant="destructive-outline" onClick={() => setConfirmCancel(true)}>
+            <Button
+              variant="destructive-outline"
+              onClick={handleConfirmCancelSubscription}
+            >
               Cancelar assinatura
             </Button>
-
-            <ConfirmModal
-              open={confirmCancel}
-              onOpenChange={setConfirmCancel}
-              title="Cancelar assinatura"
-              description={`Tem certeza? Seu acesso ao conteúdo Mais Cuidado não será renovado após ${formatDate(subscription.expires_at)}.`}
-              confirmLabel="Cancelar assinatura"
-              cancelLabel="Manter assinatura"
-              variant="destructive-inverted"
-              loading={isCanceling}
-              onConfirm={() => cancelSubscription({ subscriptionId: subscription.id })}
-            />
           </CardContent>
         </Card>
       )}

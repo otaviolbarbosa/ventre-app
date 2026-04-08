@@ -9,3 +9,4 @@ export { default as PatientsScreen } from "./patients-screen";
 export { default as ProfileScreen } from "./profile-screen";
 export { default as ProfessionalsScreen } from "./professionals-screen";
 export { default as SubscriptionScreen } from "./subscription-screen";
+export { default as UsersScreen } from "./users-screen";

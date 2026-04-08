@@ -2,8 +2,8 @@
 
 import { respondInviteAction } from "@/actions/respond-invite-action";
 import { Header } from "@/components/layouts/header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { Invite } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";

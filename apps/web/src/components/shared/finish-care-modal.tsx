@@ -1,7 +1,8 @@
 "use client";
 
 import { finishPatientCareAction } from "@/actions/finish-patient-care-action";
-import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@ventre/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,16 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@ventre/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -26,9 +20,8 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
-import { Textarea } from "@/components/ui/textarea";
-import { zodResolver } from "@hookform/resolvers/zod";
+} from "@ventre/ui/sheet";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
@@ -184,11 +177,7 @@ export function FinishCareModal({
             <FormItem>
               <FormLabel>Descrição</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Descreva como foi o acompanhamento..."
-                  rows={4}
-                  {...field}
-                />
+                <Textarea placeholder="Descreva como foi o acompanhamento..." rows={4} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -218,12 +207,7 @@ export function FinishCareModal({
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              form="finish-care-form"
-              disabled={isPending}
-              className="flex-1"
-            >
+            <Button type="submit" form="finish-care-form" disabled={isPending} className="flex-1">
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Finalizar
             </Button>

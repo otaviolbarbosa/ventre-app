@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Providers } from "@/components/providers";
+import { Providers } from "@/providers";
 
 const poppinsSans = Poppins({
   weight: ["400", "500", "600", "700"],

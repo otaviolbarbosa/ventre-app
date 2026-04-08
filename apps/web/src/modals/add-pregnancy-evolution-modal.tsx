@@ -1,31 +1,15 @@
 "use client";
 
 import { addPregnancyEvolutionAction } from "@/actions/add-pregnancy-evolution-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  type PregnancyEvolutionInput,
-  pregnancyEvolutionSchema,
-} from "@/lib/validations/prenatal";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { type PregnancyEvolutionInput, pregnancyEvolutionSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";
@@ -244,10 +228,7 @@ export function AddPregnancyEvolutionModal({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
                     </FormControl>
                     <FormLabel className="font-normal">MF presente</FormLabel>
                   </FormItem>
@@ -259,10 +240,7 @@ export function AddPregnancyEvolutionModal({
                 render={({ field }) => (
                   <FormItem className="flex items-center gap-2 space-y-0">
                     <FormControl>
-                      <Checkbox
-                        checked={field.value ?? false}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} />
                     </FormControl>
                     <FormLabel className="font-normal">Edema</FormLabel>
                   </FormItem>

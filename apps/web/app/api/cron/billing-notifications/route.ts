@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
 import { getBillingNotificationMessage } from "@/lib/billing/notifications";
 import { sendNotificationToUser } from "@/lib/notifications/send";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   try {
@@ -45,9 +45,7 @@ export async function GET(request: Request) {
       .select("user_id, enable_billing_reminders")
       .in("user_id", userIds);
 
-    const prefsMap = new Map(
-      (allPrefs ?? []).map((p) => [p.user_id, p.enable_billing_reminders]),
-    );
+    const prefsMap = new Map((allPrefs ?? []).map((p) => [p.user_id, p.enable_billing_reminders]));
 
     for (const notification of notificationList) {
       const installment = notification.installment as unknown as {
@@ -59,11 +57,7 @@ export async function GET(request: Request) {
       };
 
       // Skip if installment is already paid or cancelled
-      if (
-        !installment ||
-        installment.status === "pago" ||
-        installment.status === "cancelado"
-      ) {
+      if (!installment || installment.status === "pago" || installment.status === "cancelado") {
         await supabaseAdmin
           .from("installments_scheduled_notifications")
           .update({ status: "cancelled" })
@@ -115,9 +109,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ sent, skipped });
   } catch {
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

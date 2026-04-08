@@ -1,10 +1,10 @@
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { getServerAuth } from "@/lib/server-auth";
-import { buildDppByMonth, type DppByMonth } from "@/services/home";
+import { type DppByMonth, buildDppByMonth } from "@/services/home";
 import type { PatientWithGestationalInfo } from "@/types";
-import { createServerSupabaseAdmin } from "@nascere/supabase/server";
-import type { Tables } from "@nascere/supabase/types";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Tables } from "@ventre/supabase/types";
 
 type Patient = Tables<"patients">;
 type Pregnancy = Tables<"pregnancies">;
@@ -69,7 +69,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
   // Busca todos os profissionais da organização
   const { data: professionals } = await supabase
     .from("users")
-    .select("id, name, professional_type")
+    .select("id, name, professional_type, avatar_url")
     .eq("enterprise_id", enterpriseId)
     .eq("user_type", "professional");
 
@@ -101,6 +101,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
     name: p.name,
     professional_type: p.professional_type,
     patient_count: patientCountByProfessional[p.id]?.size ?? 0,
+    avatar_url: p.avatar_url,
   }));
 
   if (allPatientIds.length === 0) {

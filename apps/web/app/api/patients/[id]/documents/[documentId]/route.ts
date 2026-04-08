@@ -1,4 +1,4 @@
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
 type Params = { params: Promise<{ id: string; documentId: string }> };

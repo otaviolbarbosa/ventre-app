@@ -1,8 +1,8 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { ChevronDown, Stethoscope, Users, X } from "lucide-react";
 import { useState } from "react";
 
@@ -26,6 +26,7 @@ type BaseProfessional = {
   id: string;
   name: string | null;
   professional_type: string | null;
+  avatar_url?: string;
 };
 
 type ProfessionalsSelectorProps<T extends BaseProfessional> = {
@@ -71,6 +72,11 @@ export function ProfessionalsSelector<T extends BaseProfessional>({
             {selected ? (
               <>
                 <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage
+                    src={selected.avatar_url}
+                    alt={selected.name || ""}
+                    className="rounded-full object-cover"
+                  />
                   <AvatarFallback className="bg-primary/20 text-primary text-xs">
                     {getInitials(selected.name)}
                   </AvatarFallback>
@@ -79,7 +85,9 @@ export function ProfessionalsSelector<T extends BaseProfessional>({
               </>
             ) : (
               <>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <div className="-ml-2 flex size-8 items-center justify-center rounded-full bg-muted">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </div>
                 <span className="flex-1 text-left text-muted-foreground">
                   Todas as profissionais
                 </span>
@@ -118,7 +126,13 @@ export function ProfessionalsSelector<T extends BaseProfessional>({
                   isSelected && "bg-primary/5",
                 )}
               >
-                <Avatar className="h-9 w-9 shrink-0">
+                <Avatar className="h-9 w-9 shrink-0 shadow-md">
+                  <AvatarImage
+                    src={prof.avatar_url}
+                    alt={prof.name || ""}
+                    className="rounded-full object-cover"
+                  />
+
                   <AvatarFallback
                     className={cn(
                       "text-sm",

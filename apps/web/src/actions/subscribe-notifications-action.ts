@@ -1,7 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
-import type { Json } from "@nascere/supabase/types";
+import type { Json } from "@ventre/supabase/types";
 import { z } from "zod";
 
 const schema = z.object({

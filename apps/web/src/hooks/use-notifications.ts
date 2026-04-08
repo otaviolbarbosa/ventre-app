@@ -106,6 +106,10 @@ export function useNotifications() {
 
   const markAsRead = useCallback(async (ids?: string[]) => {
     const result = await markNotificationsReadAction({ ids });
+    if (result?.serverError) {
+      console.error("[subscribe] action error:", result.serverError);
+    }
+
     if (result?.data?.success) {
       if (ids) {
         setUnreadCount((c) => Math.max(0, c - ids.length));

@@ -2,19 +2,13 @@
 
 import { addProfessionalToTeamAction } from "@/actions/add-professional-to-team-action";
 import { searchUsersAction } from "@/actions/search-users-action";
-import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
+import { Label } from "@ventre/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Loader2, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
@@ -52,9 +46,7 @@ export default function AddProfessionalModal({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const { executeAsync: executeSearch, isPending: isSearching } = useAction(searchUsersAction);
-  const { executeAsync: executeAdd, isPending: isAdding } = useAction(
-    addProfessionalToTeamAction,
-  );
+  const { executeAsync: executeAdd, isPending: isAdding } = useAction(addProfessionalToTeamAction);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

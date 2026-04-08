@@ -20,10 +20,7 @@ export const deletePatientAction = authActionClient
       throw new Error("Apenas o criador pode excluir o paciente");
     }
 
-    const { error } = await supabase
-      .from("patients")
-      .delete()
-      .eq("id", parsedInput.patientId);
+    const { error } = await supabase.from("patients").delete().eq("id", parsedInput.patientId);
 
     if (error) throw new Error(error.message);
 
