@@ -1,6 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const schema = z.object({
@@ -33,6 +34,8 @@ export const finishPatientCareAction = authActionClient
 
       if (evolutionError) throw new Error(evolutionError.message);
     }
+
+    revalidatePath("/patients");
 
     return { success: true };
   });
