@@ -1222,6 +1222,60 @@ export type Database = {
           },
         ]
       }
+      registration_invites: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          email: string
+          enterprise_id: string
+          expired_at: string
+          id: string
+          invited_by: string
+          name: string
+          phone: string
+          professional_type: Database["public"]["Enums"]["professional_type"]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          email: string
+          enterprise_id: string
+          expired_at?: string
+          id?: string
+          invited_by: string
+          name: string
+          phone: string
+          professional_type: Database["public"]["Enums"]["professional_type"]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          email?: string
+          enterprise_id?: string
+          expired_at?: string
+          id?: string
+          invited_by?: string
+          name?: string
+          phone?: string
+          professional_type?: Database["public"]["Enums"]["professional_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_invites_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_invites_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_notifications: {
         Row: {
           created_at: string
@@ -1639,6 +1693,18 @@ export type Database = {
           user_id: string
           zipcode: string
         }[]
+      }
+      get_paginated_enterprises: {
+        Args: { page?: number; size?: number }
+        Returns: Json
+      }
+      get_paginated_plans: {
+        Args: { page?: number; size?: number }
+        Returns: Json
+      }
+      get_paginated_subscriptions: {
+        Args: { page?: number; size?: number }
+        Returns: Json
       }
       get_paginated_users: {
         Args: { page?: number; size?: number }

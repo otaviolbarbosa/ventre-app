@@ -42,6 +42,7 @@ export async function proxy(request: NextRequest) {
     "/login",
     "/register",
     "/forgot-password",
+    "/complete-registration",
     "/paywall",
     "/auth/callback",
     "/register/patient",

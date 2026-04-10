@@ -5,6 +5,8 @@ import { Logo } from "@/components/shared/logo";
 import { useAuth } from "@/hooks/use-auth";
 import { isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import { Button } from "@ventre/ui/button";
 import {
   BriefcaseMedicalIcon,
@@ -88,7 +90,9 @@ export function Sidebar() {
           <Avatar src={profile?.avatar_url ?? ""} name={profile?.name ?? ""} size={10} />
           <div className="flex-1 truncate">
             <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>
-            <p className="truncate text-gray-500 text-xs">{profile?.professional_type}</p>
+            <p className="truncate text-gray-500 text-xs">
+              {professionalTypeLabels[profile?.professional_type as ProfessionalType]}
+            </p>
           </div>
         </Link>
         <Button
