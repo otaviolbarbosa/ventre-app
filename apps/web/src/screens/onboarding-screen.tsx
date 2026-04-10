@@ -360,7 +360,7 @@ export default function OnboardingScreen() {
                 <FormItem>
                   <FormLabel>Nome da organização *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Clínica Nascere" disabled={isPending} {...field} />
+                    <Input placeholder="Ex: Clínica Ventre" disabled={isPending} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -374,7 +374,7 @@ export default function OnboardingScreen() {
                 <FormItem>
                   <FormLabel>Razão social</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Clínica Nascere Ltda" disabled={isPending} {...field} />
+                    <Input placeholder="Ex: Clínica Ventre Ltda" disabled={isPending} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
