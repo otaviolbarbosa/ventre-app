@@ -1,41 +1,57 @@
 "use client";
 import { addAppointmentAction } from "@/actions/add-appointment-action";
 import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import {
   type CreateAppointmentInput,
   createAppointmentSchema,
 } from "@/lib/validations/appointment";
+import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type DefaultValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type Patient = Tables<"patients">;
 
 type Professional = { id: string; name: string | null };
 
+const DURATION_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
+
+const defaultValues: DefaultValues<CreateAppointmentInput> = {
+  patient_id: "",
+  date: "",
+  time: "",
+  type: undefined,
+  duration: 60,
+  location: "",
+  notes: "",
+};
+
 type NewAppointmentModalProps = {
   patientId?: string;
   patients: Patient[];
   professionals?: Professional[];
+  appointments?: AppointmentWithPatient[];
   isStaff?: boolean;
   showModal: boolean;
   setShowModal: (open: boolean) => void;
   onSuccess?: VoidFunction;
 };
+
 export default function NewAppointmentModal({
   patientId,
   patients,
   professionals = [],
+  appointments = [],
   isStaff = false,
   showModal,
   setShowModal,
@@ -57,7 +73,7 @@ export default function NewAppointmentModal({
     onSuccess: () => {
       toast.success("Agendamento criado com sucesso!");
       onSuccess?.();
-      setShowModal(false);
+      handleClose();
     },
     onError: ({ error }) => {
       toast.error(error.serverError ?? "Erro ao criar agendamento");
@@ -68,16 +84,14 @@ export default function NewAppointmentModal({
 
   const form = useForm<CreateAppointmentInput>({
     resolver: zodResolver(createAppointmentSchema),
-    defaultValues: {
-      patient_id: patientId,
-      date: "",
-      time: "",
-      type: undefined,
-      duration: 60,
-      location: "",
-      notes: "",
-    },
+    defaultValues: { ...defaultValues, patient_id: patientId },
   });
+
+  function handleClose() {
+    form.reset({ ...defaultValues, patient_id: patientId });
+    setSelectedProfessionalId(undefined);
+    setShowModal(false);
+  }
 
   function onSubmit(data: CreateAppointmentInput) {
     execute(data);
@@ -86,23 +100,49 @@ export default function NewAppointmentModal({
   const staffPatients = patientsByProfessionalResult.data?.patients ?? [];
   const patientList = isStaff && selectedProfessionalId ? staffPatients : patients;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  const watchedDate = form.watch("date");
+  const watchedTime = form.watch("time");
+  const watchedDuration = form.watch("duration");
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to flood dependencies
   useEffect(() => {
-    form.reset({
-      patient_id: patientId,
-      date: "",
-      time: "",
-      type: undefined,
-      duration: 60,
-      location: "",
-      notes: "",
+    if (!watchedDate || !watchedTime) {
+      form.clearErrors("time");
+      return;
+    }
+
+    function toMinutes(time: string) {
+      const parts = time.split(":");
+      return Number(parts[0]) * 60 + Number(parts[1]);
+    }
+
+    const newStart = toMinutes(watchedTime);
+    const newEnd = newStart + (watchedDuration ?? 60);
+
+    const conflict = appointments.find((a) => {
+      if (a.date !== watchedDate) return false;
+      const existingStart = toMinutes(a.time.slice(0, 5));
+      const existingEnd = existingStart + (a.duration ?? 60);
+      return newStart < existingEnd && newEnd > existingStart;
     });
-  }, []);
+
+    if (conflict) {
+      const conflictStart = conflict.time.slice(0, 5);
+      const conflictEnd = toMinutes(conflictStart) + (conflict.duration ?? 60);
+      const conflictEndTime = `${String(Math.floor(conflictEnd / 60)).padStart(2, "0")}:${String(conflictEnd % 60).padStart(2, "0")}`;
+      form.setError("time", {
+        type: "manual",
+        message: `Conflito com agendamento das ${conflictStart} às ${conflictEndTime}`,
+      });
+    } else {
+      form.clearErrors("time");
+    }
+  }, [watchedDate, watchedTime, watchedDuration, appointments]);
 
   return (
     <ContentModal
       open={showModal}
-      onOpenChange={setShowModal}
+      onOpenChange={(open) => !open && handleClose()}
       title="Novo Agendamento"
       description="Agende uma consulta ou encontro com a paciente"
     >
@@ -224,7 +264,7 @@ export default function NewAppointmentModal({
                 <FormItem>
                   <FormLabel>Horário</FormLabel>
                   <FormControl>
-                    <Input type="time" {...field} />
+                    <Input type="time" step="900" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -238,15 +278,23 @@ export default function NewAppointmentModal({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Duração (minutos)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min={15}
-                    step={15}
-                    {...field}
-                    onChange={(e) => field.onChange(Number.parseInt(e.target.value) || undefined)}
-                  />
-                </FormControl>
+                <Select
+                  value={String(field.value ?? 60)}
+                  onValueChange={(v) => field.onChange(Number(v))}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a duração" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {DURATION_OPTIONS.map((min) => (
+                      <SelectItem key={min} value={String(min)}>
+                        {min} minutos
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -281,15 +329,14 @@ export default function NewAppointmentModal({
           />
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowModal(false)}
-              disabled={isSubmitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" className="gradient-primary" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="gradient-primary"
+              disabled={isSubmitting || !!form.formState.errors.time}
+            >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
             </Button>

@@ -248,8 +248,6 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
     isPending: isLoadingPatients,
   } = useAction(getEnterpriseHomePatientsAction);
 
-  console.log("patientsResult.data", patientsResult.data);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: running on mount
   useEffect(() => {
     fetchPatients({ filter: activeFilter, search: searchQuery });

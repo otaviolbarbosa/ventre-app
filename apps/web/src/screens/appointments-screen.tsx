@@ -7,15 +7,14 @@ import { getPatientsAction } from "@/actions/get-patients-action";
 import { Header } from "@/components/layouts/header";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
+import { CalendarSwitcher } from "@/components/shared/calendar-switcher";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Button } from "@ventre/ui/button";
-import { dayjs } from "@/lib/dayjs";
-import { cn } from "@/lib/utils";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import type { EnterpriseProfessional } from "@/services/professional";
 import type { Tables } from "@ventre/supabase";
-import { Calendar, ListIcon, Plus } from "lucide-react";
+import { Button } from "@ventre/ui/button";
+import { CalendarPlus, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useMemo, useState } from "react";
 
@@ -47,11 +46,7 @@ export default function AppointmentsScreen({
     localStorage.setItem("agenda-view", view);
   }
 
-  const isListView = useMemo(() => agendaView === "list", [agendaView]);
   const isCalendarView = useMemo(() => agendaView === "calendar", [agendaView]);
-
-  const calendarStartDate = dayjs().format("YYYY-MM-DD");
-  const calendarEndDate = dayjs().add(14, "day").format("YYYY-MM-DD");
 
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
   const { execute: fetchAppointments, result: appointmentsResult } =
@@ -79,14 +74,28 @@ export default function AppointmentsScreen({
     fetchAppointments({ professionalId: newFilter ?? undefined });
   }
 
-  async function handleCancelDay(date: string) {
-    await cancelDay({ date });
+  async function handleCancelDay(date: string, appointmentIds?: string[]) {
+    await cancelDay({ date, appointmentIds });
     fetchAppointments({ professionalId: professionalFilter ?? undefined });
   }
 
   function handleOpenNewModal() {
     setShowNewModal(true);
   }
+
+  const appointmentActions = (
+    <div className="flex items-center justify-end gap-2">
+      <CalendarSwitcher value={agendaView} onChange={handleSetAgendaView} />
+
+      <Button className="gradient-primary hidden md:flex" onClick={handleOpenNewModal}>
+        <CalendarPlus />
+        <span className="ml-1">Adicionar Agendamento</span>
+      </Button>
+      <Button size="icon" className="gradient-primary flex md:hidden" onClick={handleOpenNewModal}>
+        <Plus />
+      </Button>
+    </div>
+  );
 
   return (
     <div>
@@ -103,65 +112,22 @@ export default function AppointmentsScreen({
           />
         )}
 
-        <div className="flex items-center justify-end gap-2">
-          <div className="flex items-center justify-end">
-            <div className="inline-flex gap-1 rounded-full border p-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "bg-transparent hover:bg-transparent",
-                  isCalendarView &&
-                    "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
-                )}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSetAgendaView("calendar");
-                }}
-              >
-                <Calendar />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "bg-transparent hover:bg-transparent",
-                  isListView &&
-                    "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
-                )}
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleSetAgendaView("list");
-                }}
-              >
-                <ListIcon />
-              </Button>
-            </div>
-          </div>
-
-          <Button className="gradient-primary hidden md:flex" onClick={handleOpenNewModal}>
-            <Plus />
-            <span className="ml-2">Adicionar Agendamento</span>
-          </Button>
-          <Button
-            size="icon"
-            className="gradient-primary flex md:hidden"
-            onClick={handleOpenNewModal}
-          >
-            <Plus />
-          </Button>
-        </div>
-
         {isCalendarView ? (
           <AppointmentCalendarView
-            startDate={calendarStartDate}
-            endDate={calendarEndDate}
             appointments={appointments}
             showProfessional={isStaff}
+            actions={appointmentActions}
             onCancelDay={handleCancelDay}
+            onAddAppointment={() => setShowNewModal(true)}
           />
         ) : (
-          <AppointmentListView appointments={appointments} showProfessional={isStaff} />
+          <AppointmentListView
+            appointments={appointments}
+            showProfessional={isStaff}
+            actions={appointmentActions}
+            onCancelDay={handleCancelDay}
+            onAddAppointment={() => setShowNewModal(true)}
+          />
         )}
       </div>
       <NewAppointmentModal
@@ -169,6 +135,7 @@ export default function AppointmentsScreen({
         setShowModal={setShowNewModal}
         patients={patients}
         professionals={professionals}
+        appointments={appointments}
         isStaff={isStaff}
         onSuccess={() => fetchAppointments({ professionalId: professionalFilter ?? undefined })}
       />
