@@ -71,7 +71,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             }
             back
           />
-          <div className="p-4 pt-0 md:p-6 md:pt-0">
+          <div className="px-4 md:px-6">
             <Tabs value={currentTab} className="mb-6 w-full">
               <TabsList>
                 <Link href={`/patients/${patientId}/profile`} className="flex-1">

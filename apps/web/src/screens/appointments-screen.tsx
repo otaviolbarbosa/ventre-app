@@ -119,6 +119,9 @@ export default function AppointmentsScreen({
             actions={appointmentActions}
             onCancelDay={handleCancelDay}
             onAddAppointment={() => setShowNewModal(true)}
+            onUpdateAppointments={() =>
+              fetchAppointments({ professionalId: professionalFilter ?? undefined })
+            }
           />
         ) : (
           <AppointmentListView
@@ -127,6 +130,9 @@ export default function AppointmentsScreen({
             actions={appointmentActions}
             onCancelDay={handleCancelDay}
             onAddAppointment={() => setShowNewModal(true)}
+            onUpdateAppointments={() =>
+              fetchAppointments({ professionalId: professionalFilter ?? undefined })
+            }
           />
         )}
       </div>
