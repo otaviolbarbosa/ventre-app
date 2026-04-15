@@ -2,6 +2,7 @@
 import { EmptyState } from "@/components/shared/empty-state";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
+import { AppointmentDataModal } from "@/modals/appointment-data-modal";
 import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { Badge } from "@ventre/ui/badge";
@@ -17,7 +18,6 @@ import {
   MapPin,
   Stethoscope,
 } from "lucide-react";
-import Link from "next/link";
 import type React from "react";
 import { useMemo, useState } from "react";
 
@@ -68,6 +68,7 @@ type AppointmentGroupProps = {
   showProfessional?: boolean;
   onCancelDay?: (date: string, appointmentIds?: string[]) => Promise<void>;
   onAddAppointment?: VoidFunction;
+  onUpdateAppointments?: VoidFunction;
 };
 
 function AppointmentGroup({
@@ -76,12 +77,16 @@ function AppointmentGroup({
   showProfessional = false,
   onCancelDay,
   onAddAppointment,
+  onUpdateAppointments,
 }: AppointmentGroupProps) {
   const groupedAppointments = groupAppointmentsByDate(appointments);
   const sortedDates = Object.keys(groupedAppointments).sort((a, b) =>
     isPastList ? b.localeCompare(a) : a.localeCompare(b),
   );
   const [cancelDate, setCancelDate] = useState<string | null>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithPatient | null>(
+    null,
+  );
 
   if (appointments.length === 0) {
     return (
@@ -134,10 +139,11 @@ function AppointmentGroup({
 
             <div className="space-y-3">
               {dateAppointments.map((appointment) => (
-                <Link
+                <button
                   key={appointment.id}
-                  href={`/patients/${appointment.patient_id}/appointments`}
-                  className="block"
+                  type="button"
+                  className="block w-full text-left"
+                  onClick={() => setSelectedAppointment(appointment)}
                 >
                   <Card
                     className={`transition-colors hover:bg-muted/50 ${isPastList ? "opacity-60" : ""}`}
@@ -184,7 +190,7 @@ function AppointmentGroup({
                       </div>
                     </CardContent>
                   </Card>
-                </Link>
+                </button>
               ))}
             </div>
           </div>
@@ -199,6 +205,17 @@ function AppointmentGroup({
           onCancelDay={onCancelDay}
         />
       )}
+
+      <AppointmentDataModal
+        appointment={selectedAppointment}
+        open={selectedAppointment !== null}
+        onOpenChange={(open) => !open && setSelectedAppointment(null)}
+        onCancel={onUpdateAppointments}
+        onSuccess={() => {
+          setSelectedAppointment(null);
+          onUpdateAppointments?.();
+        }}
+      />
     </div>
   );
 }
@@ -237,6 +254,7 @@ type AppointmentListViewProps = {
   actions?: React.ReactElement;
   onCancelDay?: (date: string, appointmentIds?: string[]) => Promise<void>;
   onAddAppointment: VoidFunction;
+  onUpdateAppointments?: VoidFunction;
 };
 
 export function AppointmentListView({
@@ -245,6 +263,7 @@ export function AppointmentListView({
   actions,
   onCancelDay,
   onAddAppointment,
+  onUpdateAppointments,
 }: AppointmentListViewProps) {
   const now = dayjs();
   const today = now.format("YYYY-MM-DD");
@@ -340,6 +359,7 @@ export function AppointmentListView({
               showProfessional={showProfessional}
               onCancelDay={onCancelDay}
               onAddAppointment={onAddAppointment}
+              onUpdateAppointments={onUpdateAppointments}
             />
           </div>
         </div>

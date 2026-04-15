@@ -3,6 +3,7 @@
 import { EmptyState } from "@/components/shared/empty-state";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
+import { AppointmentDataModal } from "@/modals/appointment-data-modal";
 import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { Button } from "@ventre/ui/button";
@@ -15,7 +16,6 @@ import {
   ChevronRight,
   Stethoscope,
 } from "lucide-react";
-import Link from "next/link";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -46,6 +46,7 @@ type AppointmentCalendarViewProps = {
   actions?: React.ReactElement;
   onCancelDay?: (date: string, appointmentIds?: string[]) => Promise<void>;
   onAddAppointment?: VoidFunction;
+  onUpdateAppointments?: VoidFunction;
 };
 
 export function AppointmentCalendarView({
@@ -54,11 +55,15 @@ export function AppointmentCalendarView({
   actions,
   onCancelDay,
   onAddAppointment,
+  onUpdateAppointments,
 }: AppointmentCalendarViewProps) {
   const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
   const [now, setNow] = useState(dayjs());
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithPatient | null>(
+    null,
+  );
 
   const confirmedAppointments = useMemo(() => {
     return appointments.filter((appointment) => appointment.status !== "cancelada");
@@ -268,9 +273,10 @@ export function AppointmentCalendarView({
                     className="absolute right-2 left-2"
                     style={{ top: top + 2, height: height - 2 }}
                   >
-                    <Link
-                      href={`/patients/${appointment.patient_id}/appointments`}
-                      className="block h-full"
+                    <button
+                      type="button"
+                      className="block h-full w-full text-left"
+                      onClick={() => setSelectedAppointment(appointment)}
                     >
                       <Card className="h-full rounded-lg border-primary/20 bg-primary/5 shadow-none hover:bg-primary/10">
                         <CardContent className="flex h-full flex-col justify-center p-3">
@@ -290,7 +296,7 @@ export function AppointmentCalendarView({
                           )}
                         </CardContent>
                       </Card>
-                    </Link>
+                    </button>
                   </div>
                 );
               })}
@@ -308,6 +314,17 @@ export function AppointmentCalendarView({
           onCancelDay={onCancelDay}
         />
       )}
+
+      <AppointmentDataModal
+        appointment={selectedAppointment}
+        open={selectedAppointment !== null}
+        onOpenChange={(open) => !open && setSelectedAppointment(null)}
+        onCancel={onUpdateAppointments}
+        onSuccess={() => {
+          setSelectedAppointment(null);
+          onUpdateAppointments?.();
+        }}
+      />
     </div>
   );
 }
