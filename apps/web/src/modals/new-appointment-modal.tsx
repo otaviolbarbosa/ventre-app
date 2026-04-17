@@ -16,7 +16,7 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type DefaultValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -104,7 +104,12 @@ export default function NewAppointmentModal({
   const watchedTime = form.watch("time");
   const watchedDuration = form.watch("duration");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to flood dependencies
+  const appointmentsRef = useRef(appointments);
+  useEffect(() => {
+    appointmentsRef.current = appointments;
+  });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: appointments kept in ref to avoid infinite loop from new array references on each render
   useEffect(() => {
     if (!watchedDate || !watchedTime) {
       form.clearErrors("time");
@@ -119,7 +124,7 @@ export default function NewAppointmentModal({
     const newStart = toMinutes(watchedTime);
     const newEnd = newStart + (watchedDuration ?? 60);
 
-    const conflict = appointments.find((a) => {
+    const conflict = appointmentsRef.current.find((a) => {
       if (a.date !== watchedDate) return false;
       const existingStart = toMinutes(a.time.slice(0, 5));
       const existingEnd = existingStart + (a.duration ?? 60);
@@ -137,7 +142,7 @@ export default function NewAppointmentModal({
     } else {
       form.clearErrors("time");
     }
-  }, [watchedDate, watchedTime, watchedDuration, appointments]);
+  }, [watchedDate, watchedTime, watchedDuration]);
 
   return (
     <ContentModal
