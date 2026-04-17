@@ -244,3 +244,9 @@
 .blob-animate-3 {
   animation: blob-float-3 9s cubic-bezier(0.45, 0, 0.55, 1) -2s infinite;
 }
+
+/* custom */
+.lumiar-timepicker-wrapper > .react-datepicker-wrapper,
+.lumiar-datepicker-wrapper > .react-datepicker-wrapper {
+  display: block;
+}

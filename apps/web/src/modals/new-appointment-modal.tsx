@@ -13,6 +13,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
+import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -255,7 +257,13 @@ export default function NewAppointmentModal({
                 <FormItem>
                   <FormLabel>Data</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
+                      placeholderText="Selecione a data"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -269,7 +277,26 @@ export default function NewAppointmentModal({
                 <FormItem>
                   <FormLabel>Horário</FormLabel>
                   <FormControl>
-                    <Input type="time" step="900" {...field} />
+                    <TimePicker
+                      selected={
+                        field.value
+                          ? (() => {
+                              const d = new Date();
+                              const [h, m] = field.value.split(":");
+                              d.setHours(Number(h), Number(m), 0, 0);
+                              return d;
+                            })()
+                          : null
+                      }
+                      onChange={(date) =>
+                        field.onChange(
+                          date
+                            ? `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
+                            : "",
+                        )
+                      }
+                      placeholderText="Selecione o horário"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

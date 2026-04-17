@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
@@ -264,19 +265,17 @@ export default function NewPatientModal({
                 <FormItem>
                   <FormLabel>Data prevista do parto (DPP) *</FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        const dpp = e.target.value;
-                        if (dpp) {
-                          const dppDate = dayjs(dpp);
-                          form.setValue("dum", dppDate.subtract(280, "day").format("YYYY-MM-DD"));
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) => {
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "");
+                        if (date) {
+                          form.setValue("dum", dayjs(date).subtract(280, "day").format("YYYY-MM-DD"));
                         } else {
                           form.setValue("dum", "");
                         }
                       }}
+                      placeholderText="Selecione a data"
                     />
                   </FormControl>
                   <FormMessage />
@@ -290,7 +289,13 @@ export default function NewPatientModal({
                 <FormItem>
                   <FormLabel>Última menstruação (DUM)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} readOnly className="bg-muted" />
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      placeholderText="Calculado automaticamente"
+                      disabled
+                      className="bg-muted"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -589,7 +594,11 @@ export default function NewPatientModal({
                   <FormItem>
                     <FormLabel>Vencimento da 1ª parcela *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} value={field.value ?? ""} />
+                      <DatePicker
+                        selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                        onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                        placeholderText="Selecione a data"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

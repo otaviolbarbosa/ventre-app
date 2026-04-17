@@ -9,6 +9,7 @@ import type { Tables } from "@ventre/supabase";
 import { InputMask } from "@react-input/mask";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Textarea } from "@ventre/ui/textarea";
@@ -199,20 +200,19 @@ export function EditPatientModal({
                 <FormItem>
                   <FormLabel>Data prevista do parto (DPP)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        const dpp = e.target.value;
-                        if (dpp) {
-                          const dppDate = new Date(`${dpp}T00:00:00`);
-                          dppDate.setDate(dppDate.getDate() - 280);
-                          form.setValue("dum", dppDate.toISOString().split("T")[0]);
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) => {
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "");
+                        if (date) {
+                          const dum = new Date(date);
+                          dum.setDate(dum.getDate() - 280);
+                          form.setValue("dum", dum.toISOString().slice(0, 10));
                         } else {
                           form.setValue("dum", "");
                         }
                       }}
+                      placeholderText="Selecione a data"
                     />
                   </FormControl>
                   <FormMessage />
@@ -227,7 +227,13 @@ export function EditPatientModal({
                 <FormItem>
                   <FormLabel>Última menstruação (DUM)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} readOnly className="bg-muted" />
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      placeholderText="Calculado automaticamente"
+                      disabled
+                      className="bg-muted"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

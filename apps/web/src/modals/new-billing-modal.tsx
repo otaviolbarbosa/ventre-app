@@ -2,7 +2,6 @@
 
 import { addBillingAction } from "@/actions/add-billing-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
 import {
   calculateInstallmentAmount,
@@ -15,6 +14,8 @@ import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2, Pencil, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -357,7 +358,13 @@ export default function NewBillingModal({
                     render={({ field }) => (
                       <FormItem className="flex-1">
                         <FormControl>
-                          <Input type="date" {...field} value={field.value ?? ""} />
+                          <DatePicker
+                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                            onChange={(date) =>
+                              field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                            }
+                            placeholderText="Selecione a data"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -374,7 +381,11 @@ export default function NewBillingModal({
                       Parcela {i + 2}
                     </span>
                     <div className="relative flex-1">
-                      <Input type="date" value={date} disabled className="pr-9" readOnly />
+                      <DatePicker
+                        selected={date ? new Date(`${date}T00:00:00`) : null}
+                        onChange={() => undefined}
+                        disabled
+                      />
                       <button
                         type="button"
                         onClick={() => switchToCustom()}
@@ -409,7 +420,13 @@ export default function NewBillingModal({
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <FormControl>
-                            <Input type="date" {...field} value={field.value ?? ""} />
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={(date) =>
+                                field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                              }
+                              placeholderText="Selecione a data"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
