@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Loader2 } from "lucide-react";
@@ -121,7 +122,11 @@ export function AddLabExamModal({
                 <FormItem>
                   <FormLabel>Data do exame *</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      placeholderText="Selecione a data"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

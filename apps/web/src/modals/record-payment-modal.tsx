@@ -1,7 +1,6 @@
 "use client";
 
 import { CurrencyInput } from "@/components/billing/currency-input";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import { type RecordPaymentInput, recordPaymentSchema } from "@/lib/validations/billing";
@@ -9,8 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Database, Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { FileText, Loader2, Paperclip, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -140,7 +140,12 @@ export default function RecordPaymentModal({
               <FormItem>
                 <FormLabel>Data do Pagamento</FormLabel>
                 <FormControl>
-                  <Input type="date" max={dayjs().format("YYYY-MM-DD")} {...field} />
+                  <DatePicker
+                    selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                    onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                    placeholderText="Selecione a data"
+                    maxDate={new Date()}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
