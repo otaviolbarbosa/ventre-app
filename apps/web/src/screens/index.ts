@@ -5,6 +5,8 @@ export { default as OnboardingScreen } from "./onboarding-screen";
 export { default as PatientTeamScreen } from "./patient-team-screen";
 export { default as PatientTeamEnterpriseScreen } from "./patient-team-enterprise-screen";
 export { default as PatientsEnterpriseScreen } from "./patients-enterprise-screen";
+export { default as PatientsHistoryEnterpriseScreen } from "./patients-history-enterprise-screen";
+export { default as PatientsHistoryScreen } from "./patients-history-screen";
 export { default as PatientsScreen } from "./patients-screen";
 export { default as ProfileScreen } from "./profile-screen";
 export { default as ProfessionalsScreen } from "./professionals-screen";

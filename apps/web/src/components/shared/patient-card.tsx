@@ -1,3 +1,4 @@
+import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
@@ -45,14 +46,26 @@ export function PatientCard({
               <h4 className="font-medium">{patient.name}</h4>
             </div>
             <div className="flex gap-2 text-muted-foreground text-sm">
-              <span>DPP: {dppFormatted}</span>
-              &bull;
-              <span className="flex items-center gap-2 text-muted-foreground">
-                {calculateGestationalAge(patient.dum)?.label}
-                {patient.weeks >= 40 && (
-                  <Flame className="size-4 text-destructive" fill="hsl(var(--destructive))" />
-                )}
-              </span>
+              {patient.has_finished ? (
+                <div>
+                  {patient.born_at && <div>Nascimento: {patient.born_at}</div>}
+                  {patient.delivery_method && (
+                    <div>Via de parto: {PREGNANCY_DELIVERY_METHOD[patient.delivery_method]}</div>
+                  )}
+                  {patient.observations && <div>Obs: {patient.observations}</div>}
+                </div>
+              ) : (
+                <>
+                  <span>DPP: {dppFormatted}</span>
+                  &bull;
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    {calculateGestationalAge(patient.dum)?.label}
+                    {patient.weeks >= 40 && (
+                      <Flame className="size-4 text-destructive" fill="hsl(var(--destructive))" />
+                    )}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           {mainTeamMembers && mainTeamMembers.length > 0 && (

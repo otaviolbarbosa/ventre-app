@@ -7,7 +7,7 @@ import {
   type createServerSupabaseAdmin,
   createServerSupabaseClient,
 } from "@ventre/supabase/server";
-import type { Tables, TablesInsert } from "@ventre/supabase/types";
+import type { Enums, Tables, TablesInsert } from "@ventre/supabase/types";
 
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
@@ -18,6 +18,7 @@ export type PatientWithPregnancyFields = Patient & {
   dum?: string | null;
   has_finished?: boolean;
   born_at?: string | null;
+  delivery_method?: Enums<"delivery_method"> | null;
   observations?: string | null;
 };
 

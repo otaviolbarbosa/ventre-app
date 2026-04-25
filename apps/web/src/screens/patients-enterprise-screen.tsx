@@ -25,7 +25,7 @@ import {
   PaginationPrevious,
 } from "@ventre/ui/pagination";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { Baby, Plus, Search, UserPlus, X } from "lucide-react";
+import { Baby, History, Plus, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -173,6 +173,7 @@ export default function PatientsEnterpriseScreen({
           dum: patient.dum ?? null,
           has_finished: false as const,
           born_at: null,
+          delivery_method: patient.delivery_method ?? null,
           observations: null,
           weeks: weekInfo?.weeks ?? 0,
           days: weekInfo?.days ?? 0,
@@ -232,6 +233,17 @@ export default function PatientsEnterpriseScreen({
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" size="icon" className="flex sm:hidden" asChild>
+                <Link href="/patients/history">
+                  <History className="size-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" className="hidden sm:flex" asChild>
+                <Link href="/patients/history">
+                  <History className="size-4" />
+                  <span>Ver Histórico</span>
+                </Link>
+              </Button>
               <Button
                 size="icon"
                 className="gradient-primary flex sm:hidden"

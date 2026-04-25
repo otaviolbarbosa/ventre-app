@@ -1672,14 +1672,17 @@ export type Database = {
           search_query?: string
         }
         Returns: {
+          born_at: string
           city: string
           complement: string
           created_at: string
           created_by: string
           date_of_birth: string
+          delivery_method: Database["public"]["Enums"]["delivery_method"]
           due_date: string
           dum: string
           email: string
+          has_finished: boolean
           id: string
           name: string
           neighborhood: string

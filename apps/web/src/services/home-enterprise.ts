@@ -114,7 +114,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
   // Busca pacientes com gestação ativa
   const { data: patients } = await supabaseAdmin
     .from("patients")
-    .select("*, pregnancies(due_date, dum, has_finished, born_at, observations)")
+    .select("*, pregnancies(due_date, dum, has_finished, born_at, delivery_method, observations)")
     .in("id", allPatientIds);
 
   const trimesterCounts: TrimesterCounts = { first: 0, second: 0, third: 0 };
@@ -146,6 +146,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
         dum: pregnancy?.dum ?? null,
         has_finished: pregnancy?.has_finished ?? false,
         born_at: pregnancy?.born_at ?? null,
+        delivery_method: pregnancy?.delivery_method ?? null,
         observations: pregnancy?.observations ?? null,
         weeks: gestationalAge.weeks,
         days: gestationalAge.days,

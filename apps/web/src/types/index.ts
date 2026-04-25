@@ -1,4 +1,4 @@
-import type { Tables } from "@ventre/supabase";
+import type { Enums, Tables } from "@ventre/supabase";
 
 export type ProfessionalType = "obstetra" | "enfermeiro" | "doula";
 
@@ -37,6 +37,7 @@ export type PatientWithGestationalInfo = Tables<"patients"> & {
   dum: string | null;
   has_finished: boolean;
   born_at: string | null;
+  delivery_method: Enums<"delivery_method"> | null;
   observations: string | null;
   weeks: number;
   days: number;

@@ -143,7 +143,7 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
 
   const { data: patients } = await supabase
     .from("patients")
-    .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, observations)")
+    .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, delivery_method, observations)")
     .in("id", patientIds)
     .eq("pregnancies.has_finished", false);
 
@@ -168,6 +168,7 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
         dum: pregnancy?.dum ?? null,
         has_finished: pregnancy?.has_finished ?? false,
         born_at: pregnancy?.born_at ?? null,
+        delivery_method: pregnancy?.delivery_method ?? null,
         observations: pregnancy?.observations ?? null,
         weeks: gestationalAge.weeks,
         days: gestationalAge.days,
