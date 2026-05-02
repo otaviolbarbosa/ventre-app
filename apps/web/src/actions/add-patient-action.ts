@@ -1,6 +1,7 @@
 "use server";
 
 import { isStaff } from "@/lib/access-control";
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
 import { createBilling } from "@/services/billing";
@@ -41,6 +42,17 @@ export const addPatientAction = authActionClient
 
     if (profile.enterprise_id) {
       revalidateTag(`enterprise-patients-${profile.enterprise_id}`, { expire: 300 });
+
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Nova gestante cadastrada",
+        description: `${parsedInput.name} foi cadastrada como nova gestante`,
+        actionType: "patient",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: patient.id,
+        metadata: { patient_id: patient.id },
+      });
     }
 
     return { patient };

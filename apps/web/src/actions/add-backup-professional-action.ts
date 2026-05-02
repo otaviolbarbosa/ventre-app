@@ -1,6 +1,7 @@
 "use server";
 
 import { isStaff } from "@/lib/access-control";
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import type { ProfessionalType } from "@/types";
 import { z } from "zod";
@@ -12,7 +13,7 @@ const schema = z.object({
 
 export const addBackupProfessionalAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, profile } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { data: pregnancy } = await supabase
       .from("pregnancies")
       .select("id")
@@ -75,6 +76,27 @@ export const addBackupProfessionalAction = authActionClient
     });
 
     if (error) throw new Error(error.message);
+
+    if (profile.enterprise_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", parsedInput.patientId)
+        .single();
+
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Profissional de backup adicionado",
+        description: patient
+          ? `Profissional de backup adicionado à equipe de ${patient.name}`
+          : "Profissional de backup adicionado",
+        actionType: "team",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: parsedInput.patientId,
+        metadata: { professional_id: parsedInput.professionalId, pregnancy_id: pregnancy.id },
+      });
+    }
 
     return { success: true };
   });

@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { obstetricHistorySchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -12,7 +13,7 @@ const schema = z.object({
 
 export const upsertObstetricHistoryAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { patientId, pregnancyId, data } = parsedInput;
     const {
       gestations_count,
@@ -43,6 +44,27 @@ export const upsertObstetricHistoryAction = authActionClient
       .eq("id", pregnancyId);
 
     if (pregnancyError) throw new Error(pregnancyError.message);
+
+    if (profile.enterprise_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", patientId)
+        .single();
+
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Histórico obstétrico atualizado",
+        description: patient
+          ? `Histórico obstétrico de ${patient.name} atualizado`
+          : "Histórico obstétrico atualizado",
+        actionType: "clinical",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId,
+        metadata: { pregnancy_id: pregnancyId },
+      });
+    }
 
     return { success: true };
   });

@@ -14,6 +14,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action_name: string
+          action_type: string
+          created_at: string
+          description: string
+          enterprise_id: string
+          id: string
+          metadata: Json
+          patient_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action_name: string
+          action_type: string
+          created_at?: string
+          description: string
+          enterprise_id: string
+          id?: string
+          metadata?: Json
+          patient_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action_name?: string
+          action_type?: string
+          created_at?: string
+          description?: string
+          enterprise_id?: string
+          id?: string
+          metadata?: Json
+          patient_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           created_at: string | null

@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -43,6 +44,27 @@ export const removeBackupProfessionalAction = authActionClient
       .eq("id", parsedInput.teamMemberId);
 
     if (error) throw new Error(error.message);
+
+    if (profile.enterprise_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", member.patient_id)
+        .single();
+
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Profissional de backup removido",
+        description: patient
+          ? `Profissional de backup removido da equipe de ${patient.name}`
+          : "Profissional de backup removido",
+        actionType: "team",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: member.patient_id,
+        metadata: { team_member_id: parsedInput.teamMemberId },
+      });
+    }
 
     return { success: true };
   });

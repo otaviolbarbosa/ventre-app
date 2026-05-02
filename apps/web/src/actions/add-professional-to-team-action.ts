@@ -1,6 +1,7 @@
 "use server";
 
 import { isStaff } from "@/lib/access-control";
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -13,7 +14,7 @@ const schema = z.object({
 
 export const addProfessionalToTeamAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabaseAdmin, profile } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     if (!isStaff(profile)) throw new Error("Acesso não autorizado");
 
     const { patientId, professionalId, professionalType, isBackup } = parsedInput;
@@ -50,6 +51,29 @@ export const addProfessionalToTeamAction = authActionClient
     });
 
     if (error) throw new Error(error.message);
+
+    if (profile.enterprise_id) {
+      const [{ data: patient }, { data: professional }] = await Promise.all([
+        supabase.from("patients").select("name").eq("id", patientId).single(),
+        supabase.from("users").select("name").eq("id", professionalId).single(),
+      ]);
+
+      const patientName = patient?.name ?? "gestante";
+      const professionalName = professional?.name ?? "profissional";
+      const actionName = isBackup ? "Profissional backup adicionada" : "Profissional adicionada à equipe";
+      const description = `${professionalName} foi adicionada à equipe de ${patientName}`;
+
+      insertActivityLog({
+        supabaseAdmin,
+        actionName,
+        description,
+        actionType: "team",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId,
+        metadata: { professional_id: professionalId, professional_type: professionalType, is_backup: isBackup },
+      });
+    }
 
     return { success: true };
   });

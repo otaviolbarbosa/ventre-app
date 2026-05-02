@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { updatePatientSchema } from "@/lib/validations/patient";
 import { z } from "zod";
@@ -11,7 +12,7 @@ const schema = z.object({
 
 export const updatePatientAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { due_date, dum, baby_name, observations, ...patientFields } = parsedInput.data;
 
     const { data: patient, error } = await supabase
@@ -47,6 +48,19 @@ export const updatePatientAction = authActionClient
         .eq("patient_id", parsedInput.patientId);
 
       if (pregnancyError) throw new Error(pregnancyError.message);
+    }
+
+    if (profile.enterprise_id) {
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Dados da paciente atualizados",
+        description: `Dados de ${patient.name} atualizados`,
+        actionType: "patient",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: parsedInput.patientId,
+        metadata: { patient_id: parsedInput.patientId },
+      });
     }
 
     return { patient };
