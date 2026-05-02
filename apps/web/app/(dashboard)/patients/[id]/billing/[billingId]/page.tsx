@@ -6,14 +6,14 @@ import { updateBillingAction } from "@/actions/update-billing-action";
 import { InstallmentList } from "@/components/billing/installment-list";
 import { PaymentMethodBadge } from "@/components/billing/payment-method-badge";
 import { StatusBadge } from "@/components/billing/status-badge";
-import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { LoadingState } from "@/components/shared/loading-state";
-import { Button } from "@ventre/ui/button";
-import { Card, CardContent } from "@ventre/ui/card";
-import { formatCurrency } from "@/lib/billing/calculations";
 import { useAuth } from "@/hooks/use-auth";
+import { formatCurrency } from "@/lib/billing/calculations";
 import RecordPaymentModal from "@/modals/record-payment-modal";
 import type { Tables } from "@ventre/supabase/types";
+import { Button } from "@ventre/ui/button";
+import { Card, CardContent } from "@ventre/ui/card";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -66,7 +66,8 @@ export default function BillingDetailPage() {
   function handleConfirmCancelBilling() {
     confirm({
       title: "Cancelar Cobrança",
-      description: "Tem certeza que deseja cancelar esta cobrança? Esta ação não pode ser desfeita.",
+      description:
+        "Tem certeza que deseja cancelar esta cobrança? Esta ação não pode ser desfeita.",
       confirmLabel: "Cancelar Cobrança",
       variant: "destructive",
       onConfirm: async () => {
@@ -178,7 +179,6 @@ export default function BillingDetailPage() {
         setShowModal={setShowPaymentModal}
         callback={() => fetchBilling({ billingId })}
       />
-
     </div>
   );
 }

@@ -50,7 +50,7 @@ export function ProfessionalCard({
   return (
     <Card className="flex flex-col overflow-hidden border-primary/25">
       {/* Header */}
-      <div className="relative flex justify-end bg-muted/50 px-4 py-3">
+      <div className="relative flex justify-end rounded-t-xl bg-muted/50 px-4 py-3">
         <div className="absolute top-5 left-4 flex items-center gap-2">
           <UserAvatar
             user={professional as { name: string; avatar_url: string | null }}

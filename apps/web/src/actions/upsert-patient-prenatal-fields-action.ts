@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { updatePatientPrenatalSchema } from "@/lib/validations/prenatal";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
@@ -12,7 +13,7 @@ const schema = z.object({
 
 export const upsertPatientPrenatalFieldsAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { patientId, pregnancyId, data } = parsedInput;
 
     const allergiesArray = data.allergies
@@ -48,6 +49,22 @@ export const upsertPatientPrenatalFieldsAction = authActionClient
       .eq("id", pregnancyId);
 
     if (pregnancyError) throw new Error(pregnancyError.message);
+
+    if (profile.enterprise_id) {
+      const { data: patient } = await supabase.from("patients").select("name").eq("id", patientId).single();
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Cartão pré-natal atualizado",
+        description: patient
+          ? `Cartão pré-natal de ${patient.name} foi atualizado`
+          : "Cartão pré-natal atualizado",
+        actionType: "clinical",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId,
+        metadata: { pregnancy_id: pregnancyId },
+      });
+    }
 
     return { success: true };
   });

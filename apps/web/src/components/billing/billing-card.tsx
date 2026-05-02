@@ -1,8 +1,8 @@
 "use client";
 
-import { Card, CardContent } from "@ventre/ui/card";
 import { formatCurrency } from "@/lib/billing/calculations";
 import type { Tables } from "@ventre/supabase/types";
+import { Card, CardContent } from "@ventre/ui/card";
 import Link from "next/link";
 import { PaymentMethodBadge } from "./payment-method-badge";
 import { StatusBadge } from "./status-badge";

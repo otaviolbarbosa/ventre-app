@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -13,7 +14,7 @@ const schema = z.object({
 
 export const finishPatientCareAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase, user } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { error: updateError } = await supabase
       .from("pregnancies")
       .update({
@@ -36,6 +37,28 @@ export const finishPatientCareAction = authActionClient
     }
 
     revalidatePath("/patients");
+
+    if (profile.enterprise_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", parsedInput.patientId)
+        .single();
+      const deliveryLabel =
+        parsedInput.deliveryMethod === "cesarean" ? "parto cesariana" : "parto vaginal";
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Acompanhamento encerrado",
+        description: patient
+          ? `Acompanhamento de ${patient.name} encerrado (${deliveryLabel})`
+          : "Acompanhamento encerrado",
+        actionType: "patient",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: parsedInput.patientId,
+        metadata: { delivery_method: parsedInput.deliveryMethod ?? null },
+      });
+    }
 
     return { success: true };
   });

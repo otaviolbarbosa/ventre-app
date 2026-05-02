@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -11,7 +12,7 @@ const schema = z.object({
 
 export const saveInstallmentLinkAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabaseAdmin } }) => {
+  .action(async ({ parsedInput, ctx: { supabaseAdmin, user, profile } }) => {
     const { data: installment } = await supabaseAdmin
       .from("installments")
       .select("id")
@@ -27,6 +28,28 @@ export const saveInstallmentLinkAction = authActionClient
       .eq("id", parsedInput.installmentId);
 
     if (error) throw new Error(error.message);
+
+    if (profile.enterprise_id) {
+      const { data: billing } = await supabaseAdmin
+        .from("billings")
+        .select("patient_id, patient:patients(name)")
+        .eq("id", parsedInput.billingId)
+        .single();
+      const patient = billing?.patient as { name: string } | null;
+
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Link de pagamento salvo",
+        description: patient
+          ? `Link de pagamento salvo para cobrança de ${patient.name}`
+          : "Link de pagamento salvo",
+        actionType: "billing",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: billing?.patient_id ?? null,
+        metadata: { billing_id: parsedInput.billingId, installment_id: parsedInput.installmentId },
+      });
+    }
 
     return { success: true };
   });

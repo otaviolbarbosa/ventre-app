@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
@@ -47,6 +48,16 @@ export const addEnterpriseProfessionalAction = authActionClient
     if (updateError) {
       throw new Error("Erro ao adicionar profissional.");
     }
+
+    insertActivityLog({
+      supabaseAdmin,
+      actionName: "Profissional adicionada à organização",
+      description: `${targetUser.name} foi adicionada à organização`,
+      actionType: "enterprise",
+      userId: user.id,
+      enterpriseId: profile.enterprise_id,
+      metadata: { professional_id: targetUser.id, professional_email: targetUser.email },
+    });
 
     return { name: targetUser.name, email: targetUser.email };
   });

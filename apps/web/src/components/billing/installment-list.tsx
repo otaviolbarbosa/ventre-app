@@ -1,11 +1,11 @@
 "use client";
 
 import { saveInstallmentLinkAction } from "@/actions/save-installment-link-action";
-import { Button } from "@ventre/ui/button";
-import { Input } from "@ventre/ui/input";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@ventre/supabase/types";
+import { Button } from "@ventre/ui/button";
+import { Input } from "@ventre/ui/input";
 import { Check, ExternalLink, FileText, Image, LinkIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
@@ -68,7 +68,7 @@ export function InstallmentList({
       {installments
         .sort((a, b) => a.installment_number - b.installment_number)
         .map((installment) => (
-          <div key={installment.id} className="flex flex-col gap-3 rounded-lg border p-4">
+          <div key={installment.id} className="flex flex-col gap-3 rounded-lg border bg-white p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-medium text-sm">

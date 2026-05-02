@@ -1,6 +1,7 @@
 "use server";
 
 import { isStaff } from "@/lib/access-control";
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -11,7 +12,7 @@ export const cancelDayAppointmentsAction = authActionClient
       appointmentIds: z.array(z.string().uuid()).optional(),
     }),
   )
-  .action(async ({ parsedInput, ctx: { supabase, user, profile } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     let query = supabase
       .from("appointments")
       .update({ status: "cancelada" })
@@ -29,4 +30,16 @@ export const cancelDayAppointmentsAction = authActionClient
     const { error } = await query;
 
     if (error) throw new Error(error.message);
+
+    if (profile.enterprise_id) {
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Consultas do dia canceladas",
+        description: `Consultas do dia ${parsedInput.date} canceladas`,
+        actionType: "appointment",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        metadata: { date: parsedInput.date },
+      });
+    }
   });

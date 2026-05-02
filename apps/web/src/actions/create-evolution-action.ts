@@ -1,5 +1,6 @@
 "use server";
 
+import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
@@ -13,7 +14,7 @@ const schema = z.object({
 
 export const createEvolutionAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase, user } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { data: evolution, error } = await supabase
       .from("patient_evolutions")
       .insert({
@@ -40,6 +41,21 @@ export const createEvolutionAction = authActionClient
         type: "evolution_added",
         ...template,
         data: { url: `/patients/${parsedInput.patientId}` },
+      });
+    }
+
+    if (profile.enterprise_id) {
+      insertActivityLog({
+        supabaseAdmin,
+        actionName: "Evolução registrada",
+        description: patient
+          ? `Nova evolução registrada para ${patient.name}`
+          : "Nova evolução registrada",
+        actionType: "clinical",
+        userId: user.id,
+        enterpriseId: profile.enterprise_id,
+        patientId: parsedInput.patientId,
+        metadata: { evolution_id: evolution.id },
       });
     }
 
