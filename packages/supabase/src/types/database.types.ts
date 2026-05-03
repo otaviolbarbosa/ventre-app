@@ -463,10 +463,19 @@ export type Database = {
           dpp_approaching: boolean
           evolution_added: boolean
           id: string
+          lab_exam_added: boolean
+          obstetric_history_updated: boolean
+          other_exam_added: boolean
+          patient_added: boolean
+          pregnancy_evolution_added: boolean
+          risk_factors_updated: boolean
           team_invite_accepted: boolean
           team_invite_received: boolean
+          team_member_added: boolean
+          ultrasound_added: boolean
           updated_at: string
           user_id: string
+          vaccine_updated: boolean
         }
         Insert: {
           appointment_cancelled?: boolean
@@ -478,10 +487,19 @@ export type Database = {
           dpp_approaching?: boolean
           evolution_added?: boolean
           id?: string
+          lab_exam_added?: boolean
+          obstetric_history_updated?: boolean
+          other_exam_added?: boolean
+          patient_added?: boolean
+          pregnancy_evolution_added?: boolean
+          risk_factors_updated?: boolean
           team_invite_accepted?: boolean
           team_invite_received?: boolean
+          team_member_added?: boolean
+          ultrasound_added?: boolean
           updated_at?: string
           user_id: string
+          vaccine_updated?: boolean
         }
         Update: {
           appointment_cancelled?: boolean
@@ -493,10 +511,19 @@ export type Database = {
           dpp_approaching?: boolean
           evolution_added?: boolean
           id?: string
+          lab_exam_added?: boolean
+          obstetric_history_updated?: boolean
+          other_exam_added?: boolean
+          patient_added?: boolean
+          pregnancy_evolution_added?: boolean
+          risk_factors_updated?: boolean
           team_invite_accepted?: boolean
           team_invite_received?: boolean
+          team_member_added?: boolean
+          ultrasound_added?: boolean
           updated_at?: string
           user_id?: string
+          vaccine_updated?: boolean
         }
         Relationships: [
           {
@@ -1720,6 +1747,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      call_send_notification: { Args: { p_payload: Json }; Returns: undefined }
       gestational_weeks: { Args: { dum: string }; Returns: number }
       get_filtered_patients: {
         Args: {
@@ -1831,6 +1859,15 @@ export type Database = {
         | "billing_created"
         | "billing_payment_received"
         | "billing_reminder"
+        | "patient_added"
+        | "team_member_added"
+        | "obstetric_history_updated"
+        | "risk_factors_updated"
+        | "pregnancy_evolution_added"
+        | "lab_exam_added"
+        | "other_exam_added"
+        | "ultrasound_added"
+        | "vaccine_updated"
       payment_method:
         | "credito"
         | "debito"
@@ -2032,6 +2069,15 @@ export const Constants = {
         "billing_created",
         "billing_payment_received",
         "billing_reminder",
+        "patient_added",
+        "team_member_added",
+        "obstetric_history_updated",
+        "risk_factors_updated",
+        "pregnancy_evolution_added",
+        "lab_exam_added",
+        "other_exam_added",
+        "ultrasound_added",
+        "vaccine_updated",
       ],
       payment_method: [
         "credito",
