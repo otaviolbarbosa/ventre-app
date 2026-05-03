@@ -1,7 +1,5 @@
-import { calculateBillingStatus, formatCurrency } from "@/lib/billing/calculations";
+import { calculateBillingStatus } from "@/lib/billing/calculations";
 import { cancelInstallmentNotifications } from "@/lib/billing/notifications";
-import { sendNotificationToTeam } from "@/lib/notifications/send";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { recordPaymentSchema } from "@/lib/validations/billing";
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
@@ -214,26 +212,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           status: billingStatus,
         })
         .eq("id", installment.billing_id);
-    }
-
-    // Fire-and-forget: send payment confirmation notification
-    const { data: billing } = await supabaseAdmin
-      .from("billings")
-      .select("description, patient_id")
-      .eq("id", installment.billing_id)
-      .single();
-
-    if (billing) {
-      const template = getNotificationTemplate("billing_payment_received", {
-        description: billing.description,
-        amount: formatCurrency(validation.data.paid_amount),
-        installmentNumber: installment.installment_number,
-      });
-      sendNotificationToTeam(billing.patient_id, user.id, {
-        type: "billing_payment_received",
-        ...template,
-        data: { url: `/patients/${billing.patient_id}/billing` },
-      });
     }
 
     return NextResponse.json({ payment }, { status: 201 });

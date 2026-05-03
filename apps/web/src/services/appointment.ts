@@ -1,6 +1,4 @@
 import { isStaff } from "@/lib/access-control";
-import { sendNotificationToTeam } from "@/lib/notifications/send";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { getServerAuth } from "@/lib/server-auth";
 import type { CreateAppointmentInput } from "@/lib/validations/appointment";
 import type { createServerSupabaseClient } from "@ventre/supabase/server";
@@ -74,25 +72,6 @@ export async function createAppointment(
 
   if (error) {
     throw new Error(error.message);
-  }
-
-  const { data: patient } = await supabase
-    .from("patients")
-    .select("name")
-    .eq("id", data.patient_id)
-    .single();
-
-  if (patient) {
-    const template = getNotificationTemplate("appointment_created", {
-      patientName: patient.name,
-      date: data.date,
-      time: data.time,
-    });
-    sendNotificationToTeam(data.patient_id, userId, {
-      type: "appointment_created",
-      ...template,
-      data: { url: "/appointments" },
-    });
   }
 
   return appointment;

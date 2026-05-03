@@ -1,11 +1,8 @@
 import {
   calculateInstallmentAmount,
   calculateInstallmentDates,
-  formatCurrency,
 } from "@/lib/billing/calculations";
 import { scheduleBillingNotifications } from "@/lib/billing/notifications";
-import { sendNotificationToTeam } from "@/lib/notifications/send";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { getServerUser } from "@/lib/server-auth";
 import type { CreateBillingInput } from "@/lib/validations/billing";
 import {
@@ -368,24 +365,6 @@ export async function createBilling(
   }
 
   scheduleBillingNotifications(billing.id);
-
-  const { data: patient } = await supabase
-    .from("patients")
-    .select("name")
-    .eq("id", patient_id)
-    .single();
-
-  if (patient) {
-    const template = getNotificationTemplate("billing_created", {
-      description,
-      amount: formatCurrency(total_amount),
-    });
-    sendNotificationToTeam(patient_id, userId, {
-      type: "billing_created",
-      ...template,
-      data: { url: `/patients/${patient_id}/billing` },
-    });
-  }
 
   return billing;
 }

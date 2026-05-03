@@ -2,8 +2,6 @@
 
 import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
-import { sendNotificationToTeam } from "@/lib/notifications/send";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { createEvolutionSchema } from "@/lib/validations/evolution";
 import { z } from "zod";
 
@@ -27,24 +25,13 @@ export const createEvolutionAction = authActionClient
 
     if (error) throw new Error(error.message);
 
-    const [{ data: professionalProfile }, { data: patient }] = await Promise.all([
-      supabase.from("users").select("name").eq("id", user.id).single(),
-      supabase.from("patients").select("name").eq("id", parsedInput.patientId).single(),
-    ]);
-
-    if (professionalProfile && patient) {
-      const template = getNotificationTemplate("evolution_added", {
-        professionalName: professionalProfile.name,
-        patientName: patient.name,
-      });
-      sendNotificationToTeam(parsedInput.patientId, user.id, {
-        type: "evolution_added",
-        ...template,
-        data: { url: `/patients/${parsedInput.patientId}` },
-      });
-    }
-
     if (profile.enterprise_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", parsedInput.patientId)
+        .single();
+
       insertActivityLog({
         supabaseAdmin,
         actionName: "Evolução registrada",

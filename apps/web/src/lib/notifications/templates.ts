@@ -16,6 +16,7 @@ type TemplateParams = {
   dueDate?: string;
   description?: string;
   installmentNumber?: number;
+  vaccineName?: string;
 };
 
 export function getNotificationTemplate(
@@ -70,6 +71,42 @@ export function getNotificationTemplate(
     billing_reminder: () => ({
       title: "Vencimento próximo",
       body: `Parcela de ${params.amount} vence em ${params.dueDate}`,
+    }),
+    patient_added: () => ({
+      title: "Nova gestante cadastrada",
+      body: `${params.patientName} foi adicionada à sua lista de gestantes.`,
+    }),
+    team_member_added: () => ({
+      title: "Nova profissional na equipe",
+      body: `${params.professionalName} foi adicionada à equipe de ${params.patientName}.`,
+    }),
+    obstetric_history_updated: () => ({
+      title: "Histórico obstétrico atualizado",
+      body: `O histórico obstétrico de ${params.patientName} foi atualizado.`,
+    }),
+    risk_factors_updated: () => ({
+      title: "Fatores de risco atualizados",
+      body: `Os fatores de risco de ${params.patientName} foram atualizados.`,
+    }),
+    pregnancy_evolution_added: () => ({
+      title: "Nova evolução gestacional",
+      body: `Evolução gestacional registrada para ${params.patientName}.`,
+    }),
+    lab_exam_added: () => ({
+      title: "Novo exame laboratorial",
+      body: `Exame laboratorial registrado para ${params.patientName}.`,
+    }),
+    other_exam_added: () => ({
+      title: "Novo exame registrado",
+      body: `Exame registrado para ${params.patientName}.`,
+    }),
+    ultrasound_added: () => ({
+      title: "Novo ultrassom registrado",
+      body: `Ultrassom registrado para ${params.patientName}.`,
+    }),
+    vaccine_updated: () => ({
+      title: "Vacina atualizada",
+      body: `Vacina de ${params.patientName} atualizada.`,
     }),
   };
 

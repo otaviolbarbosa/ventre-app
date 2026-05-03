@@ -1,5 +1,6 @@
 import { sendMulticastNotification } from "@/lib/firebase/admin";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Enums } from "@ventre/supabase/types";
 
 export type NotificationType =
   | "appointment_created"
@@ -13,7 +14,16 @@ export type NotificationType =
   | "dpp_approaching"
   | "billing_created"
   | "billing_payment_received"
-  | "billing_reminder";
+  | "billing_reminder"
+  | "patient_added"
+  | "team_member_added"
+  | "obstetric_history_updated"
+  | "risk_factors_updated"
+  | "pregnancy_evolution_added"
+  | "lab_exam_added"
+  | "other_exam_added"
+  | "ultrasound_added"
+  | "vaccine_updated";
 
 type NotificationPayload = {
   type: NotificationType;
@@ -84,9 +94,10 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
     }
 
     // Store in notification history
+    // Cast is safe: new enum values become valid after pnpm db:types post-migration
     await supabaseAdmin.from("notifications").insert({
       user_id: userId,
-      type: payload.type,
+      type: payload.type as Enums<"notification_type">,
       title: payload.title,
       body: payload.body,
       data: payload.data || {},
