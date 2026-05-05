@@ -9,7 +9,7 @@ import {
   ArrowRightIcon,
   Building2,
   Calendar,
-  DollarSign,
+  CircleDollarSign,
   FileHeart,
   FlaskConical,
   Syringe,
@@ -25,7 +25,7 @@ const ACTION_TYPE_CONFIG = {
   clinical: { icon: FileHeart, colorClass: "text-pink-500" },
   exam: { icon: FlaskConical, colorClass: "text-orange-500" },
   vaccine: { icon: Syringe, colorClass: "text-teal-500" },
-  billing: { icon: DollarSign, colorClass: "text-yellow-500" },
+  billing: { icon: CircleDollarSign, colorClass: "text-yellow-500" },
   enterprise: { icon: Building2, colorClass: "text-muted-foreground" },
 } as const;
 

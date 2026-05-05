@@ -12,7 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@ventr
 import {
   BriefcaseMedicalIcon,
   Calendar,
-  DollarSign,
+  CircleDollarSign,
   Home,
   LogOut,
   Mail,
@@ -27,7 +27,7 @@ const navigationProfessionals = [
   { name: "Home", href: "/home", icon: Home },
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
-  { name: "Financeiro", href: "/billing", icon: DollarSign },
+  { name: "Financeiro", href: "/billing", icon: CircleDollarSign },
   { name: "Convites", href: "/invites", icon: Mail },
 ];
 
@@ -36,7 +36,7 @@ const navigationStaff = [
   { name: "Profissionais", href: "/users", icon: BriefcaseMedicalIcon },
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
-  { name: "Financeiro", href: "/billing", icon: DollarSign },
+  { name: "Financeiro", href: "/billing", icon: CircleDollarSign },
 ];
 
 export function Sidebar() {
@@ -92,7 +92,10 @@ export function Sidebar() {
             title={isCollapsed ? "Expandir menu" : "Recolher menu"}
           >
             <PanelLeft
-              className={cn("h-4 w-4 transition-transform duration-300", isCollapsed && "rotate-180")}
+              className={cn(
+                "h-4 w-4 transition-transform duration-300",
+                isCollapsed && "rotate-180",
+              )}
             />
           </Button>
         </div>

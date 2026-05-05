@@ -8,5 +8,5 @@ export const getActivityLogsAction = authActionClient
   .inputSchema(z.object({}))
   .action(async ({ ctx: { supabaseAdmin, profile } }) => {
     if (!profile.enterprise_id) return { logs: [], total: 0 };
-    return await getEnterpriseActivityLogs(supabaseAdmin, profile.enterprise_id, { limit: 10 });
+    return await getEnterpriseActivityLogs(supabaseAdmin, profile.enterprise_id, { limit: 5 });
   });
