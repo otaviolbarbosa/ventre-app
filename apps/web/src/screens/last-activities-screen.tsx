@@ -7,7 +7,7 @@ import { Card, CardContent } from "@ventre/ui/card";
 import {
   Building2,
   Calendar,
-  DollarSign,
+  CircleDollarSign,
   FileHeart,
   FlaskConical,
   Syringe,
@@ -23,7 +23,7 @@ const ACTION_TYPE_CONFIG = {
   clinical: { icon: FileHeart, colorClass: "text-pink-500" },
   exam: { icon: FlaskConical, colorClass: "text-orange-500" },
   vaccine: { icon: Syringe, colorClass: "text-teal-500" },
-  billing: { icon: DollarSign, colorClass: "text-yellow-500" },
+  billing: { icon: CircleDollarSign, colorClass: "text-yellow-500" },
   enterprise: { icon: Building2, colorClass: "text-muted-foreground" },
 } as const;
 
@@ -70,9 +70,7 @@ export function LastActivitiesScreen({
                       </div>
                       <p className="mt-0.5 text-muted-foreground text-xs">{log.description}</p>
                       {log.user && (
-                        <p className="mt-0.5 text-muted-foreground text-xs">
-                          Por: {log.user.name}
-                        </p>
+                        <p className="mt-0.5 text-muted-foreground text-xs">Por: {log.user.name}</p>
                       )}
                     </div>
                   </div>

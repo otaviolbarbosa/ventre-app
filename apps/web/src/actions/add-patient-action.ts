@@ -13,18 +13,22 @@ export const addPatientAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     // When creating on behalf of a professional, verify they belong to the same enterprise
     if (parsedInput.professional_id) {
-      if (!isStaff(profile) || parsedInput.professional_id !== profile.id) {
+      const isSelf = parsedInput.professional_id === profile.id;
+
+      if (!isStaff(profile) && !isSelf) {
         throw new Error("Sem permissão para criar pacientes em nome de outro profissional.");
       }
 
-      const { data: targetProfessional } = await supabase
-        .from("users")
-        .select("enterprise_id")
-        .eq("id", parsedInput.professional_id)
-        .single();
+      if (!isSelf) {
+        const { data: targetProfessional } = await supabase
+          .from("users")
+          .select("enterprise_id")
+          .eq("id", parsedInput.professional_id)
+          .single();
 
-      if (targetProfessional?.enterprise_id !== profile.enterprise_id) {
-        throw new Error("O profissional selecionado não pertence à sua organização.");
+        if (targetProfessional?.enterprise_id !== profile.enterprise_id) {
+          throw new Error("O profissional selecionado não pertence à sua organização.");
+        }
       }
     }
 
