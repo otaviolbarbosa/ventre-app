@@ -5,10 +5,10 @@ import { getPatientBillingsAction } from "@/actions/get-patient-billings-action"
 import { BillingCard } from "@/components/billing/billing-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientBilling } from "@/components/shared/loading-state";
-import { Button } from "@ventre/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type { Tables } from "@ventre/supabase/types";
+import { Button } from "@ventre/ui/button";
 import { Plus, Receipt } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams } from "next/navigation";
@@ -32,7 +32,7 @@ export default function PatientBillingPage() {
 
   useEffect(() => {
     execute({ patientId });
-    if (isStaff) fetchProfessionals({});
+    if (isStaff) fetchProfessionals({ patientId });
   }, [execute, fetchProfessionals, isStaff, patientId]);
 
   const billings = (result.data?.billings ?? []) as Billing[];

@@ -1,20 +1,47 @@
 // @ts-nocheck
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { type SupabaseClient, createClient } from "npm:@supabase/supabase-js@2";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") as string;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") as string;
-const FIREBASE_CLIENT_EMAIL = Deno.env.get("FIREBASE_CLIENT_EMAIL") as string;
-const FIREBASE_PRIVATE_KEY = Deno.env.get("FIREBASE_PRIVATE_KEY") as string;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID");
+const FIREBASE_CLIENT_EMAIL = Deno.env.get("FIREBASE_CLIENT_EMAIL");
+const FIREBASE_PRIVATE_KEY = Deno.env.get("FIREBASE_PRIVATE_KEY");
+
+function requireEnv(name: string, value: string | undefined): string {
+  if (!value) throw new Error(`Missing env var: ${name}`);
+  return value;
+}
 
 // ── Firebase helpers ────────────────────────────────────────────────────────
 
+function b64url(input: Uint8Array | string): string {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function normalizePrivateKey(raw: string): string {
+  let key = raw.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  key = key.replace(/\\n/g, "\n").replace(/\r/g, "");
+  if (!key.includes("-----BEGIN PRIVATE KEY-----") || !key.includes("-----END PRIVATE KEY-----")) {
+    throw new Error("FIREBASE_PRIVATE_KEY is not a valid PKCS8 PEM");
+  }
+  return key;
+}
+
 async function getAccessToken(): Promise<string> {
+  const clientEmail = requireEnv("FIREBASE_CLIENT_EMAIL", FIREBASE_CLIENT_EMAIL);
+  const privateKeyRaw = requireEnv("FIREBASE_PRIVATE_KEY", FIREBASE_PRIVATE_KEY);
+
   const now = Math.floor(Date.now() / 1000);
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = btoa(
+  const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = b64url(
     JSON.stringify({
-      iss: FIREBASE_CLIENT_EMAIL,
+      iss: clientEmail,
       scope: "https://www.googleapis.com/auth/firebase.messaging",
       aud: "https://oauth2.googleapis.com/token",
       iat: now,
@@ -22,7 +49,7 @@ async function getAccessToken(): Promise<string> {
     }),
   );
 
-  const key = FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n");
+  const key = normalizePrivateKey(privateKeyRaw);
   const pemContent = key
     .replace(/-----BEGIN PRIVATE KEY-----/, "")
     .replace(/-----END PRIVATE KEY-----/, "")
@@ -38,21 +65,26 @@ async function getAccessToken(): Promise<string> {
   );
 
   const signatureInput = new TextEncoder().encode(`${header}.${payload}`);
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, signatureInput);
-  const sig = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  const signature = new Uint8Array(
+    await crypto.subtle.sign("RSASSA-PKCS1-v1_5", cryptoKey, signatureInput),
+  );
 
-  const jwt = `${header}.${payload}.${sig}`;
+  const jwt = `${header}.${payload}.${b64url(signature)}`;
 
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
   });
 
   const data = await response.json();
+  if (!response.ok || !data?.access_token) {
+    throw new Error(`Google token error: ${JSON.stringify(data)}`);
+  }
+
   return data.access_token;
 }
 
@@ -64,8 +96,9 @@ async function sendFcmMessage(
   data?: Record<string, string>,
 ): Promise<{ success: boolean; invalidToken: boolean }> {
   try {
+    const projectId = requireEnv("FIREBASE_PROJECT_ID", FIREBASE_PROJECT_ID);
     const response = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
+      `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
       {
         method: "POST",
         headers: {
@@ -86,7 +119,10 @@ async function sendFcmMessage(
     if (!response.ok) {
       const err = await response.json();
       const code = err?.error?.details?.[0]?.errorCode;
-      return { success: false, invalidToken: code === "UNREGISTERED" || code === "INVALID_ARGUMENT" };
+      return {
+        success: false,
+        invalidToken: code === "UNREGISTERED" || code === "INVALID_ARGUMENT",
+      };
     }
 
     return { success: true, invalidToken: false };
@@ -108,7 +144,10 @@ async function getUserName(supabase: SupabaseClient, userId: string | null): Pro
   return data?.name ?? "Profissional";
 }
 
-async function getPatientIdFromPregnancy(supabase: SupabaseClient, pregnancyId: string): Promise<string | null> {
+async function getPatientIdFromPregnancy(
+  supabase: SupabaseClient,
+  pregnancyId: string,
+): Promise<string | null> {
   const { data } = await supabase
     .from("pregnancies")
     .select("patient_id")
@@ -129,6 +168,10 @@ function formatBRL(value: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
+function formatTime(time: unknown): string {
+  return typeof time === "string" ? time.slice(0, 5) : "";
+}
+
 // ── Delivery ────────────────────────────────────────────────────────────────
 
 type NotificationPayload = {
@@ -144,7 +187,6 @@ async function deliverToUser(
   userId: string,
   notification: NotificationPayload,
 ) {
-  // Check per-user opt-out
   const { data: settings } = await supabase
     .from("notification_settings")
     .select(notification.type)
@@ -153,7 +195,6 @@ async function deliverToUser(
 
   if (settings && settings[notification.type] === false) return;
 
-  // Get active FCM tokens
   const { data: subscriptions } = await supabase
     .from("push_subscriptions")
     .select("fcm_token")
@@ -171,14 +212,10 @@ async function deliverToUser(
       notification.data,
     );
     if (result.invalidToken) {
-      await supabase
-        .from("push_subscriptions")
-        .update({ is_active: false })
-        .eq("fcm_token", token);
+      await supabase.from("push_subscriptions").update({ is_active: false }).eq("fcm_token", token);
     }
   }
 
-  // Persist in notification history
   await supabase.from("notifications").insert({
     user_id: userId,
     type: notification.type,
@@ -213,6 +250,7 @@ async function handleEvent(
   triggeredBy: string | null,
   data: Record<string, unknown>,
 ): Promise<HandlerResult> {
+  console.log("data", JSON.stringify(data));
   switch (event) {
     // ── appointments ────────────────────────────────────────────────────────
     case "appointment_created": {
@@ -222,7 +260,7 @@ async function handleEvent(
         notification: {
           type: "appointment_created",
           title: "Nova consulta agendada",
-          body: `Consulta com ${patientName} em ${data.date} às ${data.time?.slice(0, 5)}.`,
+          body: `Consulta com ${patientName} em ${data.date} às ${formatTime(data.time)}.`,
           data: { category: "appointments", type: "appointment_created", url: "/appointments" },
         },
       };
@@ -235,7 +273,7 @@ async function handleEvent(
         notification: {
           type: "appointment_updated",
           title: "Consulta atualizada",
-          body: `A consulta com ${patientName} foi alterada para ${data.date} às ${data.time?.slice(0, 5)}.`,
+          body: `A consulta com ${patientName} foi alterada para ${data.date} às ${formatTime(data.time)}.`,
           data: { category: "appointments", type: "appointment_updated", url: "/appointments" },
         },
       };
@@ -264,7 +302,7 @@ async function handleEvent(
         notification: {
           type: "billing_created",
           title: "Nova cobrança criada",
-          body: `${data.description} — ${formatBRL(data.total_amount)}`,
+          body: `${String(data.description ?? "")} — ${formatBRL(Number(data.total_amount ?? 0))}`,
           data: {
             category: "billing",
             id: data.billing_id,
@@ -278,7 +316,9 @@ async function handleEvent(
     case "billing_payment_received": {
       const { data: installment } = await supabase
         .from("installments")
-        .select("installment_number, billing_id, billings(id, patient_id, description, splitted_billing)")
+        .select(
+          "installment_number, billing_id, billings(id, patient_id, description, splitted_billing)",
+        )
         .eq("id", data.installment_id)
         .single();
 
@@ -580,34 +620,49 @@ async function handleEvent(
 // ── Server ──────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
+  let stage = "init";
   try {
+    stage = "env-check";
+    requireEnv("SUPABASE_URL", SUPABASE_URL);
+    requireEnv("SUPABASE_SERVICE_ROLE_KEY", SUPABASE_SERVICE_ROLE_KEY);
+    requireEnv("FIREBASE_PROJECT_ID", FIREBASE_PROJECT_ID);
+    requireEnv("FIREBASE_CLIENT_EMAIL", FIREBASE_CLIENT_EMAIL);
+    requireEnv("FIREBASE_PRIVATE_KEY", FIREBASE_PRIVATE_KEY);
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
     }
 
+    stage = "parse-body";
     const { event, triggered_by, data } = await req.json();
 
     if (!event || !data) {
       return new Response(JSON.stringify({ error: "Missing event or data" }), { status: 400 });
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    stage = "supabase-client";
+    const supabase = createClient(SUPABASE_URL as string, SUPABASE_SERVICE_ROLE_KEY as string);
+
+    stage = "firebase-token";
     const accessToken = await getAccessToken();
 
+    stage = "handle-event";
     const result = await handleEvent(supabase, event, triggered_by ?? null, data);
 
     if (!result || result.recipientIds.length === 0) {
       return new Response(JSON.stringify({ delivered: 0 }), { status: 200 });
     }
 
+    stage = "deliver";
     await deliverToRecipients(supabase, accessToken, result.recipientIds, result.notification);
 
-    return new Response(
-      JSON.stringify({ delivered: result.recipientIds.length }),
-      { status: 200 },
-    );
+    return new Response(JSON.stringify({ delivered: result.recipientIds.length }), { status: 200 });
   } catch (error) {
-    return new Response(JSON.stringify({ error: String(error) }), { status: 500 });
+    console.error("send-notification failed at:", stage, error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error), stage }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
   }
 });

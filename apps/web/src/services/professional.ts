@@ -16,7 +16,9 @@ export type GetEnterpriseProfessionalsResult = {
   enterpriseToken: string | null;
 };
 
-export async function getEnterpriseProfessionals(): Promise<GetEnterpriseProfessionalsResult> {
+export async function getEnterpriseProfessionals(
+  patientId?: string,
+): Promise<GetEnterpriseProfessionalsResult> {
   const { supabase, profile } = await getServerAuth();
   const supabaseAdmin = await createServerSupabaseAdmin();
 
@@ -39,10 +41,16 @@ export async function getEnterpriseProfessionals(): Promise<GetEnterpriseProfess
 
   const professionalIds = professionals.map((p) => p.id);
 
-  const { data: teamMembers } = await supabaseAdmin
+  const teamMembersQuery = supabaseAdmin
     .from("team_members")
     .select("patient_id, professional_id")
     .in("professional_id", professionalIds);
+
+  if (patientId) {
+    teamMembersQuery.eq("patient_id", patientId);
+  }
+
+  const { data: teamMembers } = await teamMembersQuery;
 
   const patientCountByProfessional: Record<string, Set<string>> = {};
   for (const tm of teamMembers ?? []) {
@@ -54,14 +62,20 @@ export async function getEnterpriseProfessionals(): Promise<GetEnterpriseProfess
     }
   }
 
-  const professionalsWithCount: EnterpriseProfessional[] = professionals.map((p) => ({
-    id: p.id,
-    name: p.name,
-    email: p.email,
-    phone: p.phone,
-    professional_type: p.professional_type,
-    patient_count: patientCountByProfessional[p.id]?.size ?? 0,
-  }));
+  const teamProfessionalIds = patientId
+    ? new Set((teamMembers ?? []).map((tm) => tm.professional_id))
+    : null;
+
+  const professionalsWithCount: EnterpriseProfessional[] = professionals
+    .filter((p) => !teamProfessionalIds || teamProfessionalIds.has(p.id))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      professional_type: p.professional_type,
+      patient_count: patientCountByProfessional[p.id]?.size ?? 0,
+    }));
 
   return { professionals: professionalsWithCount, enterpriseToken: enterprise?.token ?? null };
 }
