@@ -17,7 +17,8 @@
     "db:diff": "supabase db diff",
     "db:migration:new": "supabase migration new",
     "db:seed:generate": "tsx scripts/generate-seed.ts",
-    "types": "supabase gen types typescript --project-id osnpmadayhignmkpoevr > ./src/types/database.types.ts"
+    "db:types": "node scripts/with-env.cjs supabase gen types typescript --project-id \\$NEXT_PUBLIC_SUPABASE_PROJECCT_ID > ./src/types/database.types.ts",
+    "db:functions:deploy": "node scripts/with-env.cjs supabase functions deploy --project-ref \\$NEXT_PUBLIC_SUPABASE_PROJECCT_ID"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -29,7 +30,9 @@
   "devDependencies": {
     "@faker-js/faker": "^10.2.0",
     "@types/node": "^25.0.10",
+    "cross-var": "^1.1.0",
     "dayjs": "^1.11.19",
+    "dotenv": "^17.4.2",
     "next": "^16.1.0",
     "supabase": "^2.72.8",
     "tsx": "^4.21.0",
