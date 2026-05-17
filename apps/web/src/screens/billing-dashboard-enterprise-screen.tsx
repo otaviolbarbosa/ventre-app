@@ -1,6 +1,7 @@
 "use client";
 
 import { getEnterpriseBillingAction as fetchEnterpriseBilling } from "@/actions/get-enterprise-billing-action";
+import { getEnterprisePatientsForBillingAction } from "@/actions/get-enterprise-patients-for-billing-action";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
 import { InstallmentCard } from "@/components/billing/installment-card";
 import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdown";
@@ -10,14 +11,16 @@ import { ProfessionalsSelector } from "@/components/shared/professionals-selecto
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import { getPeriodRange } from "@/lib/billing/period-range";
+import NewBillingModal from "@/modals/new-billing-modal";
 import type { EnterpriseBillingProfessional } from "@/services/billing";
 import type {
   BillingWithInstallments,
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
 import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { Receipt, X } from "lucide-react";
+import { Plus, Receipt, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useState } from "react";
 
@@ -85,6 +88,16 @@ export default function BillingDashboardEnterpriseScreen({
     sectionTitle,
   } = useBillingDashboard({ billings, metrics, activePeriod: period });
 
+  const [showNewBillingModal, setShowNewBillingModal] = useState(false);
+  const { execute: fetchBillingPatients, result: billingPatientsResult } = useAction(
+    getEnterprisePatientsForBillingAction,
+  );
+
+  const handleOpenNewBilling = () => {
+    if (!billingPatientsResult.data) fetchBillingPatients();
+    setShowNewBillingModal(true);
+  };
+
   const professionalsMap = Object.fromEntries(professionals.map((p) => [p.id, p.name ?? p.id]));
 
   return (
@@ -118,7 +131,13 @@ export default function BillingDashboardEnterpriseScreen({
                 </Badge>
               )}
             </div>
-            <PeriodFilterDropdown activePeriod={period} onSelect={handlePeriodSelect} />
+            <div className="flex items-center gap-2">
+              <PeriodFilterDropdown activePeriod={period} onSelect={handlePeriodSelect} />
+              <Button size="sm" className="gradient-primary" onClick={handleOpenNewBilling}>
+                <Plus className="mr-1 h-4 w-4" />
+                Nova Cobrança
+              </Button>
+            </div>
           </div>
 
           {/* Metrics */}
@@ -164,6 +183,14 @@ export default function BillingDashboardEnterpriseScreen({
           </div>
         </div>
       </div>
+
+      <NewBillingModal
+        isStaff
+        patients={billingPatientsResult.data?.patients ?? []}
+        showModal={showNewBillingModal}
+        setShowModal={setShowNewBillingModal}
+        callback={() => fetchData(professionalFilter, period)}
+      />
     </div>
   );
 }

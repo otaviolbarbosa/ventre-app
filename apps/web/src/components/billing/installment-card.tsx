@@ -18,11 +18,18 @@ export function InstallmentCard({
   installment,
   installmentCount,
   professionals,
+  professionalId,
 }: {
   installment: Installment;
   installmentCount: number;
   professionals?: Record<string, string>;
+  professionalId?: string;
 }) {
+  const splitted = installment.splitted_installment as Record<string, number> | null | undefined;
+  const displayAmount =
+    professionalId && splitted?.[professionalId] != null
+      ? splitted[professionalId]
+      : installment.amount;
   return (
     <Link
       href={`/patients/${installment.patient_id}/billing/${installment.billing_id}`}
@@ -40,7 +47,7 @@ export function InstallmentCard({
 
           <div className="mt-3 flex items-center justify-between text-sm">
             <div>
-              <span className="font-semibold text-lg">{formatCurrency(installment.amount)}</span>
+              <span className="font-semibold text-lg">{formatCurrency(displayAmount)}</span>
               {installmentCount > 1 && (
                 <span className="ml-2 whitespace-nowrap text-muted-foreground">
                   {installment.installment_number} de {installmentCount} parcelas
