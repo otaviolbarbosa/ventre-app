@@ -4,34 +4,25 @@ import { isStaff } from "@/lib/access-control";
 import { authActionClient } from "@/lib/safe-action";
 
 export const getEnterprisePatientsForBillingAction = authActionClient.action(
-  async ({ ctx: { supabase, profile } }) => {
-    if (!isStaff(profile) || !profile.enterprise_id) {
-      return { patients: [] };
-    }
-
-    const { data: professionals } = await supabase
-      .from("users")
-      .select("id")
-      .eq("enterprise_id", profile.enterprise_id)
-      .eq("user_type", "professional");
-
-    const professionalIds = professionals?.map((p) => p.id) ?? [];
-    if (professionalIds.length === 0) return { patients: [] };
-
-    const { data: teamMembers } = await supabase
-      .from("team_members")
-      .select("patient_id")
-      .in("professional_id", professionalIds);
-
-    const patientIds = [...new Set(teamMembers?.map((tm) => tm.patient_id) ?? [])];
-    if (patientIds.length === 0) return { patients: [] };
-
-    const { data } = await supabase
+  async ({ ctx: { supabase, profile, user } }) => {
+    let query = supabase
       .from("patients")
-      .select("id, name")
-      .in("id", patientIds)
+      .select(
+        "id, name, team_members!inner(professional_id, users!team_members_professional_id_fkey!inner(enterprise_id, user_type))",
+      )
       .order("name", { ascending: true });
 
-    return { patients: (data ?? []) as { id: string; name: string | null }[] };
+    if (isStaff(profile) && profile.enterprise_id) {
+      query = query
+        .eq("team_members.users.enterprise_id", profile.enterprise_id)
+        .eq("team_members.users.user_type", "professional");
+    } else {
+      query = query.eq("team_members.professional_id", user.id);
+    }
+
+    const { data, error } = await query;
+    if (error) return { patients: [] };
+
+    return { patients: (data ?? []).map((p) => ({ id: p.id, name: p.name })) };
   },
 );
