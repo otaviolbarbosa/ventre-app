@@ -1,3 +1,4 @@
+import { formatCurrency } from "../billing/calculations";
 import type { NotificationType } from "./send";
 
 type NotificationTemplate = {
@@ -62,15 +63,15 @@ export function getNotificationTemplate(
     }),
     billing_created: () => ({
       title: "Nova cobrança criada",
-      body: `${params.description} - ${params.amount}`,
+      body: `${params.description} - ${formatCurrency(Number(params.amount) ?? 0)}`,
     }),
     billing_payment_received: () => ({
       title: "Pagamento registrado",
-      body: `Parcela ${params.installmentNumber} de ${params.description} - ${params.amount}`,
+      body: `Parcela ${params.installmentNumber} de ${params.description} - ${formatCurrency(Number(params.amount) ?? 0)}`,
     }),
     billing_reminder: () => ({
       title: "Vencimento próximo",
-      body: `Parcela de ${params.amount} vence em ${params.dueDate}`,
+      body: `Parcela de ${formatCurrency(Number(params.amount) ?? 0)} vence em ${params.dueDate}`,
     }),
     patient_added: () => ({
       title: "Nova gestante cadastrada",

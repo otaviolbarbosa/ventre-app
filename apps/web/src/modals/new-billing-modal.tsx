@@ -1,6 +1,7 @@
 "use client";
 
 import { addBillingAction } from "@/actions/add-billing-action";
+import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-professionals-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
 import {
@@ -24,9 +25,11 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type Professional = { id: string; name: string | null };
+type Patient = { id: string; name: string | null };
 
 type NewBillingModalProps = {
-  patientId: string;
+  patientId?: string;
+  patients?: Patient[];
   showModal: boolean;
   setShowModal: (open: boolean) => void;
   callback?: VoidFunction;
@@ -36,6 +39,7 @@ type NewBillingModalProps = {
 
 export default function NewBillingModal({
   patientId,
+  patients,
   showModal,
   setShowModal,
   callback,
@@ -44,6 +48,11 @@ export default function NewBillingModal({
 }: NewBillingModalProps) {
   const [isCustomInterval, setIsCustomInterval] = useState(false);
   const [profAmounts, setProfAmounts] = useState<Record<string, number>>({});
+  const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(patientId);
+  const [dynamicProfessionals, setDynamicProfessionals] = useState<Professional[]>(professionals);
+
+  const showPatientSelector =
+    !!patients?.length || (patients !== undefined && patients.length === 0);
 
   const { execute, status } = useAction(addBillingAction, {
     onSuccess: () => {
@@ -56,12 +65,21 @@ export default function NewBillingModal({
     },
   });
 
+  const { execute: fetchProfessionals, isPending: isFetchingProfessionals } = useAction(
+    getEnterpriseProfessionalsAction,
+    {
+      onSuccess: ({ data }) => {
+        setDynamicProfessionals(data?.professionals ?? []);
+      },
+    },
+  );
+
   const isSubmitting = status === "executing";
 
   const form = useForm<CreateBillingInput>({
     resolver: zodResolver(createBillingSchema),
     defaultValues: {
-      patient_id: patientId,
+      patient_id: patientId ?? "",
       description: "",
       total_amount: 0,
       payment_method: undefined,
@@ -86,13 +104,22 @@ export default function NewBillingModal({
     [totalAmount, installmentCount],
   );
 
-  // Pre-calculated dates from first_due_date + interval (installments 2..n)
   const previewDates = useMemo<string[]>(() => {
     if (isCustomInterval || !firstDueDate || !installmentInterval || installmentCount <= 1) {
       return [];
     }
     return calculateInstallmentDates(firstDueDate, installmentCount, installmentInterval).slice(1);
   }, [isCustomInterval, firstDueDate, installmentInterval, installmentCount]);
+
+  function handlePatientChange(id: string) {
+    setSelectedPatientId(id);
+    form.setValue("patient_id", id);
+    setProfAmounts({});
+    setDynamicProfessionals([]);
+    if (isStaff) {
+      fetchProfessionals({ patientId: id });
+    }
+  }
 
   function switchToCustom(seedDates?: string[]) {
     const first = form.getValues("first_due_date") ?? "";
@@ -121,7 +148,6 @@ export default function NewBillingModal({
     }
   }
 
-  // Adjust installments_dates length when count changes in custom mode
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
   useEffect(() => {
     if (!isCustomInterval) return;
@@ -135,8 +161,10 @@ export default function NewBillingModal({
     if (showModal) {
       setIsCustomInterval(false);
       setProfAmounts({});
+      setSelectedPatientId(patientId);
+      setDynamicProfessionals(professionals);
       form.reset({
-        patient_id: patientId,
+        patient_id: patientId ?? "",
         description: "",
         total_amount: isStaff ? undefined : 0,
         payment_method: undefined,
@@ -151,6 +179,11 @@ export default function NewBillingModal({
   }, [showModal]);
 
   function onSubmit(data: CreateBillingInput) {
+    if (showPatientSelector && !selectedPatientId) {
+      toast.error("Selecione uma gestante.");
+      return;
+    }
+
     if (isStaff) {
       const selectedIds = Object.keys(profAmounts);
       if (selectedIds.length === 0) {
@@ -175,6 +208,8 @@ export default function NewBillingModal({
     execute(cleanedData);
   }
 
+  const effectiveProfessionals = showPatientSelector ? dynamicProfessionals : professionals;
+
   return (
     <ContentModal
       open={showModal}
@@ -184,6 +219,24 @@ export default function NewBillingModal({
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {showPatientSelector && (
+            <div className="space-y-1">
+              <FormLabel>Gestante</FormLabel>
+              <Select value={selectedPatientId ?? ""} onValueChange={handlePatientChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a gestante" />
+                </SelectTrigger>
+                <SelectContent>
+                  {patients?.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name ?? p.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <FormField
             control={form.control}
             name="description"
@@ -202,26 +255,40 @@ export default function NewBillingModal({
             <div className="space-y-3">
               <div className="space-y-2">
                 <FormLabel>Profissionais e Valores</FormLabel>
-                <MultiSelectDropdown
-                  options={professionals.map((p) => ({ id: p.id, label: p.name ?? p.id }))}
-                  selected={Object.keys(profAmounts)}
-                  onChange={(ids) => {
-                    setProfAmounts((prev) => {
-                      const next: Record<string, number> = {};
-                      for (const id of ids) {
-                        next[id] = prev[id] ?? 0;
-                      }
-                      return next;
-                    });
-                  }}
-                  placeholder="Selecione as profissionais..."
-                />
+                {showPatientSelector && isFetchingProfessionals ? (
+                  <div className="flex h-10 items-center gap-2 rounded-full border px-3 py-2 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Carregando profissionais...
+                  </div>
+                ) : (
+                  <MultiSelectDropdown
+                    options={effectiveProfessionals.map((p) => ({
+                      id: p.id,
+                      label: p.name ?? p.id,
+                    }))}
+                    selected={Object.keys(profAmounts)}
+                    onChange={(ids) => {
+                      setProfAmounts((prev) => {
+                        const next: Record<string, number> = {};
+                        for (const id of ids) {
+                          next[id] = prev[id] ?? 0;
+                        }
+                        return next;
+                      });
+                    }}
+                    placeholder={
+                      showPatientSelector && !selectedPatientId
+                        ? "Selecione a gestante primeiro"
+                        : "Selecione as profissionais..."
+                    }
+                  />
+                )}
               </div>
 
               {Object.keys(profAmounts).length > 0 && (
                 <div className="space-y-2">
                   {Object.keys(profAmounts).map((profId) => {
-                    const prof = professionals.find((p) => p.id === profId);
+                    const prof = effectiveProfessionals.find((p) => p.id === profId);
                     return (
                       <div key={profId} className="flex items-center gap-2">
                         <span className="flex-1 truncate text-sm">{prof?.name ?? profId}</span>
@@ -345,7 +412,6 @@ export default function NewBillingModal({
             </FormItem>
           </div>
 
-          {/* Fixed interval: first_due_date + pre-calculated remaining dates */}
           {!isCustomInterval && (
             <div className="space-y-2">
               <FormLabel>Datas de vencimento</FormLabel>
@@ -404,7 +470,6 @@ export default function NewBillingModal({
             </div>
           )}
 
-          {/* Custom interval: all dates editable */}
           {isCustomInterval && (
             <div className="space-y-2">
               <FormLabel>Datas de vencimento</FormLabel>
