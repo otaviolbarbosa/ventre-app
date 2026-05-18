@@ -15,22 +15,21 @@ export const addAppointmentAction = authActionClient
       isStaff(profile) && parsedInput.professional_id ? parsedInput.professional_id : user.id;
     const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput);
 
-    let patientName: string | null = "";
+    let patientName: string | null = parsedInput.external_patient_name ?? null;
+    if (!parsedInput.is_external && appointment.patient_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", appointment.patient_id)
+        .single();
+
+      patientName = patient?.name ?? null;
+    }
+
     if (profile.enterprise_id) {
       const isConsulta = parsedInput.type === "consulta";
       const actionName = isConsulta ? "Nova consulta agendada" : "Novo encontro agendado";
       const typeLabel = isConsulta ? "Consulta pré-natal" : "Encontro preparatório";
-
-      patientName = parsedInput.external_patient_name ?? null;
-      if (!parsedInput.is_external && appointment.patient_id) {
-        const { data: patient } = await supabase
-          .from("patients")
-          .select("name")
-          .eq("id", appointment.patient_id)
-          .single();
-
-        patientName = patient?.name ?? null;
-      }
 
       const description = patientName
         ? `${typeLabel} para ${patientName} em ${appointment.date} às ${appointment.time.slice(0, 5)}`
