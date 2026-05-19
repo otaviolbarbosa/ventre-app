@@ -81,7 +81,7 @@ export default async function HomePage() {
       <section className="relative flex min-h-screen items-center pt-16">
         {/* Background image + overlays */}
         <div className="absolute inset-0 z-0 h-[560px] md:h-screen">
-          <Image alt="" className="h-full w-full object-cover" src={heroBG} />
+          <Image alt="" className="h-full w-full object-cover" src={heroBG} priority />
           <div className="absolute inset-0 bg-background/40 md:bg-gradient-to-r md:from-background/95 md:via-background/80 md:to-background/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         </div>
