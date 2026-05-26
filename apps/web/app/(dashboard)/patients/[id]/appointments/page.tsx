@@ -1,8 +1,8 @@
 "use client";
 import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
+import { getGoogleCalendarStatusAction } from "@/actions/disconnect-google-calendar-action";
 import { getAppointmentsAction } from "@/actions/get-appointments-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
-import { getGoogleCalendarStatusAction } from "@/actions/disconnect-google-calendar-action";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
 import { CalendarSwitcher } from "@/components/shared/calendar-switcher";
@@ -89,7 +89,7 @@ export default function PatientAppointmentsPage() {
   return (
     <>
       {!isGoogleCalendarConnected && (
-        <div className="mb-4 flex flex-col justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 md:flex-row dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+        <div className="mb-4 flex flex-col justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm md:flex-row dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
           <div className="flex items-center gap-2">
             <CalendarSync className="h-4 w-4 shrink-0" />
             <span>Sincronize seus agendamentos com a sua agenda do Google. </span>

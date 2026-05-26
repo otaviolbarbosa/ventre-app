@@ -302,6 +302,7 @@ export async function createBilling(
     installment_interval,
     first_due_date,
     installments_dates,
+    installment_amounts,
     payment_links,
     notes,
   } = data;
@@ -337,7 +338,10 @@ export async function createBilling(
     throw new Error(billingError.message);
   }
 
-  const amounts = calculateInstallmentAmount(total_amount, installment_count);
+  const amounts =
+    installment_amounts?.length === installment_count
+      ? installment_amounts
+      : calculateInstallmentAmount(total_amount, installment_count);
 
   const installmentRows = amounts.map((amount, i) => {
     const splitted_installment = Object.fromEntries(

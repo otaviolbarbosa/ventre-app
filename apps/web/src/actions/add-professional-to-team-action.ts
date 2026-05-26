@@ -27,7 +27,8 @@ export const addProfessionalToTeamAction = authActionClient
       .limit(1)
       .single();
 
-    const pregnancyId = pregnancy?.id ?? null;
+    if (!pregnancy?.id) throw new Error("Paciente não possui gestação registrada");
+    const pregnancyId = pregnancy.id;
 
     const { data: existing } = await supabaseAdmin
       .from("team_members")

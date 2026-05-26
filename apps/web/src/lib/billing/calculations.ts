@@ -11,6 +11,31 @@ export function calculateInstallmentAmount(totalAmount: number, count: number): 
   return Array.from({ length: count }, (_, i) => (i === 0 ? base + remainder : base));
 }
 
+export function recalculateInstallmentAmounts(
+  totalAmount: number,
+  count: number,
+  locked: Record<number, number>,
+): number[] {
+  const lockedTotal = Object.values(locked).reduce((a, b) => a + b, 0);
+  const remaining = totalAmount - lockedTotal;
+  const unlockedIndices = Array.from({ length: count }, (_, i) => i).filter((i) => !(i in locked));
+  const unlockedCount = unlockedIndices.length;
+
+  const result = Array.from({ length: count }, (_, i) => locked[i] ?? 0);
+
+  if (unlockedCount === 0) return result;
+
+  const base = Math.floor(remaining / unlockedCount);
+  const remainder = remaining - base * unlockedCount;
+
+  for (let j = 0; j < unlockedIndices.length; j++) {
+    const idx = unlockedIndices[j] as number;
+    result[idx] = base + (j === 0 ? remainder : 0);
+  }
+
+  return result;
+}
+
 export function calculateInstallmentDates(
   firstDueDate: string,
   count: number,

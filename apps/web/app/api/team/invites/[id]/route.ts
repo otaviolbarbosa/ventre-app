@@ -90,10 +90,23 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
 
       // Add user to team
+      const { data: pregnancy } = await supabaseAdmin
+        .from("pregnancies")
+        .select("id")
+        .eq("patient_id", invite[0].patient_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!pregnancy?.id) {
+        return NextResponse.json({ error: "Paciente não possui gestação registrada" }, { status: 400 });
+      }
+
       const teamMemberData: TablesInsert<"team_members"> = {
         patient_id: invite[0].patient_id,
         professional_id: user.id,
         professional_type: professionalType,
+        pregnancy_id: pregnancy.id,
       };
 
       const { error: teamError } = await supabaseAdmin.from("team_members").insert(teamMemberData);

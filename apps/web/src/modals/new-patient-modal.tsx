@@ -3,9 +3,9 @@ import { addPatientAction } from "@/actions/add-patient-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
 import {
-  calculateInstallmentAmount,
   calculateInstallmentDates,
   formatCurrency,
+  recalculateInstallmentAmounts,
 } from "@/lib/billing/calculations";
 import { ESTADOS_BR } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -23,9 +23,9 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import dayjs from "dayjs";
-import { Check, ChevronDown, Loader2, Pencil, Shield, Users, X } from "lucide-react";
+import { Check, ChevronDown, Loader2, Pencil, RotateCcw, Shield, Users, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -134,6 +134,8 @@ export default function NewPatientModal({
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [profAmounts, setProfAmounts] = useState<Record<string, number>>({});
   const [isCustomInterval, setIsCustomInterval] = useState(false);
+  const [lockedAmounts, setLockedAmounts] = useState<Record<number, number>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
@@ -212,9 +214,12 @@ export default function NewPatientModal({
     : (form.watch("billing.total_amount") ?? 0);
 
   const installmentAmounts = useMemo(
-    () => calculateInstallmentAmount(billingTotalAmount, billingInstallmentCount),
-    [billingTotalAmount, billingInstallmentCount],
+    () => recalculateInstallmentAmounts(billingTotalAmount, billingInstallmentCount, lockedAmounts),
+    [billingTotalAmount, billingInstallmentCount, lockedAmounts],
   );
+
+  const installmentSum = installmentAmounts.reduce((a, b) => a + b, 0);
+  const hasAmountMismatch = billingTotalAmount > 0 && installmentSum !== billingTotalAmount;
 
   const previewDates = useMemo<string[]>(() => {
     if (
@@ -231,6 +236,28 @@ export default function NewPatientModal({
       billingInstallmentInterval,
     ).slice(1);
   }, [isCustomInterval, billingFirstDueDate, billingInstallmentInterval, billingInstallmentCount]);
+
+  const prevResetKeyRef = useRef({ total: billingTotalAmount, count: billingInstallmentCount });
+
+  useEffect(() => {
+    const { total, count } = prevResetKeyRef.current;
+    prevResetKeyRef.current = { total: billingTotalAmount, count: billingInstallmentCount };
+    if (total !== billingTotalAmount || count !== billingInstallmentCount) {
+      setLockedAmounts({});
+    }
+  }, [billingTotalAmount, billingInstallmentCount]);
+
+  function handleInstallmentAmountChange(index: number, value: number) {
+    setLockedAmounts((prev) => ({ ...prev, [index]: value }));
+  }
+
+  function showInstallmentAmountError(index: number) {
+    return (
+      billingTotalAmount > 0 &&
+      (installmentAmounts[index] ?? 0) <= 0 &&
+      (submitAttempted || lockedAmounts[index] === 0)
+    );
+  }
 
   // Keep profAmounts in sync with the selected professionals
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync
@@ -302,6 +329,8 @@ export default function NewPatientModal({
   function toggleBilling(enabled: boolean) {
     setShowBilling(enabled);
     setProfAmounts({});
+    setLockedAmounts({});
+    setSubmitAttempted(false);
     setIsCustomInterval(false);
     if (enabled) {
       form.setValue("billing", {
@@ -341,6 +370,23 @@ export default function NewPatientModal({
   }
 
   function onSubmit(data: CreatePatientInput) {
+    if (showBilling && data.billing) {
+      setSubmitAttempted(true);
+
+      const hasEmptyInstallments = billingTotalAmount > 0 && installmentAmounts.some((a) => a <= 0);
+      if (hasEmptyInstallments) {
+        toast.error("Informe o valor de todas as parcelas.");
+        return;
+      }
+
+      if (hasAmountMismatch) {
+        toast.error(
+          `A soma das parcelas (${formatCurrency(installmentSum)}) não corresponde ao valor total (${formatCurrency(billingTotalAmount)}).`,
+        );
+        return;
+      }
+    }
+
     if (showBilling && isSplitBilling && data.billing) {
       if (Object.keys(profAmounts).length === 0) {
         toast.error("Informe os valores para cada profissional.");
@@ -358,6 +404,7 @@ export default function NewPatientModal({
           splitted_billing: profAmounts,
           installment_interval: isCustomInterval ? null : data.billing.installment_interval,
           first_due_date: isCustomInterval ? null : data.billing.first_due_date,
+          installment_amounts: installmentAmounts,
         },
       });
       return;
@@ -369,6 +416,7 @@ export default function NewPatientModal({
           ...data.billing,
           installment_interval: isCustomInterval ? null : data.billing.installment_interval,
           first_due_date: isCustomInterval ? null : data.billing.first_due_date,
+          installment_amounts: installmentAmounts,
         },
       });
       return;
@@ -382,6 +430,8 @@ export default function NewPatientModal({
     setAddressVisible(false);
     setShowBilling(false);
     setProfAmounts({});
+    setLockedAmounts({});
+    setSubmitAttempted(false);
     setIsCustomInterval(false);
     setIsNavigating(false);
   }
@@ -1090,10 +1140,24 @@ export default function NewPatientModal({
 
                     {!isCustomInterval && (
                       <div className="space-y-2">
-                        <FormLabel>Datas de vencimento</FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Datas de vencimento</FormLabel>
+                          {Object.keys(lockedAmounts).length > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setLockedAmounts({})}
+                              className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Reiniciar parcelas
+                            </Button>
+                          )}
+                        </div>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-3">
-                            <span className="w-20 shrink-0 text-muted-foreground text-xs">
+                          <div className="flex items-start gap-3">
+                            <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
                               Parcela 1
                             </span>
                             <FormField
@@ -1116,17 +1180,23 @@ export default function NewPatientModal({
                                 </FormItem>
                               )}
                             />
-                            <span className="w-20 shrink-0 text-right text-sm">
-                              {formatCurrency(installmentAmounts[0] ?? 0)}
-                            </span>
+                            <div className="w-28 shrink-0">
+                              <CurrencyInput
+                                value={installmentAmounts[0] ?? 0}
+                                onChange={(val) => handleInstallmentAmountChange(0, val)}
+                              />
+                              {showInstallmentAmountError(0) && (
+                                <p className="mt-0.5 text-destructive text-xs">Campo obrigatório</p>
+                              )}
+                            </div>
                           </div>
 
                           {previewDates.map((date, i) => (
                             <div
                               key={date || `preview-${i + 2}`}
-                              className="flex items-center gap-3"
+                              className="flex items-start gap-3"
                             >
-                              <span className="w-20 shrink-0 text-muted-foreground text-xs">
+                              <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
                                 Parcela {i + 2}
                               </span>
                               <div className="relative flex-1">
@@ -1144,22 +1214,50 @@ export default function NewPatientModal({
                                   <Pencil className="h-3.5 w-3.5" />
                                 </button>
                               </div>
-                              <span className="w-20 shrink-0 text-right text-sm">
-                                {formatCurrency(installmentAmounts[i + 1] ?? 0)}
-                              </span>
+                              <div className="w-28 shrink-0">
+                                <CurrencyInput
+                                  value={installmentAmounts[i + 1] ?? 0}
+                                  onChange={(val) => handleInstallmentAmountChange(i + 1, val)}
+                                />
+                                {showInstallmentAmountError(i + 1) && (
+                                  <p className="mt-0.5 text-destructive text-xs">
+                                    Campo obrigatório
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
+                        {hasAmountMismatch && (
+                          <p className="text-destructive text-xs">
+                            A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde
+                            ao valor total ({formatCurrency(billingTotalAmount)}).
+                          </p>
+                        )}
                       </div>
                     )}
 
                     {isCustomInterval && (
                       <div className="space-y-2">
-                        <FormLabel>Datas de vencimento</FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Datas de vencimento</FormLabel>
+                          {Object.keys(lockedAmounts).length > 0 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setLockedAmounts({})}
+                              className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Reiniciar parcelas
+                            </Button>
+                          )}
+                        </div>
                         <div className="space-y-2">
                           {Array.from({ length: billingInstallmentCount }, (_, i) => (
-                            <div key={`custom-date-${i + 1}`} className="flex items-center gap-3">
-                              <span className="w-20 shrink-0 text-muted-foreground text-xs">
+                            <div key={`custom-date-${i + 1}`} className="flex items-start gap-3">
+                              <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
                                 Parcela {i + 1}
                               </span>
                               <FormField
@@ -1186,12 +1284,26 @@ export default function NewPatientModal({
                                   </FormItem>
                                 )}
                               />
-                              <span className="w-20 shrink-0 text-right text-sm">
-                                {formatCurrency(installmentAmounts[i] ?? 0)}
-                              </span>
+                              <div className="w-28 shrink-0">
+                                <CurrencyInput
+                                  value={installmentAmounts[i] ?? 0}
+                                  onChange={(val) => handleInstallmentAmountChange(i, val)}
+                                />
+                                {showInstallmentAmountError(i) && (
+                                  <p className="mt-0.5 text-destructive text-xs">
+                                    Campo obrigatório
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
+                        {hasAmountMismatch && (
+                          <p className="text-destructive text-xs">
+                            A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde
+                            ao valor total ({formatCurrency(billingTotalAmount)}).
+                          </p>
+                        )}
                       </div>
                     )}
 

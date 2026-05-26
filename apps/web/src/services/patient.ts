@@ -202,14 +202,18 @@ export async function createPatient(
   }
 
   // Create pregnancy record with due_date, dum, observations
-  const { error: pregnancyError } = await supabaseAdmin.from("pregnancies").insert({
-    patient_id: patient.id,
-    due_date: data.due_date,
-    dum: data.dum,
-    created_by: responsibleProfessionalId,
-    baby_name: data.baby_name || null,
-    observations: data.observations,
-  } satisfies TablesInsert<"pregnancies">);
+  const { data: pregnancy, error: pregnancyError } = await supabaseAdmin
+    .from("pregnancies")
+    .insert({
+      patient_id: patient.id,
+      due_date: data.due_date,
+      dum: data.dum,
+      created_by: responsibleProfessionalId,
+      baby_name: data.baby_name || null,
+      observations: data.observations,
+    } satisfies TablesInsert<"pregnancies">)
+    .select("id")
+    .single();
 
   if (pregnancyError) {
     await supabaseAdmin.from("patients").delete().eq("id", patient.id);
@@ -231,6 +235,7 @@ export async function createPatient(
         patient_id: patient.id,
         professional_id: profId,
         professional_type: prof.professional_type,
+        pregnancy_id: pregnancy.id,
       } satisfies TablesInsert<"team_members">);
 
       if (teamError) {

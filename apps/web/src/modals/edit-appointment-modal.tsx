@@ -90,19 +90,19 @@ export function EditAppointmentModal({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-3 rounded-md border bg-muted/40 p-3">
             <div className="space-y-0.5">
-              <p className="text-xs text-muted-foreground">Gestante</p>
-              <p className="text-sm font-medium">
+              <p className="text-muted-foreground text-xs">Gestante</p>
+              <p className="font-medium text-sm">
                 {appointment.patient?.name ?? appointment.external_patient_name ?? "—"}
               </p>
               {appointment.external_patient_name && (
-                <p className="text-xs text-muted-foreground">Paciente externa</p>
+                <p className="text-muted-foreground text-xs">Paciente externa</p>
               )}
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs text-muted-foreground">Profissional</p>
-              <p className="text-sm font-medium">{appointment.professional?.name ?? "—"}</p>
+              <p className="text-muted-foreground text-xs">Profissional</p>
+              <p className="font-medium text-sm">{appointment.professional?.name ?? "—"}</p>
               {appointment.professional?.professional_type && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {PROFESSIONAL_TYPE_LABELS[appointment.professional.professional_type] ??
                     appointment.professional.professional_type}
                 </p>
