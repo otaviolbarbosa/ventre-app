@@ -5,9 +5,9 @@ import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-profe
 import { CurrencyInput } from "@/components/billing/currency-input";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
 import {
-  calculateInstallmentAmount,
   calculateInstallmentDates,
   formatCurrency,
+  recalculateInstallmentAmounts,
 } from "@/lib/billing/calculations";
 import { type CreateBillingInput, createBillingSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,9 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
-import { Loader2, Pencil, X } from "lucide-react";
+import { Loader2, Pencil, RotateCcw, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -50,6 +50,8 @@ export default function NewBillingModal({
   const [profAmounts, setProfAmounts] = useState<Record<string, number>>({});
   const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(patientId);
   const [dynamicProfessionals, setDynamicProfessionals] = useState<Professional[]>(professionals);
+  const [lockedAmounts, setLockedAmounts] = useState<Record<number, number>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const showPatientSelector =
     !!patients?.length || (patients !== undefined && patients.length === 0);
@@ -100,9 +102,12 @@ export default function NewBillingModal({
     : (form.watch("total_amount") ?? 0);
 
   const installmentAmounts = useMemo(
-    () => calculateInstallmentAmount(totalAmount ?? 0, installmentCount),
-    [totalAmount, installmentCount],
+    () => recalculateInstallmentAmounts(totalAmount ?? 0, installmentCount, lockedAmounts),
+    [totalAmount, installmentCount, lockedAmounts],
   );
+
+  const installmentSum = installmentAmounts.reduce((a, b) => a + b, 0);
+  const hasAmountMismatch = totalAmount > 0 && installmentSum !== totalAmount;
 
   const previewDates = useMemo<string[]>(() => {
     if (isCustomInterval || !firstDueDate || !installmentInterval || installmentCount <= 1) {
@@ -110,6 +115,28 @@ export default function NewBillingModal({
     }
     return calculateInstallmentDates(firstDueDate, installmentCount, installmentInterval).slice(1);
   }, [isCustomInterval, firstDueDate, installmentInterval, installmentCount]);
+
+  const prevResetKeyRef = useRef({ total: totalAmount, count: installmentCount });
+
+  useEffect(() => {
+    const { total, count } = prevResetKeyRef.current;
+    prevResetKeyRef.current = { total: totalAmount, count: installmentCount };
+    if (total !== totalAmount || count !== installmentCount) {
+      setLockedAmounts({});
+    }
+  }, [totalAmount, installmentCount]);
+
+  function handleInstallmentAmountChange(index: number, value: number) {
+    setLockedAmounts((prev) => ({ ...prev, [index]: value }));
+  }
+
+  function showInstallmentAmountError(index: number) {
+    return (
+      totalAmount > 0 &&
+      (installmentAmounts[index] ?? 0) <= 0 &&
+      (submitAttempted || lockedAmounts[index] === 0)
+    );
+  }
 
   function handlePatientChange(id: string) {
     setSelectedPatientId(id);
@@ -161,6 +188,8 @@ export default function NewBillingModal({
     if (showModal) {
       setIsCustomInterval(false);
       setProfAmounts({});
+      setLockedAmounts({});
+      setSubmitAttempted(false);
       setSelectedPatientId(patientId);
       setDynamicProfessionals(professionals);
       form.reset({
@@ -179,8 +208,23 @@ export default function NewBillingModal({
   }, [showModal]);
 
   function onSubmit(data: CreateBillingInput) {
+    setSubmitAttempted(true);
+
     if (showPatientSelector && !selectedPatientId) {
       toast.error("Selecione uma gestante.");
+      return;
+    }
+
+    const hasEmptyInstallments = totalAmount > 0 && installmentAmounts.some((a) => a <= 0);
+    if (hasEmptyInstallments) {
+      toast.error("Informe o valor de todas as parcelas.");
+      return;
+    }
+
+    if (hasAmountMismatch) {
+      toast.error(
+        `A soma das parcelas (${formatCurrency(installmentSum)}) não corresponde ao valor total (${formatCurrency(totalAmount)}).`,
+      );
       return;
     }
 
@@ -204,6 +248,7 @@ export default function NewBillingModal({
       installment_interval: isCustomInterval ? null : data.installment_interval,
       first_due_date: isCustomInterval ? null : data.first_due_date,
       payment_links: data.payment_links?.filter((link) => link !== "") || [],
+      installment_amounts: installmentAmounts,
     };
     execute(cleanedData);
   }
@@ -414,10 +459,26 @@ export default function NewBillingModal({
 
           {!isCustomInterval && (
             <div className="space-y-2">
-              <FormLabel>Datas de vencimento</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Datas de vencimento</FormLabel>
+                {Object.keys(lockedAmounts).length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLockedAmounts({})}
+                    className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Reiniciar parcelas
+                  </Button>
+                )}
+              </div>
               <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <span className="w-24 shrink-0 text-muted-foreground text-sm">Parcela 1</span>
+                <div className="flex items-start gap-3">
+                  <span className="w-24 shrink-0 pt-2 text-muted-foreground text-sm">
+                    Parcela 1
+                  </span>
                   <FormField
                     control={form.control}
                     name="first_due_date"
@@ -436,14 +497,20 @@ export default function NewBillingModal({
                       </FormItem>
                     )}
                   />
-                  <span className="w-24 shrink-0 text-right text-sm">
-                    {formatCurrency(installmentAmounts[0] ?? 0)}
-                  </span>
+                  <div className="w-28 shrink-0">
+                    <CurrencyInput
+                      value={installmentAmounts[0] ?? 0}
+                      onChange={(val) => handleInstallmentAmountChange(0, val)}
+                    />
+                    {showInstallmentAmountError(0) && (
+                      <p className="mt-0.5 text-destructive text-xs">Campo obrigatório</p>
+                    )}
+                  </div>
                 </div>
 
                 {previewDates.map((date, i) => (
-                  <div key={date || `preview-${i + 2}`} className="flex items-center gap-3">
-                    <span className="w-24 shrink-0 text-muted-foreground text-sm">
+                  <div key={date || `preview-${i + 2}`} className="flex items-start gap-3">
+                    <span className="w-24 shrink-0 pt-2 text-muted-foreground text-sm">
                       Parcela {i + 2}
                     </span>
                     <div className="relative flex-1">
@@ -461,22 +528,48 @@ export default function NewBillingModal({
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <span className="w-24 shrink-0 text-right text-sm">
-                      {formatCurrency(installmentAmounts[i + 1] ?? 0)}
-                    </span>
+                    <div className="w-28 shrink-0">
+                      <CurrencyInput
+                        value={installmentAmounts[i + 1] ?? 0}
+                        onChange={(val) => handleInstallmentAmountChange(i + 1, val)}
+                      />
+                      {showInstallmentAmountError(i + 1) && (
+                        <p className="mt-0.5 text-destructive text-xs">Campo obrigatório</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
+              {hasAmountMismatch && (
+                <p className="text-destructive text-xs">
+                  A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde ao valor
+                  total ({formatCurrency(totalAmount)}).
+                </p>
+              )}
             </div>
           )}
 
           {isCustomInterval && (
             <div className="space-y-2">
-              <FormLabel>Datas de vencimento</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Datas de vencimento</FormLabel>
+                {Object.keys(lockedAmounts).length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLockedAmounts({})}
+                    className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Reiniciar parcelas
+                  </Button>
+                )}
+              </div>
               <div className="space-y-2">
                 {Array.from({ length: installmentCount }, (_, i) => (
-                  <div key={`custom-date-${i + 1}`} className="flex items-center gap-3">
-                    <span className="w-24 shrink-0 text-muted-foreground text-sm">
+                  <div key={`custom-date-${i + 1}`} className="flex items-start gap-3">
+                    <span className="w-24 shrink-0 pt-2 text-muted-foreground text-sm">
                       Parcela {i + 1}
                     </span>
                     <FormField
@@ -497,12 +590,24 @@ export default function NewBillingModal({
                         </FormItem>
                       )}
                     />
-                    <span className="w-24 shrink-0 text-right text-sm">
-                      {formatCurrency(installmentAmounts[i] ?? 0)}
-                    </span>
+                    <div className="w-28 shrink-0">
+                      <CurrencyInput
+                        value={installmentAmounts[i] ?? 0}
+                        onChange={(val) => handleInstallmentAmountChange(i, val)}
+                      />
+                      {showInstallmentAmountError(i) && (
+                        <p className="mt-0.5 text-destructive text-xs">Campo obrigatório</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
+              {hasAmountMismatch && (
+                <p className="text-destructive text-xs">
+                  A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde ao valor
+                  total ({formatCurrency(totalAmount)}).
+                </p>
+              )}
             </div>
           )}
 

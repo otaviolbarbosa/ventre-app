@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@ventre/ui/input";
-import { type ChangeEvent, useCallback, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useState } from "react";
 
 type CurrencyInputProps = {
   value: number;
@@ -25,6 +25,13 @@ export function CurrencyInput({
   placeholder = "0,00",
 }: CurrencyInputProps) {
   const [display, setDisplay] = useState(() => formatDisplay(value));
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setDisplay(formatDisplay(value));
+    }
+  }, [value, isFocused]);
 
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -36,7 +43,10 @@ export function CurrencyInput({
     [onChange],
   );
 
+  const handleFocus = useCallback(() => setIsFocused(true), []);
+
   const handleBlur = useCallback(() => {
+    setIsFocused(false);
     setDisplay(formatDisplay(value));
   }, [value]);
 
@@ -50,6 +60,7 @@ export function CurrencyInput({
         inputMode="decimal"
         value={display}
         onChange={handleChange}
+        onFocus={handleFocus}
         onBlur={handleBlur}
         disabled={disabled}
         placeholder={placeholder}

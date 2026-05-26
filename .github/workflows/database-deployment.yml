@@ -49,8 +49,11 @@ jobs:
           major_version = 17
           EOF
 
-      - run: supabase link --project-ref $PROJECT_ID
+      - name: Link project
+        run: supabase link --project-ref $PROJECT_ID
 
-      - run: supabase db push
+      - name: Push migrations
+        run: supabase db push
 
-      - run: node scripts/with-env.cjs supabase functions deploy --project-ref \\$NEXT_PUBLIC_SUPABASE_PROJECCT_ID
+      - name: Deploy edge functions
+        run: node scripts/with-env.cjs supabase functions deploy --project-ref \\$NEXT_PUBLIC_SUPABASE_PROJECCT_ID

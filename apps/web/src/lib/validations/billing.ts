@@ -54,6 +54,9 @@ export const createBillingSchema = z.object({
       }),
     )
     .optional(),
+  installment_amounts: z
+    .array(z.number().int("Valor deve ser inteiro (centavos)").nonnegative())
+    .optional(),
   payment_links: z
     .array(z.union([z.string().url("URL de pagamento inválida"), z.literal("")]))
     .max(10, "Máximo de 10 links de pagamento")

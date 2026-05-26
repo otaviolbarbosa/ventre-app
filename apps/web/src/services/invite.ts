@@ -140,19 +140,19 @@ export async function respondToInvite(
     .select()
     .eq("id", inviteId)
     .eq("status", "pendente")
-    .limit(1);
+    .single();
 
-  if (inviteError || !invite?.[0]) {
+  if (inviteError || !invite) {
     throw new Error("Convite não encontrado");
   }
 
-  if (new Date(invite[0].expires_at) < new Date()) {
+  if (new Date(invite.expires_at) < new Date()) {
     await supabase.from("team_invites").update({ status: "expirado" }).eq("id", inviteId);
     throw new Error("Convite expirado");
   }
 
   if (action === "accept") {
-    let professionalType = invite[0].professional_type;
+    let professionalType = invite.professional_type;
 
     if (!professionalType) {
       const { data: userProfile } = await supabase
@@ -171,7 +171,7 @@ export async function respondToInvite(
     const { data: existingMember } = await supabase
       .from("team_members")
       .select("id")
-      .eq("patient_id", invite[0].patient_id)
+      .eq("patient_id", invite.patient_id)
       .eq("professional_type", professionalType)
       .single();
 
@@ -180,10 +180,21 @@ export async function respondToInvite(
       throw new Error(`Já existe um ${professionalType} na equipe desta paciente`);
     }
 
+    const { data: pregnancy } = await supabaseAdmin
+      .from("pregnancies")
+      .select("id")
+      .eq("patient_id", invite.patient_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!pregnancy?.id) throw new Error("Paciente não possui gestação registrada");
+
     const { error: teamError } = await supabaseAdmin.from("team_members").insert({
-      patient_id: invite[0].patient_id,
+      patient_id: invite.patient_id,
       professional_id: profile.id,
       professional_type: professionalType,
+      pregnancy_id: pregnancy.id,
     } satisfies TablesInsert<"team_members">);
 
     if (teamError) {
@@ -192,7 +203,7 @@ export async function respondToInvite(
 
     await supabase.from("team_invites").update({ status: "aceito" }).eq("id", inviteId);
 
-    return { patientId: invite[0].patient_id };
+    return { patientId: invite.patient_id };
   }
 
   await supabaseAdmin
