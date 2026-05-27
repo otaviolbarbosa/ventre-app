@@ -7,8 +7,6 @@ import { LoadingPatientProfile } from "@/components/shared/loading-state";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
-import PrenatalCard from "@/components/shared/prenatal-card";
-import { useAuth } from "@/hooks/use-auth";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
@@ -25,8 +23,6 @@ export default function PatientProfilePage() {
   const router = useRouter();
   const [showFinishModal, setShowFinishModal] = useState(false);
   const { confirm } = useConfirmModal();
-  const { isObstetrician, isNurse } = useAuth();
-
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
@@ -37,7 +33,6 @@ export default function PatientProfilePage() {
   }, [fetchPatient, patientId]);
 
   const patient = result.data?.patient;
-  const pregnancy = result.data?.pregnancy;
 
   function handleConfirmDelete() {
     confirm({
@@ -88,19 +83,6 @@ export default function PatientProfilePage() {
                 onChange={async () => {
                   fetchPatient({ patientId });
                 }}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="cartao-prenatal">
-            <AccordionTrigger className="font-semibold text-base">
-              Cartão Pré-natal Digital
-            </AccordionTrigger>
-            <AccordionContent>
-              <PrenatalCard
-                patientId={patient.id}
-                pregnancyId={pregnancy?.id}
-                isEditable={isObstetrician || isNurse}
               />
             </AccordionContent>
           </AccordionItem>

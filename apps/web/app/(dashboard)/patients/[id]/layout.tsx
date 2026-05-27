@@ -17,8 +17,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const currentTab = pathname.includes("/billing")
     ? "billing"
-    : pathname.includes("/appointments")
-      ? "appointments"
+    : pathname.includes("/prenatal")
+      ? "prenatal"
       : pathname.includes("/team")
         ? "team"
         : "profile";
@@ -77,8 +77,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                 <Link href={`/patients/${patientId}/profile`} className="flex-1">
                   <TabsTrigger value="profile">Perfil</TabsTrigger>
                 </Link>
-                <Link href={`/patients/${patientId}/appointments`} className="flex-1">
-                  <TabsTrigger value="appointments">Agenda</TabsTrigger>
+                <Link href={`/patients/${patientId}/prenatal`} className="flex-1">
+                  <TabsTrigger value="prenatal">Cartão Pré-natal</TabsTrigger>
                 </Link>
                 <Link href={`/patients/${patientId}/team`} className="flex-1">
                   <TabsTrigger value="team">Equipe</TabsTrigger>
