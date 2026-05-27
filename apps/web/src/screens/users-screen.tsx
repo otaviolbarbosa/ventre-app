@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ProfessionalCard } from "@/components/shared/professional-card";
 import { StaffCard } from "@/components/shared/staff-card";
 import AddEnterpriseProfessionalModal from "@/modals/add-enterprise-professional-modal";
+import AddPatientsModal from "@/modals/add-patients-modal";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
 import RemoveEnterpriseProfessionalModal from "@/modals/remove-enterprise-professional-modal";
@@ -17,6 +18,7 @@ import { Button } from "@ventre/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
 import { BriefcaseMedical, Stethoscope, UserPlus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +30,7 @@ type UsersScreenProps = {
 type Patient = Tables<"patients">;
 
 export default function UsersScreen({ professionals, staff }: UsersScreenProps) {
+  const router = useRouter();
   const [showAddModal, setShowAddModal] = useState(false);
   const [patients, setPatients] = useState<{ id: string; name: string }[]>();
   const [selectedProfessional, setSelectedProfessional] = useState<EnterpriseProfessional>();
@@ -36,6 +39,9 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
   const [professionalToRemove, setProfessionalToRemove] = useState<EnterpriseProfessional | null>(
     null,
   );
+  const [showAddPatientsModal, setShowAddPatientsModal] = useState(false);
+  const [professionalForAddPatients, setProfessionalForAddPatients] =
+    useState<EnterpriseProfessional | null>(null);
 
   const { executeAsync: executeFetchPatients } = useAction(getPatientsByProfessionalAction);
 
@@ -113,10 +119,14 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
                   <ProfessionalCard
                     key={professional.id}
                     professional={professional}
-                    onAddPatient={async () => {
+                    onAddNewPatient={async () => {
                       await fetchPatients(professional.id);
                       setSelectedProfessional(professional);
                       setShowNewPatientModal(true);
+                    }}
+                    onAddPatients={() => {
+                      setProfessionalForAddPatients(professional);
+                      setShowAddPatientsModal(true);
                     }}
                     onAddCalendarEvent={() => setShowNewAppointmentModal(true)}
                     onRemove={setProfessionalToRemove}
@@ -157,6 +167,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
         showModal={showNewPatientModal}
         professional={selectedProfessional}
         setShowModal={setShowNewPatientModal}
+        onSuccess={() => router.refresh()}
       />
 
       <NewAppointmentModal
@@ -164,6 +175,22 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
         showModal={showNewAppointmentModal}
         setShowModal={setShowNewAppointmentModal}
       />
+
+      {professionalForAddPatients?.professional_type && (
+        <AddPatientsModal
+          showModal={showAddPatientsModal}
+          setShowModal={setShowAddPatientsModal}
+          professionalId={professionalForAddPatients.id}
+          professionalName={professionalForAddPatients.name ?? "profissional"}
+          professionalType={
+            professionalForAddPatients.professional_type as "obstetra" | "enfermeiro" | "doula"
+          }
+          onSuccess={() => {
+            setProfessionalForAddPatients(null);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
