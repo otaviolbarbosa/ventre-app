@@ -71,9 +71,8 @@ export default function AppointmentsScreen({
 
   useEffect(() => {
     fetchPatients();
-    fetchAppointments({});
     if (isStaff) fetchProfessionals({});
-  }, [fetchPatients, fetchAppointments, fetchProfessionals, isStaff]);
+  }, [fetchPatients, fetchProfessionals, isStaff]);
 
   const patients = (patientsResult.data?.patients ?? []) as Patient[];
   const appointments = (appointmentsResult.data?.appointments ??
