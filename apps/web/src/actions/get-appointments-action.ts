@@ -34,7 +34,7 @@ export const getAppointmentsAction = authActionClient
       query = query.eq("professional_id", parsedInput.professionalId);
     }
 
-    const { data: appointments, error } = await query;
+    const { data: appointments, error } = await query.eq("status", "agendada");
 
     if (error) throw new Error(error.message);
 

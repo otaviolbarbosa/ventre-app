@@ -1,7 +1,10 @@
 import { isStaff } from "@/lib/access-control";
 import { getServerAuth } from "@/lib/server-auth";
 import type { CreateAppointmentInput } from "@/lib/validations/appointment";
-import type { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import type {
+  createServerSupabaseAdmin,
+  createServerSupabaseClient,
+} from "@ventre/supabase/server";
 import type { Tables, TablesInsert } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
@@ -44,7 +47,7 @@ export async function getMyAppointments(): Promise<GetMyAppointmentsResult> {
     query = query.eq("professional_id", user.id);
   }
 
-  const { data: appointments } = await query;
+  const { data: appointments } = await query.eq("status", "agendada");
 
   return { appointments: (appointments as AppointmentWithPatient[]) || [] };
 }
@@ -65,7 +68,7 @@ export async function createAppointment(
     notes: data.notes,
     external_patient_name: data.is_external ? (data.external_patient_name ?? null) : null,
     external_patient_phone: data.is_external ? (data.external_patient_phone ?? null) : null,
-    external_patient_email: data.is_external ? (data.external_patient_email || null) : null,
+    external_patient_email: data.is_external ? data.external_patient_email || null : null,
   };
 
   const { data: appointment, error } = await supabase
