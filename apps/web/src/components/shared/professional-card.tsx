@@ -17,10 +17,12 @@ import {
   Mail,
   MoreHorizontal,
   Phone,
+  Plus,
   Search,
   Stethoscope,
   UserMinus,
   UserPlus,
+  UserSearch,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -32,14 +34,16 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
 
 type ProfessionalCardProps = {
   professional: EnterpriseProfessional;
-  onAddPatient: () => void;
+  onAddNewPatient: () => void;
+  onAddPatients: () => void;
   onAddCalendarEvent: () => void;
   onRemove: (professional: EnterpriseProfessional) => void;
 };
 
 export function ProfessionalCard({
   professional,
-  onAddPatient,
+  onAddNewPatient,
+  onAddPatients,
   onAddCalendarEvent,
   onRemove,
 }: ProfessionalCardProps) {
@@ -71,17 +75,19 @@ export function ProfessionalCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  return;
-                }}
-              >
-                <Search className="mr-2 size-4" />
-                Ver Perfil
+              <DropdownMenuItem asChild>
+                <Link href={`/patients?professional=${professional.id}`}>
+                  <Search className="mr-2 size-4" />
+                  Ver Perfil
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onAddPatient}>
+              <DropdownMenuItem onClick={onAddNewPatient}>
                 <UserPlus className="mr-2 size-4" />
-                Adicionar Gestante
+                Nova Gestante
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onAddPatients}>
+                <UserSearch className="mr-2 size-4" />
+                Atribuir Gestantes
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onAddCalendarEvent}>
                 <CalendarPlus className="mr-2 size-4" />
@@ -125,20 +131,29 @@ export function ProfessionalCard({
         </div>
 
         {/* Patients link */}
-        <Link
-          href={`/patients?professional=${professional.id}`}
-          className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5"
-        >
-          <Stethoscope className="size-4 shrink-0 text-muted-foreground" />
-          <div className="flex-1 font-medium text-sm hover:text-primary">
-            {professional.patient_count}{" "}
-            {professional.patient_count === 1 ? "gestante" : "gestantes"}
-          </div>
-          <ChevronRight className="size-4 text-primary" />
-          {/* <Badge variant="secondary" className="text-xs">
-            Ver
-          </Badge> */}
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/patients?professional=${professional.id}`}
+            className="flex flex-1 items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5"
+          >
+            <Stethoscope className="size-4 shrink-0 text-muted-foreground" />
+            <div className="flex-1 font-medium text-sm hover:text-primary">
+              {professional.patient_count}{" "}
+              {professional.patient_count === 1 ? "gestante" : "gestantes"}
+            </div>
+            <ChevronRight className="size-4 text-primary" />
+          </Link>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xl"
+            onClick={onAddPatients}
+            title="Adicionar gestantes"
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
       </div>
     </Card>
   );
