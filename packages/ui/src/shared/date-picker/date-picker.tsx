@@ -3,8 +3,11 @@
 import { CalendarIcon } from "lucide-react";
 import type React from "react";
 import { forwardRef } from "react";
-import ReactDatePicker from "react-datepicker";
+import ReactDatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { ptBR } from "react-day-picker/locale";
+
+registerLocale("pt-BR", ptBR);
 import { InputMask } from "@react-input/mask";
 import { Input } from "@ventre/ui/input";
 
@@ -59,6 +62,7 @@ export function DatePicker({
         minDate={minDate}
         maxDate={maxDate}
         dateFormat={dateFormat}
+        locale="pt-BR"
         className={className}
         customInput={
           <InputMask component={CustomInput} mask="__/__/____" replacement={{ _: /\d/ }} />
