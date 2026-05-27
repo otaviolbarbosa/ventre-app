@@ -557,10 +557,12 @@ function EvolutionsSection({
           title="Nenhuma evolução registrada"
           description="Registre as consultas pré-natais da gestante."
         >
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="h-4 w-4" />
-            Adicionar evolução
-          </Button>
+          {isEditable && (
+            <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
+              <Plus className="h-4 w-4" />
+              Adicionar evolução
+            </Button>
+          )}
         </EmptyState>
       ) : (
         <div className="space-y-3">
@@ -724,10 +726,12 @@ function UltrasoundsSection({
           title="Nenhuma ultrassonografia registrada"
           description="Registre os exames de imagem da gestante."
         >
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="h-4 w-4" />
-            Adicionar USG
-          </Button>
+          {isEditable && (
+            <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
+              <Plus className="h-4 w-4" />
+              Adicionar USG
+            </Button>
+          )}
         </EmptyState>
       ) : (
         <div className="space-y-3">
@@ -912,10 +916,12 @@ function LabExamsSection({
           title="Nenhum exame registrado"
           description="Registre os exames laboratoriais da gestante."
         >
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="h-4 w-4" />
-            Adicionar exame
-          </Button>
+          {isEditable && (
+            <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
+              <Plus className="h-4 w-4" />
+              Adicionar exame
+            </Button>
+          )}
         </EmptyState>
       ) : (
         <div className="overflow-x-auto">
@@ -1041,7 +1047,7 @@ function VaccinesSection({
                   <p className="text-muted-foreground text-xs">Não registrada</p>
                 )}
               </div>
-              <Pencil className="h-3 w-3 shrink-0 text-muted-foreground" />
+              {isEditable && <Pencil className="h-3 w-3 shrink-0 text-muted-foreground" />}
             </button>
           );
         })}
@@ -1110,10 +1116,12 @@ function OtherExamsSection({
           title="Nenhum exame registrado"
           description="Registre exames como CTG, NST e outros não estruturados."
         >
-          <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
-            <Plus className="h-4 w-4" />
-            Adicionar exame
-          </Button>
+          {isEditable && (
+            <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
+              <Plus className="h-4 w-4" />
+              Adicionar exame
+            </Button>
+          )}
         </EmptyState>
       ) : (
         <div className="space-y-2">
