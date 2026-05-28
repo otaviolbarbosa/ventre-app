@@ -66,12 +66,21 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
 
   const enterpriseId = profile.enterprise_id;
 
-  // Busca todos os profissionais da organização
-  const { data: professionals } = await supabase
-    .from("users")
-    .select("id, name, professional_type, avatar_url")
-    .eq("enterprise_id", enterpriseId)
-    .eq("user_type", "professional");
+  // Busca profissionais da organização via junction table
+  const { data: ueData } = await supabaseAdmin
+    .from("user_enterprises")
+    .select("user_id, users!inner(id, name, professional_type, avatar_url)")
+    .eq("enterprise_id", enterpriseId);
+
+  const professionals = (ueData ?? []).map((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return {
+      id: u?.id ?? ue.user_id,
+      name: u?.name ?? null,
+      professional_type: u?.professional_type ?? null,
+      avatar_url: u?.avatar_url ?? null,
+    };
+  });
 
   if (!professionals || professionals.length === 0) {
     return { ...EMPTY };

@@ -13,7 +13,23 @@ export const addAppointmentAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const professionalId =
       isStaff(profile) && parsedInput.professional_id ? parsedInput.professional_id : user.id;
-    const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput);
+
+    // enterprise_id: staff usa profile, profissional deriva da gestação ativa do paciente
+    let appointmentEnterpriseId: string | null = profile.enterprise_id ?? null;
+
+    if (!appointmentEnterpriseId && parsedInput.patient_id && !parsedInput.is_external) {
+      const { data: pregnancy } = await supabase
+        .from("pregnancies")
+        .select("enterprise_id")
+        .eq("patient_id", parsedInput.patient_id)
+        .eq("has_finished", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      appointmentEnterpriseId = pregnancy?.enterprise_id ?? null;
+    }
+
+    const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput, appointmentEnterpriseId);
 
     let patientName: string | null = parsedInput.external_patient_name ?? null;
     if (!parsedInput.is_external && appointment.patient_id) {
@@ -26,7 +42,7 @@ export const addAppointmentAction = authActionClient
       patientName = patient?.name ?? null;
     }
 
-    if (profile.enterprise_id) {
+    if (appointmentEnterpriseId) {
       const isConsulta = parsedInput.type === "consulta";
       const actionName = isConsulta ? "Nova consulta agendada" : "Novo encontro agendado";
       const typeLabel = isConsulta ? "Consulta pré-natal" : "Encontro preparatório";
@@ -41,7 +57,7 @@ export const addAppointmentAction = authActionClient
         description,
         actionType: "appointment",
         userId: user.id,
-        enterpriseId: profile.enterprise_id,
+        enterpriseId: appointmentEnterpriseId,
         patientId: appointment.patient_id ?? undefined,
         metadata: { appointment_id: appointment.id, type: parsedInput.type },
       });

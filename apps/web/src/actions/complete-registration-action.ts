@@ -30,8 +30,6 @@ export const completeRegistrationAction = actionClient
       throw new Error("Convite não encontrado.");
     }
 
-    // const invite = inviteRaw as RegistrationInvite;
-
     if (invite.completed_at) {
       throw new Error("Convite já utilizado.");
     }
@@ -57,14 +55,22 @@ export const completeRegistrationAction = actionClient
       throw new Error(signUpError?.message ?? "Erro ao criar conta.");
     }
 
-    // Update the public.users row created by the trigger with phone and enterprise_id
+    // Atualiza perfil sem enterprise_id (para profissionais, enterprise vai na junction table)
     const { error: updateError } = await supabaseAdmin
       .from("users")
-      .update({ name: finalName, phone: finalPhone, enterprise_id: invite.enterprise_id })
+      .update({ name: finalName, phone: finalPhone })
       .eq("id", signUpData.user.id);
 
     if (updateError) {
       throw new Error("Erro ao atualizar perfil.");
+    }
+
+    // Associa à empresa via junction table
+    if (invite.enterprise_id) {
+      const { error: joinError } = await supabaseAdmin
+        .from("user_enterprises")
+        .insert({ user_id: signUpData.user.id, enterprise_id: invite.enterprise_id });
+      if (joinError) throw new Error("Erro ao vincular à organização.");
     }
 
     // Mark invite as completed

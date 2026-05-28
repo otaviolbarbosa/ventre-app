@@ -8,9 +8,24 @@ import { createBilling } from "@/services/billing";
 export const addBillingAction = authActionClient
   .inputSchema(createBillingSchema)
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
-    const billing = await createBilling(supabase, supabaseAdmin, user.id, parsedInput);
+    // enterprise_id: staff usa profile, profissional deriva da gestação ativa do paciente
+    let billingEnterpriseId: string | null = profile.enterprise_id ?? null;
 
-    if (profile.enterprise_id) {
+    if (!billingEnterpriseId && parsedInput.patient_id) {
+      const { data: pregnancy } = await supabase
+        .from("pregnancies")
+        .select("enterprise_id")
+        .eq("patient_id", parsedInput.patient_id)
+        .eq("has_finished", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      billingEnterpriseId = pregnancy?.enterprise_id ?? null;
+    }
+
+    const billing = await createBilling(supabase, supabaseAdmin, user.id, parsedInput, billingEnterpriseId);
+
+    if (billingEnterpriseId) {
       const { data: patient } = await supabase
         .from("patients")
         .select("name")
@@ -25,7 +40,7 @@ export const addBillingAction = authActionClient
           : "Nova cobrança criada",
         actionType: "billing",
         userId: user.id,
-        enterpriseId: profile.enterprise_id,
+        enterpriseId: billingEnterpriseId,
         patientId: billing.patient_id,
         metadata: { billing_id: billing.id },
       });

@@ -70,13 +70,13 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
       .eq("professional_id", professionalId);
     allTeamMembers = (data ?? []) as typeof allTeamMembers;
   } else {
-    const { data: professionals } = await supabase
-      .from("users")
-      .select("id")
-      .eq("enterprise_id", enterpriseId)
-      .eq("user_type", "professional");
+    // Profissionais da empresa via junction table
+    const { data: ueData } = await supabase
+      .from("user_enterprises")
+      .select("user_id")
+      .eq("enterprise_id", enterpriseId);
 
-    const professionalIds = (professionals ?? []).map((p) => p.id);
+    const professionalIds = (ueData ?? []).map((ue) => ue.user_id);
     if (professionalIds.length === 0) return [];
 
     const { data } = await supabase

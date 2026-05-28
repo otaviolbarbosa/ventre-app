@@ -26,16 +26,27 @@ export async function getEnterpriseProfessionals(
 
   const enterpriseId = profile.enterprise_id;
 
-  const [{ data: enterprise }, { data: professionals }] = await Promise.all([
+  // Profissionais via junction table + enterprise token em paralelo
+  const [{ data: enterprise }, { data: ueData }] = await Promise.all([
     supabase.from("enterprises").select("token").eq("id", enterpriseId).single(),
     supabaseAdmin
-      .from("users")
-      .select("id, name, email, phone, professional_type")
-      .eq("enterprise_id", enterpriseId)
-      .eq("user_type", "professional"),
+      .from("user_enterprises")
+      .select("user_id, users!inner(id, name, email, phone, professional_type)")
+      .eq("enterprise_id", enterpriseId),
   ]);
 
-  if (!professionals || professionals.length === 0) {
+  const professionals = (ueData ?? []).map((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return {
+      id: u?.id ?? ue.user_id,
+      name: u?.name ?? null,
+      email: u?.email ?? null,
+      phone: u?.phone ?? null,
+      professional_type: u?.professional_type ?? null,
+    };
+  });
+
+  if (professionals.length === 0) {
     return { professionals: [], enterpriseToken: enterprise?.token ?? null };
   }
 

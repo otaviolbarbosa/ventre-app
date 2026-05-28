@@ -26,12 +26,12 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
 
   const enterpriseId = profile.enterprise_id;
 
-  const [{ data: professionalsData }, { data: staffData }] = await Promise.all([
+  // Profissionais via junction table; staff continua via users.enterprise_id
+  const [{ data: ueData }, { data: staffData }] = await Promise.all([
     supabaseAdmin
-      .from("users")
-      .select("id, name, email, phone, professional_type, avatar_url")
-      .eq("enterprise_id", enterpriseId)
-      .eq("user_type", "professional"),
+      .from("user_enterprises")
+      .select("user_id, users!inner(id, name, email, phone, professional_type, avatar_url)")
+      .eq("enterprise_id", enterpriseId),
     supabaseAdmin
       .from("users")
       .select("id, name, email, phone, user_type, avatar_url")
@@ -39,7 +39,19 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
       .in("user_type", ["manager", "secretary"]),
   ]);
 
-  const professionalIds = (professionalsData ?? []).map((p) => p.id);
+  const professionalsData = (ueData ?? []).map((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return {
+      id: u?.id ?? ue.user_id,
+      name: u?.name ?? null,
+      email: u?.email ?? null,
+      phone: u?.phone ?? null,
+      professional_type: u?.professional_type ?? null,
+      avatar_url: u?.avatar_url ?? null,
+    };
+  });
+
+  const professionalIds = professionalsData.map((p) => p.id);
 
   const { data: teamMembers } =
     professionalIds.length > 0

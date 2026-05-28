@@ -16,7 +16,7 @@ export const addEnterpriseProfessionalAction = authActionClient
 
     const { data: targetUser, error } = await supabaseAdmin
       .from("users")
-      .select("id, name, email, user_type, enterprise_id")
+      .select("id, name, email, user_type")
       .eq("email", email.toLowerCase().trim())
       .single();
 
@@ -32,20 +32,15 @@ export const addEnterpriseProfessionalAction = authActionClient
       throw new Error("Você não pode adicionar a si mesmo.");
     }
 
-    if (targetUser.enterprise_id === profile.enterprise_id) {
-      throw new Error("Este profissional já pertence à sua organização.");
-    }
+    // Insere na junction table — PK composta detecta duplicatas via código 23505
+    const { error: insertError } = await supabaseAdmin
+      .from("user_enterprises")
+      .insert({ user_id: targetUser.id, enterprise_id: profile.enterprise_id });
 
-    if (targetUser.enterprise_id) {
-      throw new Error("Este profissional já está vinculado a outra organização.");
-    }
-
-    const { error: updateError } = await supabaseAdmin
-      .from("users")
-      .update({ enterprise_id: profile.enterprise_id })
-      .eq("id", targetUser.id);
-
-    if (updateError) {
+    if (insertError) {
+      if (insertError.code === "23505") {
+        throw new Error("Este profissional já pertence à sua organização.");
+      }
       throw new Error("Erro ao adicionar profissional.");
     }
 
