@@ -1,16 +1,16 @@
 "use client";
 
 import { updateProfileAction } from "@/actions/update-profile-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@ventre/supabase/types";
 import { InputMask } from "@react-input/mask";
+import type { Tables } from "@ventre/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Separator } from "@ventre/ui/separator";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import {
   Bell,
   Camera,
@@ -247,7 +247,7 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
                       mask="(__) _____-____"
                       replacement={{ _: /\d/ }}
                       placeholder="(00) 00000-0000"
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                       {...field}
                     />
                   </FormControl>

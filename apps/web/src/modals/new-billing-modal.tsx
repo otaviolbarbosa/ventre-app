@@ -337,10 +337,14 @@ export default function NewBillingModal({
                     return (
                       <div key={profId} className="flex items-center gap-2">
                         <span className="flex-1 truncate text-sm">{prof?.name ?? profId}</span>
-                        <CurrencyInput
-                          value={profAmounts[profId] ?? 0}
-                          onChange={(val) => setProfAmounts((prev) => ({ ...prev, [profId]: val }))}
-                        />
+                        <div className="w-full max-w-40 xs:max-w-48">
+                          <CurrencyInput
+                            value={profAmounts[profId] ?? 0}
+                            onChange={(val) =>
+                              setProfAmounts((prev) => ({ ...prev, [profId]: val }))
+                            }
+                          />
+                        </div>
                         <Button
                           type="button"
                           variant="ghost"
@@ -476,14 +480,17 @@ export default function NewBillingModal({
               </div>
               <div className="space-y-2">
                 <div className="flex items-start gap-3">
-                  <span className="w-24 shrink-0 pt-2 text-muted-foreground text-sm">
+                  <span className="hidden flex-1 shrink-0 pt-2 text-muted-foreground text-sm sm:inline">
                     Parcela 1
+                  </span>
+                  <span className="flex-1 shrink-0 pt-2 text-muted-foreground text-sm sm:hidden">
+                    #1
                   </span>
                   <FormField
                     control={form.control}
                     name="first_due_date"
                     render={({ field }) => (
-                      <FormItem className="flex-1">
+                      <FormItem className="w-full max-w-36 sm:max-w-40">
                         <FormControl>
                           <DatePicker
                             selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
@@ -497,7 +504,7 @@ export default function NewBillingModal({
                       </FormItem>
                     )}
                   />
-                  <div className="w-28 shrink-0">
+                  <div className="w-full max-w-32 shrink-0 sm:max-w-40">
                     <CurrencyInput
                       value={installmentAmounts[0] ?? 0}
                       onChange={(val) => handleInstallmentAmountChange(0, val)}
@@ -510,10 +517,13 @@ export default function NewBillingModal({
 
                 {previewDates.map((date, i) => (
                   <div key={date || `preview-${i + 2}`} className="flex items-start gap-3">
-                    <span className="w-24 shrink-0 pt-2 text-muted-foreground text-sm">
+                    <span className="hidden flex-1 shrink-0 pt-2 text-muted-foreground text-sm sm:inline">
                       Parcela {i + 2}
                     </span>
-                    <div className="relative flex-1">
+                    <span className="flex-1 shrink-0 pt-2 text-muted-foreground text-sm sm:hidden">
+                      #{i + 2}
+                    </span>
+                    <div className="relative w-full max-w-36 sm:max-w-40">
                       <DatePicker
                         selected={date ? new Date(`${date}T00:00:00`) : null}
                         onChange={() => undefined}
@@ -522,13 +532,13 @@ export default function NewBillingModal({
                       <button
                         type="button"
                         onClick={() => switchToCustom()}
-                        className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
+                        className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
                         title="Editar datas manualmente"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <div className="w-28 shrink-0">
+                    <div className="w-full max-w-32 shrink-0 sm:max-w-40">
                       <CurrencyInput
                         value={installmentAmounts[i + 1] ?? 0}
                         onChange={(val) => handleInstallmentAmountChange(i + 1, val)}
