@@ -44,22 +44,13 @@ export const joinEnterpriseAction = authActionClient
 
     if (typeError) throw new Error(typeError.message);
 
-    if (userType === "professional") {
-      // Profissionais entram via junction table (suporta múltiplas empresas)
-      const supabaseAdmin = await createServerSupabaseAdmin();
-      const { error: joinError } = await supabaseAdmin
-        .from("user_enterprises")
-        .insert({ user_id: user.id, enterprise_id: enterprise.id });
-      if (joinError && joinError.code !== "23505") {
-        throw new Error(joinError.message);
-      }
-    } else {
-      // Managers e secretaries mantêm users.enterprise_id
-      const { error } = await supabase
-        .from("users")
-        .update({ enterprise_id: enterprise.id })
-        .eq("id", user.id);
-      if (error) throw new Error(error.message);
+    // Todos os tipos entram via junction table
+    const supabaseAdmin = await createServerSupabaseAdmin();
+    const { error: joinError } = await supabaseAdmin
+      .from("user_enterprises")
+      .insert({ user_id: user.id, enterprise_id: enterprise.id });
+    if (joinError && joinError.code !== "23505") {
+      throw new Error(joinError.message);
     }
 
     redirect("/home");

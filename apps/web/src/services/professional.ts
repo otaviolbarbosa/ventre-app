@@ -54,8 +54,9 @@ export async function getEnterpriseProfessionals(
 
   const teamMembersQuery = supabaseAdmin
     .from("team_members")
-    .select("patient_id, professional_id")
-    .in("professional_id", professionalIds);
+    .select("professional_id, pregnancies!inner(id, enterprise_id)")
+    .in("professional_id", professionalIds)
+    .eq("pregnancies.enterprise_id", enterpriseId);
 
   if (patientId) {
     teamMembersQuery.eq("patient_id", patientId);
@@ -65,11 +66,13 @@ export async function getEnterpriseProfessionals(
 
   const patientCountByProfessional: Record<string, Set<string>> = {};
   for (const tm of teamMembers ?? []) {
+    const pregnancyId = Array.isArray(tm.pregnancies) ? tm.pregnancies[0]?.id : tm.pregnancies?.id;
+    if (!pregnancyId) continue;
     const bucket = patientCountByProfessional[tm.professional_id];
     if (!bucket) {
-      patientCountByProfessional[tm.professional_id] = new Set([tm.patient_id]);
+      patientCountByProfessional[tm.professional_id] = new Set([pregnancyId]);
     } else {
-      bucket.add(tm.patient_id);
+      bucket.add(pregnancyId);
     }
   }
 

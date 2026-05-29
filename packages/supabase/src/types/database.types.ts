@@ -1769,7 +1769,6 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           email: string
-          enterprise_id: string | null
           id: string
           name: string
           phone: string | null
@@ -1783,7 +1782,6 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           email: string
-          enterprise_id?: string | null
           id: string
           name: string
           phone?: string | null
@@ -1797,7 +1795,6 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           email?: string
-          enterprise_id?: string | null
           id?: string
           name?: string
           phone?: string | null
@@ -1807,15 +1804,7 @@ export type Database = {
           updated_at?: string | null
           user_type?: Database["public"]["Enums"]["user_type"]
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_enterprise_id_fkey"
-            columns: ["enterprise_id"]
-            isOneToOne: false
-            referencedRelation: "enterprises"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       vaccine_records: {
         Row: {
@@ -1915,6 +1904,7 @@ export type Database = {
         Args: { page?: number; size?: number }
         Returns: Json
       }
+      get_staff_enterprise_ids: { Args: never; Returns: string[] }
       is_enterprise_patient: {
         Args: { p_patient_id: string }
         Returns: boolean

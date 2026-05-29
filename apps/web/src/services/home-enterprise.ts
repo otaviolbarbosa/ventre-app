@@ -124,18 +124,14 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
   const { data: patients } = await supabaseAdmin
     .from("patients")
     .select("*, pregnancies(due_date, dum, has_finished, born_at, delivery_method, observations)")
-    .in("id", allPatientIds);
+    .in("id", allPatientIds)
+    .order("due_date", { referencedTable: "pregnancies", ascending: true });
 
   const trimesterCounts: TrimesterCounts = { first: 0, second: 0, third: 0 };
   const today = dayjs();
   const patientsWithInfo: PatientWithGestationalInfo[] = [];
 
-  // Sort by due_date from pregnancy
-  const sortedPatients = (patients ?? []).slice().sort((a, b) => {
-    const aDate = a.pregnancies?.[0]?.due_date ?? "";
-    const bDate = b.pregnancies?.[0]?.due_date ?? "";
-    return aDate.localeCompare(bDate);
-  });
+  const sortedPatients = patients ?? [];
 
   for (const patient of sortedPatients) {
     const pregnancy = patient.pregnancies?.[0];

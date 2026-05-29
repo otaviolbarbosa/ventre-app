@@ -3,7 +3,7 @@
 import { cancelSubscriptionAction } from "@/actions/cancel-subscription-action";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { isStaff } from "@/lib/access-control";
-import type { Tables } from "@ventre/supabase/types";
+import type { UserProfile } from "@/lib/server-auth";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ventre/ui/card";
@@ -14,13 +14,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import type { Tables } from "@ventre/supabase/types";
+
 type Plan = Tables<"plans">;
 type Subscription = Tables<"subscriptions"> & { plans: Plan | null };
-type Profile = Tables<"users">;
 
 type SubscriptionScreenProps = {
   subscription: Subscription | null;
-  profile: Profile;
+  profile: UserProfile;
 };
 
 const STATUS_MAP: Record<

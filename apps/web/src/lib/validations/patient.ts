@@ -25,6 +25,7 @@ export const createPatientSchema = z.object({
     .array(z.string().uuid())
     .min(1, "Selecione pelo menos uma profissional")
     .optional(),
+  enterprise_id: z.string().uuid().nullable().optional(),
   billing: createBillingSchema.omit({ patient_id: true }).optional(),
 });
 

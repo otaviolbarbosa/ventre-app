@@ -28,6 +28,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type HomeScreenProps = {
   profile: Tables<"users">;
+  enterprises?: { id: string; name: string }[];
 };
 
 type FilterType = Exclude<PatientFilter, "finished">;
@@ -249,7 +250,7 @@ const FILTER_LABELS: Record<FilterType, string> = {
 
 type DppFilter = { month: number; year: number } | null;
 
-export default function HomeScreen({ profile }: HomeScreenProps) {
+export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dppFilter, setDppFilter] = useState<DppFilter>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -367,6 +368,7 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
         <NewPatientModal
           showModal={showNewPatient}
           setShowModal={setShowNewPatient}
+          enterprises={enterprises}
           onSuccess={refreshAll}
         />
       </div>
@@ -499,6 +501,7 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
       <NewPatientModal
         showModal={showNewPatient}
         setShowModal={setShowNewPatient}
+        enterprises={enterprises}
         onSuccess={refreshAll}
       />
       <NewAppointmentModal
