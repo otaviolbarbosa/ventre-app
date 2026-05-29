@@ -8,6 +8,7 @@ import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
+import { dayjs } from "@/lib/dayjs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
@@ -114,10 +115,7 @@ export default function PatientProfilePage() {
               {patient.born_at && (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    Nascimento:{" "}
-                    {new Date(patient.born_at).toLocaleDateString("pt-BR", {
-                      timeZone: "UTC",
-                    })}
+                    Nascimento: {dayjs(patient.born_at).format("DD/MM/YYYY")}
                   </p>
                   <p className="text-muted-foreground text-sm">
                     Via de parto:{" "}
