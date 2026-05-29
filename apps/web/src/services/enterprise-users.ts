@@ -26,27 +26,42 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
 
   const enterpriseId = profile.enterprise_id;
 
-  const [{ data: professionalsData }, { data: staffData }] = await Promise.all([
-    supabaseAdmin
-      .from("users")
-      .select("id, name, email, phone, professional_type, avatar_url")
-      .eq("enterprise_id", enterpriseId)
-      .eq("user_type", "professional"),
-    supabaseAdmin
-      .from("users")
-      .select("id, name, email, phone, user_type, avatar_url")
-      .eq("enterprise_id", enterpriseId)
-      .in("user_type", ["manager", "secretary"]),
-  ]);
+  // Todos os membros da enterprise via junction table, split por user_type
+  const { data: allUeData } = await supabaseAdmin
+    .from("user_enterprises")
+    .select("user_id, users!inner(id, name, email, phone, professional_type, user_type, avatar_url)")
+    .eq("enterprise_id", enterpriseId);
 
-  const professionalIds = (professionalsData ?? []).map((p) => p.id);
+  const ueData = (allUeData ?? []).filter((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return u?.user_type === "professional";
+  });
+  const staffUeData = (allUeData ?? []).filter((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return u?.user_type === "manager" || u?.user_type === "secretary";
+  });
+
+  const professionalsData = (ueData ?? []).map((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return {
+      id: u?.id ?? ue.user_id,
+      name: u?.name ?? null,
+      email: u?.email ?? null,
+      phone: u?.phone ?? null,
+      professional_type: u?.professional_type ?? null,
+      avatar_url: u?.avatar_url ?? null,
+    };
+  });
+
+  const professionalIds = professionalsData.map((p) => p.id);
 
   const { data: teamMembers } =
     professionalIds.length > 0
       ? await supabaseAdmin
           .from("team_members")
-          .select("patient_id, professional_id")
+          .select("patient_id, professional_id, pregnancies!inner(enterprise_id)")
           .in("professional_id", professionalIds)
+          .eq("pregnancies.enterprise_id", enterpriseId)
       : { data: [] };
 
   const patientCountByProfessional: Record<string, Set<string>> = {};
@@ -69,13 +84,16 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
     avatar_url: p.avatar_url ?? undefined,
   }));
 
-  const staff: EnterpriseStaffMember[] = (staffData ?? []).map((s) => ({
-    id: s.id,
-    name: s.name,
-    email: s.email,
-    user_type: s.user_type as "manager" | "secretary",
-    avatar_url: s.avatar_url ?? undefined,
-  }));
+  const staff: EnterpriseStaffMember[] = (staffUeData ?? []).map((ue) => {
+    const s = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return {
+      id: s?.id ?? ue.user_id,
+      name: s?.name ?? null,
+      email: s?.email ?? null,
+      user_type: (s?.user_type ?? "secretary") as "manager" | "secretary",
+      avatar_url: s?.avatar_url ?? undefined,
+    };
+  });
 
   return { professionals, staff, enterpriseId };
 }

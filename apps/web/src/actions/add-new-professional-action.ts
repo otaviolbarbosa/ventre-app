@@ -18,25 +18,32 @@ export const addNewProfessionalAction = authActionClient
     if (!isStaff(profile)) throw new Error("Acesso não autorizado");
     if (!profile.enterprise_id) throw new Error("Você não está associado a nenhuma organização.");
 
+    const enterpriseId = profile.enterprise_id;
     const { name, email, phone, professional_type } = parsedInput;
     const normalizedEmail = email.toLowerCase().trim();
 
     const { data: existing } = await supabaseAdmin
       .from("users")
-      .select("id, enterprise_id")
+      .select("id")
       .eq("email", normalizedEmail)
       .maybeSingle();
 
-    if (existing?.enterprise_id) {
-      throw new Error("Esta profissional já está vinculada a uma organização.");
-    }
-
     if (existing) {
-      // User already has an auth account — just update the profile, no invite needed
+      const { data: existingLink } = await supabaseAdmin
+        .from("user_enterprises")
+        .select("enterprise_id")
+        .eq("user_id", existing.id)
+        .maybeSingle();
+
+      if (existingLink?.enterprise_id) {
+        throw new Error("Esta profissional já está vinculada a uma organização.");
+      }
+
+      // User already has an auth account — update profile and link to enterprise
+      await supabaseAdmin.from("users").update({ phone }).eq("id", existing.id);
       await supabaseAdmin
-        .from("users")
-        .update({ phone, enterprise_id: profile.enterprise_id })
-        .eq("id", existing.id);
+        .from("user_enterprises")
+        .insert({ user_id: existing.id, enterprise_id: enterpriseId });
 
       return { name, email: normalizedEmail };
     }

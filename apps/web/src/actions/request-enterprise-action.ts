@@ -71,11 +71,19 @@ export const requestEnterpriseAction = authActionClient
 
     const { error: userError } = await supabaseAdmin
       .from("users")
-      .update({ user_type: "manager", enterprise_id: enterprise.id })
+      .update({ user_type: "manager" })
       .eq("id", user.id);
 
     if (userError) {
       throw new Error(userError.message);
+    }
+
+    const { error: joinError } = await supabaseAdmin
+      .from("user_enterprises")
+      .insert({ user_id: user.id, enterprise_id: enterprise.id });
+
+    if (joinError) {
+      throw new Error(joinError.message);
     }
 
     redirect("/home");

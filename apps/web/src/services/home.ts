@@ -145,13 +145,10 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
     .from("patients")
     .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, delivery_method, observations)")
     .in("id", patientIds)
-    .eq("pregnancies.has_finished", false);
+    .eq("pregnancies.has_finished", false)
+    .order("due_date", { referencedTable: "pregnancies", ascending: true });
 
-  const sortedPatients = (patients || []).slice().sort((a, b) => {
-    const aDate = a.pregnancies?.[0]?.due_date ?? "";
-    const bDate = b.pregnancies?.[0]?.due_date ?? "";
-    return aDate.localeCompare(bDate);
-  });
+  const sortedPatients = patients || [];
 
   const patientsWithInfo: PatientWithGestationalInfo[] = [];
 

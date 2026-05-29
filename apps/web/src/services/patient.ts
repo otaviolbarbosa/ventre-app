@@ -58,35 +58,37 @@ export async function getMyPatients(
   let totalCount = 0;
 
   if (dppMonth !== undefined && dppYear !== undefined) {
-    // DPP filter path: query pregnancies directly
     const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
-    const { data: pregnancies } = await supabase
+    let pregnanciesQuery = supabase
       .from("pregnancies")
-      .select("patient_id, due_date, dum, has_finished, born_at, observations")
+      .select(
+        "due_date, dum, has_finished, born_at, observations, patients!inner(id, name, phone, email, street, neighborhood, complement, number, city, state, zipcode, date_of_birth, created_at, updated_at, created_by, user_id)",
+      )
       .in("patient_id", patientIds)
       .gte("due_date", startDate)
-      .lte("due_date", endDate);
+      .lte("due_date", endDate)
+      .order("due_date", { ascending: true });
 
-    const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
-    const filteredIds = (pregnancies ?? []).map((p) => p.patient_id);
+    if (search) pregnanciesQuery = pregnanciesQuery.ilike("patients.name", `%${search}%`);
 
-    if (filteredIds.length === 0) {
+    const { data: pregnanciesData } = await pregnanciesQuery;
+
+    if (!pregnanciesData || pregnanciesData.length === 0) {
       return { patients: [], totalCount: 0, teamMembersMap: {} };
     }
 
-    let patientsQuery = supabase.from("patients").select("*").in("id", filteredIds);
-    if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
-    const { data: patientsData } = await patientsQuery;
-
-    rows = (patientsData ?? []).map((p) => ({
-      ...p,
-      due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
-      dum: pregnancyByPatient.get(p.id)?.dum ?? null,
-      has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
-      born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
-      observations: pregnancyByPatient.get(p.id)?.observations ?? null,
-    }));
+    rows = pregnanciesData.map((preg) => {
+      const patient = preg.patients as unknown as Patient;
+      return {
+        ...patient,
+        due_date: preg.due_date ?? null,
+        dum: preg.dum ?? null,
+        has_finished: preg.has_finished ?? false,
+        born_at: preg.born_at ?? null,
+        observations: preg.observations ?? null,
+      };
+    });
     totalCount = rows.length;
   } else {
     // Standard RPC path
@@ -160,9 +162,7 @@ export async function createPatient(
 ) {
   // First selected professional (or the creator) is the responsible professional
   const professionalIds =
-    data.professional_ids && data.professional_ids.length > 0
-      ? data.professional_ids
-      : [userId];
+    data.professional_ids && data.professional_ids.length > 0 ? data.professional_ids : [userId];
   // professionalIds always has at least one element (userId fallback above)
   const responsibleProfessionalId = professionalIds[0] as string;
 
@@ -211,6 +211,7 @@ export async function createPatient(
       created_by: responsibleProfessionalId,
       baby_name: data.baby_name || null,
       observations: data.observations,
+      enterprise_id: data.enterprise_id ?? null,
     } satisfies TablesInsert<"pregnancies">)
     .select("id")
     .single();

@@ -1,5 +1,5 @@
 import { isStaff } from "@/lib/access-control";
-import { getServerAuth } from "@/lib/server-auth";
+import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
 import { AppointmentsScreen } from "@/screens";
 import { getMyAppointments } from "@/services/appointment";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
@@ -7,23 +7,23 @@ import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 export default async function AppointmentsPage() {
   const { profile, user } = await getServerAuth();
   const { appointments } = await getMyAppointments();
+  const userIsStaff = isStaff(profile);
 
-  let isGoogleCalendarConnected = false;
-  if (user) {
-    const supabaseAdmin = await createServerSupabaseAdmin();
-    const { data: googleToken } = await supabaseAdmin
-      .from("user_google_tokens")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    isGoogleCalendarConnected = !!googleToken;
-  }
+  const [googleTokenResult, enterprises] = await Promise.all([
+    user
+      ? createServerSupabaseAdmin().then((admin) =>
+          admin.from("user_google_tokens").select("id").eq("user_id", user.id).maybeSingle(),
+        )
+      : Promise.resolve({ data: null }),
+    userIsStaff ? Promise.resolve([]) : getServerUserEnterprises(),
+  ]);
 
   return (
     <AppointmentsScreen
       appointments={appointments}
-      isStaff={isStaff(profile)}
-      isGoogleCalendarConnected={isGoogleCalendarConnected}
+      isStaff={userIsStaff}
+      isGoogleCalendarConnected={!!googleTokenResult.data}
+      enterprises={enterprises}
     />
   );
 }

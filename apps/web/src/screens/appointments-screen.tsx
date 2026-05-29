@@ -25,6 +25,7 @@ type AppointmentsScreenProps = {
   appointments: AppointmentWithPatient[];
   isStaff?: boolean;
   isGoogleCalendarConnected?: boolean;
+  enterprises?: { id: string; name: string }[];
 };
 
 type AgendaView = "list" | "calendar";
@@ -35,6 +36,7 @@ export default function AppointmentsScreen({
   appointments: initialAppointments,
   isStaff = false,
   isGoogleCalendarConnected = true,
+  enterprises,
 }: AppointmentsScreenProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
@@ -179,7 +181,8 @@ export default function AppointmentsScreen({
           setShowNewPatientModal(open);
           if (!open) setExternalPatientInitialValues(null);
         }}
-        professionals={professionals}
+        professionals={isStaff ? professionals : undefined}
+        enterprises={!isStaff ? enterprises : undefined}
         initialValues={{
           name: externalPatientInitialValues?.name ?? undefined,
           email: externalPatientInitialValues?.email ?? undefined,

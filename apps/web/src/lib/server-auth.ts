@@ -1,14 +1,11 @@
-import { createServerSupabaseClient } from "@ventre/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
 import { cache } from "react";
 
-export type UserProfile = Tables<"users">;
+export type UserEnterprise = { id: string; name: string };
 
-/**
- * Memoized per request via React.cache().
- * Returns the Supabase client + authenticated user.
- * Calling this multiple times in the same request executes only once.
- */
+export type UserProfile = Tables<"users"> & { enterprise_id: string | null };
+
 const _getBaseAuth = cache(async () => {
   const supabase = await createServerSupabaseClient();
   const {
@@ -17,24 +14,45 @@ const _getBaseAuth = cache(async () => {
   return { supabase, user: user ?? null };
 });
 
-/**
- * Returns the current authenticated user and the Supabase client.
- * Does NOT fetch the profile row from the DB.
- * Returns `user: null` when unauthenticated.
- */
 export const getServerUser = _getBaseAuth;
 
-/**
- * Returns the current user, their full profile row, and the Supabase client.
- * Memoized per request — safe to call multiple times in the same render.
- * Returns `user: null, profile: null` when unauthenticated.
- */
+export async function getServerUserEnterprises(): Promise<UserEnterprise[]> {
+  const { user } = await _getBaseAuth();
+  if (!user) return [];
+
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("user_enterprises")
+    .select("enterprises!inner(id, name)")
+    .eq("user_id", user.id);
+
+  return (data ?? [])
+    .map((ue) => {
+      const ent = Array.isArray(ue.enterprises) ? ue.enterprises[0] : ue.enterprises;
+      return { id: ent?.id ?? "", name: ent?.name ?? "" };
+    })
+    .filter((e) => e.id);
+}
+
 export const getServerAuth = cache(async () => {
   const { supabase, user } = await _getBaseAuth();
 
   if (!user) return { supabase, user: null, profile: null as UserProfile | null };
 
-  const { data: profile } = await supabase.from("users").select("*").eq("id", user.id).single();
+  const { data: profileData } = await supabase.from("users").select("*").eq("id", user.id).single();
 
-  return { supabase, user, profile: profile ?? null };
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data: ueRow } = await supabaseAdmin
+    .from("user_enterprises")
+    .select("enterprise_id")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  const profile: UserProfile = {
+    ...(profileData ?? ({} as Tables<"users">)),
+    enterprise_id: ueRow?.enterprise_id ?? null,
+  };
+
+  return { supabase, user, profile: profileData ? profile : null };
 });

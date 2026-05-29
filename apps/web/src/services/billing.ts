@@ -58,23 +58,20 @@ export async function getEnterpriseBillings(
   metrics: DashboardMetrics | null;
   professionals: EnterpriseBillingProfessional[];
 }> {
-  const supabase = await createServerSupabaseClient();
   const supabaseAdmin = await createAdmin();
 
-  const { data: professionalsData } = await supabase
-    .from("users")
-    .select("id, name, professional_type")
-    .eq("enterprise_id", enterpriseId)
-    .eq("user_type", "professional");
+  // Profissionais da empresa via junction table (para o dropdown de filtro)
+  const { data: ueData } = await supabaseAdmin
+    .from("user_enterprises")
+    .select("user_id, users!inner(id, name, professional_type)")
+    .eq("enterprise_id", enterpriseId);
 
-  const professionals = professionalsData ?? [];
-  const allIds = professionals.map((p) => p.id);
-  const targetIds = professionalId ? [professionalId] : allIds;
+  const professionals = (ueData ?? []).map((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return { id: u?.id ?? ue.user_id, name: u?.name ?? null, professional_type: u?.professional_type ?? null };
+  });
 
-  if (targetIds.length === 0) {
-    return { billings: [], metrics: null, professionals: [] };
-  }
-
+  // Query direta em billings.enterprise_id
   let query = supabaseAdmin
     .from("billings")
     .select(`
@@ -82,9 +79,14 @@ export async function getEnterpriseBillings(
       installments(*),
       patient:patients!billings_patient_id_fkey(id, name)
     `)
-    .or(targetIds.map((id) => `splitted_billing->>${id}.not.is.null`).join(","))
+    .eq("enterprise_id", enterpriseId)
     .order("created_at", { ascending: false })
     .order("installment_number", { ascending: true, referencedTable: "installments" });
+
+  // Filtro por profissional individual via splitted_billing
+  if (professionalId) {
+    query = query.not(`splitted_billing->>${professionalId}`, "is", null);
+  }
 
   if (startDate) query = query.gte("installments.due_date", startDate);
   if (endDate) query = query.lte("installments.due_date", endDate);
@@ -93,6 +95,8 @@ export async function getEnterpriseBillings(
   if (error) return { billings: [], metrics: null, professionals: [] };
 
   const billings = (data as BillingWithInstallments[]) ?? [];
+
+  const targetIds = professionalId ? [professionalId] : professionals.map((p) => p.id);
 
   const metrics: DashboardMetrics = {
     total_amount: 0,
@@ -129,9 +133,8 @@ export async function getEnterpriseBillings(
 
   const billingCountByProfessional: Record<string, number> = {};
   for (const billing of billings) {
-    for (const professionalId of Object.keys(billing.splitted_billing ?? {})) {
-      billingCountByProfessional[professionalId] =
-        (billingCountByProfessional[professionalId] ?? 0) + 1;
+    for (const profId of Object.keys(billing.splitted_billing ?? {})) {
+      billingCountByProfessional[profId] = (billingCountByProfessional[profId] ?? 0) + 1;
     }
   }
 
@@ -293,6 +296,7 @@ export async function createBilling(
   supabaseAdmin: SupabaseAdminClient,
   userId: string,
   data: CreateBillingInput,
+  enterpriseId?: string | null,
 ) {
   const {
     patient_id,
@@ -330,6 +334,7 @@ export async function createBilling(
       installment_interval: installment_interval ?? null,
       installments_dates: dates.length > 0 ? dates : null,
       notes,
+      ...(enterpriseId ? { enterprise_id: enterpriseId } : {}),
     })
     .select()
     .single();

@@ -56,6 +56,7 @@ export async function createAppointment(
   supabase: SupabaseClient | SupabaseAdminClient,
   userId: string,
   data: CreateAppointmentInput,
+  enterpriseId?: string | null,
 ) {
   const insertData: TablesInsert<"appointments"> = {
     patient_id: data.is_external ? null : data.patient_id,
@@ -69,6 +70,7 @@ export async function createAppointment(
     external_patient_name: data.is_external ? (data.external_patient_name ?? null) : null,
     external_patient_phone: data.is_external ? (data.external_patient_phone ?? null) : null,
     external_patient_email: data.is_external ? data.external_patient_email || null : null,
+    ...(enterpriseId ? { enterprise_id: enterpriseId } : {}),
   };
 
   const { data: appointment, error } = await supabase
