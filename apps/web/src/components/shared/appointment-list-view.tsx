@@ -207,6 +207,7 @@ function AppointmentGroup({
           date={cancelDate}
           appointments={cancellableByDate(cancelDate)}
           onCancelDay={onCancelDay}
+          isStaff={showProfessional}
         />
       )}
 

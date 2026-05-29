@@ -48,7 +48,9 @@ export function PatientCard({
             <div className="flex gap-2 text-muted-foreground text-sm">
               {patient.has_finished ? (
                 <div>
-                  {patient.born_at && <div>Nascimento: {patient.born_at}</div>}
+                  {patient.born_at && (
+                    <div>Nascimento: {dayjs(patient.born_at).format("DD/MM/YYYY")}</div>
+                  )}
                   {patient.delivery_method && (
                     <div>Via de parto: {PREGNANCY_DELIVERY_METHOD[patient.delivery_method]}</div>
                   )}
