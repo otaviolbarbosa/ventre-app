@@ -314,6 +314,7 @@ export function AppointmentCalendarView({
           date={selectedDate}
           appointments={cancellableAppointments}
           onCancelDay={onCancelDay}
+          isStaff={showProfessional}
         />
       )}
 
