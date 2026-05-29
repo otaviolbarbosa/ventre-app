@@ -11,30 +11,36 @@ import { revalidateTag } from "next/cache";
 export const addPatientAction = authActionClient
   .inputSchema(createPatientSchema)
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
-    // Validate all selected professionals belong to the same enterprise
-    if (parsedInput.professional_ids && parsedInput.professional_ids.length > 0) {
-      for (const profId of parsedInput.professional_ids) {
-        const isSelf = profId === profile.id;
+    let enterpriseId: string | null = null;
 
-        if (!isStaff(profile) && !isSelf) {
-          throw new Error("Sem permissão para criar pacientes em nome de outro profissional.");
-        }
+    if (isStaff(profile)) {
+      if (!profile.enterprise_id) {
+        throw new Error("Você precisa pertencer a uma empresa para executar esta ação.");
+      }
+      enterpriseId = profile.enterprise_id;
 
-        if (!isSelf) {
-          const { data: targetProfessional } = await supabase
-            .from("users")
-            .select("enterprise_id")
-            .eq("id", profId)
-            .single();
+      if (parsedInput.professional_ids && parsedInput.professional_ids.length > 0) {
+        for (const profId of parsedInput.professional_ids) {
+          const { data: membership } = await supabaseAdmin
+            .from("user_enterprises")
+            .select("user_id")
+            .eq("user_id", profId)
+            .eq("enterprise_id", enterpriseId)
+            .maybeSingle();
 
-          if (targetProfessional?.enterprise_id !== profile.enterprise_id) {
-            throw new Error("Um dos profissionais selecionados não pertence à sua organização.");
+          if (!membership) {
+            throw new Error("Uma das profissionais selecionadas não pertence à sua organização.");
           }
         }
       }
+    } else {
+      enterpriseId = parsedInput.enterprise_id ?? null;
     }
 
-    const patient = await createPatient(supabaseAdmin, user.id, parsedInput);
+    const patient = await createPatient(supabaseAdmin, user.id, {
+      ...parsedInput,
+      enterprise_id: enterpriseId,
+    });
 
     if (parsedInput.billing) {
       await createBilling(supabase, supabaseAdmin, user.id, {
@@ -46,8 +52,8 @@ export const addPatientAction = authActionClient
     revalidateTag(`home-patients-${user.id}`, { expire: 300 });
     revalidateTag(`home-data-${user.id}`, { expire: 300 });
 
-    if (profile.enterprise_id) {
-      revalidateTag(`enterprise-patients-${profile.enterprise_id}`, { expire: 300 });
+    if (enterpriseId) {
+      revalidateTag(`enterprise-patients-${enterpriseId}`, { expire: 300 });
 
       insertActivityLog({
         supabaseAdmin,
@@ -55,7 +61,7 @@ export const addPatientAction = authActionClient
         description: `${parsedInput.name} foi cadastrada como nova gestante`,
         actionType: "patient",
         userId: user.id,
-        enterpriseId: profile.enterprise_id,
+        enterpriseId,
         patientId: patient.id,
         metadata: { patient_id: patient.id },
       });

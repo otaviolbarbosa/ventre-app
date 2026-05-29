@@ -126,19 +126,21 @@ export function UsersTable() {
           },
           {
             label: "Empresa",
-            name: "enterprise_id",
-            callback: (user) =>
-              user.enterprise_id ? (
+            name: "enterprises",
+            callback: (user) => {
+              const enterprise = user.enterprises?.[0];
+              return enterprise ? (
                 <Link
-                  href={`/enterprises/${user.enterprise_id}`}
+                  href={`/enterprises/${enterprise.id}`}
                   className="group flex items-center gap-2 hover:text-primary"
                 >
-                  <span className="">{user.enterprise?.name}</span>
+                  <span className="">{enterprise.name}</span>
                   <ExternalLink className="size-3 transition-opacity md:opacity-0 md:group-hover:opacity-100" />
                 </Link>
               ) : (
                 "-"
-              ),
+              );
+            },
           },
           {
             label: "Criado em",

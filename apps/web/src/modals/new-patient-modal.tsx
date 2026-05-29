@@ -36,6 +36,11 @@ type Professional = {
   avatar_url?: string | null;
 };
 
+type Enterprise = {
+  id: string;
+  name: string;
+};
+
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
   enfermeiro: "Enfermeira",
@@ -52,17 +57,19 @@ function getInitials(name: string | null | undefined): string {
     .slice(0, 2);
 }
 
-const STEPS = [
-  { n: 1, label: "Gestante" },
-  { n: 2, label: "Contato" },
-  { n: 3, label: "Endereço" },
-  { n: 4, label: "Equipe" },
-  { n: 5, label: "Cobrança" },
-] as const;
+type StepNumber = 1 | 2 | 3 | 4 | 5;
 
-type StepNumber = (typeof STEPS)[number]["n"];
-
-function StepIndicator({ current }: { current: StepNumber }) {
+function StepIndicator({
+  current,
+  step4Label,
+}: { current: StepNumber; step4Label: string }) {
+  const STEPS = [
+    { n: 1 as StepNumber, label: "Gestante" },
+    { n: 2 as StepNumber, label: "Contato" },
+    { n: 3 as StepNumber, label: "Endereço" },
+    { n: 4 as StepNumber, label: step4Label },
+    { n: 5 as StepNumber, label: "Cobrança" },
+  ];
   return (
     <div className="mb-8 flex items-center justify-center">
       {STEPS.map(({ n, label }, i) => {
@@ -113,6 +120,7 @@ type NewPatientModalProps = {
   onSuccess?: VoidFunction;
   professional?: Professional;
   professionals?: Professional[];
+  enterprises?: Enterprise[];
   initialValues?: {
     name?: string;
     email?: string;
@@ -124,6 +132,7 @@ export default function NewPatientModal({
   showModal,
   professional,
   professionals,
+  enterprises,
   setShowModal,
   onSuccess,
   initialValues,
@@ -177,6 +186,8 @@ export default function NewPatientModal({
 
   const isSubmitting = status === "executing";
   const showProfessionalSelector = professionalsOptions.length > 0;
+  const showEnterpriseSelector = enterprises !== undefined && !showProfessionalSelector;
+  const step4Label = showEnterpriseSelector ? "Empresa" : "Equipe";
 
   const defaultProfessionalIds = professional?.id ? [professional.id] : undefined;
 
@@ -199,6 +210,7 @@ export default function NewPatientModal({
       zipcode: "",
       observations: "",
       professional_ids: defaultProfessionalIds,
+      enterprise_id: null,
     },
   });
 
@@ -454,7 +466,7 @@ export default function NewPatientModal({
           }}
           className="space-y-6"
         >
-          <StepIndicator current={step} />
+          <StepIndicator current={step} step4Label={step4Label} />
 
           <div className="min-h-[400px]">
             {/* ── Step 1: Dados da Gestante ── */}
@@ -762,7 +774,7 @@ export default function NewPatientModal({
               </div>
             )}
 
-            {/* ── Step 4: Equipe ── */}
+            {/* ── Step 4: Equipe / Empresa ── */}
             {step === 4 && (
               <div className="space-y-4">
                 {showProfessionalSelector ? (
@@ -969,11 +981,66 @@ export default function NewPatientModal({
                       );
                     }}
                   />
-                ) : (
-                  <p className="text-center text-muted-foreground text-sm">
-                    Nenhuma profissional disponível para seleção.
-                  </p>
-                )}
+                ) : showEnterpriseSelector ? (
+                  <FormField
+                    control={form.control}
+                    name="enterprise_id"
+                    render={({ field }) => {
+                      const enterpriseOptions = [
+                        { id: null as string | null, name: "Atendimento Autônomo", description: "Sem vínculo com empresa" },
+                        ...(enterprises ?? []).map((e) => ({ id: e.id as string | null, name: e.name, description: null })),
+                      ];
+                      return (
+                        <FormItem>
+                          <FormLabel>Vincular ao atendimento</FormLabel>
+                          <div className="flex flex-col gap-2 pt-1">
+                            {enterpriseOptions.map((opt) => {
+                              const isSelected = field.value === opt.id;
+                              return (
+                                <button
+                                  key={opt.id ?? "autonomous"}
+                                  type="button"
+                                  onClick={() => field.onChange(opt.id)}
+                                  className={cn(
+                                    "flex items-center gap-3 rounded-xl border p-4 text-left transition-colors",
+                                    isSelected
+                                      ? "border-primary/40 bg-primary/5"
+                                      : "border-border hover:border-primary/30 hover:bg-muted/40",
+                                  )}
+                                >
+                                  <div
+                                    className={cn(
+                                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                                      isSelected ? "bg-primary/20" : "bg-muted",
+                                    )}
+                                  >
+                                    {opt.id === null ? (
+                                      <Users className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
+                                    ) : (
+                                      <Shield className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className={cn("font-medium text-sm", isSelected && "text-primary")}>
+                                      {opt.name}
+                                    </p>
+                                    {opt.description && (
+                                      <p className="text-muted-foreground text-xs">{opt.description}</p>
+                                    )}
+                                  </div>
+                                  {isSelected && (
+                                    <Check className="h-4 w-4 shrink-0 text-primary" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                ) : null}
               </div>
             )}
 

@@ -66,12 +66,21 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
 
   const enterpriseId = profile.enterprise_id;
 
-  // Busca todos os profissionais da organização
-  const { data: professionals } = await supabase
-    .from("users")
-    .select("id, name, professional_type, avatar_url")
-    .eq("enterprise_id", enterpriseId)
-    .eq("user_type", "professional");
+  // Busca profissionais da organização via junction table
+  const { data: ueData } = await supabaseAdmin
+    .from("user_enterprises")
+    .select("user_id, users!inner(id, name, professional_type, avatar_url)")
+    .eq("enterprise_id", enterpriseId);
+
+  const professionals = (ueData ?? []).map((ue) => {
+    const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
+    return {
+      id: u?.id ?? ue.user_id,
+      name: u?.name ?? null,
+      professional_type: u?.professional_type ?? null,
+      avatar_url: u?.avatar_url ?? null,
+    };
+  });
 
   if (!professionals || professionals.length === 0) {
     return { ...EMPTY };
@@ -115,18 +124,14 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
   const { data: patients } = await supabaseAdmin
     .from("patients")
     .select("*, pregnancies(due_date, dum, has_finished, born_at, delivery_method, observations)")
-    .in("id", allPatientIds);
+    .in("id", allPatientIds)
+    .order("due_date", { referencedTable: "pregnancies", ascending: true });
 
   const trimesterCounts: TrimesterCounts = { first: 0, second: 0, third: 0 };
   const today = dayjs();
   const patientsWithInfo: PatientWithGestationalInfo[] = [];
 
-  // Sort by due_date from pregnancy
-  const sortedPatients = (patients ?? []).slice().sort((a, b) => {
-    const aDate = a.pregnancies?.[0]?.due_date ?? "";
-    const bDate = b.pregnancies?.[0]?.due_date ?? "";
-    return aDate.localeCompare(bDate);
-  });
+  const sortedPatients = patients ?? [];
 
   for (const patient of sortedPatients) {
     const pregnancy = patient.pregnancies?.[0];

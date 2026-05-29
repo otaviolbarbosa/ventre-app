@@ -11,30 +11,41 @@ export const removeEnterpriseProfessionalAction = authActionClient
       throw new Error("Você não está associado a nenhuma organização.");
     }
 
-    const { data: targetUser, error } = await supabaseAdmin
+    // Verifica se o profissional pertence à empresa via junction table
+    const { data: membership, error: membershipError } = await supabaseAdmin
+      .from("user_enterprises")
+      .select("user_id")
+      .eq("user_id", professionalId)
+      .eq("enterprise_id", profile.enterprise_id)
+      .single();
+
+    if (membershipError || !membership) {
+      throw new Error("Este profissional não pertence à sua organização.");
+    }
+
+    // Verifica user_type via users (para garantir que só profissionais são removidos)
+    const { data: targetUser, error: userError } = await supabaseAdmin
       .from("users")
-      .select("id, user_type, enterprise_id, name")
+      .select("id, user_type, name")
       .eq("id", professionalId)
       .single();
 
-    if (error || !targetUser) {
+    if (userError || !targetUser) {
       throw new Error("Profissional não encontrado.");
-    }
-
-    if (targetUser.enterprise_id !== profile.enterprise_id) {
-      throw new Error("Este profissional não pertence à sua organização.");
     }
 
     if (targetUser.user_type !== "professional") {
       throw new Error("Apenas profissionais podem ser removidos pela organização.");
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from("users")
-      .update({ enterprise_id: null })
-      .eq("id", professionalId);
+    // Remove da junction table (profissional continua existindo no sistema)
+    const { error: deleteError } = await supabaseAdmin
+      .from("user_enterprises")
+      .delete()
+      .eq("user_id", professionalId)
+      .eq("enterprise_id", profile.enterprise_id);
 
-    if (updateError) {
+    if (deleteError) {
       throw new Error("Erro ao remover profissional.");
     }
 

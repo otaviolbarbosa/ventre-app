@@ -23,6 +23,7 @@ const createUserSchema = z.object({
   enterprise_id: z.string().uuid().nullable().optional(),
 });
 
+
 const deleteUserSchema = z.object({
   id: z.string().uuid(),
 });
@@ -35,11 +36,20 @@ const getPaginatedUsersSchema = z.object({
 export const updateUserAction = adminActionClient
   .schema(updateUserSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const { id, ...data } = parsedInput;
+    const { id, enterprise_id, ...data } = parsedInput;
 
     const { error } = await ctx.supabaseAdmin.from("users").update(data).eq("id", id);
 
     if (error) throw new Error(error.message);
+
+    // Gerencia enterprise via junction table
+    await ctx.supabaseAdmin.from("user_enterprises").delete().eq("user_id", id);
+    if (enterprise_id) {
+      const { error: joinError } = await ctx.supabaseAdmin
+        .from("user_enterprises")
+        .insert({ user_id: id, enterprise_id });
+      if (joinError) throw new Error(joinError.message);
+    }
 
     revalidatePath("/users");
     revalidatePath(`/users/${id}`);
@@ -49,7 +59,7 @@ export const updateUserAction = adminActionClient
 export const createUserAction = adminActionClient
   .schema(createUserSchema)
   .action(async ({ parsedInput, ctx }) => {
-    const { password, ...profileData } = parsedInput;
+    const { password, enterprise_id, ...profileData } = parsedInput;
 
     const { data: authData, error: authError } = await ctx.supabaseAdmin.auth.admin.createUser({
       email: profileData.email,
@@ -68,6 +78,13 @@ export const createUserAction = adminActionClient
     if (profileError) {
       await ctx.supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       throw new Error(profileError.message);
+    }
+
+    if (enterprise_id) {
+      const { error: joinError } = await ctx.supabaseAdmin
+        .from("user_enterprises")
+        .insert({ user_id: authData.user.id, enterprise_id });
+      if (joinError) throw new Error(joinError.message);
     }
 
     revalidatePath("/users");

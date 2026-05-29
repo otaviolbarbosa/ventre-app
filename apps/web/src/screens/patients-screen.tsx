@@ -60,6 +60,7 @@ type PatientsScreenProps = {
   dppByMonth: DppByMonth[];
   initialDppMonth: number | null;
   initialDppYear: number | null;
+  enterprises?: { id: string; name: string }[];
 };
 
 export default function PatientsScreen({
@@ -72,6 +73,7 @@ export default function PatientsScreen({
   dppByMonth,
   initialDppMonth,
   initialDppYear,
+  enterprises,
 }: PatientsScreenProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -351,6 +353,7 @@ export default function PatientsScreen({
       <NewPatientModal
         showModal={showNewPatientModal}
         setShowModal={setShowNewPatientModal}
+        enterprises={enterprises}
         onSuccess={() => router.refresh()}
       />
     </div>

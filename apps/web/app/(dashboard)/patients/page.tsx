@@ -4,7 +4,7 @@ import {
 } from "@/actions/get-enterprise-patients-action";
 import { isStaff } from "@/lib/access-control";
 import { dayjs } from "@/lib/dayjs";
-import { getServerAuth } from "@/lib/server-auth";
+import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
 import { PatientsEnterpriseScreen, PatientsScreen } from "@/screens";
 import { buildDppByMonth } from "@/services/home";
 import { getMyPatients } from "@/services/patient";
@@ -93,10 +93,12 @@ export default async function PatientsPage({
     );
   }
 
-  const [{ patients: p, totalCount: tc, teamMembersMap: tm }, dueDates] = await Promise.all([
-    getMyPatients(validFilter, search || "", currentPage, dppMonth, dppYear),
-    profile?.id ? getDueDatesForUser(profile.id) : Promise.resolve([]),
-  ]);
+  const [{ patients: p, totalCount: tc, teamMembersMap: tm }, dueDates, enterprises] =
+    await Promise.all([
+      getMyPatients(validFilter, search || "", currentPage, dppMonth, dppYear),
+      profile?.id ? getDueDatesForUser(profile.id) : Promise.resolve([]),
+      getServerUserEnterprises(),
+    ]);
 
   patients = p;
   totalCount = tc;
@@ -115,6 +117,7 @@ export default async function PatientsPage({
       dppByMonth={dppByMonth}
       initialDppMonth={initialDppMonth}
       initialDppYear={initialDppYear}
+      enterprises={enterprises}
     />
   );
 }

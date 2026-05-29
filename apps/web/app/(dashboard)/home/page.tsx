@@ -1,5 +1,5 @@
 import { isStaff } from "@/lib/access-control";
-import { getServerAuth } from "@/lib/server-auth";
+import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
 import { HomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
 import type { Tables } from "@ventre/supabase";
@@ -22,5 +22,6 @@ export default async function Home() {
     return <HomeEnterpriseScreen profile={profile as Profile} />;
   }
 
-  return <HomeScreen profile={profile as Profile} />;
+  const enterprises = await getServerUserEnterprises();
+  return <HomeScreen profile={profile as Profile} enterprises={enterprises} />;
 }

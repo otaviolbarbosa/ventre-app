@@ -8,15 +8,25 @@ export default async function UserDetailPage({ params }: { params: Params }) {
   const { id } = await params;
   const supabase = await createServerSupabaseAdmin();
 
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, name, email, user_type, professional_type, enterprise_id, created_at")
-    .eq("id", id)
-    .single();
+  const [{ data: user }, { data: enterprises }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, name, email, user_type, professional_type, created_at")
+      .eq("id", id)
+      .single(),
+    supabase.from("enterprises").select("id, name").order("name"),
+  ]);
 
   if (!user) notFound();
 
-  const { data: enterprises } = await supabase.from("enterprises").select("id, name").order("name");
+  const { data: ueRow } = await supabase
+    .from("user_enterprises")
+    .select("enterprise_id")
+    .eq("user_id", id)
+    .limit(1)
+    .maybeSingle();
+
+  const userWithEnterprise = { ...user, enterprise_id: ueRow?.enterprise_id ?? null };
 
   return (
     <div>
@@ -24,7 +34,7 @@ export default async function UserDetailPage({ params }: { params: Params }) {
         <h1 className="font-bold text-2xl text-foreground">Editar Usuário</h1>
         <p className="mt-1 text-muted-foreground text-sm">{user.email}</p>
       </div>
-      <UserEditForm user={user} enterprises={enterprises ?? []} />
+      <UserEditForm user={userWithEnterprise} enterprises={enterprises ?? []} />
     </div>
   );
 }

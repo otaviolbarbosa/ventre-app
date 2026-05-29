@@ -18,26 +18,23 @@ export async function getEnterpriseDueDates(
   professionalId?: string | null,
 ): Promise<{ due_date: string | null }[]> {
   const supabase = await createServerSupabaseClient();
-  let teamMembersQuery = supabase.from("team_members").select("patient_id");
-  if (professionalId) {
-    teamMembersQuery = teamMembersQuery.eq("professional_id", professionalId);
-  } else {
-    const { data: professionals } = await supabase
-      .from("users")
-      .select("id")
-      .eq("enterprise_id", enterpriseId)
-      .eq("user_type", "professional");
-    const professionalIds = professionals?.map((p) => p.id) ?? [];
-    if (professionalIds.length === 0) return [];
-    teamMembersQuery = teamMembersQuery.in("professional_id", professionalIds);
-  }
-  const { data: memberships } = await teamMembersQuery;
-  const patientIds = [...new Set(memberships?.map((tm) => tm.patient_id) ?? [])];
-  if (patientIds.length === 0) return [];
-  const { data } = await supabase
+
+  let pregnanciesQuery = supabase
     .from("pregnancies")
-    .select("due_date")
-    .in("patient_id", patientIds);
+    .select("due_date, patient_id")
+    .eq("enterprise_id", enterpriseId);
+
+  if (professionalId) {
+    const { data: teamMemberships } = await supabase
+      .from("team_members")
+      .select("patient_id")
+      .eq("professional_id", professionalId);
+    const professionalPatientIds = teamMemberships?.map((tm) => tm.patient_id) ?? [];
+    if (professionalPatientIds.length === 0) return [];
+    pregnanciesQuery = pregnanciesQuery.in("patient_id", professionalPatientIds);
+  }
+
+  const { data } = await pregnanciesQuery;
   return (data ?? []).map((p) => ({ due_date: p.due_date ?? null }));
 }
 
@@ -52,32 +49,29 @@ export async function getEnterprisePatients(
 ): Promise<GetEnterprisePatientsResult> {
   const supabase = await createServerSupabaseClient();
 
-  let teamMembersQuery = supabase.from("team_members").select("patient_id");
+  const { data: enterprisePregnancies } = await supabase
+    .from("pregnancies")
+    .select("patient_id")
+    .eq("enterprise_id", enterpriseId);
 
-  if (professionalId) {
-    teamMembersQuery = teamMembersQuery.eq("professional_id", professionalId);
-  } else {
-    const { data: professionals } = await supabase
-      .from("users")
-      .select("id")
-      .eq("enterprise_id", enterpriseId)
-      .eq("user_type", "professional");
-
-    const professionalIds = professionals?.map((p) => p.id) ?? [];
-
-    if (professionalIds.length === 0) {
-      return { patients: [], totalCount: 0, teamMembersMap: {} };
-    }
-
-    teamMembersQuery = teamMembersQuery.in("professional_id", professionalIds);
-  }
-
-  const { data: teamMembershipsData } = await teamMembersQuery;
-
-  const patientIds = [...new Set(teamMembershipsData?.map((tm) => tm.patient_id) ?? [])];
+  let patientIds = [...new Set((enterprisePregnancies ?? []).map((p) => p.patient_id))];
 
   if (patientIds.length === 0) {
     return { patients: [], totalCount: 0, teamMembersMap: {} };
+  }
+
+  if (professionalId) {
+    const { data: teamMemberships } = await supabase
+      .from("team_members")
+      .select("patient_id")
+      .eq("professional_id", professionalId)
+      .in("patient_id", patientIds);
+    const professionalPatientIds = new Set(teamMemberships?.map((tm) => tm.patient_id) ?? []);
+    patientIds = patientIds.filter((id) => professionalPatientIds.has(id));
+
+    if (patientIds.length === 0) {
+      return { patients: [], totalCount: 0, teamMembersMap: {} };
+    }
   }
 
   let rows: PatientWithPregnancyFields[] = [];
@@ -92,7 +86,8 @@ export async function getEnterprisePatients(
       .select("patient_id, due_date, dum, has_finished, born_at, observations")
       .in("patient_id", patientIds)
       .gte("due_date", startDate)
-      .lte("due_date", endDate);
+      .lte("due_date", endDate)
+      .order("due_date", { ascending: true });
 
     const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
     const filteredIds = (pregnancies ?? []).map((p) => p.patient_id);
@@ -105,14 +100,20 @@ export async function getEnterprisePatients(
     if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
     const { data: patientsData } = await patientsQuery;
 
-    rows = (patientsData ?? []).map((p) => ({
-      ...p,
-      due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
-      dum: pregnancyByPatient.get(p.id)?.dum ?? null,
-      has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
-      born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
-      observations: pregnancyByPatient.get(p.id)?.observations ?? null,
-    }));
+    rows = (patientsData ?? [])
+      .map((p) => ({
+        ...p,
+        due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
+        dum: pregnancyByPatient.get(p.id)?.dum ?? null,
+        has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
+        born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
+        observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+      }))
+      .sort((a, b) => {
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return a.due_date.localeCompare(b.due_date);
+      });
     totalCount = rows.length;
   } else {
     // Standard RPC path
