@@ -13,6 +13,7 @@ import NewPatientModal from "@/modals/new-patient-modal";
 import RemoveEnterpriseProfessionalModal from "@/modals/remove-enterprise-professional-modal";
 import type { EnterpriseStaffMember } from "@/services/enterprise-users";
 import type { EnterpriseProfessional } from "@/services/professional";
+import type { ProfessionalType } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
@@ -182,9 +183,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
           setShowModal={setShowAddPatientsModal}
           professionalId={professionalForAddPatients.id}
           professionalName={professionalForAddPatients.name ?? "profissional"}
-          professionalType={
-            professionalForAddPatients.professional_type as "obstetra" | "enfermeiro" | "doula"
-          }
+          professionalType={professionalForAddPatients.professional_type as ProfessionalType}
           onSuccess={() => {
             setProfessionalForAddPatients(null);
             router.refresh();

@@ -27,6 +27,7 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
   enfermeiro: "Enfermeiro(a)",
   doula: "Doula",
+  fisio: "Fisioterapeuta",
 };
 
 type EditAppointmentModalProps = {

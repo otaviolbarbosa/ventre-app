@@ -7,6 +7,7 @@ import { setProfessionalTypeAction } from "@/actions/set-professional-type-actio
 import { setUserTypeAction } from "@/actions/set-user-type-action";
 import { ESTADOS_BR } from "@/lib/constants";
 import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
+import type { ProfessionalType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import type { Tables } from "@ventre/supabase/types";
@@ -15,14 +16,13 @@ import { Card } from "@ventre/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
-import { Baby, Building2, Heart, Loader2, LockKeyhole, Stethoscope } from "lucide-react";
+import { Activity, Baby, Building2, Heart, Loader2, LockKeyhole, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type UserRoleType = Tables<"users">["user_type"];
-type ProfessionalType = NonNullable<Tables<"users">["professional_type"]>;
 
 const PROFESSIONALS_AMOUNT_OPTIONS = [
   { label: "Até 5 profissionais", value: 5 },
@@ -41,7 +41,7 @@ const userRoles: {
   {
     type: "professional",
     label: "Profissional",
-    description: "Obstetra, enfermeira ou doula",
+    description: "Obstetra, enfermeira, doula ou fisioterapeuta",
     icon: Stethoscope,
   },
   {
@@ -81,6 +81,12 @@ const professionalTypes: {
     label: "Doula",
     description: "Suporte contínuo durante a gestação e parto",
     icon: Baby,
+  },
+  {
+    type: "fisio",
+    label: "Fisioterapeuta",
+    description: "Fisioterapia obstétrica e pélvica",
+    icon: Activity,
   },
 ];
 
