@@ -1,5 +1,4 @@
-// import heroBG from "@/assets/hero-bg.jpg";
-import heroBG from "@/assets/hero-bg.jpg";
+import heroBG from "@/assets/hero-bg-3.png";
 import { LandingFooter } from "@/components/shared/landing-footer";
 import { LandingHeader } from "@/components/shared/landing-header";
 import { Button } from "@ventre/ui/button";
@@ -82,7 +81,7 @@ export default async function HomePage() {
         {/* Background image + overlays */}
         <div className="absolute inset-0 z-0 h-[560px] md:h-screen">
           <Image alt="" className="h-full w-full object-cover" src={heroBG} priority />
-          <div className="absolute inset-0 bg-background/40 md:bg-gradient-to-r md:from-background/95 md:via-background/80 md:to-background/20" />
+          <div className="absolute inset-0 bg-background/75 md:bg-background/0 md:bg-gradient-to-r md:from-background/95 md:via-background/80 md:to-background/20" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
         </div>
 
@@ -94,17 +93,17 @@ export default async function HomePage() {
         <div className="container relative z-10 mx-auto px-6">
           <div className="max-w-2xl space-y-8 py-24">
             {/* Badge */}
-            <div className="hero-animate hero-animate-1 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/80 px-4 py-2 font-medium text-primary-foreground text-sm">
+            {/* <div className="hero-animate hero-animate-1 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/80 px-4 py-2 font-medium text-primary-foreground text-sm">
               <Heart className="h-3.5 w-3.5 fill-current" />A melhor plataforma para o
               acompanhamento gestacional
-            </div>
+            </div> */}
 
             {/* Headline */}
             <h1
               className="hero-animate hero-animate-2 font-bold text-foreground leading-[1.08] tracking-tight"
               style={{ fontSize: "clamp(2.6rem, 5.5vw, 4.75rem)" }}
             >
-              Cuidado integrado para <span className="text-primary">gestantes</span>
+              Cuidado <span className="text-primary">integrado</span> para gestantes
             </h1>
 
             <p className="hero-animate hero-animate-3 max-w-lg text-foreground/60 text-lg leading-relaxed">
