@@ -1,9 +1,9 @@
 "use client";
 
 import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
-import { Card } from "@ventre/ui/card";
 import type { Tables } from "@ventre/supabase";
-import { Baby, Heart, Stethoscope } from "lucide-react";
+import { Card } from "@ventre/ui/card";
+import { Activity, Baby, Heart, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 
 type ProfessionalType = NonNullable<Tables<"users">["professional_type"]>;
@@ -31,6 +31,12 @@ const professionalTypes: {
     label: "Doula",
     description: "Suporte contínuo durante a gestação e parto",
     icon: Baby,
+  },
+  {
+    type: "fisio",
+    label: "Fisioterapeuta",
+    description: "Fisioterapia obstétrica e pélvica",
+    icon: Activity,
   },
 ];
 

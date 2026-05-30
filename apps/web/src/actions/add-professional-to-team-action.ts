@@ -8,7 +8,7 @@ import { z } from "zod";
 const schema = z.object({
   patientId: z.string().uuid("ID do paciente inválido"),
   professionalId: z.string().uuid("ID do profissional inválido"),
-  professionalType: z.enum(["obstetra", "enfermeiro", "doula"]),
+  professionalType: z.enum(["obstetra", "enfermeiro", "doula", "fisio"]),
   isBackup: z.boolean().default(false),
 });
 
@@ -61,7 +61,9 @@ export const addProfessionalToTeamAction = authActionClient
 
       const patientName = patient?.name ?? "gestante";
       const professionalName = professional?.name ?? "profissional";
-      const actionName = isBackup ? "Profissional backup adicionada" : "Profissional adicionada à equipe";
+      const actionName = isBackup
+        ? "Profissional backup adicionada"
+        : "Profissional adicionada à equipe";
       const description = `${professionalName} foi adicionada à equipe de ${patientName}`;
 
       insertActivityLog({
@@ -72,7 +74,11 @@ export const addProfessionalToTeamAction = authActionClient
         userId: user.id,
         enterpriseId: profile.enterprise_id,
         patientId,
-        metadata: { professional_id: professionalId, professional_type: professionalType, is_backup: isBackup },
+        metadata: {
+          professional_id: professionalId,
+          professional_type: professionalType,
+          is_backup: isBackup,
+        },
       });
     }
 

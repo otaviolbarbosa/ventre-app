@@ -40,7 +40,7 @@ export function UserCreateForm({ enterprises }: { enterprises: Enterprise[] }) {
       password,
       user_type: userType as "professional" | "patient" | "manager" | "secretary" | "admin",
       professional_type: professionalType
-        ? (professionalType as "obstetra" | "enfermeiro" | "doula")
+        ? (professionalType as "obstetra" | "enfermeiro" | "doula" | "fisio")
         : null,
       enterprise_id: enterpriseId || null,
     });
@@ -104,6 +104,7 @@ export function UserCreateForm({ enterprises }: { enterprises: Enterprise[] }) {
                   <SelectItem value="obstetra">Obstetra</SelectItem>
                   <SelectItem value="enfermeiro">Enfermeiro(a)</SelectItem>
                   <SelectItem value="doula">Doula</SelectItem>
+                  <SelectItem value="fisio">Fisioterapeuta</SelectItem>
                 </SelectContent>
               </Select>
             </div>

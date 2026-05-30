@@ -1982,7 +1982,7 @@ export type Database = {
         | "dinheiro"
         | "outro"
       plan_type: "free" | "premium" | "enterprise"
-      professional_type: "obstetra" | "enfermeiro" | "doula"
+      professional_type: "obstetra" | "enfermeiro" | "doula" | "fisio"
       subscription_frequence: "month" | "quarter" | "semester" | "year"
       subscription_status:
         | "active"
@@ -2194,7 +2194,7 @@ export const Constants = {
         "outro",
       ],
       plan_type: ["free", "premium", "enterprise"],
-      professional_type: ["obstetra", "enfermeiro", "doula"],
+      professional_type: ["obstetra", "enfermeiro", "doula", "fisio"],
       subscription_frequence: ["month", "quarter", "semester", "year"],
       subscription_status: [
         "active",

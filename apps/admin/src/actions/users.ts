@@ -10,7 +10,7 @@ const updateUserSchema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
   email: z.string().email("E-mail inválido"),
   user_type: z.enum(["professional", "patient", "manager", "secretary", "admin"]),
-  professional_type: z.enum(["obstetra", "enfermeiro", "doula"]).nullable().optional(),
+  professional_type: z.enum(["obstetra", "enfermeiro", "doula", "fisio"]).nullable().optional(),
   enterprise_id: z.string().uuid().nullable().optional(),
 });
 
@@ -19,10 +19,9 @@ const createUserSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(8, "Senha deve ter ao menos 8 caracteres"),
   user_type: z.enum(["professional", "patient", "manager", "secretary", "admin"]),
-  professional_type: z.enum(["obstetra", "enfermeiro", "doula"]).nullable().optional(),
+  professional_type: z.enum(["obstetra", "enfermeiro", "doula", "fisio"]).nullable().optional(),
   enterprise_id: z.string().uuid().nullable().optional(),
 });
-
 
 const deleteUserSchema = z.object({
   id: z.string().uuid(),
@@ -110,10 +109,10 @@ export const getPaginatedUsersAction = adminActionClient
       rpcResult.data.map((u) => ctx.supabaseAdmin.auth.admin.getUserById(u.id)),
     );
 
-    const confirmedMap = new Map<string, boolean>()
+    const confirmedMap = new Map<string, boolean>();
     for (const r of authResults) {
       if (!r.error && r.data.user) {
-        confirmedMap.set(r.data.user.id, !!r.data.user.email_confirmed_at)
+        confirmedMap.set(r.data.user.id, !!r.data.user.email_confirmed_at);
       }
     }
 

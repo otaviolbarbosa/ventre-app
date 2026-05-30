@@ -45,6 +45,7 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
   enfermeiro: "Enfermeira",
   doula: "Doula",
+  fisio: "Fisioterapeuta",
 };
 
 function getInitials(name: string | null | undefined): string {
@@ -59,10 +60,7 @@ function getInitials(name: string | null | undefined): string {
 
 type StepNumber = 1 | 2 | 3 | 4 | 5;
 
-function StepIndicator({
-  current,
-  step4Label,
-}: { current: StepNumber; step4Label: string }) {
+function StepIndicator({ current, step4Label }: { current: StepNumber; step4Label: string }) {
   const STEPS = [
     { n: 1 as StepNumber, label: "Gestante" },
     { n: 2 as StepNumber, label: "Contato" },
@@ -987,8 +985,16 @@ export default function NewPatientModal({
                     name="enterprise_id"
                     render={({ field }) => {
                       const enterpriseOptions = [
-                        { id: null as string | null, name: "Atendimento Autônomo", description: "Sem vínculo com empresa" },
-                        ...(enterprises ?? []).map((e) => ({ id: e.id as string | null, name: e.name, description: null })),
+                        {
+                          id: null as string | null,
+                          name: "Atendimento Autônomo",
+                          description: "Sem vínculo com empresa",
+                        },
+                        ...(enterprises ?? []).map((e) => ({
+                          id: e.id as string | null,
+                          name: e.name,
+                          description: null,
+                        })),
                       ];
                       return (
                         <FormItem>
@@ -1015,17 +1021,34 @@ export default function NewPatientModal({
                                     )}
                                   >
                                     {opt.id === null ? (
-                                      <Users className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
+                                      <Users
+                                        className={cn(
+                                          "h-4 w-4",
+                                          isSelected ? "text-primary" : "text-muted-foreground",
+                                        )}
+                                      />
                                     ) : (
-                                      <Shield className={cn("h-4 w-4", isSelected ? "text-primary" : "text-muted-foreground")} />
+                                      <Shield
+                                        className={cn(
+                                          "h-4 w-4",
+                                          isSelected ? "text-primary" : "text-muted-foreground",
+                                        )}
+                                      />
                                     )}
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <p className={cn("font-medium text-sm", isSelected && "text-primary")}>
+                                    <p
+                                      className={cn(
+                                        "font-medium text-sm",
+                                        isSelected && "text-primary",
+                                      )}
+                                    >
                                       {opt.name}
                                     </p>
                                     {opt.description && (
-                                      <p className="text-muted-foreground text-xs">{opt.description}</p>
+                                      <p className="text-muted-foreground text-xs">
+                                        {opt.description}
+                                      </p>
                                     )}
                                   </div>
                                   {isSelected && (
