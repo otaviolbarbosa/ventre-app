@@ -6,7 +6,7 @@ import { z } from "zod";
 
 const schema = z.object({
   professionalId: z.string().uuid(),
-  professionalType: z.enum(["obstetra", "enfermeiro", "doula"]),
+  professionalType: z.enum(["obstetra", "enfermeiro", "doula", "fisio"]),
   patientIds: z.array(z.string().uuid()).min(1),
 });
 

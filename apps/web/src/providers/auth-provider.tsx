@@ -28,6 +28,7 @@ interface AuthContextType {
   isObstetrician: boolean;
   isNurse: boolean;
   isDoula: boolean;
+  isFisioterapeuta: boolean;
   isPatient: boolean;
   isManager: boolean;
   isSecretary: boolean;
@@ -166,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isObstetrician: isProfessional(profile) && profile?.professional_type === "obstetra",
     isNurse: isProfessional(profile) && profile?.professional_type === "enfermeiro",
     isDoula: isProfessional(profile) && profile?.professional_type === "doula",
+    isFisioterapeuta: isProfessional(profile) && profile?.professional_type === "fisio",
     isPatient: isPatient(profile),
     isManager: isManager(profile),
     isSecretary: isSecretary(profile),

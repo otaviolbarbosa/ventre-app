@@ -19,7 +19,7 @@ const schema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
   email: z.string().email("Digite um e-mail válido"),
   phone: z.string().min(10, "Telefone inválido"),
-  professional_type: z.enum(["obstetra", "enfermeiro", "doula"], {
+  professional_type: z.enum(["obstetra", "enfermeiro", "doula", "fisio"], {
     required_error: "Selecione a especialidade",
   }),
 });
@@ -146,11 +146,7 @@ export default function AddNewProfessionalModal({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Especialidade</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={isExecuting}
-                >
+                <Select value={field.value} onValueChange={field.onChange} disabled={isExecuting}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a especialidade" />

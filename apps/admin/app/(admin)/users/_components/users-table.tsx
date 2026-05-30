@@ -26,8 +26,9 @@ const userTypeLabels: Record<string, string> = {
 
 const professionalTypeLabels: Record<string, string> = {
   obstetra: "Obstetra",
-  enfermeiro: "Enfermeiro(a)",
+  enfermeiro: "Enfermeira",
   doula: "Doula",
+  fisio: "Fisioterapeuta",
 };
 
 export function UsersTable() {

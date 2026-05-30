@@ -1,6 +1,6 @@
 import type { Enums, Tables } from "@ventre/supabase";
 
-export type ProfessionalType = "obstetra" | "enfermeiro" | "doula";
+export type ProfessionalType = "obstetra" | "enfermeiro" | "doula" | "fisio";
 
 export type Appointment = Tables<"appointments">;
 export type Patient = Tables<"patients">;

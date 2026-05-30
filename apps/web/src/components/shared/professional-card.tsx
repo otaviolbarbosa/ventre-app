@@ -30,6 +30,7 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
   enfermeiro: "Enfermeira",
   doula: "Doula",
+  fisio: "Fisioterapeuta",
 };
 
 type ProfessionalCardProps = {

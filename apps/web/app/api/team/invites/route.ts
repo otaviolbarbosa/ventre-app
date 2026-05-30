@@ -1,8 +1,8 @@
+import { sendNotificationToUser } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { createServerSupabaseClient } from "@ventre/supabase/server";
 import type { Enums, TablesInsert } from "@ventre/supabase/types";
 import { NextResponse } from "next/server";
-import { sendNotificationToUser } from "@/lib/notifications/send";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
 
 export async function GET() {
   try {
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     }
 
     // Validate professional_type if provided
-    const validTypes: Enums<"professional_type">[] = ["obstetra", "enfermeiro", "doula"];
+    const validTypes: Enums<"professional_type">[] = ["obstetra", "enfermeiro", "doula", "fisio"];
     if (professional_type && !validTypes.includes(professional_type)) {
       return NextResponse.json({ error: "Tipo de profissional inválido" }, { status: 400 });
     }

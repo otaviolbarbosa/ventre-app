@@ -9,7 +9,7 @@ const schema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
   email: z.string().email("Digite um e-mail válido"),
   phone: z.string().min(10, "Telefone inválido"),
-  professional_type: z.enum(["obstetra", "enfermeiro", "doula"]),
+  professional_type: z.enum(["obstetra", "enfermeiro", "doula", "fisio"]),
 });
 
 export const addNewProfessionalAction = authActionClient

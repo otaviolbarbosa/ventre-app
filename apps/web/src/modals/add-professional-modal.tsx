@@ -2,13 +2,13 @@
 
 import { addProfessionalToTeamAction } from "@/actions/add-professional-to-team-action";
 import { searchUsersAction } from "@/actions/search-users-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Loader2, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
@@ -21,7 +21,7 @@ type SearchedUser = {
   professional_type: string;
 };
 
-const ROLE_OPTIONS: ProfessionalType[] = ["obstetra", "enfermeiro", "doula"];
+const ROLE_OPTIONS: ProfessionalType[] = ["obstetra", "enfermeiro", "doula", "fisio"];
 
 type AddProfessionalModalProps = {
   patientId: string;

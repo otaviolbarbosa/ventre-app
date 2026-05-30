@@ -4,7 +4,6 @@ import { getPatientAction } from "@/actions/get-patient-action";
 import { getPatientPendingInvitesAction } from "@/actions/get-patient-pending-invites-action";
 import { getTeamMembersAction } from "@/actions/get-team-members-action";
 import { leaveTeamAction } from "@/actions/leave-team-action";
-import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientTeam } from "@/components/shared/loading-state";
 import PendingInviteCard from "@/components/shared/pending-invite-card";
@@ -14,6 +13,7 @@ import AddBackupProfessionalModal from "@/modals/add-backup-professional-modal";
 import InviteProfessionalModal from "@/modals/invite-professional-modal";
 import type { ProfessionalType } from "@/types";
 import { Button } from "@ventre/ui/button";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { ShieldAlert, UserMinus, UserPlus, Users } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { redirect, useParams } from "next/navigation";
@@ -70,7 +70,7 @@ export default function PatientTeamScreen() {
   if (loading) return <LoadingPatientTeam />;
   if (!patient) return null;
 
-  const ROLE_ORDER: ProfessionalType[] = ["obstetra", "enfermeiro", "doula"];
+  const ROLE_ORDER: ProfessionalType[] = ["obstetra", "enfermeiro", "doula", "fisio"];
 
   const primaryByType = Object.fromEntries(
     ROLE_ORDER.map((role) => [
@@ -127,10 +127,7 @@ export default function PatientTeamScreen() {
           <h2 className="font-semibold text-lg">Equipe de Cuidado</h2>
           <div className="flex gap-2">
             {isUserInTeam && (
-              <Button
-                variant="outline"
-                onClick={handleConfirmLeave}
-              >
+              <Button variant="outline" onClick={handleConfirmLeave}>
                 <UserMinus className="mr-2 h-4 w-4" />
                 <span className="hidden sm:block">Sair da Equipe</span>
                 <span className="block sm:hidden">Sair</span>

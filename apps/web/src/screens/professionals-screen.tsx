@@ -3,6 +3,8 @@
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
+import NewPatientModal from "@/modals/new-patient-modal";
+import type { EnterpriseProfessional } from "@/services/professional";
 import { Avatar, AvatarFallback } from "@ventre/ui/avatar";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
@@ -15,8 +17,6 @@ import {
   DialogTitle,
 } from "@ventre/ui/dialog";
 import { Input } from "@ventre/ui/input";
-import NewPatientModal from "@/modals/new-patient-modal";
-import type { EnterpriseProfessional } from "@/services/professional";
 import { Copy, Plus, Stethoscope, UserPlus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -26,6 +26,7 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
   enfermeiro: "Enfermeira",
   doula: "Doula",
+  fisio: "Fisioterapeuta",
 };
 
 function getInitials(name: string | null): string {

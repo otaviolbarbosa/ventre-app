@@ -53,7 +53,7 @@ export default function PatientTeamEnterpriseScreen() {
   if (loading) return <LoadingPatientTeam />;
   if (!patient) return null;
 
-  const ROLE_ORDER: ProfessionalType[] = ["obstetra", "enfermeiro", "doula"];
+  const ROLE_ORDER: ProfessionalType[] = ["obstetra", "enfermeiro", "doula", "fisio"];
 
   const primaryByType = Object.fromEntries(
     ROLE_ORDER.map((role) => [

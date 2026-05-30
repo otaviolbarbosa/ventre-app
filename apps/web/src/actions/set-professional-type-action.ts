@@ -12,6 +12,7 @@ const professionalTypes = [
   "obstetra",
   "enfermeiro",
   "doula",
+  "fisio",
 ] as const satisfies readonly ProfessionalType[];
 
 const schema = z.object({
