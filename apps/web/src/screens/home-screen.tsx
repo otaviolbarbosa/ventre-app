@@ -88,23 +88,10 @@ function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
     <div className="flex h-full flex-col">
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
-        {/* DPP cards skeleton */}
-        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+        {/* DPP pills skeleton */}
+        <div className="-mx-4 no-scrollbar flex h-14 gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           {[0, 1, 2, 3].map((i) => (
-            <Card key={i} className="shrink-0">
-              <CardContent className="px-4 py-3">
-                <div className="space-y-1">
-                  <div className="flex min-w-[120px] items-center justify-between gap-3">
-                    <Skeleton className="h-[28px] w-20" />
-                    <Skeleton className="h-[25px] w-10 rounded-full" />
-                  </div>
-                  <div className="flex items-baseline gap-4">
-                    <Skeleton className="h-[28px] w-6" />
-                    <Skeleton className="h-4 w-14" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <Skeleton key={i} className="h-14 w-32 shrink-0 rounded-full" />
           ))}
         </div>
 
