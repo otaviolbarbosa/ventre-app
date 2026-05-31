@@ -35,14 +35,17 @@ export function DppMonthCarousel({
             type="button"
             onClick={() => onSelect(item.month, item.year)}
             className={cn(
-              "flex shrink-0 items-center gap-4 rounded-full border py-2 pr-2 pl-5 shadow-sm transition-all",
+              "flex min-w-32 shrink-0 items-center rounded-full border px-2 py-2 shadow-sm transition-all",
               isSelected
                 ? "gradient-primary bg-primary text-white"
                 : "bg-white text-gray-800 hover:border-gray-300",
             )}
           >
             <span
-              className={cn("font-poppins font-semibold text-lg", !isSelected && "text-primary")}
+              className={cn(
+                "flex-1 font-poppins font-semibold text-lg",
+                !isSelected && "text-primary",
+              )}
             >
               {MONTH_LABELS_SHORT[item.month]}
             </span>
