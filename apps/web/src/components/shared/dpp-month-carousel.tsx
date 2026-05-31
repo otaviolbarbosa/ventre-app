@@ -35,7 +35,7 @@ export function DppMonthCarousel({
             type="button"
             onClick={() => onSelect(item.month, item.year)}
             className={cn(
-              "border≥ flex shrink-0 items-center gap-4 rounded-full py-2 pr-2 pl-5 shadow-sm transition-all",
+              "flex shrink-0 items-center gap-4 rounded-full border py-2 pr-2 pl-5 shadow-sm transition-all",
               isSelected
                 ? "gradient-primary bg-primary text-white"
                 : "bg-white text-gray-800 hover:border-gray-300",
