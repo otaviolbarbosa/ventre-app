@@ -1,9 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { MONTH_LABELS_FULL } from "@/services/home";
-import { Card, CardContent } from "@ventre/ui/card";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { MONTH_LABELS_SHORT } from "@/services/home";
 
 type DppMonthItem = {
   month: number;
@@ -28,7 +26,7 @@ export function DppMonthCarousel({
   if (items.length === 0) return null;
 
   return (
-    <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+    <div className="-mx-4 no-scrollbar flex h-14 gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       {items.map((item) => {
         const isSelected = selectedMonth === item.month && selectedYear === item.year;
         return (
@@ -36,49 +34,27 @@ export function DppMonthCarousel({
             key={`${item.year}-${item.month}`}
             type="button"
             onClick={() => onSelect(item.month, item.year)}
+            className={cn(
+              "flex shrink-0 items-center gap-4 rounded-full border py-2 pr-2 pl-5 shadow-sm transition-all",
+              isSelected
+                ? "gradient-primary bg-primary text-white"
+                : "bg-white text-gray-800 hover:border-gray-300",
+            )}
           >
-            <Card
+            <span
+              className={cn("font-poppins font-semibold text-lg", !isSelected && "text-primary")}
+            >
+              {MONTH_LABELS_SHORT[item.month]}
+            </span>
+            <span
               className={cn(
-                "shrink-0 transition-colors",
-                isSelected
-                  ? "border-primary bg-primary/5"
-                  : "hover:border-primary/40 hover:bg-muted/40",
+                "flex h-10 w-10 items-center justify-center rounded-full font-bold",
+                isSelected ? "bg-white text-gray-800" : "bg-background text-gray-700",
+                item.count > 100 ? "text-sm" : "text-lg",
               )}
             >
-              <CardContent className="px-4 py-3">
-                <div className="space-y-1">
-                  <div className="flex min-w-[120px] items-center justify-between gap-3">
-                    <p
-                      className={cn(
-                        "font-bold font-poppins text-lg",
-                        isSelected ? "text-primary" : "text-muted-foreground",
-                      )}
-                    >
-                      {MONTH_LABELS_FULL[item.month]}
-                    </p>
-                    {item.percentage !== 0 && (
-                      <div
-                        className={cn(
-                          "flex items-start gap-0.5 rounded-full font-medium text-[10px]",
-                          item.percentage >= 0 ? "text-green-600" : "text-destructive",
-                        )}
-                      >
-                        {Math.abs(item.percentage)}%
-                        {item.percentage >= 0 ? (
-                          <TrendingUp className="size-3.5" />
-                        ) : (
-                          <TrendingDown className="size-3.5" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-4">
-                    <p className="font-bold font-poppins text-xl">{item.count}</p>
-                    <span className="text-muted-foreground text-xs">Gestantes</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              {item.count > 100 ? "99+" : item.count}
+            </span>
           </button>
         );
       })}
