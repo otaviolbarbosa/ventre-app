@@ -14,13 +14,12 @@ export const getPatientsNotInProfessionalTeamAction = authActionClient
     if (!isStaff(profile)) throw new Error("Acesso não autorizado");
     if (!profile.enterprise_id) throw new Error("Organização não encontrada");
 
-    // Fetch the professional's type alongside the enterprise professionals in parallel
-    const [{ data: enterpriseProfessionals }, { data: professional }] = await Promise.all([
+    const [{ data: enterprisePregnancies }, { data: professional }] = await Promise.all([
       supabaseAdmin
-        .from("users")
-        .select("id")
+        .from("pregnancies")
+        .select("patient_id")
         .eq("enterprise_id", profile.enterprise_id)
-        .eq("user_type", "professional"),
+        .eq("has_finished", false),
       supabaseAdmin
         .from("users")
         .select("professional_type")
@@ -28,15 +27,7 @@ export const getPatientsNotInProfessionalTeamAction = authActionClient
         .single(),
     ]);
 
-    const professionalIds = enterpriseProfessionals?.map((p) => p.id) ?? [];
-    if (professionalIds.length === 0) return { patients: [] };
-
-    const { data: allTeamMembers } = await supabaseAdmin
-      .from("team_members")
-      .select("patient_id")
-      .in("professional_id", professionalIds);
-
-    const allPatientIds = [...new Set(allTeamMembers?.map((tm) => tm.patient_id) ?? [])];
+    const allPatientIds = [...new Set(enterprisePregnancies?.map((p) => p.patient_id) ?? [])];
     if (allPatientIds.length === 0) return { patients: [] };
 
     // Patients already assigned to this professional

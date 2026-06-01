@@ -91,7 +91,7 @@ function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
         {/* DPP pills skeleton */}
         <div className="-mx-4 no-scrollbar flex h-14 gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-14 w-32 shrink-0 rounded-full" />
+            <Skeleton key={i} className="h-14 w-28 shrink-0 rounded-full" />
           ))}
         </div>
 

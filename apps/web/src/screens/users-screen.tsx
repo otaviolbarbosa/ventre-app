@@ -188,6 +188,11 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
             setProfessionalForAddPatients(null);
             router.refresh();
           }}
+          onAddPatient={() => {
+            setShowAddPatientsModal(false);
+            setSelectedProfessional(professionalForAddPatients);
+            setShowNewPatientModal(true);
+          }}
         />
       )}
     </div>
