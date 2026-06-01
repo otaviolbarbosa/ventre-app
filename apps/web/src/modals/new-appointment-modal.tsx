@@ -7,6 +7,7 @@ import {
 } from "@/lib/validations/appointment";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
@@ -17,7 +18,6 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Textarea } from "@ventre/ui/textarea";
-import { InputMask } from "@react-input/mask";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
@@ -383,6 +383,8 @@ export default function NewAppointmentModal({
                         )
                       }
                       placeholderText="Selecione o horário"
+                      minTime={new Date(new Date().setHours(6, 0, 0, 0))}
+                      maxTime={new Date(new Date().setHours(22, 0, 0, 0))}
                     />
                   </FormControl>
                   <FormMessage />
