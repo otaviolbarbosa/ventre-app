@@ -10,7 +10,7 @@ import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { UserAvatar } from "@ventre/ui/shared/user-avatar";
-import { Flame, Loader2, Search, UserPlus } from "lucide-react";
+import { Flame, Loader2, Search, UserPlus, UserX2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ type AddPatientsModalProps = {
   professionalName: string;
   professionalType: ProfessionalType;
   onSuccess?: () => void;
+  onAddPatient?: () => void;
 };
 
 export default function AddPatientsModal({
@@ -38,6 +39,7 @@ export default function AddPatientsModal({
   professionalName,
   professionalType,
   onSuccess,
+  onAddPatient,
 }: AddPatientsModalProps) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [search, setSearch] = useState("");
@@ -119,10 +121,14 @@ export default function AddPatientsModal({
           </div>
         ) : patients.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <UserPlus className="h-8 w-8 text-muted-foreground/50" />
+            <UserX2 className="h-8 w-8 text-muted-foreground/50" />
             <p className="text-muted-foreground text-sm">
-              Todas as gestantes já fazem parte da equipe desta profissional.
+              Não há gestantes para adicionar à equipe de ${professionalName}.
             </p>
+            <Button variant="default" onClick={onAddPatient}>
+              <UserPlus className="h-4 w-4" />
+              Cadastrar gestante
+            </Button>
           </div>
         ) : (
           <>

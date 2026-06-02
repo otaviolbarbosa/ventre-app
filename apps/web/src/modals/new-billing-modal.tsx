@@ -14,11 +14,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
-import { Loader2, Pencil, RotateCcw, X } from "lucide-react";
+import { ChevronDown, Loader2, Pencil, RotateCcw, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -52,6 +53,8 @@ export default function NewBillingModal({
   const [dynamicProfessionals, setDynamicProfessionals] = useState<Professional[]>(professionals);
   const [lockedAmounts, setLockedAmounts] = useState<Record<number, number>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientOpen, setPatientOpen] = useState(false);
 
   const showPatientSelector =
     !!patients?.length || (patients !== undefined && patients.length === 0);
@@ -192,6 +195,8 @@ export default function NewBillingModal({
       setSubmitAttempted(false);
       setSelectedPatientId(patientId);
       setDynamicProfessionals(professionals);
+      setPatientSearch("");
+      setPatientOpen(false);
       form.reset({
         patient_id: patientId ?? "",
         description: "",
@@ -267,18 +272,69 @@ export default function NewBillingModal({
           {showPatientSelector && (
             <div className="space-y-1">
               <FormLabel>Gestante</FormLabel>
-              <Select value={selectedPatientId ?? ""} onValueChange={handlePatientChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a gestante" />
-                </SelectTrigger>
-                <SelectContent>
-                  {patients?.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name ?? p.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover
+                open={patientOpen}
+                onOpenChange={(open) => {
+                  setPatientOpen(open);
+                  if (!open) setPatientSearch("");
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-10 w-full items-center justify-between whitespace-nowrap rounded-full border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className={!selectedPatientId ? "text-muted-foreground" : ""}>
+                      {selectedPatientId
+                        ? (patients?.find((p) => p.id === selectedPatientId)?.name ?? selectedPatientId)
+                        : "Selecione a gestante"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0"
+                  align="start"
+                  style={{ width: "var(--radix-popover-trigger-width)" }}
+                >
+                  <div className="border-b p-2">
+                    <Input
+                      placeholder="Buscar gestante..."
+                      value={patientSearch}
+                      onChange={(e) => setPatientSearch(e.target.value)}
+                      className="h-8 rounded-full"
+                    />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto p-1">
+                    {(patients?.filter((p) =>
+                      (p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase()),
+                    ) ?? []).length === 0 ? (
+                      <p className="py-6 text-center text-muted-foreground text-sm">
+                        Nenhuma gestante encontrada
+                      </p>
+                    ) : (
+                      patients
+                        ?.filter((p) =>
+                          (p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase()),
+                        )
+                        .map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className="flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                            onClick={() => {
+                              handlePatientChange(p.id);
+                              setPatientOpen(false);
+                              setPatientSearch("");
+                            }}
+                          >
+                            {p.name ?? p.id}
+                          </button>
+                        ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           )}
 

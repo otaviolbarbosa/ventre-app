@@ -1,24 +1,26 @@
 "use client";
 import { addAppointmentAction } from "@/actions/add-appointment-action";
 import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
+import { cn } from "@/lib/utils";
 import {
   type CreateAppointmentInput,
   createAppointmentSchema,
 } from "@/lib/validations/appointment";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Textarea } from "@ventre/ui/textarea";
-import { InputMask } from "@react-input/mask";
-import { Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { type DefaultValues, useForm } from "react-hook-form";
@@ -66,6 +68,10 @@ export default function NewAppointmentModal({
   onSuccess,
 }: NewAppointmentModalProps) {
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | undefined>();
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientOpen, setPatientOpen] = useState(false);
+  const [professionalSearch, setProfessionalSearch] = useState("");
+  const [professionalOpen, setProfessionalOpen] = useState(false);
 
   const {
     execute: fetchPatientsByProfessional,
@@ -100,6 +106,10 @@ export default function NewAppointmentModal({
   function handleClose() {
     form.reset({ ...defaultValues, patient_id: patientId });
     setSelectedProfessionalId(undefined);
+    setPatientSearch("");
+    setPatientOpen(false);
+    setProfessionalSearch("");
+    setProfessionalOpen(false);
     setShowModal(false);
   }
 
@@ -109,6 +119,10 @@ export default function NewAppointmentModal({
 
   const staffPatients = patientsByProfessionalResult.data?.patients ?? [];
   const patientList = isStaff && selectedProfessionalId ? staffPatients : patients;
+  const filteredPatients =
+    patientList?.filter((p) =>
+      (p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase()),
+    ) ?? [];
 
   const watchedDate = form.watch("date");
   const watchedTime = form.watch("time");
@@ -170,28 +184,80 @@ export default function NewAppointmentModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Profissional</FormLabel>
-                  <Select
-                    value={field.value ?? ""}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedProfessionalId(value);
-                      form.setValue("patient_id", "");
-                      fetchPatientsByProfessional({ professionalId: value });
+                  <Popover
+                    open={professionalOpen}
+                    onOpenChange={(open) => {
+                      setProfessionalOpen(open);
+                      if (!open) setProfessionalSearch("");
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o profissional" />
-                      </SelectTrigger>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex h-10 w-full items-center justify-between gap-2 whitespace-nowrap rounded-full border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <span
+                            className={cn(
+                              "flex-1 text-left",
+                              !field.value ? "text-muted-foreground" : "",
+                            )}
+                          >
+                            {field.value
+                              ? (professionals.find((p) => p.id === field.value)?.name ?? field.value)
+                              : "Selecione o profissional"}
+                          </span>
+                          <ChevronDown className="h-4 w-4 opacity-50" />
+                        </button>
+                      </PopoverTrigger>
                     </FormControl>
-                    <SelectContent>
-                      {professionals.map((prof) => (
-                        <SelectItem key={prof.id} value={prof.id}>
-                          {prof.name ?? prof.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <PopoverContent
+                      className="p-0"
+                      align="start"
+                      style={{ width: "var(--radix-popover-trigger-width)" }}
+                    >
+                      <div className="border-b p-2">
+                        <Input
+                          placeholder="Buscar profissional..."
+                          value={professionalSearch}
+                          onChange={(e) => setProfessionalSearch(e.target.value)}
+                          className="h-8 rounded-full"
+                        />
+                      </div>
+                      <div className="max-h-60 overflow-y-auto p-1">
+                        {professionals.filter((p) =>
+                          (p.name ?? "").toLowerCase().includes(professionalSearch.toLowerCase()),
+                        ).length === 0 ? (
+                          <p className="py-6 text-center text-muted-foreground text-sm">
+                            Nenhum profissional encontrado
+                          </p>
+                        ) : (
+                          professionals
+                            .filter((p) =>
+                              (p.name ?? "").toLowerCase().includes(professionalSearch.toLowerCase()),
+                            )
+                            .map((prof) => (
+                              <button
+                                key={prof.id}
+                                type="button"
+                                className="flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => {
+                                  field.onChange(prof.id);
+                                  setSelectedProfessionalId(prof.id);
+                                  form.setValue("patient_id", "");
+                                  setPatientSearch("");
+                                  fetchPatientsByProfessional({ professionalId: prof.id });
+                                  setProfessionalOpen(false);
+                                  setProfessionalSearch("");
+                                }}
+                              >
+                                {prof.name ?? prof.id}
+                              </button>
+                            ))
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -281,32 +347,79 @@ export default function NewAppointmentModal({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Paciente</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={isStaff && (!selectedProfessionalId || isLoadingPatients)}
+                      <Popover
+                        open={patientOpen}
+                        onOpenChange={(open) => {
+                          setPatientOpen(open);
+                          if (!open) setPatientSearch("");
+                        }}
                       >
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                isLoadingPatients
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={isStaff && (!selectedProfessionalId || isLoadingPatients)}
+                              className="flex h-10 w-full items-center justify-between gap-2 whitespace-nowrap rounded-full border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {isLoadingPatients ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : null}
+                              <span
+                                className={cn(
+                                  "flex-1 text-left",
+                                  !field.value ? "text-muted-foreground" : "",
+                                )}
+                              >
+                                {isLoadingPatients
                                   ? "Carregando pacientes..."
-                                  : isStaff && !selectedProfessionalId
-                                    ? "Selecione o profissional primeiro"
-                                    : "Selecione a paciente"
-                              }
-                            />
-                          </SelectTrigger>
+                                  : field.value
+                                    ? (patientList.find((p) => p.id === field.value)?.name ??
+                                      field.value)
+                                    : isStaff && !selectedProfessionalId
+                                      ? "Selecione o profissional primeiro"
+                                      : "Selecione a paciente"}
+                              </span>
+                              <ChevronDown className="h-4 w-4 opacity-50" />
+                            </button>
+                          </PopoverTrigger>
                         </FormControl>
-                        <SelectContent>
-                          {patientList.map((patient) => (
-                            <SelectItem key={patient.id} value={patient.id}>
-                              {patient.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <PopoverContent
+                          className="p-0"
+                          align="start"
+                          style={{ width: "var(--radix-popover-trigger-width)" }}
+                        >
+                          <div className="border-b p-2">
+                            <Input
+                              placeholder="Buscar paciente..."
+                              value={patientSearch}
+                              onChange={(e) => setPatientSearch(e.target.value)}
+                              className="h-8 rounded-full"
+                            />
+                          </div>
+                          <div className="max-h-60 overflow-y-auto p-1">
+                            {filteredPatients.length === 0 ? (
+                              <p className="py-6 text-center text-muted-foreground text-sm">
+                                Nenhuma paciente encontrada
+                              </p>
+                            ) : (
+                              filteredPatients.map((patient) => (
+                                <button
+                                  key={patient.id}
+                                  type="button"
+                                  className="flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                                  onClick={() => {
+                                    field.onChange(patient.id);
+                                    setPatientOpen(false);
+                                    setPatientSearch("");
+                                  }}
+                                >
+                                  {patient.name}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -383,6 +496,8 @@ export default function NewAppointmentModal({
                         )
                       }
                       placeholderText="Selecione o horário"
+                      minTime={new Date(new Date().setHours(6, 0, 0, 0))}
+                      maxTime={new Date(new Date().setHours(22, 0, 0, 0))}
                     />
                   </FormControl>
                   <FormMessage />
