@@ -66,48 +66,32 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
   if (dppMonth !== undefined && dppYear !== undefined) {
     const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
-    let pregnancyQuery = supabase
+    let query = supabase
       .from("pregnancies")
-      .select("patient_id, due_date, dum, has_finished, born_at, observations")
+      .select(
+        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*)",
+      )
       .in("patient_id", patientIds)
       .gte("due_date", startDate)
       .lte("due_date", endDate)
       .order("due_date", { ascending: true });
 
-    if (!showFinished) {
-      pregnancyQuery = pregnancyQuery.eq("has_finished", false);
-    }
+    if (!showFinished) query = query.eq("has_finished", false);
+    if (search) query = query.filter("patient.name", "ilike", `%${search}%`);
 
-    const { data: pregnancies, error: pregError } = await pregnancyQuery;
-    if (pregError) throw new Error(pregError.message);
-
-    const filteredPatientIds = (pregnancies ?? []).map((p) => p.patient_id);
-    if (filteredPatientIds.length === 0) return [];
-
-    const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
-
-    let patientsQuery = supabase
-      .from("patients")
-      .select("*")
-      .in("id", filteredPatientIds)
-      .limit(20);
-
-    if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
-
-    const { data, error } = await patientsQuery;
+    const { data, error } = await query.limit(20);
     if (error) throw new Error(error.message);
 
-    rawPatients = (data ?? []).map((p) => {
-      const preg = pregnancyByPatient.get(p.id);
-      return {
-        ...p,
-        due_date: preg?.due_date ?? null,
-        dum: preg?.dum ?? null,
-        has_finished: preg?.has_finished ?? false,
-        born_at: preg?.born_at ?? null,
-        observations: preg?.observations ?? null,
-      };
-    });
+    if (!data || data.length === 0) return [];
+
+    rawPatients = data.map(({ patient, due_date, dum, has_finished, born_at, observations }) => ({
+      ...(patient as unknown as RawPatient),
+      due_date,
+      dum,
+      has_finished,
+      born_at,
+      observations,
+    }));
   } else {
     const { data, error } = await supabase
       .rpc("get_filtered_patients", {

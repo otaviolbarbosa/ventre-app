@@ -181,6 +181,7 @@ export default function AddProfessionalModal({
             <Select
               value={professionalType}
               onValueChange={(v) => setProfessionalType(v as ProfessionalType)}
+              disabled={!!selected || availableTypes.length === 0}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecionar" />
