@@ -2,6 +2,7 @@
 
 import { deleteLabExamAction } from "@/actions/delete-lab-exam-action";
 import { deleteOtherExamAction } from "@/actions/delete-other-exam-action";
+import { deletePregnancyEvolutionAction } from "@/actions/delete-pregnancy-evolution-action";
 import { getPrenatalCardAction } from "@/actions/get-prenatal-card-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { dayjs } from "@/lib/dayjs";
@@ -20,6 +21,7 @@ import {
 import { AddLabExamModal } from "@/modals/add-lab-exam-modal";
 import { AddOtherExamModal } from "@/modals/add-other-exam-modal";
 import { AddPregnancyEvolutionModal } from "@/modals/add-pregnancy-evolution-modal";
+import { EditPregnancyEvolutionModal } from "@/modals/edit-pregnancy-evolution-modal";
 import { AddUltrasoundModal } from "@/modals/add-ultrasound-modal";
 import { EditGeneralDataModal } from "@/modals/edit-general-data-modal";
 import { EditObstetricHistoryModal } from "@/modals/edit-obstetric-history-modal";
@@ -200,7 +202,7 @@ function GeneralDataSection({
 
         {/* Nome do bebê / Hospital de referência */}
         {(pregnancy?.baby_name || pregnancy?.reference_hospital) && (
-          <div className="border-t">
+          <div className="mt-3 border-t">
             <div
               className={`grid divide-x ${pregnancy?.baby_name && pregnancy?.reference_hospital ? "grid-cols-2" : "grid-cols-1"}`}
             >
@@ -340,13 +342,13 @@ function ObstetricHistorySection({
           {/* Contagens obstétricas — números destacados */}
           {hasPregnancyCounts && (
             <>
-              <div className="grid grid-cols-3 text-center">
+              <div className="grid grid-cols-3 gap-2 text-center">
                 {[
                   { label: "Gestações", value: pregnancy?.gestations_count },
                   { label: "Partos", value: pregnancy?.deliveries_count },
                   { label: "Abortos", value: pregnancy?.abortions_count },
                 ].map(({ label, value }) => (
-                  <div key={label}>
+                  <div key={label} className="rounded-xl border p-2">
                     <p className="text-3xl font-bold">{value ?? "-"}</p>
                     <p className="mt-1 text-muted-foreground text-sm">{label}</p>
                   </div>
@@ -537,6 +539,29 @@ function EvolutionsSection({
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const [editingEvolution, setEditingEvolution] = useState<Tables<"pregnancy_evolutions"> | null>(
+    null,
+  );
+  const { confirm } = useConfirmModal();
+  const { executeAsync: deleteEvolution } = useAction(deletePregnancyEvolutionAction);
+
+  function handleConfirmDelete(evolutionId: string) {
+    confirm({
+      title: "Remover evolução",
+      description: "Tem certeza que deseja remover esta evolução? Esta ação não pode ser desfeita.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await deleteEvolution({ evolutionId });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          return;
+        }
+        toast.success("Evolução removida!");
+        onRefresh();
+      },
+    });
+  }
 
   return (
     <div>
@@ -600,6 +625,26 @@ function EvolutionsSection({
                     <Badge variant="outline" className="text-muted-foreground text-xs">
                       IG não informada
                     </Badge>
+                  )}
+                  {isEditable && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditingEvolution(ev)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => handleConfirmDelete(ev.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -688,6 +733,15 @@ function EvolutionsSection({
         pregnancyId={pregnancyId}
         onSuccess={onRefresh}
       />
+
+      {editingEvolution && (
+        <EditPregnancyEvolutionModal
+          open={!!editingEvolution}
+          onOpenChange={(open) => !open && setEditingEvolution(null)}
+          evolution={editingEvolution}
+          onSuccess={onRefresh}
+        />
+      )}
     </div>
   );
 }
@@ -752,10 +806,7 @@ function UltrasoundsSection({
       ) : (
         <div className="space-y-3">
           {ultrasounds.map((usg) => (
-            <div
-              key={usg.id}
-              className="overflow-hidden rounded-lg border border-l-[3px] border-l-primary/40"
-            >
+            <div key={usg.id} className="overflow-hidden rounded-lg border">
               {/* Cabeçalho */}
               <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
                 <span className="font-semibold text-sm">
