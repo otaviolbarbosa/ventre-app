@@ -233,15 +233,10 @@ export default function PatientsEnterpriseScreen({
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <Button variant="outline" size="icon" className="flex sm:hidden" asChild>
+              <Button variant="outline" asChild>
                 <Link href="/patients/history">
                   <History className="size-4" />
-                </Link>
-              </Button>
-              <Button variant="outline" className="hidden sm:flex" asChild>
-                <Link href="/patients/history">
-                  <History className="size-4" />
-                  <span>Ver Histórico</span>
+                  <span>Finalizados</span>
                 </Link>
               </Button>
               <Button
