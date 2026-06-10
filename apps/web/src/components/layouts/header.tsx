@@ -1,7 +1,7 @@
 "use client";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import { Button } from "@ventre/ui/button";
 import { cn } from "@/lib/utils";
+import { Button } from "@ventre/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -50,7 +50,12 @@ export function Header({ title, back }: HeaderProps) {
     >
       {/* Back button */}
       {back && (
-        <Button variant="ghost" size="icon" className="mx-0 md:hidden" onClick={handleGoBack}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mx-0 w-6 hover:bg-transparent active:bg-transparent md:hidden"
+          onClick={handleGoBack}
+        >
           <ChevronLeft />
         </Button>
       )}

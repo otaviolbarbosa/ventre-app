@@ -69,7 +69,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                 </span>
               </div>
             }
-            back
+            back="/patients"
           />
           <div className="px-4 md:px-6">
             <Tabs value={currentTab} className="mb-6 w-full">
