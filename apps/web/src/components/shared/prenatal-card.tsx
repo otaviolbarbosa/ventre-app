@@ -691,6 +691,7 @@ function UltrasoundsSection({
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const [editingUltrasound, setEditingUltrasound] = useState<Tables<"ultrasounds"> | null>(null);
 
   return (
     <div>
@@ -742,16 +743,28 @@ function UltrasoundsSection({
                 <span className="font-semibold text-sm">
                   {dayjs(usg.exam_date).format("DD/MM/YYYY")}
                 </span>
-                {usg.gestational_weeks != null ? (
-                  <Badge variant="outline" className="text-xs">
-                    {usg.gestational_weeks}s
-                    {usg.gestational_days != null ? `${usg.gestational_days}d` : ""}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground text-xs">
-                    IG não informada
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {usg.gestational_weeks != null ? (
+                    <Badge variant="outline" className="text-xs">
+                      {usg.gestational_weeks}s
+                      {usg.gestational_days != null ? `${usg.gestational_days}d` : ""}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground text-xs">
+                      IG não informada
+                    </Badge>
+                  )}
+                  {isEditable && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setEditingUltrasound(usg)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Linha 1: FCF · CCN · TN · Colo */}
@@ -837,9 +850,15 @@ function UltrasoundsSection({
       )}
 
       <AddUltrasoundModal
-        open={showModal}
-        onOpenChange={setShowModal}
+        open={showModal || !!editingUltrasound}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowModal(false);
+            setEditingUltrasound(null);
+          }
+        }}
         pregnancyId={pregnancyId}
+        ultrasound={editingUltrasound ?? undefined}
         onSuccess={onRefresh}
       />
     </div>
