@@ -29,7 +29,6 @@ import type { Tables } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { Separator } from "@ventre/ui/separator";
 import { Skeleton } from "@ventre/ui/skeleton";
 import {
   Activity,
@@ -89,23 +88,24 @@ type PrenatalData = {
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 function SectionHeader({
-  icon: Icon,
+  icon: _icon,
   title,
   action,
 }: {
-  icon: React.ElementType;
+  icon?: React.ElementType;
   title: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold text-sm">{title}</h3>
-      </div>
+    <div className="mb-5 flex items-start justify-between">
+      <h3 className="text-xl font-bold tracking-tight">{title}</h3>
       {action}
     </div>
   );
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-2xl border bg-card p-5 md:p-6">{children}</div>;
 }
 
 function BooleanBadge({ value, label }: { value: boolean | null | undefined; label: string }) {
@@ -173,26 +173,26 @@ function GeneralDataSection({
         }
       />
 
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-lg">
         {/* Métricas principais */}
-        <div className="grid grid-cols-2 divide-x sm:grid-cols-4">
-          <div className="px-3 py-2.5 text-center">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">Tipo sanguíneo</p>
             <p className="font-medium text-sm">{patient?.blood_type ?? "-"}</p>
           </div>
-          <div className="px-3 py-2.5 text-center">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">Altura</p>
             <p className="font-medium text-sm">
               {patient?.height_cm ? `${patient.height_cm} cm` : "-"}
             </p>
           </div>
-          <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">Peso inicial</p>
             <p className="font-medium text-sm">
               {pregnancy?.initial_weight_kg ? `${pregnancy.initial_weight_kg} kg` : "-"}
             </p>
           </div>
-          <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">IMC inicial</p>
             <p className="font-medium text-sm">{pregnancy?.initial_bmi?.toString() ?? "-"}</p>
           </div>
@@ -336,33 +336,47 @@ function ObstetricHistorySection({
       {!hasData ? (
         <p className="text-muted-foreground text-sm italic">Nenhum antecedente registrado.</p>
       ) : (
-        <div className="overflow-hidden rounded-lg border">
-          {/* Contagens obstétricas */}
+        <div className="space-y-5">
+          {/* Contagens obstétricas — números destacados */}
           {hasPregnancyCounts && (
-            <div className="grid grid-cols-2 divide-x sm:grid-cols-4">
-              <div className="px-3 py-2.5 text-center">
-                <p className="mb-0.5 text-muted-foreground text-xs">Gestações</p>
-                <p className="font-medium text-sm">{pregnancy?.gestations_count ?? "-"}</p>
+            <>
+              <div className="grid grid-cols-3 text-center">
+                {[
+                  { label: "Gestações", value: pregnancy?.gestations_count },
+                  { label: "Partos", value: pregnancy?.deliveries_count },
+                  { label: "Abortos", value: pregnancy?.abortions_count },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-3xl font-bold">{value ?? "-"}</p>
+                    <p className="mt-1 text-muted-foreground text-sm">{label}</p>
+                  </div>
+                ))}
               </div>
-              <div className="px-3 py-2.5 text-center">
-                <p className="mb-0.5 text-muted-foreground text-xs">Partos</p>
-                <p className="font-medium text-sm">{pregnancy?.deliveries_count ?? "-"}</p>
+
+              <div>
+                <p className="mb-2.5 font-semibold text-sm">Tipos de Parto</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border p-3 text-center">
+                    <p className="text-2xl font-bold">{pregnancy?.cesareans_count ?? "-"}</p>
+                    <p className="mt-1 text-muted-foreground text-sm">Cesáreas</p>
+                  </div>
+                  <div className="rounded-xl border p-3 text-center">
+                    <p className="text-2xl font-bold">
+                      {pregnancy?.deliveries_count != null && pregnancy?.cesareans_count != null
+                        ? pregnancy.deliveries_count - pregnancy.cesareans_count
+                        : "-"}
+                    </p>
+                    <p className="mt-1 text-muted-foreground text-sm">Partos Normais</p>
+                  </div>
+                </div>
               </div>
-              <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
-                <p className="mb-0.5 text-muted-foreground text-xs">Cesáreas</p>
-                <p className="font-medium text-sm">{pregnancy?.cesareans_count ?? "-"}</p>
-              </div>
-              <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
-                <p className="mb-0.5 text-muted-foreground text-xs">Abortos</p>
-                <p className="font-medium text-sm">{pregnancy?.abortions_count ?? "-"}</p>
-              </div>
-            </div>
+            </>
           )}
 
           {/* Antecedentes clínicos */}
           {activeClinical.length > 0 && (
-            <div className="border-t px-4 py-2.5">
-              <p className="mb-1.5 font-medium text-muted-foreground text-xs">Clínicos</p>
+            <div>
+              <p className="mb-2 font-semibold text-sm">Antecedentes Clínicos</p>
               <div className="flex flex-wrap gap-1.5">
                 {activeClinical.map((f) => (
                   <Badge key={f.name} variant="secondary" className="text-xs">
@@ -371,15 +385,15 @@ function ObstetricHistorySection({
                 ))}
               </div>
               {history?.other_clinical_notes && (
-                <p className="mt-1.5 text-sm">{history.other_clinical_notes}</p>
+                <p className="mt-2 text-muted-foreground text-sm">{history.other_clinical_notes}</p>
               )}
             </div>
           )}
 
           {/* Antecedentes cirúrgicos */}
           {activeSurgical.length > 0 && (
-            <div className="border-t bg-muted/20 px-4 py-2.5">
-              <p className="mb-1.5 font-medium text-muted-foreground text-xs">Cirúrgicos</p>
+            <div>
+              <p className="mb-2 font-semibold text-sm">Antecedentes Cirúrgicos</p>
               <div className="flex flex-wrap gap-1.5">
                 {activeSurgical.map((f) => (
                   <Badge key={f.name} variant="secondary" className="text-xs">
@@ -388,7 +402,7 @@ function ObstetricHistorySection({
                 ))}
               </div>
               {history?.other_surgery_notes && (
-                <p className="mt-1.5 text-sm">{history.other_surgery_notes}</p>
+                <p className="mt-2 text-muted-foreground text-sm">{history.other_surgery_notes}</p>
               )}
             </div>
           )}
@@ -738,7 +752,10 @@ function UltrasoundsSection({
       ) : (
         <div className="space-y-3">
           {ultrasounds.map((usg) => (
-            <div key={usg.id} className="overflow-hidden rounded-lg border">
+            <div
+              key={usg.id}
+              className="overflow-hidden rounded-lg border border-l-[3px] border-l-primary/40"
+            >
               {/* Cabeçalho */}
               <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
                 <span className="font-semibold text-sm">
@@ -1269,79 +1286,81 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
   };
 
   return (
-    <div className="space-y-6 pt-2">
-      <GeneralDataSection
-        patientId={patientId}
-        pregnancyId={pregnancyId}
-        data={data}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+    <div className="space-y-4 pt-2">
+      <SectionCard>
+        <GeneralDataSection
+          patientId={patientId}
+          pregnancyId={pregnancyId}
+          data={data}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
+      <SectionCard>
+        <ObstetricHistorySection
+          patientId={patientId}
+          pregnancyId={pregnancyId}
+          history={data.obstetricHistory}
+          pregnancy={data.pregnancy}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <ObstetricHistorySection
-        patientId={patientId}
-        pregnancyId={pregnancyId}
-        history={data.obstetricHistory}
-        pregnancy={data.pregnancy}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <RiskFactorsSection
+          pregnancyId={pregnancyId}
+          riskFactors={data.riskFactors}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
+      <SectionCard>
+        <EvolutionsSection
+          pregnancyId={pregnancyId}
+          evolutions={data.evolutions}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <RiskFactorsSection
-        pregnancyId={pregnancyId}
-        riskFactors={data.riskFactors}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <UltrasoundsSection
+          pregnancyId={pregnancyId}
+          ultrasounds={data.ultrasounds}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
+      <SectionCard>
+        <LabExamsSection
+          pregnancyId={pregnancyId}
+          labExams={data.labExams}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <EvolutionsSection
-        pregnancyId={pregnancyId}
-        evolutions={data.evolutions}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <VaccinesSection
+          pregnancyId={pregnancyId}
+          vaccines={data.vaccines}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
-
-      <UltrasoundsSection
-        pregnancyId={pregnancyId}
-        ultrasounds={data.ultrasounds}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
-
-      <Separator />
-
-      <LabExamsSection
-        pregnancyId={pregnancyId}
-        labExams={data.labExams}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
-
-      <Separator />
-
-      <VaccinesSection
-        pregnancyId={pregnancyId}
-        vaccines={data.vaccines}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
-
-      <Separator />
-
-      <OtherExamsSection
-        pregnancyId={pregnancyId}
-        otherExams={data.otherExams}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <OtherExamsSection
+          pregnancyId={pregnancyId}
+          otherExams={data.otherExams}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
     </div>
   );
 }
