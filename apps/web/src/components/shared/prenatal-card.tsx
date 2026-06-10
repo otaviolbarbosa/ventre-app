@@ -1,6 +1,9 @@
 "use client";
 
 import { deleteLabExamAction } from "@/actions/delete-lab-exam-action";
+import { deleteOtherExamAction } from "@/actions/delete-other-exam-action";
+import { deletePregnancyEvolutionAction } from "@/actions/delete-pregnancy-evolution-action";
+import { deleteUltrasoundAction } from "@/actions/delete-ultrasound-action";
 import { getPrenatalCardAction } from "@/actions/get-prenatal-card-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { dayjs } from "@/lib/dayjs";
@@ -19,6 +22,7 @@ import {
 import { AddLabExamModal } from "@/modals/add-lab-exam-modal";
 import { AddOtherExamModal } from "@/modals/add-other-exam-modal";
 import { AddPregnancyEvolutionModal } from "@/modals/add-pregnancy-evolution-modal";
+import { EditPregnancyEvolutionModal } from "@/modals/edit-pregnancy-evolution-modal";
 import { AddUltrasoundModal } from "@/modals/add-ultrasound-modal";
 import { EditGeneralDataModal } from "@/modals/edit-general-data-modal";
 import { EditObstetricHistoryModal } from "@/modals/edit-obstetric-history-modal";
@@ -28,7 +32,6 @@ import type { Tables } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { Separator } from "@ventre/ui/separator";
 import { Skeleton } from "@ventre/ui/skeleton";
 import {
   Activity,
@@ -88,23 +91,24 @@ type PrenatalData = {
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 function SectionHeader({
-  icon: Icon,
+  icon: _icon,
   title,
   action,
 }: {
-  icon: React.ElementType;
+  icon?: React.ElementType;
   title: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-primary" />
-        <h3 className="font-semibold text-sm">{title}</h3>
-      </div>
+    <div className="mb-5 flex items-start justify-between">
+      <h3 className="text-xl font-bold tracking-tight">{title}</h3>
       {action}
     </div>
   );
+}
+
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-2xl border bg-card p-5 md:p-6">{children}</div>;
 }
 
 function BooleanBadge({ value, label }: { value: boolean | null | undefined; label: string }) {
@@ -172,26 +176,26 @@ function GeneralDataSection({
         }
       />
 
-      <div className="overflow-hidden rounded-lg border">
+      <div className="overflow-hidden rounded-lg">
         {/* Métricas principais */}
-        <div className="grid grid-cols-2 divide-x sm:grid-cols-4">
-          <div className="px-3 py-2.5 text-center">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">Tipo sanguíneo</p>
             <p className="font-medium text-sm">{patient?.blood_type ?? "-"}</p>
           </div>
-          <div className="px-3 py-2.5 text-center">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">Altura</p>
             <p className="font-medium text-sm">
               {patient?.height_cm ? `${patient.height_cm} cm` : "-"}
             </p>
           </div>
-          <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">Peso inicial</p>
             <p className="font-medium text-sm">
               {pregnancy?.initial_weight_kg ? `${pregnancy.initial_weight_kg} kg` : "-"}
             </p>
           </div>
-          <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
+          <div className="rounded-lg border px-3 py-2.5 text-center">
             <p className="mb-0.5 text-muted-foreground text-xs">IMC inicial</p>
             <p className="font-medium text-sm">{pregnancy?.initial_bmi?.toString() ?? "-"}</p>
           </div>
@@ -199,7 +203,7 @@ function GeneralDataSection({
 
         {/* Nome do bebê / Hospital de referência */}
         {(pregnancy?.baby_name || pregnancy?.reference_hospital) && (
-          <div className="border-t">
+          <div className="mt-3 border-t">
             <div
               className={`grid divide-x ${pregnancy?.baby_name && pregnancy?.reference_hospital ? "grid-cols-2" : "grid-cols-1"}`}
             >
@@ -335,33 +339,47 @@ function ObstetricHistorySection({
       {!hasData ? (
         <p className="text-muted-foreground text-sm italic">Nenhum antecedente registrado.</p>
       ) : (
-        <div className="overflow-hidden rounded-lg border">
-          {/* Contagens obstétricas */}
+        <div className="space-y-5">
+          {/* Contagens obstétricas — números destacados */}
           {hasPregnancyCounts && (
-            <div className="grid grid-cols-2 divide-x sm:grid-cols-4">
-              <div className="px-3 py-2.5 text-center">
-                <p className="mb-0.5 text-muted-foreground text-xs">Gestações</p>
-                <p className="font-medium text-sm">{pregnancy?.gestations_count ?? "-"}</p>
+            <>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  { label: "Gestações", value: pregnancy?.gestations_count },
+                  { label: "Partos", value: pregnancy?.deliveries_count },
+                  { label: "Abortos", value: pregnancy?.abortions_count },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-xl border p-2">
+                    <p className="text-3xl font-bold">{value ?? "-"}</p>
+                    <p className="mt-1 text-muted-foreground text-sm">{label}</p>
+                  </div>
+                ))}
               </div>
-              <div className="px-3 py-2.5 text-center">
-                <p className="mb-0.5 text-muted-foreground text-xs">Partos</p>
-                <p className="font-medium text-sm">{pregnancy?.deliveries_count ?? "-"}</p>
+
+              <div>
+                <p className="mb-2.5 font-semibold text-sm">Tipos de Parto</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl border p-3 text-center">
+                    <p className="text-2xl font-bold">{pregnancy?.cesareans_count ?? "-"}</p>
+                    <p className="mt-1 text-muted-foreground text-sm">Cesáreas</p>
+                  </div>
+                  <div className="rounded-xl border p-3 text-center">
+                    <p className="text-2xl font-bold">
+                      {pregnancy?.deliveries_count != null && pregnancy?.cesareans_count != null
+                        ? pregnancy.deliveries_count - pregnancy.cesareans_count
+                        : "-"}
+                    </p>
+                    <p className="mt-1 text-muted-foreground text-sm">Partos Normais</p>
+                  </div>
+                </div>
               </div>
-              <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
-                <p className="mb-0.5 text-muted-foreground text-xs">Cesáreas</p>
-                <p className="font-medium text-sm">{pregnancy?.cesareans_count ?? "-"}</p>
-              </div>
-              <div className="border-t px-3 py-2.5 text-center sm:border-t-0">
-                <p className="mb-0.5 text-muted-foreground text-xs">Abortos</p>
-                <p className="font-medium text-sm">{pregnancy?.abortions_count ?? "-"}</p>
-              </div>
-            </div>
+            </>
           )}
 
           {/* Antecedentes clínicos */}
           {activeClinical.length > 0 && (
-            <div className="border-t px-4 py-2.5">
-              <p className="mb-1.5 font-medium text-muted-foreground text-xs">Clínicos</p>
+            <div>
+              <p className="mb-2 font-semibold text-sm">Antecedentes Clínicos</p>
               <div className="flex flex-wrap gap-1.5">
                 {activeClinical.map((f) => (
                   <Badge key={f.name} variant="secondary" className="text-xs">
@@ -370,15 +388,15 @@ function ObstetricHistorySection({
                 ))}
               </div>
               {history?.other_clinical_notes && (
-                <p className="mt-1.5 text-sm">{history.other_clinical_notes}</p>
+                <p className="mt-2 text-muted-foreground text-sm">{history.other_clinical_notes}</p>
               )}
             </div>
           )}
 
           {/* Antecedentes cirúrgicos */}
           {activeSurgical.length > 0 && (
-            <div className="border-t bg-muted/20 px-4 py-2.5">
-              <p className="mb-1.5 font-medium text-muted-foreground text-xs">Cirúrgicos</p>
+            <div>
+              <p className="mb-2 font-semibold text-sm">Antecedentes Cirúrgicos</p>
               <div className="flex flex-wrap gap-1.5">
                 {activeSurgical.map((f) => (
                   <Badge key={f.name} variant="secondary" className="text-xs">
@@ -387,7 +405,7 @@ function ObstetricHistorySection({
                 ))}
               </div>
               {history?.other_surgery_notes && (
-                <p className="mt-1.5 text-sm">{history.other_surgery_notes}</p>
+                <p className="mt-2 text-muted-foreground text-sm">{history.other_surgery_notes}</p>
               )}
             </div>
           )}
@@ -522,6 +540,29 @@ function EvolutionsSection({
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const [editingEvolution, setEditingEvolution] = useState<Tables<"pregnancy_evolutions"> | null>(
+    null,
+  );
+  const { confirm } = useConfirmModal();
+  const { executeAsync: deleteEvolution } = useAction(deletePregnancyEvolutionAction);
+
+  function handleConfirmDelete(evolutionId: string) {
+    confirm({
+      title: "Remover evolução",
+      description: "Tem certeza que deseja remover esta evolução? Esta ação não pode ser desfeita.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await deleteEvolution({ evolutionId });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          return;
+        }
+        toast.success("Evolução removida!");
+        onRefresh();
+      },
+    });
+  }
 
   return (
     <div>
@@ -585,6 +626,26 @@ function EvolutionsSection({
                     <Badge variant="outline" className="text-muted-foreground text-xs">
                       IG não informada
                     </Badge>
+                  )}
+                  {isEditable && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditingEvolution(ev)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => handleConfirmDelete(ev.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -673,6 +734,15 @@ function EvolutionsSection({
         pregnancyId={pregnancyId}
         onSuccess={onRefresh}
       />
+
+      {editingEvolution && (
+        <EditPregnancyEvolutionModal
+          open={!!editingEvolution}
+          onOpenChange={(open) => !open && setEditingEvolution(null)}
+          evolution={editingEvolution}
+          onSuccess={onRefresh}
+        />
+      )}
     </div>
   );
 }
@@ -691,6 +761,28 @@ function UltrasoundsSection({
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const [editingUltrasound, setEditingUltrasound] = useState<Tables<"ultrasounds"> | null>(null);
+  const { confirm } = useConfirmModal();
+  const { executeAsync: deleteUltrasound } = useAction(deleteUltrasoundAction);
+
+  function handleConfirmDelete(ultrasoundId: string) {
+    confirm({
+      title: "Remover ultrassonografia",
+      description:
+        "Tem certeza que deseja remover esta ultrassonografia? Esta ação não pode ser desfeita.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await deleteUltrasound({ ultrasoundId });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          return;
+        }
+        toast.success("Ultrassonografia removida!");
+        onRefresh();
+      },
+    });
+  }
 
   return (
     <div>
@@ -742,16 +834,38 @@ function UltrasoundsSection({
                 <span className="font-semibold text-sm">
                   {dayjs(usg.exam_date).format("DD/MM/YYYY")}
                 </span>
-                {usg.gestational_weeks != null ? (
-                  <Badge variant="outline" className="text-xs">
-                    {usg.gestational_weeks}s
-                    {usg.gestational_days != null ? `${usg.gestational_days}d` : ""}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground text-xs">
-                    IG não informada
-                  </Badge>
-                )}
+                <div className="flex items-center gap-2">
+                  {usg.gestational_weeks != null ? (
+                    <Badge variant="outline" className="text-xs">
+                      {usg.gestational_weeks}s
+                      {usg.gestational_days != null ? `${usg.gestational_days}d` : ""}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground text-xs">
+                      IG não informada
+                    </Badge>
+                  )}
+                  {isEditable && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => setEditingUltrasound(usg)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => handleConfirmDelete(usg.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Linha 1: FCF · CCN · TN · Colo */}
@@ -837,9 +951,15 @@ function UltrasoundsSection({
       )}
 
       <AddUltrasoundModal
-        open={showModal}
-        onOpenChange={setShowModal}
+        open={showModal || !!editingUltrasound}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowModal(false);
+            setEditingUltrasound(null);
+          }
+        }}
         pregnancyId={pregnancyId}
+        ultrasound={editingUltrasound ?? undefined}
         onSuccess={onRefresh}
       />
     </div>
@@ -1047,7 +1167,7 @@ function VaccinesSection({
                   <p className="text-muted-foreground text-xs">Não registrada</p>
                 )}
               </div>
-              {isEditable && <Pencil className="h-3 w-3 shrink-0 text-muted-foreground" />}
+              {isEditable && <Pencil className="h-4 w-4 shrink-0" />}
             </button>
           );
         })}
@@ -1081,6 +1201,27 @@ function OtherExamsSection({
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
+  const [editingExam, setEditingExam] = useState<Tables<"other_exams"> | null>(null);
+  const { confirm } = useConfirmModal();
+  const { executeAsync: deleteExam } = useAction(deleteOtherExamAction);
+
+  function handleConfirmDelete(examId: string) {
+    confirm({
+      title: "Remover exame",
+      description: "Tem certeza que deseja remover este exame? Esta ação não pode ser desfeita.",
+      confirmLabel: "Remover",
+      variant: "destructive",
+      onConfirm: async () => {
+        const result = await deleteExam({ examId });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          return;
+        }
+        toast.success("Exame removido!");
+        onRefresh();
+      },
+    });
+  }
 
   return (
     <div>
@@ -1126,12 +1267,34 @@ function OtherExamsSection({
       ) : (
         <div className="space-y-2">
           {otherExams.map((exam) => (
-            <div key={exam.id} className="rounded-lg border p-3">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm">{exam.description}</p>
-                <span className="shrink-0 text-muted-foreground text-xs">
-                  {dayjs(exam.exam_date).format("DD/MM/YYYY")}
-                </span>
+            <div key={exam.id} className="group rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm">{exam.description}</p>
+                  <span className="text-muted-foreground text-xs">
+                    {dayjs(exam.exam_date).format("DD/MM/YYYY")}
+                  </span>
+                </div>
+                {isEditable && (
+                  <div className="flex shrink-0 items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => setEditingExam(exam)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => handleConfirmDelete(exam.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -1139,9 +1302,15 @@ function OtherExamsSection({
       )}
 
       <AddOtherExamModal
-        open={showModal}
-        onOpenChange={setShowModal}
+        open={showModal || !!editingExam}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowModal(false);
+            setEditingExam(null);
+          }
+        }}
         pregnancyId={pregnancyId}
+        exam={editingExam ?? undefined}
         onSuccess={onRefresh}
       />
     </div>
@@ -1200,79 +1369,81 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
   };
 
   return (
-    <div className="space-y-6 pt-2">
-      <GeneralDataSection
-        patientId={patientId}
-        pregnancyId={pregnancyId}
-        data={data}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+    <div className="space-y-4 pt-2">
+      <SectionCard>
+        <GeneralDataSection
+          patientId={patientId}
+          pregnancyId={pregnancyId}
+          data={data}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
+      <SectionCard>
+        <ObstetricHistorySection
+          patientId={patientId}
+          pregnancyId={pregnancyId}
+          history={data.obstetricHistory}
+          pregnancy={data.pregnancy}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <ObstetricHistorySection
-        patientId={patientId}
-        pregnancyId={pregnancyId}
-        history={data.obstetricHistory}
-        pregnancy={data.pregnancy}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <RiskFactorsSection
+          pregnancyId={pregnancyId}
+          riskFactors={data.riskFactors}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
+      <SectionCard>
+        <EvolutionsSection
+          pregnancyId={pregnancyId}
+          evolutions={data.evolutions}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <RiskFactorsSection
-        pregnancyId={pregnancyId}
-        riskFactors={data.riskFactors}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <UltrasoundsSection
+          pregnancyId={pregnancyId}
+          ultrasounds={data.ultrasounds}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
+      <SectionCard>
+        <LabExamsSection
+          pregnancyId={pregnancyId}
+          labExams={data.labExams}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <EvolutionsSection
-        pregnancyId={pregnancyId}
-        evolutions={data.evolutions}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <VaccinesSection
+          pregnancyId={pregnancyId}
+          vaccines={data.vaccines}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
 
-      <Separator />
-
-      <UltrasoundsSection
-        pregnancyId={pregnancyId}
-        ultrasounds={data.ultrasounds}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
-
-      <Separator />
-
-      <LabExamsSection
-        pregnancyId={pregnancyId}
-        labExams={data.labExams}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
-
-      <Separator />
-
-      <VaccinesSection
-        pregnancyId={pregnancyId}
-        vaccines={data.vaccines}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
-
-      <Separator />
-
-      <OtherExamsSection
-        pregnancyId={pregnancyId}
-        otherExams={data.otherExams}
-        isEditable={isEditable}
-        onRefresh={refresh}
-      />
+      <SectionCard>
+        <OtherExamsSection
+          pregnancyId={pregnancyId}
+          otherExams={data.otherExams}
+          isEditable={isEditable}
+          onRefresh={refresh}
+        />
+      </SectionCard>
     </div>
   );
 }

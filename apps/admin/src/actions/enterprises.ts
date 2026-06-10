@@ -87,3 +87,54 @@ export const deleteEnterpriseAction = adminActionClient
     revalidatePath("/enterprises");
     return { success: true };
   });
+
+const getEnterpriseProfessionalsSchema = z.object({
+  enterpriseId: z.string().uuid(),
+  page: z.number().int().min(1).default(1),
+  size: z.number().int().min(1).default(10),
+});
+
+export const getEnterpriseProfessionalsAction = adminActionClient
+  .schema(getEnterpriseProfessionalsSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { enterpriseId, page, size } = parsedInput;
+    const from = (page - 1) * size;
+    const to = from + size - 1;
+
+    const { data: ueData, error: ueError } = await ctx.supabaseAdmin
+      .from("user_enterprises")
+      .select("user_id")
+      .eq("enterprise_id", enterpriseId);
+
+    if (ueError) throw new Error(ueError.message);
+
+    const userIds = (ueData ?? []).map((row) => row.user_id);
+
+    if (userIds.length === 0) {
+      return {
+        data: [] as Tables<"users">[],
+        pagination: { page, size, total_pages: 0 },
+      };
+    }
+
+    const { data, count, error } = await ctx.supabaseAdmin
+      .from("users")
+      .select(
+        "id, name, email, user_type, professional_type, avatar_url, created_at, phone, updated_at",
+        { count: "exact" },
+      )
+      .in("id", userIds)
+      .order("name")
+      .range(from, to);
+
+    if (error) throw new Error(error.message);
+
+    return {
+      data: (data ?? []) as Tables<"users">[],
+      pagination: {
+        page,
+        size,
+        total_pages: Math.ceil((count ?? 0) / size),
+      },
+    };
+  });

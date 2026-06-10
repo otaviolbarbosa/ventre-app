@@ -1,10 +1,12 @@
 "use client";
 
 import { addUltrasoundAction } from "@/actions/add-ultrasound-action";
+import { updateUltrasoundAction } from "@/actions/update-ultrasound-action";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { AMNIOTIC_FLUID_INDEX_LABELS } from "@/lib/prenatal-constants";
 import { type UltrasoundInput, ultrasoundSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
@@ -14,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -21,6 +24,7 @@ type AddUltrasoundModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pregnancyId: string;
+  ultrasound?: Tables<"ultrasounds">;
   onSuccess: () => void;
 };
 
@@ -28,23 +32,57 @@ export function AddUltrasoundModal({
   open,
   onOpenChange,
   pregnancyId,
+  ultrasound,
   onSuccess,
 }: AddUltrasoundModalProps) {
-  const { executeAsync, isPending } = useAction(addUltrasoundAction);
+  const isEditing = !!ultrasound;
+  const { executeAsync: addUltrasound, isPending: isAdding } = useAction(addUltrasoundAction);
+  const { executeAsync: updateUltrasound, isPending: isUpdating } =
+    useAction(updateUltrasoundAction);
+  const isPending = isAdding || isUpdating;
 
   const form = useForm<UltrasoundInput>({
     resolver: zodResolver(ultrasoundSchema),
     defaultValues: { exam_date: new Date().toISOString().split("T")[0] },
   });
 
-  async function onSubmit(values: UltrasoundInput) {
-    const result = await executeAsync({ pregnancyId, data: values });
-    if (result?.serverError) {
-      toast.error(result.serverError);
-      return;
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        exam_date: ultrasound?.exam_date ?? new Date().toISOString().split("T")[0],
+        gestational_weeks: ultrasound?.gestational_weeks ?? undefined,
+        gestational_days: ultrasound?.gestational_days ?? undefined,
+        ccn_mm: ultrasound?.ccn_mm ?? undefined,
+        fetal_heart_rate_bpm: ultrasound?.fetal_heart_rate_bpm ?? undefined,
+        nuchal_translucency_mm: ultrasound?.nuchal_translucency_mm ?? undefined,
+        cervical_length_cm: ultrasound?.cervical_length_cm ?? undefined,
+        estimated_weight_g: ultrasound?.estimated_weight_g ?? undefined,
+        amniotic_fluid_index: ultrasound?.amniotic_fluid_index ?? undefined,
+        placenta_position: ultrasound?.placenta_position ?? undefined,
+        doppler_result: ultrasound?.doppler_result ?? undefined,
+        nasal_bone_present: ultrasound?.nasal_bone_present ?? undefined,
+        iugr: ultrasound?.iugr ?? undefined,
+        notes: ultrasound?.notes ?? undefined,
+      });
     }
-    toast.success("Ultrassonografia registrada!");
-    form.reset({ exam_date: new Date().toISOString().split("T")[0] });
+  }, [open, ultrasound, form]);
+
+  async function onSubmit(values: UltrasoundInput) {
+    if (isEditing) {
+      const result = await updateUltrasound({ ultrasoundId: ultrasound.id, data: values });
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        return;
+      }
+      toast.success("Ultrassonografia atualizada!");
+    } else {
+      const result = await addUltrasound({ pregnancyId, data: values });
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        return;
+      }
+      toast.success("Ultrassonografia registrada!");
+    }
     onOpenChange(false);
     onSuccess();
   }
@@ -53,7 +91,7 @@ export function AddUltrasoundModal({
     <ContentModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Nova Ultrassonografia"
+      title={isEditing ? "Editar Ultrassonografia" : "Nova Ultrassonografia"}
       description="Registre os dados do exame de imagem"
     >
       <Form {...form}>
@@ -247,7 +285,7 @@ export function AddUltrasoundModal({
             </Button>
             <Button type="submit" className="gradient-primary" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar
+              {isEditing ? "Salvar alterações" : "Salvar"}
             </Button>
           </div>
         </form>

@@ -6,7 +6,6 @@ import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithPregnancyFields } from "@/services/patient";
 import type { TeamMember } from "@/types";
-import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
 import {
   Pagination,
@@ -17,7 +16,7 @@ import {
   PaginationPrevious,
 } from "@ventre/ui/pagination";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { ArrowLeft, Baby, Search } from "lucide-react";
+import { Baby, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -102,18 +101,9 @@ export default function PatientsHistoryScreen({
 
   return (
     <div>
-      <Header title="Histórico de Atendimentos" />
+      <Header title="Atendimentos Finalizados" back="/patients" />
       <div className="p-4 pt-0 md:p-6 md:pt-0">
         <div className="mb-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <Button variant="ghost" size="sm" className="gap-2" asChild>
-              <Link href="/patients">
-                <ArrowLeft className="size-4" />
-                <span>Voltar</span>
-              </Link>
-            </Button>
-          </div>
-
           <div className="relative flex-1">
             <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-4 text-muted-foreground" />
             <Input
