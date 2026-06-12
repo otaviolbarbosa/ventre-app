@@ -17,10 +17,11 @@ export const POST = async (req: Request) => {
       return NextResponse.json({ error: "Missing Stripe signature header." }, { status: 400 });
     }
 
-    const text = await req.text();
+    const rawBody = await req.arrayBuffer();
+    const body = Buffer.from(rawBody);
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const event = stripe.webhooks.constructEvent(
-      text,
+      body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET,
     );
