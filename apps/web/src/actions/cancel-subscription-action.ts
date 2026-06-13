@@ -15,13 +15,6 @@ export const cancelSubscriptionAction = authActionClient
       throw new Error("Stripe não configurado.");
     }
 
-    // Apenas assinaturas individuais (não empresariais)
-    if (profile.enterprise_id) {
-      throw new Error(
-        "Cancelamento de assinaturas de organizações deve ser feito por uma gestora.",
-      );
-    }
-
     // Busca a assinatura no banco, garantindo que pertence ao usuário
     const { data: subscription, error } = await supabase
       .from("subscriptions")

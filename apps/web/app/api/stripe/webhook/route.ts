@@ -177,16 +177,19 @@ async function handleEnterpriseSubscription({
     .eq("enterprise_id", enterpriseId)
     .in("status", ["active", "pending"]);
 
-  const { error: insertError } = await supabaseAdmin.from("subscriptions").insert({
-    enterprise_id: enterpriseId,
-    user_id: null,
-    plan_id: planId,
-    frequence,
-    subscription_id: subscriptionId,
-    status,
-    paid_at: paidAt,
-    expires_at: expiresAt,
-  });
+  const { error: insertError } = await supabaseAdmin.from("subscriptions").upsert(
+    {
+      enterprise_id: enterpriseId,
+      user_id: null,
+      plan_id: planId,
+      frequence,
+      subscription_id: subscriptionId,
+      status,
+      paid_at: paidAt,
+      expires_at: expiresAt,
+    },
+    { onConflict: "subscription_id" },
+  );
 
   if (insertError)
     throw new Error(`Failed to save enterprise subscription: ${insertError.message}`);
@@ -226,14 +229,17 @@ async function handleIndividualSubscription({
     .eq("user_id", userId)
     .in("status", ["active", "pending"]);
 
-  const { error: insertError } = await supabaseAdmin.from("subscriptions").insert({
-    user_id: userId,
-    plan_id: planId,
-    frequence,
-    subscription_id: subscriptionId,
-    status,
-    paid_at: paidAt,
-    expires_at: expiresAt,
-  });
+  const { error: insertError } = await supabaseAdmin.from("subscriptions").upsert(
+    {
+      user_id: userId,
+      plan_id: planId,
+      frequence,
+      subscription_id: subscriptionId,
+      status,
+      paid_at: paidAt,
+      expires_at: expiresAt,
+    },
+    { onConflict: "subscription_id" },
+  );
   if (insertError) throw new Error(`Failed to save subscription: ${insertError.message}`);
 }
