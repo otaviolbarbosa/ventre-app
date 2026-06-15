@@ -8,10 +8,14 @@ export type UserProfile = Tables<"users"> & { enterprise_id: string | null };
 
 const _getBaseAuth = cache(async () => {
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return { supabase, user: user ?? null };
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return { supabase, user: user ?? null };
+  } catch {
+    return { supabase, user: null };
+  }
 });
 
 export const getServerUser = _getBaseAuth;
