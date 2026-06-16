@@ -1,13 +1,10 @@
-import {
-  calculateInstallmentAmount,
-  calculateInstallmentDates,
-} from "@/lib/billing/calculations";
+import { calculateInstallmentAmount, calculateInstallmentDates } from "@/lib/billing/calculations";
 import { scheduleBillingNotifications } from "@/lib/billing/notifications";
 import { getServerUser } from "@/lib/server-auth";
 import type { CreateBillingInput } from "@/lib/validations/billing";
 import {
-  type createServerSupabaseAdmin,
   createServerSupabaseAdmin as createAdmin,
+  type createServerSupabaseAdmin,
   createServerSupabaseClient,
 } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
@@ -68,7 +65,11 @@ export async function getEnterpriseBillings(
 
   const professionals = (ueData ?? []).map((ue) => {
     const u = Array.isArray(ue.users) ? ue.users[0] : ue.users;
-    return { id: u?.id ?? ue.user_id, name: u?.name ?? null, professional_type: u?.professional_type ?? null };
+    return {
+      id: u?.id ?? ue.user_id,
+      name: u?.name ?? null,
+      professional_type: u?.professional_type ?? null,
+    };
   });
 
   // Query direta em billings.enterprise_id
@@ -114,12 +115,14 @@ export async function getEnterpriseBillings(
     const professionalTotal = targetIds.reduce((sum, id) => sum + (splitted?.[id] ?? 0), 0);
 
     metrics.total_amount += professionalTotal;
-    metrics.paid_amount += billing.paid_amount;
     metrics.by_status[billing.status] = (metrics.by_status[billing.status] || 0) + 1;
     metrics.by_payment_method[billing.payment_method] =
       (metrics.by_payment_method[billing.payment_method] || 0) + 1;
 
     for (const inst of billing.installments) {
+      if (inst.status === "pago") {
+        metrics.paid_amount += inst.paid_amount;
+      }
       if (inst.status === "atrasado") {
         metrics.overdue_amount += inst.amount - inst.paid_amount;
       }
@@ -238,12 +241,8 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
     `)
     .not(`splitted_billing->>${user.id}`, "is", null);
 
-  if (startDate) {
-    query = query.gte("created_at", startDate);
-  }
-  if (endDate) {
-    query = query.lte("created_at", endDate);
-  }
+  if (startDate) query = query.gte("installments.due_date", startDate);
+  if (endDate) query = query.lte("installments.due_date", endDate);
 
   const { data: billings, error } = await query;
 
@@ -263,25 +262,35 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
     upcoming_due: 0,
   };
 
-  // const today = new Date().toISOString().split("T")[0] as string;
-  // const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  //   .toISOString()
-  //   .split("T")[0] as string;
-
   for (const billing of typedBillings) {
     metrics.total_amount += billing.total_amount;
-    metrics.paid_amount += billing.paid_amount;
 
     metrics.by_status[billing.status] = (metrics.by_status[billing.status] || 0) + 1;
     metrics.by_payment_method[billing.payment_method] =
       (metrics.by_payment_method[billing.payment_method] || 0) + 1;
 
     for (const inst of billing.installments) {
+      const dueDate = inst.due_date;
+      const inRange = (!startDate || dueDate >= startDate) && (!endDate || dueDate <= endDate);
+
+      console.log(dueDate, inRange, inst.amount, inst.status);
+
+      if (!inRange) {
+        continue;
+      }
+
+      if (inst.status === "pago") {
+        metrics.paid_amount +=
+          (inst.splitted_installment as Record<string, number>)?.[user.id] ?? 0;
+      }
+
       if (inst.status === "atrasado") {
-        metrics.overdue_amount += inst.amount - inst.paid_amount;
+        metrics.overdue_amount +=
+          (inst.splitted_installment as Record<string, number>)?.[user.id] ?? 0;
       }
       if (inst.status === "pendente") {
-        metrics.upcoming_due += inst.amount - inst.paid_amount;
+        metrics.upcoming_due +=
+          (inst.splitted_installment as Record<string, number>)?.[user.id] ?? 0;
       }
     }
   }
