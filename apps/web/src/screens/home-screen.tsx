@@ -211,9 +211,14 @@ function AppointmentTimeline({
                     >
                       {formatAppointmentDate(appointment.date)}, {appointment.time.slice(0, 5)}
                     </p>
-                    <p className="font-medium text-sm">{appointment.patient.name}</p>
+                    <p className="font-medium text-sm">
+                      {appointment.patient?.name ?? appointment.external_patient_name ?? "-"}xxx
+                    </p>
                     <p className="text-muted-foreground text-xs">
-                      {getTypeLabel(appointment.type, appointment.patient.pregnancies?.[0]?.dum)}
+                      {getTypeLabel(
+                        appointment.type,
+                        appointment.patient?.pregnancies?.[0]?.dum ?? null,
+                      )}
                     </p>
                   </div>
                 </div>
