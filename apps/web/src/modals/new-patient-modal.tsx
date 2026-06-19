@@ -17,13 +17,13 @@ import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
+import { SearchableDropdown } from "@ventre/ui/shared/searchable-dropdown";
 import { Textarea } from "@ventre/ui/textarea";
 import dayjs from "dayjs";
-import { Check, ChevronDown, Loader2, Pencil, RotateCcw, Shield, Users, X } from "lucide-react";
+import { Check, Loader2, Pencil, RotateCcw, Shield, Users, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -47,6 +47,25 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   doula: "Doula",
   fisio: "Fisioterapeuta",
 };
+
+const PROFESSIONAL_TYPE_PLURAL_LABELS: Record<string, string> = {
+  obstetra: "Obstetras",
+  enfermeiro: "Enfermeiras",
+  doula: "Doulas",
+  fisio: "Fisioterapeutas",
+};
+
+function getBackupProfessionalIds(ids: string[], options: Professional[]): string[] {
+  const seenByType: Record<string, number> = {};
+  const result: string[] = [];
+  for (const id of ids) {
+    const prof = options.find((p) => p.id === id);
+    const type = prof?.professional_type ?? "__none__";
+    seenByType[type] = (seenByType[type] ?? 0) + 1;
+    if (seenByType[type] === 2) result.push(id);
+  }
+  return result;
+}
 
 function getInitials(name: string | null | undefined): string {
   if (!name) return "?";
@@ -138,7 +157,6 @@ export default function NewPatientModal({
   const [step, setStep] = useState<StepNumber>(1);
   const [addressVisible, setAddressVisible] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
-  const [selectorOpen, setSelectorOpen] = useState(false);
   const [profAmounts, setProfAmounts] = useState<Record<string, number>>({});
   const [isCustomInterval, setIsCustomInterval] = useState(false);
   const [lockedAmounts, setLockedAmounts] = useState<Record<number, number>>({});
@@ -380,6 +398,11 @@ export default function NewPatientModal({
   }
 
   function onSubmit(data: CreatePatientInput) {
+    const backupProfessionalIds = getBackupProfessionalIds(
+      data.professional_ids ?? [],
+      professionalsOptions,
+    );
+
     if (showBilling && data.billing) {
       setSubmitAttempted(true);
 
@@ -408,6 +431,7 @@ export default function NewPatientModal({
       }
       execute({
         ...data,
+        backup_professional_ids: backupProfessionalIds,
         billing: {
           ...data.billing,
           total_amount: undefined,
@@ -422,6 +446,7 @@ export default function NewPatientModal({
     if (showBilling && data.billing) {
       execute({
         ...data,
+        backup_professional_ids: backupProfessionalIds,
         billing: {
           ...data.billing,
           installment_interval: isCustomInterval ? null : data.billing.installment_interval,
@@ -431,7 +456,7 @@ export default function NewPatientModal({
       });
       return;
     }
-    execute(data);
+    execute({ ...data, backup_professional_ids: backupProfessionalIds });
   }
 
   function resetModal() {
@@ -670,7 +695,20 @@ export default function NewPatientModal({
                   )}
                 />
 
-                <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-3">
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="São Paulo" disabled={!addressVisible} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="state"
@@ -699,36 +737,26 @@ export default function NewPatientModal({
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-4">
                   <FormField
                     control={form.control}
-                    name="city"
+                    name="street"
                     render={({ field }) => (
-                      <FormItem className="sm:col-span-2">
-                        <FormLabel>Cidade</FormLabel>
+                      <FormItem className="sm:col-span-3">
+                        <FormLabel>Rua</FormLabel>
                         <FormControl>
-                          <Input placeholder="São Paulo" disabled={!addressVisible} {...field} />
+                          <Input
+                            placeholder="Rua das Flores"
+                            disabled={!addressVisible}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="street"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Rua</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Rua das Flores" disabled={!addressVisible} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-4 sm:grid-cols-3">
                   <FormField
                     control={form.control}
                     name="number"
@@ -742,6 +770,9 @@ export default function NewPatientModal({
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="complement"
@@ -785,15 +816,7 @@ export default function NewPatientModal({
                       const selectedProfessionals = selectedIds
                         .map((id) => professionalsOptions.find((p) => p.id === id))
                         .filter(Boolean) as Professional[];
-
-                      function toggleProfessional(id: string) {
-                        const current = field.value ?? [];
-                        if (current.includes(id)) {
-                          field.onChange(current.filter((x) => x !== id));
-                        } else {
-                          field.onChange([...current, id]);
-                        }
-                      }
+                      const backupIds = getBackupProfessionalIds(selectedIds, professionalsOptions);
 
                       function removeProfessional(id: string) {
                         field.onChange((field.value ?? []).filter((x) => x !== id));
@@ -809,105 +832,39 @@ export default function NewPatientModal({
                         <FormItem>
                           <FormLabel>Profissionais responsáveis</FormLabel>
 
-                          <Popover open={selectorOpen} onOpenChange={setSelectorOpen}>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    "flex h-10 w-full items-center gap-2 rounded-full border bg-background px-3 text-sm transition-colors hover:bg-muted/40",
-                                    selectedIds.length > 0 && "border-primary/40",
-                                    hasError && "border-destructive",
-                                  )}
-                                >
-                                  <div className="-ml-1 flex size-6 items-center justify-center rounded-full bg-muted">
-                                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                                  </div>
-                                  <span
-                                    className={cn(
-                                      "flex-1 text-left",
-                                      selectedIds.length === 0 && "text-muted-foreground",
-                                    )}
-                                  >
-                                    {selectedIds.length === 0
-                                      ? "Selecione as profissionais"
-                                      : selectedIds.length === 1
-                                        ? "1 profissional selecionada"
-                                        : `${selectedIds.length} profissionais selecionadas`}
-                                  </span>
-                                  <ChevronDown
-                                    className={cn(
-                                      "h-4 w-4 text-muted-foreground transition-transform",
-                                      selectorOpen && "rotate-180",
-                                    )}
-                                  />
-                                </button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              align="start"
-                              className="w-[var(--radix-popover-trigger-width)] p-2"
-                            >
-                              <div className="flex flex-col gap-1">
-                                {professionalsOptions.map((prof) => {
-                                  const isSelected = selectedIds.includes(prof.id);
-                                  return (
-                                    <button
-                                      key={prof.id}
-                                      type="button"
-                                      onClick={() => toggleProfessional(prof.id)}
-                                      className={cn(
-                                        "flex items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-muted/60",
-                                        isSelected && "bg-primary/5",
-                                      )}
-                                    >
-                                      <Avatar className="h-9 w-9 shrink-0 shadow-md">
-                                        <AvatarImage
-                                          src={prof.avatar_url ?? undefined}
-                                          alt={prof.name ?? ""}
-                                          className="rounded-full object-cover"
-                                        />
-                                        <AvatarFallback
-                                          className={cn(
-                                            "text-sm",
-                                            isSelected
-                                              ? "bg-primary/20 text-primary"
-                                              : "bg-primary/10 text-primary",
-                                          )}
-                                        >
-                                          {getInitials(prof.name)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="min-w-0 flex-1">
-                                        <p
-                                          className={cn(
-                                            "truncate font-medium text-sm",
-                                            isSelected && "text-primary",
-                                          )}
-                                        >
-                                          {prof.name ?? "—"}
-                                        </p>
-                                        <p className="text-muted-foreground text-xs">
-                                          {prof.professional_type
-                                            ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
-                                              prof.professional_type)
-                                            : "Profissional"}
-                                        </p>
-                                      </div>
-                                      {isSelected && (
-                                        <Check className="h-4 w-4 shrink-0 text-primary" />
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
+                          <FormControl>
+                            <SearchableDropdown
+                              multiple
+                              options={professionalsOptions.map((prof) => ({
+                                value: prof.id,
+                                label: prof.professional_type
+                                  ? `${prof.name ?? "—"} — ${
+                                      PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
+                                      prof.professional_type
+                                    }`
+                                  : (prof.name ?? "—"),
+                                group: prof.professional_type
+                                  ? PROFESSIONAL_TYPE_PLURAL_LABELS[prof.professional_type]
+                                  : undefined,
+                              }))}
+                              value={selectedIds}
+                              onChange={(next) => field.onChange(next)}
+                              placeholder="Selecione as profissionais"
+                              searchPlaceholder="Buscar profissional..."
+                              emptyMessage="Nenhuma profissional encontrada"
+                              maxSelectedPerGroup={2}
+                              className={cn(
+                                selectedIds.length > 0 && "border-primary/40",
+                                hasError && "border-destructive",
+                              )}
+                            />
+                          </FormControl>
 
                           {selectedProfessionals.length > 0 && (
                             <div className="flex flex-col gap-2 pt-1">
                               {selectedProfessionals.map((prof, index) => {
                                 const isResponsible = index === 0;
+                                const isBackup = backupIds.includes(prof.id);
                                 return (
                                   <div
                                     key={prof.id}
@@ -951,6 +908,14 @@ export default function NewPatientModal({
                                             <span className="shrink-0 text-muted-foreground text-xs">
                                               Clique para tornar responsável
                                             </span>
+                                          )}
+                                          {isBackup && (
+                                            <Badge
+                                              variant="outline"
+                                              className="shrink-0 border-muted-foreground/30 bg-muted px-1.5 py-0 text-muted-foreground text-xs"
+                                            >
+                                              Backup
+                                            </Badge>
                                           )}
                                         </div>
                                         <p className="text-muted-foreground text-xs">
@@ -1101,7 +1066,7 @@ export default function NewPatientModal({
                     {isSplitBilling ? (
                       <div className="space-y-2">
                         <FormLabel>Profissionais e Valores *</FormLabel>
-                        {selectedProfessionalIds.map((profId) => {
+                        {Object.keys(profAmounts).map((profId) => {
                           const prof = professionalsOptions.find((p) => p.id === profId);
                           return (
                             <div key={profId} className="flex items-center gap-3">
@@ -1124,9 +1089,44 @@ export default function NewPatientModal({
                                   setProfAmounts((prev) => ({ ...prev, [profId]: val }))
                                 }
                               />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={() =>
+                                  setProfAmounts((prev) => {
+                                    const next = { ...prev };
+                                    delete next[profId];
+                                    return next;
+                                  })
+                                }
+                              >
+                                <X className="h-4 w-4 text-muted-foreground" />
+                              </Button>
                             </div>
                           );
                         })}
+                        {selectedProfessionalIds.some((id) => !(id in profAmounts)) && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {selectedProfessionalIds
+                              .filter((id) => !(id in profAmounts))
+                              .map((profId) => {
+                                const prof = professionalsOptions.find((p) => p.id === profId);
+                                return (
+                                  <button
+                                    key={profId}
+                                    type="button"
+                                    onClick={() =>
+                                      setProfAmounts((prev) => ({ ...prev, [profId]: 0 }))
+                                    }
+                                    className="flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-muted-foreground text-xs transition-colors hover:border-primary hover:text-primary"
+                                  >
+                                    + {prof?.name ?? profId}
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        )}
                         {splitBillingTotal > 0 && (
                           <p className="text-right text-muted-foreground text-xs">
                             Total: {formatCurrency(splitBillingTotal)}
