@@ -43,10 +43,16 @@ export const addPatientAction = authActionClient
     });
 
     if (parsedInput.billing) {
-      await createBilling(supabase, supabaseAdmin, user.id, {
-        ...parsedInput.billing,
-        patient_id: patient.id,
-      });
+      await createBilling(
+        supabase,
+        supabaseAdmin,
+        user.id,
+        {
+          ...parsedInput.billing,
+          patient_id: patient.id,
+        },
+        enterpriseId,
+      );
     }
 
     revalidateTag(`home-patients-${user.id}`, { expire: 300 });

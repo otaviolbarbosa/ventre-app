@@ -33,7 +33,7 @@ type Patient = Tables<"patients">;
 export default function UsersScreen({ professionals, staff }: UsersScreenProps) {
   const router = useRouter();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [patients, setPatients] = useState<{ id: string; name: string }[]>();
+  const [patients, setPatients] = useState<{ id: string; name: string }[]>([]);
   const [selectedProfessional, setSelectedProfessional] = useState<EnterpriseProfessional>();
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
@@ -55,7 +55,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
       toast("Erro ao carregar dados de pacientes");
     }
 
-    setPatients(patientsData?.patients);
+    setPatients(patientsData?.patients ?? []);
   };
 
   return (
