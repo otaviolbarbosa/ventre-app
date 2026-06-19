@@ -228,6 +228,7 @@ export async function createPatient(
     .in("id", professionalIds);
 
   const profProfileMap = new Map((profProfiles ?? []).map((p) => [p.id, p]));
+  const backupProfessionalIds = data.backup_professional_ids ?? [];
 
   for (const profId of professionalIds) {
     const prof = profProfileMap.get(profId);
@@ -237,6 +238,7 @@ export async function createPatient(
         professional_id: profId,
         professional_type: prof.professional_type,
         pregnancy_id: pregnancy.id,
+        is_backup: backupProfessionalIds.includes(profId),
       } satisfies TablesInsert<"team_members">);
 
       if (teamError) {
