@@ -34,7 +34,7 @@ export const getPrenatalCardAction = authActionClient
       supabase
         .from("pregnancies")
         .select(
-          "gestations_count, deliveries_count, cesareans_count, abortions_count, initial_weight_kg, initial_bmi, baby_name, reference_hospital",
+          "gestations_count, deliveries_count, cesareans_count, abortions_count, initial_weight_kg, initial_bmi, baby_name, reference_hospital, dum, due_date",
         )
         .eq("id", pregnancyId)
         .single(),
@@ -50,7 +50,7 @@ export const getPrenatalCardAction = authActionClient
         .maybeSingle(),
       supabase
         .from("pregnancy_evolutions")
-        .select("*")
+        .select("*, created_by_user:users!pregnancy_evolutions_created_by_fkey(name, avatar_url)")
         .eq("pregnancy_id", pregnancyId)
         .order("consultation_date", { ascending: true }),
       supabase

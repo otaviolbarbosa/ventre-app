@@ -26,13 +26,13 @@ const CustomInput = forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ value, onClick, placeholder, ...props }, ref) => (
     <div className="relative w-full">
       <Input
+        {...props}
         ref={ref}
         value={value}
         onClick={onClick}
         placeholder={placeholder}
         readOnly
         className="cursor-pointer pr-10"
-        {...props}
       />
       {!props.disabled && (
         <CalendarIcon className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />

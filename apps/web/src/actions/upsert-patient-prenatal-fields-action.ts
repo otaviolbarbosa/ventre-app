@@ -43,6 +43,7 @@ export const upsertPatientPrenatalFieldsAction = authActionClient
       .from("pregnancies")
       .update({
         initial_weight_kg: data.initial_weight_kg ?? null,
+        initial_bmi: data.initial_bmi ?? null,
         baby_name: data.baby_name || null,
         reference_hospital: data.reference_hospital || null,
       })

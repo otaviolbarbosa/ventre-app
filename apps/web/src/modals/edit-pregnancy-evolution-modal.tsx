@@ -1,6 +1,7 @@
 "use client";
 
 import { updatePregnancyEvolutionAction } from "@/actions/update-pregnancy-evolution-action";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import { type PregnancyEvolutionInput, pregnancyEvolutionSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
@@ -22,6 +23,7 @@ type EditPregnancyEvolutionModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   evolution: Tables<"pregnancy_evolutions">;
+  dum: string | null | undefined;
   onSuccess: () => void;
 };
 
@@ -29,6 +31,7 @@ export function EditPregnancyEvolutionModal({
   open,
   onOpenChange,
   evolution,
+  dum,
   onSuccess,
 }: EditPregnancyEvolutionModalProps) {
   const { executeAsync, isPending } = useAction(updatePregnancyEvolutionAction);
@@ -53,6 +56,18 @@ export function EditPregnancyEvolutionModal({
     onSuccess();
   }
 
+  function handleOnChange(date: Date | null) {
+    const consultationDate = date ? date.toISOString().slice(0, 10) : "";
+    form.setValue("consultation_date", consultationDate);
+
+    const ga = calculateGestationalAge(dum, consultationDate || undefined);
+    if (ga) {
+      form.setValue("gestational_weeks", ga.weeks);
+      form.setValue("gestational_days", ga.days);
+      form.setValue("ig_source", "dum");
+    }
+  }
+
   return (
     <ContentModal
       open={open}
@@ -73,7 +88,7 @@ export function EditPregnancyEvolutionModal({
                   <FormControl>
                     <DatePicker
                       selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      onChange={handleOnChange}
                       placeholderText="Selecione a data"
                     />
                   </FormControl>
@@ -301,20 +316,6 @@ export function EditPregnancyEvolutionModal({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="responsible"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Profissional responsável</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
@@ -347,6 +348,5 @@ function buildDefaultValues(ev: Tables<"pregnancy_evolutions">): PregnancyEvolut
     complaint: ev.complaint ?? undefined,
     cervical_exam: ev.cervical_exam ?? undefined,
     observations: ev.observations ?? undefined,
-    responsible: ev.responsible ?? undefined,
   };
 }

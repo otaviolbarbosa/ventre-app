@@ -39,6 +39,12 @@ type PregnancyData = Pick<
   "initial_weight_kg" | "initial_bmi" | "baby_name" | "reference_hospital"
 > | null;
 
+function calculateBmi(heightCm: number | null | undefined, weightKg: number | null | undefined) {
+  if (!heightCm || !weightKg) return null;
+  const heightM = heightCm / 100;
+  return Number((weightKg / (heightM * heightM)).toFixed(2));
+}
+
 type EditGeneralDataModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,11 +83,20 @@ export function EditGeneralDataModal({
         family_history_twin: patientData?.family_history_twin ?? false,
         family_history_others: patientData?.family_history_others ?? "",
         initial_weight_kg: pregnancyData?.initial_weight_kg ?? undefined,
+        initial_bmi: pregnancyData?.initial_bmi ?? undefined,
         baby_name: pregnancyData?.baby_name ?? "",
         reference_hospital: pregnancyData?.reference_hospital ?? "",
       });
     }
   }, [open, patientData, pregnancyData]);
+
+  const heightCm = form.watch("height_cm");
+  const initialWeightKg = form.watch("initial_weight_kg");
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: recalculate only when height or weight change
+  useEffect(() => {
+    form.setValue("initial_bmi", calculateBmi(heightCm, initialWeightKg));
+  }, [heightCm, initialWeightKg]);
 
   async function onSubmit(values: UpdatePatientPrenatalInput) {
     const result = await executeAsync({ patientId, pregnancyId, data: values });
@@ -195,6 +210,20 @@ export function EditGeneralDataModal({
               )}
             />
           </div>
+
+          <FormField
+            control={form.control}
+            name="initial_bmi"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>IMC inicial</FormLabel>
+                <FormControl>
+                  <Input readOnly disabled value={field.value ?? ""} placeholder="Calculado automaticamente" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
