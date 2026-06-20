@@ -17,6 +17,7 @@ export const addPregnancyEvolutionAction = authActionClient
 
     const { error } = await supabase.from("pregnancy_evolutions").insert({
       pregnancy_id: pregnancyId,
+      created_by: user.id,
       ...data,
     });
 

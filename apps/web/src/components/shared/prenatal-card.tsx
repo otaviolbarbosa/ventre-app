@@ -22,16 +22,17 @@ import {
 import { AddLabExamModal } from "@/modals/add-lab-exam-modal";
 import { AddOtherExamModal } from "@/modals/add-other-exam-modal";
 import { AddPregnancyEvolutionModal } from "@/modals/add-pregnancy-evolution-modal";
-import { EditPregnancyEvolutionModal } from "@/modals/edit-pregnancy-evolution-modal";
 import { AddUltrasoundModal } from "@/modals/add-ultrasound-modal";
 import { EditGeneralDataModal } from "@/modals/edit-general-data-modal";
 import { EditObstetricHistoryModal } from "@/modals/edit-obstetric-history-modal";
+import { EditPregnancyEvolutionModal } from "@/modals/edit-pregnancy-evolution-modal";
 import { EditRiskFactorsModal } from "@/modals/edit-risk-factors-modal";
 import { EditVaccineRecordModal } from "@/modals/edit-vaccine-record-modal";
 import type { Tables } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
 import { Skeleton } from "@ventre/ui/skeleton";
 import {
   Activity,
@@ -40,8 +41,10 @@ import {
   ClipboardList,
   FlaskConical,
   HelpCircle,
+  MinusCircle,
   Pencil,
   Plus,
+  PlusCircle,
   ShieldAlert,
   Stethoscope,
   Syringe,
@@ -81,7 +84,9 @@ type PrenatalData = {
   > | null;
   obstetricHistory: Tables<"patient_obstetric_history"> | null;
   riskFactors: Tables<"pregnancy_risk_factors"> | null;
-  evolutions: Tables<"pregnancy_evolutions">[];
+  evolutions: (Tables<"pregnancy_evolutions"> & {
+    created_by_user: Pick<Tables<"users">, "name" | "avatar_url"> | null;
+  })[];
   ultrasounds: Tables<"ultrasounds">[];
   labExams: Tables<"lab_exam_results">[];
   vaccines: Tables<"vaccine_records">[];
@@ -101,7 +106,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-5 flex items-start justify-between">
-      <h3 className="text-xl font-bold tracking-tight">{title}</h3>
+      <h3 className="font-bold text-xl tracking-tight">{title}</h3>
       {action}
     </div>
   );
@@ -350,7 +355,7 @@ function ObstetricHistorySection({
                   { label: "Abortos", value: pregnancy?.abortions_count },
                 ].map(({ label, value }) => (
                   <div key={label} className="rounded-xl border p-2">
-                    <p className="text-3xl font-bold">{value ?? "-"}</p>
+                    <p className="font-bold text-3xl">{value ?? "-"}</p>
                     <p className="mt-1 text-muted-foreground text-sm">{label}</p>
                   </div>
                 ))}
@@ -360,11 +365,11 @@ function ObstetricHistorySection({
                 <p className="mb-2.5 font-semibold text-sm">Tipos de Parto</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl border p-3 text-center">
-                    <p className="text-2xl font-bold">{pregnancy?.cesareans_count ?? "-"}</p>
+                    <p className="font-bold text-2xl">{pregnancy?.cesareans_count ?? "-"}</p>
                     <p className="mt-1 text-muted-foreground text-sm">Cesáreas</p>
                   </div>
                   <div className="rounded-xl border p-3 text-center">
-                    <p className="text-2xl font-bold">
+                    <p className="font-bold text-2xl">
                       {pregnancy?.deliveries_count != null && pregnancy?.cesareans_count != null
                         ? pregnancy.deliveries_count - pregnancy.cesareans_count
                         : "-"}
@@ -531,18 +536,20 @@ function RiskFactorsSection({
 function EvolutionsSection({
   pregnancyId,
   evolutions,
+  dum,
   isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
-  evolutions: Tables<"pregnancy_evolutions">[];
+  evolutions: PrenatalData["evolutions"];
+  dum: string | null | undefined;
   isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
-  const [editingEvolution, setEditingEvolution] = useState<Tables<"pregnancy_evolutions"> | null>(
-    null,
-  );
+  const [editingEvolution, setEditingEvolution] = useState<
+    PrenatalData["evolutions"][number] | null
+  >(null);
   const { confirm } = useConfirmModal();
   const { executeAsync: deleteEvolution } = useAction(deletePregnancyEvolutionAction);
 
@@ -611,22 +618,30 @@ function EvolutionsSection({
             <div key={ev.id} className="overflow-hidden rounded-lg border">
               {/* Cabeçalho */}
               <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
-                <span className="font-semibold text-sm">
-                  {dayjs(ev.consultation_date).format("DD/MM/YYYY")}
-                </span>
-                <div className="flex items-center gap-2">
-                  {ev.gestational_weeks != null ? (
-                    <Badge variant="outline" className="text-xs">
-                      {ev.gestational_weeks}s
-                      {ev.gestational_days != null ? `${ev.gestational_days}d` : ""}
-                      {" · "}
-                      {ev.ig_source === "usg" ? "USG" : "DUM"}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground text-xs">
-                      IG não informada
-                    </Badge>
+                <div>
+                  <span className="font-semibold text-sm">
+                    {dayjs(ev.consultation_date).format("DD/MM/YYYY")}{" "}
+                    {ev.gestational_weeks != null ? (
+                      <Badge variant="outline" className="text-xs">
+                        {ev.gestational_weeks}s
+                        {ev.gestational_days != null ? `${ev.gestational_days}d` : ""}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground text-xs">
+                        IG não informada
+                      </Badge>
+                    )}
+                  </span>
+                  {ev.created_by_user && (
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <UserAvatar user={ev.created_by_user} size={5} />
+                      <span className="text-muted-foreground text-xs">
+                        {ev.created_by_user.name}
+                      </span>
+                    </div>
                   )}
+                </div>
+                <div className="flex items-center gap-2">
                   {isEditable && (
                     <>
                       <Button
@@ -691,13 +706,29 @@ function EvolutionsSection({
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">Edema</p>
                   <p className="font-medium text-sm">
-                    {ev.edema != null ? (ev.edema ? "Sim" : "Não") : "-"}
+                    {ev.edema != null ? (
+                      ev.edema ? (
+                        <PlusCircle className="h-4 w-4" />
+                      ) : (
+                        <MinusCircle className="h-4 w-4" />
+                      )
+                    ) : (
+                      <MinusCircle className="h-4 w-4" />
+                    )}
                   </p>
                 </div>
                 <div className="px-3 py-2.5">
                   <p className="mb-0.5 text-muted-foreground text-xs">MF</p>
-                  <p className="font-medium text-sm">
-                    {ev.fetal_movement != null ? (ev.fetal_movement ? "Presente" : "Ausente") : "-"}
+                  <p className="text-center font-medium text-sm">
+                    {ev.fetal_movement != null ? (
+                      ev.fetal_movement ? (
+                        <PlusCircle className="h-4 w-4" />
+                      ) : (
+                        <MinusCircle className="h-4 w-4" />
+                      )
+                    ) : (
+                      <MinusCircle className="h-4 w-4" />
+                    )}
                   </p>
                 </div>
                 <div className="px-3 py-2.5">
@@ -707,19 +738,15 @@ function EvolutionsSection({
               </div>
 
               {/* Notas textuais */}
-              {(ev.complaint || ev.observations || ev.responsible) && (
+              {(ev.complaint || ev.observations) && (
                 <div className="grid grid-cols-4 divide-x border-t bg-muted/20">
-                  <div className="px-3 py-2.5">
+                  <div className="col-span-2 px-3 py-2.5">
                     <p className="mb-0.5 font-medium text-muted-foreground text-xs">Queixa</p>
                     <p className="text-xs">{ev.complaint || "-"}</p>
                   </div>
                   <div className="col-span-2 px-3 py-2.5">
                     <p className="mb-0.5 font-medium text-muted-foreground text-xs">Conduta</p>
                     <p className="whitespace-pre-wrap text-xs">{ev.observations || "-"}</p>
-                  </div>
-                  <div className="px-3 py-2.5">
-                    <p className="mb-0.5 font-medium text-muted-foreground text-xs">Responsável</p>
-                    <p className="text-xs">{ev.responsible || "-"}</p>
                   </div>
                 </div>
               )}
@@ -732,6 +759,7 @@ function EvolutionsSection({
         open={showModal}
         onOpenChange={setShowModal}
         pregnancyId={pregnancyId}
+        dum={dum}
         onSuccess={onRefresh}
       />
 
@@ -740,6 +768,7 @@ function EvolutionsSection({
           open={!!editingEvolution}
           onOpenChange={(open) => !open && setEditingEvolution(null)}
           evolution={editingEvolution}
+          dum={dum}
           onSuccess={onRefresh}
         />
       )}
@@ -1404,6 +1433,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
         <EvolutionsSection
           pregnancyId={pregnancyId}
           evolutions={data.evolutions}
+          dum={data.pregnancy?.dum}
           isEditable={isEditable}
           onRefresh={refresh}
         />

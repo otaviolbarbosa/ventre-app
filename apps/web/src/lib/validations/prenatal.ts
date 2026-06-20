@@ -90,7 +90,6 @@ export const pregnancyEvolutionSchema = z.object({
   exantema: z.boolean().optional().nullable(),
   exantema_notes: z.string().optional(),
   observations: z.string().optional(),
-  responsible: z.string().optional(),
 });
 export type PregnancyEvolutionInput = z.infer<typeof pregnancyEvolutionSchema>;
 

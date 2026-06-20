@@ -1125,6 +1125,7 @@ export type Database = {
           complaint: string | null
           consultation_date: string
           created_at: string
+          created_by: string | null
           diastolic_bp: number | null
           edema: boolean | null
           exantema: boolean | null
@@ -1140,7 +1141,6 @@ export type Database = {
           ig_source: string | null
           observations: string | null
           pregnancy_id: string
-          responsible: string | null
           systolic_bp: number | null
           uterine_height_cm: number | null
           weight_kg: number | null
@@ -1151,6 +1151,7 @@ export type Database = {
           complaint?: string | null
           consultation_date: string
           created_at?: string
+          created_by?: string | null
           diastolic_bp?: number | null
           edema?: boolean | null
           exantema?: boolean | null
@@ -1166,7 +1167,6 @@ export type Database = {
           ig_source?: string | null
           observations?: string | null
           pregnancy_id: string
-          responsible?: string | null
           systolic_bp?: number | null
           uterine_height_cm?: number | null
           weight_kg?: number | null
@@ -1177,6 +1177,7 @@ export type Database = {
           complaint?: string | null
           consultation_date?: string
           created_at?: string
+          created_by?: string | null
           diastolic_bp?: number | null
           edema?: boolean | null
           exantema?: boolean | null
@@ -1192,12 +1193,18 @@ export type Database = {
           ig_source?: string | null
           observations?: string | null
           pregnancy_id?: string
-          responsible?: string | null
           systolic_bp?: number | null
           uterine_height_cm?: number | null
           weight_kg?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pregnancy_evolutions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pregnancy_evolutions_pregnancy_id_fkey"
             columns: ["pregnancy_id"]
