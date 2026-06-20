@@ -6,6 +6,8 @@ import { deletePregnancyEvolutionAction } from "@/actions/delete-pregnancy-evolu
 import { deleteUltrasoundAction } from "@/actions/delete-ultrasound-action";
 import { getPrenatalCardAction } from "@/actions/get-prenatal-card-action";
 import { EmptyState } from "@/components/shared/empty-state";
+import { GestationalWeightGainChart } from "@/components/shared/gestational-weight-gain-chart";
+import { UterineHeightChart } from "@/components/shared/uterine-height-chart";
 import { dayjs } from "@/lib/dayjs";
 import {
   AMNIOTIC_FLUID_INDEX_LABELS,
@@ -537,12 +539,16 @@ function EvolutionsSection({
   pregnancyId,
   evolutions,
   dum,
+  initialWeightKg,
+  initialBmi,
   isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   evolutions: PrenatalData["evolutions"];
   dum: string | null | undefined;
+  initialWeightKg: number | null | undefined;
+  initialBmi: number | null | undefined;
   isEditable: boolean;
   onRefresh: () => void;
 }) {
@@ -613,145 +619,159 @@ function EvolutionsSection({
           )}
         </EmptyState>
       ) : (
-        <div className="space-y-3">
-          {evolutions.map((ev) => (
-            <div key={ev.id} className="overflow-hidden rounded-lg border">
-              {/* Cabeçalho */}
-              <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
-                <div>
-                  <span className="font-semibold text-sm">
-                    {dayjs(ev.consultation_date).format("DD/MM/YYYY")}{" "}
-                    {ev.gestational_weeks != null ? (
-                      <Badge variant="outline" className="text-xs">
-                        {ev.gestational_weeks}s
-                        {ev.gestational_days != null ? `${ev.gestational_days}d` : ""}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground text-xs">
-                        IG não informada
-                      </Badge>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-3">
+            {evolutions.map((ev) => (
+              <div key={ev.id} className="overflow-hidden rounded-lg border">
+                {/* Cabeçalho */}
+                <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2">
+                  <div>
+                    <span className="font-semibold text-sm">
+                      {dayjs(ev.consultation_date).format("DD/MM/YYYY")}{" "}
+                      {ev.gestational_weeks != null ? (
+                        <Badge variant="outline" className="text-xs">
+                          {ev.gestational_weeks}s
+                          {ev.gestational_days != null ? `${ev.gestational_days}d` : ""}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground text-xs">
+                          IG não informada
+                        </Badge>
+                      )}
+                    </span>
+                    {ev.created_by_user && (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <UserAvatar user={ev.created_by_user} size={5} />
+                        <span className="text-muted-foreground text-xs">
+                          {ev.created_by_user.name}
+                        </span>
+                      </div>
                     )}
-                  </span>
-                  {ev.created_by_user && (
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <UserAvatar user={ev.created_by_user} size={5} />
-                      <span className="text-muted-foreground text-xs">
-                        {ev.created_by_user.name}
-                      </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isEditable && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditingEvolution(ev)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => handleConfirmDelete(ev.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Grid de métricas */}
+                <div className="grid grid-cols-4 divide-x text-center">
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">Peso</p>
+                    <p className="font-medium text-sm">
+                      {ev.weight_kg != null ? `${ev.weight_kg} kg` : "-"}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">PA (mmHg)</p>
+                    <p className="font-medium text-sm">
+                      {ev.systolic_bp != null || ev.diastolic_bp != null
+                        ? `${ev.systolic_bp ?? "-"}/${ev.diastolic_bp ?? "-"}`
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">AU (cm)</p>
+                    <p className="font-medium text-sm">
+                      {ev.uterine_height_cm != null ? ev.uterine_height_cm : "-"}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">BCF (bpm)</p>
+                    <p className="font-medium text-sm">
+                      {ev.fetal_heart_rate != null ? ev.fetal_heart_rate : "-"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Segunda linha de métricas */}
+                <div className="grid grid-cols-4 divide-x border-t text-center">
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">Apresentação</p>
+                    <p className="font-medium text-sm">
+                      {ev.fetal_presentation
+                        ? FETAL_PRESENTATION_LABELS[ev.fetal_presentation]
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">Edema</p>
+                    <p className="flex items-center justify-center font-medium text-sm">
+                      {ev.edema != null ? (
+                        ev.edema ? (
+                          <PlusCircle className="h-4 w-4" />
+                        ) : (
+                          <MinusCircle className="h-4 w-4" />
+                        )
+                      ) : (
+                        <MinusCircle className="h-4 w-4" />
+                      )}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">MF</p>
+                    <p className="flex items-center justify-center font-medium text-sm">
+                      {ev.fetal_movement != null ? (
+                        ev.fetal_movement ? (
+                          <PlusCircle className="h-4 w-4" />
+                        ) : (
+                          <MinusCircle className="h-4 w-4" />
+                        )
+                      ) : (
+                        <MinusCircle className="h-4 w-4" />
+                      )}
+                    </p>
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="mb-0.5 text-muted-foreground text-xs">Exame de colo</p>
+                    <p className="truncate font-medium text-sm">{ev.cervical_exam ?? "-"}</p>
+                  </div>
+                </div>
+
+                {/* Notas textuais */}
+                {(ev.complaint || ev.observations) && (
+                  <div className="grid grid-cols-4 divide-x border-t bg-muted/20">
+                    <div className="col-span-2 px-3 py-2.5">
+                      <p className="mb-0.5 font-medium text-muted-foreground text-xs">Queixa</p>
+                      <p className="font-medium text-sm">{ev.complaint || "-"}</p>
                     </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {isEditable && (
-                    <>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => setEditingEvolution(ev)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => handleConfirmDelete(ev.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Grid de métricas */}
-              <div className="grid grid-cols-4 divide-x text-center">
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">Peso</p>
-                  <p className="font-medium text-sm">
-                    {ev.weight_kg != null ? `${ev.weight_kg} kg` : "-"}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">PA (mmHg)</p>
-                  <p className="font-medium text-sm">
-                    {ev.systolic_bp != null || ev.diastolic_bp != null
-                      ? `${ev.systolic_bp ?? "-"}/${ev.diastolic_bp ?? "-"}`
-                      : "-"}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">AU (cm)</p>
-                  <p className="font-medium text-sm">
-                    {ev.uterine_height_cm != null ? ev.uterine_height_cm : "-"}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">BCF (bpm)</p>
-                  <p className="font-medium text-sm">
-                    {ev.fetal_heart_rate != null ? ev.fetal_heart_rate : "-"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Segunda linha de métricas */}
-              <div className="grid grid-cols-4 divide-x border-t text-center">
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">Apresentação</p>
-                  <p className="font-medium text-sm">
-                    {ev.fetal_presentation ? FETAL_PRESENTATION_LABELS[ev.fetal_presentation] : "-"}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">Edema</p>
-                  <p className="font-medium text-sm">
-                    {ev.edema != null ? (
-                      ev.edema ? (
-                        <PlusCircle className="h-4 w-4" />
-                      ) : (
-                        <MinusCircle className="h-4 w-4" />
-                      )
-                    ) : (
-                      <MinusCircle className="h-4 w-4" />
-                    )}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">MF</p>
-                  <p className="text-center font-medium text-sm">
-                    {ev.fetal_movement != null ? (
-                      ev.fetal_movement ? (
-                        <PlusCircle className="h-4 w-4" />
-                      ) : (
-                        <MinusCircle className="h-4 w-4" />
-                      )
-                    ) : (
-                      <MinusCircle className="h-4 w-4" />
-                    )}
-                  </p>
-                </div>
-                <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">Exame de colo</p>
-                  <p className="truncate font-medium text-sm">{ev.cervical_exam ?? "-"}</p>
-                </div>
-              </div>
-
-              {/* Notas textuais */}
-              {(ev.complaint || ev.observations) && (
-                <div className="grid grid-cols-4 divide-x border-t bg-muted/20">
-                  <div className="col-span-2 px-3 py-2.5">
-                    <p className="mb-0.5 font-medium text-muted-foreground text-xs">Queixa</p>
-                    <p className="text-xs">{ev.complaint || "-"}</p>
+                    <div className="col-span-2 px-3 py-2.5">
+                      <p className="mb-0.5 font-medium text-muted-foreground text-xs">Conduta</p>
+                      <p className="whitespace-pre-wrap font-medium text-sm">
+                        {ev.observations || "-"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="col-span-2 px-3 py-2.5">
-                    <p className="mb-0.5 font-medium text-muted-foreground text-xs">Conduta</p>
-                    <p className="whitespace-pre-wrap text-xs">{ev.observations || "-"}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="space-y-4">
+            <GestationalWeightGainChart
+              evolutions={evolutions}
+              initialWeightKg={initialWeightKg ?? null}
+              initialBmi={initialBmi ?? null}
+            />
+            <UterineHeightChart evolutions={evolutions} />
+          </div>
         </div>
       )}
 
@@ -1434,6 +1454,8 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
           pregnancyId={pregnancyId}
           evolutions={data.evolutions}
           dum={data.pregnancy?.dum}
+          initialWeightKg={data.pregnancy?.initial_weight_kg}
+          initialBmi={data.pregnancy?.initial_bmi}
           isEditable={isEditable}
           onRefresh={refresh}
         />
