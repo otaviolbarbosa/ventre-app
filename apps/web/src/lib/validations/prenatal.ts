@@ -11,6 +11,7 @@ export const updatePatientPrenatalSchema = z.object({
   family_history_twin: z.boolean().optional().nullable(),
   family_history_others: z.string().optional(),
   initial_weight_kg: z.coerce.number().positive().optional().nullable(),
+  initial_bmi: z.coerce.number().positive().optional().nullable(),
   baby_name: z.string().optional(),
   reference_hospital: z.string().optional(),
 });
@@ -90,7 +91,6 @@ export const pregnancyEvolutionSchema = z.object({
   exantema: z.boolean().optional().nullable(),
   exantema_notes: z.string().optional(),
   observations: z.string().optional(),
-  responsible: z.string().optional(),
 });
 export type PregnancyEvolutionInput = z.infer<typeof pregnancyEvolutionSchema>;
 

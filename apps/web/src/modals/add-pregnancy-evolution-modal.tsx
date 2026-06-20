@@ -1,16 +1,18 @@
 "use client";
 
 import { addPregnancyEvolutionAction } from "@/actions/add-pregnancy-evolution-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import { type PregnancyEvolutionInput, pregnancyEvolutionSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
+import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";
@@ -20,6 +22,7 @@ type AddPregnancyEvolutionModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pregnancyId: string;
+  dum: string | null | undefined;
   onSuccess: () => void;
 };
 
@@ -27,6 +30,7 @@ export function AddPregnancyEvolutionModal({
   open,
   onOpenChange,
   pregnancyId,
+  dum,
   onSuccess,
 }: AddPregnancyEvolutionModalProps) {
   const { executeAsync, isPending } = useAction(addPregnancyEvolutionAction);
@@ -46,6 +50,20 @@ export function AddPregnancyEvolutionModal({
     form.reset({ consultation_date: new Date().toISOString().split("T")[0] });
     onOpenChange(false);
     onSuccess();
+  }
+
+  function handleOnChange(date: Date | null) {
+    console.log("calculating IG");
+    const consultationDate = date ? date.toISOString().slice(0, 10) : "";
+    form.setValue("consultation_date", consultationDate);
+
+    const ga = calculateGestationalAge(dum, consultationDate || undefined);
+    console.log(ga);
+    if (ga) {
+      form.setValue("gestational_weeks", ga.weeks);
+      form.setValue("gestational_days", ga.days);
+      form.setValue("ig_source", "dum");
+    }
   }
 
   return (
@@ -68,7 +86,8 @@ export function AddPregnancyEvolutionModal({
                   <FormControl>
                     <DatePicker
                       selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      onChange={handleOnChange}
+                      maxDate={dayjs().toDate()}
                       placeholderText="Selecione a data"
                     />
                   </FormControl>
@@ -261,7 +280,7 @@ export function AddPregnancyEvolutionModal({
               <FormItem>
                 <FormLabel>Queixa principal</FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value ?? ""} />
+                  <Textarea rows={4} {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -275,7 +294,7 @@ export function AddPregnancyEvolutionModal({
               <FormItem>
                 <FormLabel>Exame de colo</FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value ?? ""} />
+                  <Textarea rows={4} {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -290,20 +309,6 @@ export function AddPregnancyEvolutionModal({
                 <FormLabel>Conduta / Observações</FormLabel>
                 <FormControl>
                   <Textarea rows={3} {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="responsible"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Profissional responsável</FormLabel>
-                <FormControl>
-                  <Input {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
