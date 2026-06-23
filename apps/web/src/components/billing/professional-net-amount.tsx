@@ -3,6 +3,7 @@
 import {
   type AppliedBillingFee,
   computeNetAmountCents,
+  computeTotalNetAmountCents,
   formatCurrency,
 } from "@/lib/billing/calculations";
 import { Badge } from "@ventre/ui/badge";
@@ -11,7 +12,7 @@ import { Info } from "lucide-react";
 import { useState } from "react";
 
 type ProfessionalNetAmountProps = {
-  professionalId: string;
+  professionalId?: string;
   professionalName?: string;
   grossAmountCents: number;
   appliedFees: AppliedBillingFee[];
@@ -24,13 +25,12 @@ export function ProfessionalNetAmount({
   appliedFees,
 }: ProfessionalNetAmountProps) {
   const [open, setOpen] = useState(false);
-  const { netAmountCents, totalFeesCents, feeLineItems } = computeNetAmountCents(
-    grossAmountCents,
-    appliedFees,
-    professionalId,
-  );
+  const { netAmountCents, totalFeesCents, feeLineItems } = professionalId
+    ? computeNetAmountCents(grossAmountCents, appliedFees, professionalId)
+    : computeTotalNetAmountCents(grossAmountCents, appliedFees);
 
   const label = professionalName ?? "Valor líquido";
+  console.log(professionalName);
 
   if (feeLineItems.length === 0) {
     return (

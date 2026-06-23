@@ -7,9 +7,10 @@ import { InstallmentList } from "@/components/billing/installment-list";
 import { PaymentMethodBadge } from "@/components/billing/payment-method-badge";
 import { ProfessionalNetAmount } from "@/components/billing/professional-net-amount";
 import { StatusBadge } from "@/components/billing/status-badge";
+import { TotalAmount } from "@/components/billing/total-amount";
 import { LoadingState } from "@/components/shared/loading-state";
 import { useAuth } from "@/hooks/use-auth";
-import { type AppliedBillingFee, formatCurrency } from "@/lib/billing/calculations";
+import type { AppliedBillingFee } from "@/lib/billing/calculations";
 import RecordPaymentModal from "@/modals/record-payment-modal";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
@@ -139,17 +140,23 @@ export default function BillingDetailPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-muted-foreground text-xs">Total</p>
-              <p className="font-semibold text-lg">{formatCurrency(displayTotalAmount)}</p>
+              <TotalAmount amount={displayTotalAmount} />
+
+              {/* <p className="font-semibold text-lg">{formatCurrency(displayTotalAmount)}</p> */}
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Pago</p>
-              <p className="font-semibold text-green-600 text-lg">
-                {formatCurrency(displayPaidAmount)}
-              </p>
+
+              <div className="text-green-600">
+                <TotalAmount amount={displayPaidAmount} />
+                {/* {formatCurrency(displayPaidAmount)} */}
+              </div>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Restante</p>
-              <p className="font-semibold text-lg">{formatCurrency(remaining)}</p>
+              <p className="text-muted-foreground text-xs">A receber</p>
+              <p className="text-amber-500">
+                <TotalAmount amount={remaining} />
+              </p>
             </div>
           </div>
 

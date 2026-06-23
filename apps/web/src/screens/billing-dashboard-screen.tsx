@@ -4,6 +4,7 @@ import { getBillingDashboardAction } from "@/actions/get-billing-dashboard-actio
 import { getPatientsAction } from "@/actions/get-patients-action";
 import { BillingGroupCard } from "@/components/billing/billing-group-card";
 import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
+import { BillingTable } from "@/components/billing/billing-table";
 import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
 import { Header } from "@/components/layouts/header";
@@ -132,6 +133,8 @@ export default function BillingDashboardScreen({
                   />
                 ))}
               </div>
+            ) : viewMode === "table" ? (
+              <BillingTable billings={filteredBillings} professionalId={user?.id as string} />
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {filteredBillings.map((billing) => (

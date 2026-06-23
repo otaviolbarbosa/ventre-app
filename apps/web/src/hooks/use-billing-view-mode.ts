@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type BillingViewMode = "simplified" | "expanded";
+export type BillingViewMode = "simplified" | "expanded" | "table";
 
 const STORAGE_KEY = "billing-view-mode";
 
@@ -11,7 +11,7 @@ export function useBillingViewMode() {
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "simplified" || stored === "expanded") {
+    if (stored === "simplified" || stored === "expanded" || stored === "table") {
       setViewModeState(stored);
     }
   }, []);

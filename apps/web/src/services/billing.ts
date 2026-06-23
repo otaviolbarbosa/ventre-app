@@ -1,5 +1,6 @@
 import {
   applyBillingFeesToSplit,
+  applyInstallmentFeesFromBilling,
   calculateInstallmentAmount,
   calculateInstallmentDates,
 } from "@/lib/billing/calculations";
@@ -375,6 +376,12 @@ export async function createBilling(
         Math.round((profAmount / total_amount) * amount),
       ]),
     );
+    const applied_installment_fees = applyInstallmentFeesFromBilling(
+      appliedBillingFees,
+      splitted_installment,
+      amount,
+      total_amount,
+    );
     return {
       billing_id: billing.id,
       installment_number: i + 1,
@@ -382,6 +389,7 @@ export async function createBilling(
       due_date: dates[i] as string,
       payment_link: payment_links?.[i] || null,
       splitted_installment,
+      applied_installment_fees: applied_installment_fees as unknown as Json,
     };
   });
 
