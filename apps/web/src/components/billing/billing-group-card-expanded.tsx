@@ -26,6 +26,13 @@ export function BillingGroupCardExpanded({
   professionals?: Record<string, string>;
   professionalId?: string;
 }) {
+  const monthlyAmount = installments.reduce((total, installment) => {
+    const splittedInstallment = installment.splitted_installment as Record<string, number>;
+    const amount = professionalId
+      ? (splittedInstallment[professionalId] ?? 0)
+      : Object.values(splittedInstallment).reduce((sum, value) => sum + value, 0);
+    return total + amount;
+  }, 0);
   const appliedFees = (billing.applied_billing_fees as unknown as AppliedBillingFee[]) ?? [];
   const sortedInstallments = [...installments].sort(
     (a, b) => a.installment_number - b.installment_number,
@@ -40,9 +47,8 @@ export function BillingGroupCardExpanded({
             <h3 className="truncate font-medium">{billing.patient.name}</h3>
             <p className="text-muted-foreground text-sm">{billing.description}</p>
           </div>
-          <StatusBadge status={billing.status} />
         </div>
-        <p className="font-semibold text-xl">{formatCurrency(billing.total_amount)}</p>
+        <p className="font-semibold text-xl">{formatCurrency(monthlyAmount)}</p>
       </CardHeader>
       <CardContent
         className={cn(

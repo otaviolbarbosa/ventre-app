@@ -1,11 +1,10 @@
 "use client";
-
-import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { TotalAmount } from "./total-amount";
 
 export type FilterKey = "total" | "paid" | "overdue" | "upcoming";
 
@@ -130,9 +129,10 @@ export function DashboardMetrics({
                       {metric.title}
                     </p>
                   </div>
-                  <p className="font-bold text-lg leading-none text-foreground">
+                  <TotalAmount amount={metric.amount} />
+                  {/* <p className="font-bold text-foreground text-lg leading-none">
                     {formatCurrency(metric.amount)}
-                  </p>
+                  </p> */}
                 </CardContent>
               </Card>
             );

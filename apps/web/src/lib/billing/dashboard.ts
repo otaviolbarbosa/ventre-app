@@ -92,7 +92,7 @@ export function groupBillingsByFilter(
 export function buildBillingMetrics(metrics: DashboardMetrics): MetricItem[] {
   return [
     { key: "paid", title: "Recebido", amount: metrics.paid_amount, icon: TrendingUp },
-    { key: "upcoming", title: "Próx. Vencimentos", amount: metrics.upcoming_due, icon: Clock },
+    { key: "upcoming", title: "A receber", amount: metrics.upcoming_due, icon: Clock },
     { key: "overdue", title: "Em Atraso", amount: metrics.overdue_amount, icon: AlertTriangle },
   ] satisfies MetricItem[];
 }

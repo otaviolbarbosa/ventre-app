@@ -381,6 +381,7 @@ export type Database = {
       installments: {
         Row: {
           amount: number
+          applied_installment_fees: Json
           billing_id: string
           created_at: string
           due_date: string
@@ -397,6 +398,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          applied_installment_fees?: Json
           billing_id: string
           created_at?: string
           due_date: string
@@ -413,6 +415,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          applied_installment_fees?: Json
           billing_id?: string
           created_at?: string
           due_date?: string

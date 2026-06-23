@@ -4,6 +4,7 @@ import { getEnterpriseBillingAction as fetchEnterpriseBilling } from "@/actions/
 import { getEnterprisePatientsForBillingAction } from "@/actions/get-enterprise-patients-for-billing-action";
 import { BillingGroupCard } from "@/components/billing/billing-group-card";
 import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
+import { BillingTable } from "@/components/billing/billing-table";
 import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
 import { Header } from "@/components/layouts/header";
@@ -177,6 +178,8 @@ export default function BillingDashboardEnterpriseScreen({
                   />
                 ))}
               </div>
+            ) : viewMode === "table" ? (
+              <BillingTable billings={filteredBillings} professionals={professionalsMap} />
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {filteredBillings.map((billing) => (

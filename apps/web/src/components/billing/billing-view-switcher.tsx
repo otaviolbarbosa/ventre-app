@@ -3,7 +3,7 @@
 import type { BillingViewMode } from "@/hooks/use-billing-view-mode";
 import { cn } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
-import { LayoutGrid, StretchHorizontal } from "lucide-react";
+import { LayoutGrid, Table2 } from "lucide-react";
 
 type BillingViewSwitcherProps = {
   value: BillingViewMode;
@@ -28,7 +28,7 @@ export function BillingViewSwitcher({ value, onChange }: BillingViewSwitcherProp
       >
         <LayoutGrid />
       </Button>
-      <Button
+      {/* <Button
         variant="ghost"
         size="icon"
         className={cn(
@@ -42,6 +42,21 @@ export function BillingViewSwitcher({ value, onChange }: BillingViewSwitcherProp
         }}
       >
         <StretchHorizontal />
+      </Button> */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn(
+          "bg-transparent hover:bg-transparent",
+          value === "table" &&
+            "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
+        )}
+        onClick={(e) => {
+          e.preventDefault();
+          onChange("table");
+        }}
+      >
+        <Table2 />
       </Button>
     </div>
   );

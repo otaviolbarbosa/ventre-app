@@ -45,6 +45,53 @@ export function applyBillingFeesToSplit(
   return appliedFees;
 }
 
+export function applyInstallmentFeesFromBilling(
+  appliedBillingFees: AppliedBillingFee[],
+  splittedInstallment: SplittedBilling,
+  installmentAmountCents: number,
+  billingTotalAmountCents: number,
+): AppliedBillingFee[] {
+  if (billingTotalAmountCents === 0) return [];
+
+  const ratio = installmentAmountCents / billingTotalAmountCents;
+
+  return appliedBillingFees.flatMap((fee) => {
+    const baseAmountCents = splittedInstallment[fee.professional_id];
+    if (baseAmountCents === undefined) return [];
+
+    return [
+      {
+        ...fee,
+        base_amount_cents: baseAmountCents,
+        computed_amount_cents: Math.min(
+          Math.round(fee.computed_amount_cents * ratio),
+          baseAmountCents,
+        ),
+      },
+    ];
+  });
+}
+
+export function aggregateAppliedFees(appliedFeesLists: AppliedBillingFee[][]): AppliedBillingFee[] {
+  const aggregated = new Map<string, AppliedBillingFee>();
+
+  for (const fees of appliedFeesLists) {
+    for (const fee of fees) {
+      const key = `${fee.professional_id}:${fee.fee_id}`;
+      const existing = aggregated.get(key);
+
+      if (existing) {
+        existing.base_amount_cents += fee.base_amount_cents;
+        existing.computed_amount_cents += fee.computed_amount_cents;
+      } else {
+        aggregated.set(key, { ...fee });
+      }
+    }
+  }
+
+  return Array.from(aggregated.values());
+}
+
 export interface AppliedFeeLineItem {
   fee_id: string;
   name: string;
@@ -84,6 +131,37 @@ export function computeNetAmountCents(
       : Math.round(fee.computed_amount_cents * ratio),
   }));
 
+  const totalFeesCents = feeLineItems.reduce((sum, item) => sum + item.amountCents, 0);
+
+  return {
+    netAmountCents: grossAmountCents - totalFeesCents,
+    totalFeesCents,
+    feeLineItems,
+  };
+}
+
+export function computeTotalNetAmountCents(
+  grossAmountCents: number,
+  appliedFees: AppliedBillingFee[],
+): NetAmountResult {
+  const grouped = new Map<string, AppliedFeeLineItem>();
+
+  for (const fee of appliedFees) {
+    const existing = grouped.get(fee.fee_id);
+    if (existing) {
+      existing.amountCents += fee.computed_amount_cents;
+    } else {
+      grouped.set(fee.fee_id, {
+        fee_id: fee.fee_id,
+        name: fee.name,
+        fee_type: fee.fee_type,
+        value: fee.value,
+        amountCents: fee.computed_amount_cents,
+      });
+    }
+  }
+
+  const feeLineItems = Array.from(grouped.values());
   const totalFeesCents = feeLineItems.reduce((sum, item) => sum + item.amountCents, 0);
 
   return {
@@ -180,7 +258,7 @@ type StatusConfig = {
 };
 
 const statusConfigs: Record<BillingStatus, StatusConfig> = {
-  pendente: { label: "Pendente", variant: "warning" },
+  pendente: { label: "A Receber", variant: "warning" },
   pago: { label: "Pago", variant: "success" },
   atrasado: { label: "Atrasado", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },
