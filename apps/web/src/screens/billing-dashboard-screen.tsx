@@ -1,63 +1,73 @@
 "use client";
 
 import { getPatientsAction } from "@/actions/get-patients-action";
+import { getBillingDashboardAction } from "@/actions/get-billing-dashboard-action";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
 import { InstallmentCard } from "@/components/billing/installment-card";
-import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdown";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/hooks/use-auth";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
-import type { BillingPeriod } from "@/lib/billing/period-range";
+import { getMonthRange } from "@/lib/billing/period-range";
+import { dayjs } from "@/lib/dayjs";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type {
   BillingWithInstallments,
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
-import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import { Plus, Receipt, X } from "lucide-react";
+import { Skeleton } from "@ventre/ui/skeleton";
+import { Plus, Receipt } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 
 type BillingDashboardScreenProps = {
   billings: BillingWithInstallments[];
   metrics: DashboardMetricsType | null;
-  activePeriod: BillingPeriod | null;
+  activeMonth: string;
 };
 
 export default function BillingDashboardScreen({
-  billings,
-  metrics,
-  activePeriod,
+  billings: initialBillings,
+  metrics: initialMetrics,
+  activeMonth: initialActiveMonth,
 }: BillingDashboardScreenProps) {
-  const router = useRouter();
   const { user } = useAuth();
+  const [currentMonth, setCurrentMonth] = useState<string | null>(initialActiveMonth);
+
+  const { execute, result, isPending } = useAction(getBillingDashboardAction);
+
+  const billings: BillingWithInstallments[] =
+    (result.data?.billings as BillingWithInstallments[] | undefined) ?? initialBillings;
+  const metrics: DashboardMetricsType | null =
+    (result.data?.metrics as DashboardMetricsType | null | undefined) ?? initialMetrics;
+
+  const fetchData = useCallback(
+    (month: string | null) => {
+      const dateRange = month ? getMonthRange(month) : undefined;
+      execute({
+        startDate: dateRange?.startDate,
+        endDate: dateRange?.endDate,
+      });
+    },
+    [execute],
+  );
+
+  const handleMonthChange = (month: string | null) => {
+    setCurrentMonth(month);
+    fetchData(month);
+  };
+
+  const activeMonthForHook = currentMonth ?? dayjs().format("YYYY-MM");
 
   const {
     activeFilter,
     handleFilterClick,
     filteredInstallments,
     billingMetrics,
-    activePeriodLabel,
+    activeMonthLabel,
     sectionTitle,
-  } = useBillingDashboard({ billings, metrics, activePeriod });
-
-  const handlePeriodSelect = useCallback(
-    (period: BillingPeriod) => {
-      if (activePeriod === period) {
-        router.push("/billing");
-      } else {
-        router.push(`/billing?period=${period}`);
-      }
-    },
-    [activePeriod, router],
-  );
-
-  const handleClearPeriod = useCallback(() => {
-    router.push("/billing");
-  }, [router]);
+  } = useBillingDashboard({ billings, metrics, activeMonth: activeMonthForHook });
 
   const [showNewBillingModal, setShowNewBillingModal] = useState(false);
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
@@ -73,16 +83,8 @@ export default function BillingDashboardScreen({
         <Header title="Financeiro" />
         <div className="space-y-4 p-4 pt-0 md:p-6">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center">
-              <Badge variant="outline">{activePeriodLabel ?? ""}</Badge>
-              {activePeriod && (
-                <Button variant="ghost" size="icon-sm" onClick={handleClearPeriod}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <div />
             <div className="flex items-center gap-2">
-              <PeriodFilterDropdown activePeriod={activePeriod} onSelect={handlePeriodSelect} />
               <Button size="sm" className="gradient-primary" onClick={handleOpenNewBilling}>
                 <Plus className="mr-1 h-4 w-4" />
                 Nova Cobrança
@@ -95,12 +97,21 @@ export default function BillingDashboardScreen({
               metrics={billingMetrics}
               activeFilter={activeFilter}
               onFilterClick={handleFilterClick}
+              activeMonth={activeMonthForHook}
+              activeMonthLabel={activeMonthLabel}
+              onMonthChange={handleMonthChange}
             />
           )}
 
           <div>
             <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
-            {filteredInstallments.length === 0 ? (
+            {isPending ? (
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : filteredInstallments.length === 0 ? (
               <EmptyState
                 icon={Receipt}
                 title="Nenhuma cobrança"
@@ -130,7 +141,7 @@ export default function BillingDashboardScreen({
         patients={patientsResult.data?.patients?.map((p) => ({ id: p.id, name: p.name })) ?? []}
         showModal={showNewBillingModal}
         setShowModal={setShowNewBillingModal}
-        callback={() => router.refresh()}
+        callback={() => fetchData(currentMonth)}
       />
     </>
   );
