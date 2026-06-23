@@ -1,4 +1,6 @@
 export { default as AppointmentsScreen } from "./appointments-screen";
+export { default as BillingDeductionsScreen } from "./billing-deductions-screen";
+export { default as EnterpriseSettingsScreen } from "./enterprise-settings-screen";
 export { default as HomeScreen } from "./home-screen";
 export { default as HomeEnterpriseScreen } from "./home-enterprise-screen";
 export { default as OnboardingScreen } from "./onboarding-screen";

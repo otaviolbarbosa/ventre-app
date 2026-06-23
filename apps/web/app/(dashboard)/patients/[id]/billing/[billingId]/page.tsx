@@ -5,10 +5,12 @@ import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-profe
 import { updateBillingAction } from "@/actions/update-billing-action";
 import { InstallmentList } from "@/components/billing/installment-list";
 import { PaymentMethodBadge } from "@/components/billing/payment-method-badge";
+import { ProfessionalNetAmount } from "@/components/billing/professional-net-amount";
 import { StatusBadge } from "@/components/billing/status-badge";
+import { TotalAmount } from "@/components/billing/total-amount";
 import { LoadingState } from "@/components/shared/loading-state";
 import { useAuth } from "@/hooks/use-auth";
-import { formatCurrency } from "@/lib/billing/calculations";
+import type { AppliedBillingFee } from "@/lib/billing/calculations";
 import RecordPaymentModal from "@/modals/record-payment-modal";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
@@ -33,7 +35,7 @@ export default function BillingDetailPage() {
   const router = useRouter();
   const billingId = params.billingId as string;
   const patientId = params.id as string;
-  const { isStaff } = useAuth();
+  const { isStaff, user } = useAuth();
 
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -99,7 +101,19 @@ export default function BillingDetailPage() {
     );
   }
 
-  const remaining = billing.total_amount - billing.paid_amount;
+  const appliedFees = (billing.applied_billing_fees as unknown as AppliedBillingFee[]) ?? [];
+  const splittedBilling = billing.splitted_billing as Record<string, number> | null;
+  const professionalGrossAmountCents =
+    !isStaff && user?.id && splittedBilling ? (splittedBilling[user.id] ?? undefined) : undefined;
+
+  const displayTotalAmount = professionalGrossAmountCents ?? billing.total_amount;
+  const paidRatio = billing.total_amount > 0 ? billing.paid_amount / billing.total_amount : 0;
+  const displayPaidAmount =
+    professionalGrossAmountCents !== undefined
+      ? Math.round(professionalGrossAmountCents * paidRatio)
+      : billing.paid_amount;
+
+  const remaining = displayTotalAmount - displayPaidAmount;
 
   return (
     <div>
@@ -126,19 +140,48 @@ export default function BillingDetailPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-muted-foreground text-xs">Total</p>
-              <p className="font-semibold text-lg">{formatCurrency(billing.total_amount)}</p>
+              <TotalAmount amount={displayTotalAmount} />
+
+              {/* <p className="font-semibold text-lg">{formatCurrency(displayTotalAmount)}</p> */}
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Pago</p>
-              <p className="font-semibold text-green-600 text-lg">
-                {formatCurrency(billing.paid_amount)}
-              </p>
+
+              <div className="text-green-600">
+                <TotalAmount amount={displayPaidAmount} />
+                {/* {formatCurrency(displayPaidAmount)} */}
+              </div>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Restante</p>
-              <p className="font-semibold text-lg">{formatCurrency(remaining)}</p>
+              <p className="text-muted-foreground text-xs">A receber</p>
+              <p className="text-amber-500">
+                <TotalAmount amount={remaining} />
+              </p>
             </div>
           </div>
+
+          {isStaff && splittedBilling && (
+            <div className="mt-3 space-y-0.5 border-t pt-2">
+              {Object.entries(splittedBilling).map(([profId, amount]) => (
+                <ProfessionalNetAmount
+                  key={profId}
+                  professionalId={profId}
+                  professionalName={professionalsMap?.[profId] ?? profId}
+                  grossAmountCents={amount}
+                  appliedFees={appliedFees}
+                />
+              ))}
+            </div>
+          )}
+          {professionalGrossAmountCents !== undefined && user?.id && (
+            <div className="mt-3 border-t pt-2">
+              <ProfessionalNetAmount
+                professionalId={user.id}
+                grossAmountCents={professionalGrossAmountCents}
+                appliedFees={appliedFees}
+              />
+            </div>
+          )}
 
           <div className="mt-3 flex items-center gap-2">
             <PaymentMethodBadge method={billing.payment_method} />
@@ -170,6 +213,8 @@ export default function BillingDetailPage() {
         onRecordPayment={handleRecordPayment}
         onUpdate={() => fetchBilling({ billingId })}
         professionals={professionalsMap}
+        appliedBillingFees={billing.applied_billing_fees as unknown as AppliedBillingFee[]}
+        professionalId={!isStaff ? user?.id : undefined}
       />
 
       <RecordPaymentModal

@@ -191,6 +191,7 @@ export type Database = {
       }
       billings: {
         Row: {
+          applied_billing_fees: Json
           created_at: string
           description: string
           enterprise_id: string | null
@@ -208,6 +209,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          applied_billing_fees?: Json
           created_at?: string
           description: string
           enterprise_id?: string | null
@@ -225,6 +227,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          applied_billing_fees?: Json
           created_at?: string
           description?: string
           enterprise_id?: string | null
@@ -254,6 +257,57 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enterprise_billing_fees: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enterprise_id: string
+          fee_type: Database["public"]["Enums"]["billing_fee_type"]
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enterprise_id: string
+          fee_type: Database["public"]["Enums"]["billing_fee_type"]
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enterprise_id?: string
+          fee_type?: Database["public"]["Enums"]["billing_fee_type"]
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enterprise_billing_fees_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enterprise_billing_fees_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
             referencedColumns: ["id"]
           },
         ]
@@ -327,6 +381,7 @@ export type Database = {
       installments: {
         Row: {
           amount: number
+          applied_installment_fees: Json
           billing_id: string
           created_at: string
           due_date: string
@@ -343,6 +398,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          applied_installment_fees?: Json
           billing_id: string
           created_at?: string
           due_date: string
@@ -359,6 +415,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          applied_installment_fees?: Json
           billing_id?: string
           created_at?: string
           due_date?: string
@@ -1935,6 +1992,7 @@ export type Database = {
         | "polyhydramnios"
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro"
+      billing_fee_type: "fixed" | "percentage"
       billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       delivery_method: "cesarean" | "vaginal"
@@ -2142,6 +2200,7 @@ export const Constants = {
       ],
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro"],
+      billing_fee_type: ["fixed", "percentage"],
       billing_status: ["pendente", "pago", "atrasado", "cancelado"],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       delivery_method: ["cesarean", "vaginal"],

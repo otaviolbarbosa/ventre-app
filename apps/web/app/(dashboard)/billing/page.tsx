@@ -1,19 +1,21 @@
 import { isStaff } from "@/lib/access-control";
-import { type BillingPeriod, getPeriodRange } from "@/lib/billing/period-range";
+import { getMonthRange } from "@/lib/billing/period-range";
+import { dayjs } from "@/lib/dayjs";
 import { getServerAuth } from "@/lib/server-auth";
 import BillingDashboardEnterpriseScreen from "@/screens/billing-dashboard-enterprise-screen";
 import BillingDashboardScreen from "@/screens/billing-dashboard-screen";
-import { getEnterpriseBillings, getBillings, getDashboardMetrics } from "@/services/billing";
+import { getBillings, getDashboardMetrics, getEnterpriseBillings } from "@/services/billing";
 
 export default async function BillingDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; month?: string; view?: string }>;
 }) {
-  const { period } = await searchParams;
+  const { month } = await searchParams;
 
-  const activePeriod = period as BillingPeriod | undefined;
-  const dateRange = activePeriod ? getPeriodRange(activePeriod) : undefined;
+  const activeMonth = month ?? dayjs().format("YYYY-MM");
+
+  const dateRange = getMonthRange(activeMonth);
 
   const { profile } = await getServerAuth();
 
@@ -29,7 +31,7 @@ export default async function BillingDashboardPage({
         initialBillings={billings}
         initialMetrics={metrics}
         initialProfessionals={professionals}
-        activePeriod={activePeriod ?? null}
+        activeMonth={activeMonth}
       />
     );
   }
@@ -39,11 +41,5 @@ export default async function BillingDashboardPage({
     getDashboardMetrics(dateRange?.startDate, dateRange?.endDate),
   ]);
 
-  return (
-    <BillingDashboardScreen
-      billings={billings}
-      metrics={metrics}
-      activePeriod={activePeriod ?? null}
-    />
-  );
+  return <BillingDashboardScreen billings={billings} metrics={metrics} activeMonth={activeMonth} />;
 }
