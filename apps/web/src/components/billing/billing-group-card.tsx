@@ -30,7 +30,7 @@ export function BillingGroupCard({
   professionalId?: string;
 }) {
   const appliedFees = (billing.applied_billing_fees as unknown as AppliedBillingFee[]) ?? [];
-  const totalCount = installments.length;
+  const totalCount = billing.installment_count;
   const sortedInstallments = [...installments].sort(
     (a, b) => a.installment_number - b.installment_number,
   );
@@ -73,7 +73,11 @@ export function BillingGroupCard({
                 )}
                 <StatusBadge status={installment.status} />
                 <span className="truncate text-muted-foreground text-xs">
-                  Venc.: {dayjs(installment.due_date).format("DD/MM/YYYY")}
+                  {installment.paid_at ? (
+                    <>Pago em: {dayjs(installment.paid_at).format("DD/MM/YYYY")}</>
+                  ) : (
+                    <>Venc.: {dayjs(installment.due_date).format("DD/MM/YYYY")}</>
+                  )}
                 </span>
               </div>
               <ProfessionalNetAmount

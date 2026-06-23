@@ -76,7 +76,11 @@ export function BillingGroupCardExpanded({
                   <StatusBadge status={installment.status} />
                 </div>
                 <span className="text-muted-foreground text-xs">
-                  Venc.: {dayjs(installment.due_date).format("DD/MM/YYYY")}
+                  {installment.paid_at ? (
+                    <>Pago em: {dayjs(installment.paid_at).format("DD/MM/YYYY")}</>
+                  ) : (
+                    <>Venc.: {dayjs(installment.due_date).format("DD/MM/YYYY")}</>
+                  )}
                 </span>
               </div>
               {professionals && installment.splitted_installment && (

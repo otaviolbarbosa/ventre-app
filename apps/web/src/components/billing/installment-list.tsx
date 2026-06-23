@@ -10,7 +10,7 @@ import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
-import { Check, ExternalLink, FileText, Image, LinkIcon, X } from "lucide-react";
+import { Check, CheckCircle, ExternalLink, FileText, Image, LinkIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -107,20 +107,24 @@ export function InstallmentList({
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-medium text-sm">
                     {installment.installment_number}
                   </div>
-                  <div>
+                  <div className="w-full space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{formatCurrency(netAmountCents)}</span>
-                      {totalFeesCents > 0 && (
-                        <span className="whitespace-nowrap text-muted-foreground text-xs">
-                          (−{formatCurrency(totalFeesCents)} taxas)
-                        </span>
-                      )}
+                      <div className="flex-1">
+                        <span className="font-medium">{formatCurrency(netAmountCents)}</span>
+                        {totalFeesCents > 0 && (
+                          <span className="whitespace-nowrap text-muted-foreground text-xs">
+                            (−{formatCurrency(totalFeesCents)} taxas)
+                          </span>
+                        )}
+                      </div>
                       <StatusBadge status={installment.status} />
                     </div>
-                    <div className="text-muted-foreground text-sm">
-                      Vencimento: {dayjs(installment.due_date).format("DD/MM/YYYY")}
+                    <div className="text-muted-foreground text-xs">
+                      {installment.status !== "pago" && (
+                        <>Vencimento: {dayjs(installment.due_date).format("DD/MM/YYYY")}</>
+                      )}
                       {displayPaidAmount > 0 && (
-                        <span className="ml-2">(Pago: {formatCurrency(displayPaidAmount)})</span>
+                        <>Pago em: {dayjs(installment.paid_at).format("DD/MM/YYYY")}</>
                       )}
                     </div>
                   </div>
@@ -146,7 +150,7 @@ export function InstallmentList({
                         </Button>
                       ))}
                   {installment.status !== "pago" && installment.status !== "cancelado" && (
-                    <>
+                    <div className="flex w-full justify-between">
                       {installment.payment_link && editingId !== installment.id && (
                         <Button variant="ghost" size="sm" asChild>
                           <a
@@ -174,9 +178,10 @@ export function InstallmentList({
                         variant="outline"
                         onClick={() => onRecordPayment(installment)}
                       >
+                        <CheckCircle className="mr-1 h-4 w-4" />
                         Registrar Pagamento
                       </Button>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
