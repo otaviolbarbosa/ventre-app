@@ -3,7 +3,7 @@
 import Avatar from "@/components/shared/avatar";
 import { Logo } from "@/components/shared/logo";
 import { useAuth } from "@/hooks/use-auth";
-import { isStaff } from "@/lib/access-control";
+import { isManager, isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
@@ -17,6 +17,7 @@ import {
   LogOut,
   Mail,
   PanelLeft,
+  Settings,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -39,6 +40,11 @@ const navigationStaff = [
   { name: "Financeiro", href: "/billing", icon: CircleDollarSign },
 ];
 
+const navigationManager = [
+  ...navigationStaff,
+  { name: "Configurações", href: "/settings", icon: Settings },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { signOut, profile } = useAuth();
@@ -49,10 +55,11 @@ export function Sidebar() {
     if (stored !== null) setIsCollapsed(stored === "true");
   }, []);
 
-  const navigation = useMemo(
-    () => (isStaff(profile) ? navigationStaff : navigationProfessionals),
-    [profile],
-  );
+  const navigation = useMemo(() => {
+    if (isManager(profile)) return navigationManager;
+    if (isStaff(profile)) return navigationStaff;
+    return navigationProfessionals;
+  }, [profile]);
 
   if (pathname === "/onboarding") {
     return null;

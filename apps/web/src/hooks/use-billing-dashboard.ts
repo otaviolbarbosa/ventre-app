@@ -5,8 +5,7 @@ import {
   FILTER_LABELS,
   PERIOD_OPTIONS,
   buildBillingMetrics,
-  filterInstallments,
-  flattenInstallments,
+  groupBillingsByFilter,
 } from "@/lib/billing/dashboard";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
@@ -29,8 +28,8 @@ export function useBillingDashboard({
     setActiveFilter((prev) => (prev === filter ? null : filter));
   }, []);
 
-  const filteredInstallments = useMemo(
-    () => filterInstallments(flattenInstallments(billings), activeFilter),
+  const filteredBillings = useMemo(
+    () => groupBillingsByFilter(billings, activeFilter),
     [billings, activeFilter],
   );
 
@@ -42,7 +41,7 @@ export function useBillingDashboard({
   return {
     activeFilter,
     handleFilterClick,
-    filteredInstallments,
+    filteredBillings,
     billingMetrics,
     activePeriodLabel,
     sectionTitle,

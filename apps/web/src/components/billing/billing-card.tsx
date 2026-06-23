@@ -1,10 +1,11 @@
 "use client";
 
-import { formatCurrency } from "@/lib/billing/calculations";
+import { type AppliedBillingFee, formatCurrency } from "@/lib/billing/calculations";
 import type { Tables } from "@ventre/supabase/types";
 import { Card, CardContent } from "@ventre/ui/card";
 import Link from "next/link";
 import { PaymentMethodBadge } from "./payment-method-badge";
+import { ProfessionalNetAmount } from "./professional-net-amount";
 import { StatusBadge } from "./status-badge";
 
 type Billing = Tables<"billings"> & {
@@ -15,14 +16,31 @@ type Billing = Tables<"billings"> & {
 export function BillingCard({
   billing,
   professionals,
+  professionalId,
 }: {
   billing: Billing;
   professionals?: Record<string, string>;
+  professionalId?: string;
 }) {
+  const appliedFees = (billing.applied_billing_fees as unknown as AppliedBillingFee[]) ?? [];
   const paidCount = billing.installments.filter((i) => i.status === "pago").length;
   const totalCount = billing.installments.length;
+
+  const splittedBilling = billing.splitted_billing as Record<string, number> | null;
+  const professionalGrossAmountCents =
+    !professionals && professionalId && splittedBilling
+      ? (splittedBilling[professionalId] ?? billing.total_amount)
+      : undefined;
+
+  const displayTotalAmount = professionalGrossAmountCents ?? billing.total_amount;
+  const paidRatio = billing.total_amount > 0 ? billing.paid_amount / billing.total_amount : 0;
+  const displayPaidAmount =
+    professionalGrossAmountCents !== undefined
+      ? Math.round(professionalGrossAmountCents * paidRatio)
+      : billing.paid_amount;
+
   const progressPercent =
-    billing.total_amount > 0 ? Math.round((billing.paid_amount / billing.total_amount) * 100) : 0;
+    displayTotalAmount > 0 ? Math.round((displayPaidAmount / displayTotalAmount) * 100) : 0;
 
   return (
     <Link href={`/patients/${billing.patient_id}/billing/${billing.id}`} className="block">
@@ -38,10 +56,10 @@ export function BillingCard({
 
           <div className="mt-3 flex items-center justify-between text-sm">
             <div>
-              <span className="font-semibold text-lg">{formatCurrency(billing.total_amount)}</span>
-              {billing.paid_amount > 0 && (
+              <span className="font-semibold text-lg">{formatCurrency(displayTotalAmount)}</span>
+              {displayPaidAmount > 0 && (
                 <span className="ml-2 whitespace-nowrap text-muted-foreground">
-                  ({formatCurrency(billing.paid_amount)} pago)
+                  ({formatCurrency(displayPaidAmount)} pago)
                 </span>
               )}
             </div>
@@ -52,12 +70,24 @@ export function BillingCard({
             <div className="mt-2 space-y-0.5 border-t pt-2">
               {Object.entries(billing.splitted_billing as Record<string, number>).map(
                 ([profId, amount]) => (
-                  <div key={profId} className="flex justify-between text-muted-foreground text-xs">
-                    <span>{professionals[profId] ?? profId}</span>
-                    <span>{formatCurrency(amount)}</span>
-                  </div>
+                  <ProfessionalNetAmount
+                    key={profId}
+                    professionalId={profId}
+                    professionalName={professionals[profId] ?? profId}
+                    grossAmountCents={amount}
+                    appliedFees={appliedFees}
+                  />
                 ),
               )}
+            </div>
+          )}
+          {professionalGrossAmountCents !== undefined && professionalId && (
+            <div className="mt-2 border-t pt-2">
+              <ProfessionalNetAmount
+                professionalId={professionalId}
+                grossAmountCents={professionalGrossAmountCents}
+                appliedFees={appliedFees}
+              />
             </div>
           )}
 

@@ -1,13 +1,16 @@
 "use client";
 
 import { getPatientsAction } from "@/actions/get-patients-action";
+import { BillingGroupCard } from "@/components/billing/billing-group-card";
+import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
+import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
-import { InstallmentCard } from "@/components/billing/installment-card";
 import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdown";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/hooks/use-auth";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
+import { useBillingViewMode } from "@/hooks/use-billing-view-mode";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type {
@@ -34,11 +37,12 @@ export default function BillingDashboardScreen({
 }: BillingDashboardScreenProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { viewMode, setViewMode } = useBillingViewMode();
 
   const {
     activeFilter,
     handleFilterClick,
-    filteredInstallments,
+    filteredBillings,
     billingMetrics,
     activePeriodLabel,
     sectionTitle,
@@ -99,8 +103,11 @@ export default function BillingDashboardScreen({
           )}
 
           <div>
-            <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
-            {filteredInstallments.length === 0 ? (
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-semibold text-lg">{sectionTitle}</h2>
+              <BillingViewSwitcher value={viewMode} onChange={setViewMode} />
+            </div>
+            {filteredBillings.length === 0 ? (
               <EmptyState
                 icon={Receipt}
                 title="Nenhuma cobrança"
@@ -110,13 +117,24 @@ export default function BillingDashboardScreen({
                     : "Suas cobranças aparecerão aqui."
                 }
               />
+            ) : viewMode === "expanded" ? (
+              <div className="flex flex-col gap-3">
+                {filteredBillings.map((billing) => (
+                  <BillingGroupCardExpanded
+                    key={billing.id}
+                    billing={billing}
+                    installments={billing.filteredInstallments}
+                    professionalId={user?.id as string}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {filteredInstallments.map((installment) => (
-                  <InstallmentCard
-                    key={installment.id}
-                    installment={installment}
-                    installmentCount={installment.billing_installment_count}
+                {filteredBillings.map((billing) => (
+                  <BillingGroupCard
+                    key={billing.id}
+                    billing={billing}
+                    installments={billing.filteredInstallments}
                     professionalId={user?.id as string}
                   />
                 ))}
