@@ -23,7 +23,7 @@ export default function PatientBillingPage() {
   const params = useParams();
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const [showModal, setShowModal] = useState(false);
-  const { isStaff } = useAuth();
+  const { isStaff, user } = useAuth();
 
   const { execute, result, isPending } = useAction(getPatientBillingsAction);
   const { execute: fetchProfessionals, result: professionalsResult } = useAction(
@@ -69,7 +69,12 @@ export default function PatientBillingPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {billings.map((billing) => (
-            <BillingCard key={billing.id} billing={billing} professionals={professionalsMap} />
+            <BillingCard
+              key={billing.id}
+              billing={billing}
+              professionals={professionalsMap}
+              professionalId={!isStaff ? user?.id : undefined}
+            />
           ))}
         </div>
       )}

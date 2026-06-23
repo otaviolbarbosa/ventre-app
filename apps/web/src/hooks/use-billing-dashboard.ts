@@ -4,8 +4,7 @@ import type { FilterKey } from "@/components/billing/dashboard-metrics";
 import {
   FILTER_LABELS,
   buildBillingMetrics,
-  filterInstallments,
-  flattenInstallments,
+  groupBillingsByFilter,
 } from "@/lib/billing/dashboard";
 import { dayjs } from "@/lib/dayjs";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
@@ -30,8 +29,8 @@ export function useBillingDashboard({
     setActiveFilter((prev) => (prev === filter ? null : filter));
   }, []);
 
-  const filteredInstallments = useMemo(
-    () => filterInstallments(flattenInstallments(billings), activeFilter),
+  const filteredBillings = useMemo(
+    () => groupBillingsByFilter(billings, activeFilter),
     [billings, activeFilter],
   );
 
@@ -43,7 +42,7 @@ export function useBillingDashboard({
   return {
     activeFilter,
     handleFilterClick,
-    filteredInstallments,
+    filteredBillings,
     billingMetrics,
     activeMonthLabel,
     sectionTitle,

@@ -1,13 +1,18 @@
-import { calculateInstallmentAmount, calculateInstallmentDates } from "@/lib/billing/calculations";
+import {
+  applyBillingFeesToSplit,
+  calculateInstallmentAmount,
+  calculateInstallmentDates,
+} from "@/lib/billing/calculations";
 import { scheduleBillingNotifications } from "@/lib/billing/notifications";
 import { getServerUser } from "@/lib/server-auth";
 import type { CreateBillingInput } from "@/lib/validations/billing";
+import { getActiveEnterpriseBillingFees } from "@/services/enterprise-billing-fees";
 import {
   createServerSupabaseAdmin as createAdmin,
   type createServerSupabaseAdmin,
   createServerSupabaseClient,
 } from "@ventre/supabase/server";
-import type { Tables } from "@ventre/supabase/types";
+import type { Json, Tables } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
@@ -331,6 +336,11 @@ export async function createBilling(
       ? (installments_dates ?? [])
       : calculateInstallmentDates(first_due_date ?? "", installment_count, installment_interval);
 
+  const activeFees = enterpriseId
+    ? await getActiveEnterpriseBillingFees(supabaseAdmin, enterpriseId)
+    : [];
+  const appliedBillingFees = applyBillingFeesToSplit(splittedBilling, activeFees);
+
   const { data: billing, error: billingError } = await supabase
     .from("billings")
     .insert({
@@ -343,6 +353,7 @@ export async function createBilling(
       installment_interval: installment_interval ?? null,
       installments_dates: dates.length > 0 ? dates : null,
       notes,
+      applied_billing_fees: appliedBillingFees as unknown as Json,
       ...(enterpriseId ? { enterprise_id: enterpriseId } : {}),
     })
     .select()

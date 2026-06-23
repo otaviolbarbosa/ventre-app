@@ -1,6 +1,6 @@
 "use client";
 import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
-import { isStaff } from "@/lib/access-control";
+import { isManager, isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import {
   BriefcaseMedicalIcon,
@@ -10,6 +10,7 @@ import {
   Home,
   type LucideProps,
   Mail,
+  Settings,
   Users,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -127,6 +128,16 @@ export default function BottomNav() {
           icon: CircleDollarSign,
           isActive: pathname.startsWith("/billing"),
         },
+        ...(isManager(profile)
+          ? [
+              {
+                name: "Configurações",
+                href: "/settings",
+                icon: Settings,
+                isActive: pathname.startsWith("/settings"),
+              },
+            ]
+          : []),
       ]
     : [
         {

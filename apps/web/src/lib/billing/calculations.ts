@@ -1,9 +1,97 @@
 import { dayjs } from "@/lib/dayjs";
-import type { Database } from "@ventre/supabase/types";
+import type { Database, Tables } from "@ventre/supabase/types";
 
 type BillingStatus = Database["public"]["Enums"]["billing_status"];
 type InstallmentStatus = Database["public"]["Enums"]["installment_status"];
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
+
+export type SplittedBilling = Record<string, number>;
+
+export interface AppliedBillingFee {
+  professional_id: string;
+  fee_id: string;
+  name: string;
+  fee_type: "fixed" | "percentage";
+  value: number;
+  base_amount_cents: number;
+  computed_amount_cents: number;
+}
+
+export function applyBillingFeesToSplit(
+  splittedBilling: SplittedBilling,
+  fees: Tables<"enterprise_billing_fees">[],
+): AppliedBillingFee[] {
+  const activeFees = fees.filter((fee) => fee.is_active);
+  const appliedFees: AppliedBillingFee[] = [];
+
+  for (const [professionalId, baseAmountCents] of Object.entries(splittedBilling)) {
+    for (const fee of activeFees) {
+      const rawAmount =
+        fee.fee_type === "fixed" ? fee.value : Math.round(baseAmountCents * (fee.value / 100));
+      const computedAmountCents = Math.min(Math.round(rawAmount), baseAmountCents);
+
+      appliedFees.push({
+        professional_id: professionalId,
+        fee_id: fee.id,
+        name: fee.name,
+        fee_type: fee.fee_type,
+        value: fee.value,
+        base_amount_cents: baseAmountCents,
+        computed_amount_cents: computedAmountCents,
+      });
+    }
+  }
+
+  return appliedFees;
+}
+
+export interface AppliedFeeLineItem {
+  fee_id: string;
+  name: string;
+  fee_type: "fixed" | "percentage";
+  value: number;
+  amountCents: number;
+}
+
+export interface NetAmountResult {
+  netAmountCents: number;
+  totalFeesCents: number;
+  feeLineItems: AppliedFeeLineItem[];
+}
+
+export function computeNetAmountCents(
+  grossAmountCents: number,
+  appliedFees: AppliedBillingFee[],
+  professionalId: string,
+): NetAmountResult {
+  const professionalFees = appliedFees.filter((fee) => fee.professional_id === professionalId);
+
+  if (professionalFees.length === 0) {
+    return { netAmountCents: grossAmountCents, totalFeesCents: 0, feeLineItems: [] };
+  }
+
+  const baseAmountCents = professionalFees[0]?.base_amount_cents ?? grossAmountCents;
+  const ratio = baseAmountCents === 0 ? 0 : grossAmountCents / baseAmountCents;
+  const isBillingLevel = baseAmountCents === grossAmountCents;
+
+  const feeLineItems: AppliedFeeLineItem[] = professionalFees.map((fee) => ({
+    fee_id: fee.fee_id,
+    name: fee.name,
+    fee_type: fee.fee_type,
+    value: fee.value,
+    amountCents: isBillingLevel
+      ? fee.computed_amount_cents
+      : Math.round(fee.computed_amount_cents * ratio),
+  }));
+
+  const totalFeesCents = feeLineItems.reduce((sum, item) => sum + item.amountCents, 0);
+
+  return {
+    netAmountCents: grossAmountCents - totalFeesCents,
+    totalFeesCents,
+    feeLineItems,
+  };
+}
 
 export function calculateInstallmentAmount(totalAmount: number, count: number): number[] {
   const base = Math.floor(totalAmount / count);

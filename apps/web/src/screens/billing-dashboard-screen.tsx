@@ -1,13 +1,16 @@
 "use client";
 
-import { getPatientsAction } from "@/actions/get-patients-action";
 import { getBillingDashboardAction } from "@/actions/get-billing-dashboard-action";
+import { getPatientsAction } from "@/actions/get-patients-action";
+import { BillingGroupCard } from "@/components/billing/billing-group-card";
+import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
+import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
-import { InstallmentCard } from "@/components/billing/installment-card";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/hooks/use-auth";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
+import { useBillingViewMode } from "@/hooks/use-billing-view-mode";
 import { getMonthRange } from "@/lib/billing/period-range";
 import { dayjs } from "@/lib/dayjs";
 import NewBillingModal from "@/modals/new-billing-modal";
@@ -16,7 +19,6 @@ import type {
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
 import { Button } from "@ventre/ui/button";
-import { Skeleton } from "@ventre/ui/skeleton";
 import { Plus, Receipt } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useState } from "react";
@@ -33,9 +35,10 @@ export default function BillingDashboardScreen({
   activeMonth: initialActiveMonth,
 }: BillingDashboardScreenProps) {
   const { user } = useAuth();
+  const { viewMode, setViewMode } = useBillingViewMode();
   const [currentMonth, setCurrentMonth] = useState<string | null>(initialActiveMonth);
 
-  const { execute, result, isPending } = useAction(getBillingDashboardAction);
+  const { execute, result } = useAction(getBillingDashboardAction);
 
   const billings: BillingWithInstallments[] =
     (result.data?.billings as BillingWithInstallments[] | undefined) ?? initialBillings;
@@ -63,7 +66,7 @@ export default function BillingDashboardScreen({
   const {
     activeFilter,
     handleFilterClick,
-    filteredInstallments,
+    filteredBillings,
     billingMetrics,
     activeMonthLabel,
     sectionTitle,
@@ -104,14 +107,11 @@ export default function BillingDashboardScreen({
           )}
 
           <div>
-            <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
-            {isPending ? (
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
-                ))}
-              </div>
-            ) : filteredInstallments.length === 0 ? (
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-semibold text-lg">{sectionTitle}</h2>
+              <BillingViewSwitcher value={viewMode} onChange={setViewMode} />
+            </div>
+            {filteredBillings.length === 0 ? (
               <EmptyState
                 icon={Receipt}
                 title="Nenhuma cobrança"
@@ -121,13 +121,24 @@ export default function BillingDashboardScreen({
                     : "Suas cobranças aparecerão aqui."
                 }
               />
+            ) : viewMode === "expanded" ? (
+              <div className="flex flex-col gap-3">
+                {filteredBillings.map((billing) => (
+                  <BillingGroupCardExpanded
+                    key={billing.id}
+                    billing={billing}
+                    installments={billing.filteredInstallments}
+                    professionalId={user?.id as string}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {filteredInstallments.map((installment) => (
-                  <InstallmentCard
-                    key={installment.id}
-                    installment={installment}
-                    installmentCount={installment.billing_installment_count}
+                {filteredBillings.map((billing) => (
+                  <BillingGroupCard
+                    key={billing.id}
+                    billing={billing}
+                    installments={billing.filteredInstallments}
                     professionalId={user?.id as string}
                   />
                 ))}

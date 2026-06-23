@@ -2,12 +2,15 @@
 
 import { getEnterpriseBillingAction as fetchEnterpriseBilling } from "@/actions/get-enterprise-billing-action";
 import { getEnterprisePatientsForBillingAction } from "@/actions/get-enterprise-patients-for-billing-action";
+import { BillingGroupCard } from "@/components/billing/billing-group-card";
+import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
+import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
-import { InstallmentCard } from "@/components/billing/installment-card";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
+import { useBillingViewMode } from "@/hooks/use-billing-view-mode";
 import { getMonthRange } from "@/lib/billing/period-range";
 import { dayjs } from "@/lib/dayjs";
 import NewBillingModal from "@/modals/new-billing-modal";
@@ -36,6 +39,7 @@ export default function BillingDashboardEnterpriseScreen({
   activeMonth: initialActiveMonth,
 }: BillingDashboardEnterpriseScreenProps) {
   const [professionalFilter, setProfessionalFilter] = useState<string | null>(null);
+  const { viewMode, setViewMode } = useBillingViewMode();
   const [currentMonth, setCurrentMonth] = useState<string | null>(initialActiveMonth);
 
   const { execute, result, isPending } = useAction(fetchEnterpriseBilling);
@@ -76,7 +80,7 @@ export default function BillingDashboardEnterpriseScreen({
   const {
     activeFilter,
     handleFilterClick,
-    filteredInstallments,
+    filteredBillings,
     billingMetrics,
     activeMonthLabel,
     sectionTitle,
@@ -142,14 +146,17 @@ export default function BillingDashboardEnterpriseScreen({
 
           {/* Installments list */}
           <div>
-            <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="font-semibold text-lg">{sectionTitle}</h2>
+              <BillingViewSwitcher value={viewMode} onChange={setViewMode} />
+            </div>
             {isPending ? (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {[0, 1, 2, 4].map((i) => (
                   <Skeleton key={i} className="h-24 w-full rounded-xl" />
                 ))}
               </div>
-            ) : filteredInstallments.length === 0 ? (
+            ) : filteredBillings.length === 0 ? (
               <EmptyState
                 icon={Receipt}
                 title="Nenhuma cobrança"
@@ -159,13 +166,24 @@ export default function BillingDashboardEnterpriseScreen({
                     : "As cobranças dos profissionais aparecerão aqui."
                 }
               />
+            ) : viewMode === "expanded" ? (
+              <div className="flex flex-col gap-3">
+                {filteredBillings.map((billing) => (
+                  <BillingGroupCardExpanded
+                    key={billing.id}
+                    billing={billing}
+                    installments={billing.filteredInstallments}
+                    professionals={professionalsMap}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {filteredInstallments.map((installment) => (
-                  <InstallmentCard
-                    key={installment.id}
-                    installment={installment}
-                    installmentCount={installment.billing_installment_count}
+                {filteredBillings.map((billing) => (
+                  <BillingGroupCard
+                    key={billing.id}
+                    billing={billing}
+                    installments={billing.filteredInstallments}
                     professionals={professionalsMap}
                   />
                 ))}
