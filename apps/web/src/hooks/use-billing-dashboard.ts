@@ -3,24 +3,25 @@
 import type { FilterKey } from "@/components/billing/dashboard-metrics";
 import {
   FILTER_LABELS,
-  PERIOD_OPTIONS,
   buildBillingMetrics,
   groupBillingsByFilter,
 } from "@/lib/billing/dashboard";
-import type { BillingPeriod } from "@/lib/billing/period-range";
+import { dayjs } from "@/lib/dayjs";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
 import { useCallback, useMemo, useState } from "react";
 
 type UseBillingDashboardOptions = {
   billings: BillingWithInstallments[];
   metrics: DashboardMetrics | null;
-  activePeriod: BillingPeriod | null;
+  activeMonth: string;
 };
+
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 export function useBillingDashboard({
   billings,
   metrics,
-  activePeriod,
+  activeMonth,
 }: UseBillingDashboardOptions) {
   const [activeFilter, setActiveFilter] = useState<FilterKey | null>(null);
 
@@ -35,7 +36,7 @@ export function useBillingDashboard({
 
   const billingMetrics = useMemo(() => (metrics ? buildBillingMetrics(metrics) : []), [metrics]);
 
-  const activePeriodLabel = PERIOD_OPTIONS.find((o) => o.key === activePeriod)?.label;
+  const activeMonthLabel = `${capitalize(dayjs(activeMonth).format("MMMM"))} de ${dayjs(activeMonth).format("YYYY")}`;
   const sectionTitle = activeFilter ? FILTER_LABELS[activeFilter] : "Cobranças Recentes";
 
   return {
@@ -43,7 +44,7 @@ export function useBillingDashboard({
     handleFilterClick,
     filteredBillings,
     billingMetrics,
-    activePeriodLabel,
+    activeMonthLabel,
     sectionTitle,
   };
 }

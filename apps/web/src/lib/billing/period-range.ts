@@ -33,3 +33,12 @@ export function getPeriodRange(period: BillingPeriod): { startDate: string; endD
       return { startDate: fmt(today), endDate: fmt(today.add(3, "month")) };
   }
 }
+
+export function getMonthRange(month: string): { startDate: string; endDate: string } {
+  const fmt = (d: dayjs.Dayjs) => d.format("YYYY-MM-DD");
+  const m = dayjs(month);
+  return {
+    startDate: fmt(m.startOf("month")),
+    endDate: fmt(m.endOf("month")),
+  };
+}

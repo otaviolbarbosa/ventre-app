@@ -6,24 +6,22 @@ import { BillingGroupCard } from "@/components/billing/billing-group-card";
 import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
 import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
-import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdown";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
 import { useBillingViewMode } from "@/hooks/use-billing-view-mode";
-import type { BillingPeriod } from "@/lib/billing/period-range";
-import { getPeriodRange } from "@/lib/billing/period-range";
+import { getMonthRange } from "@/lib/billing/period-range";
+import { dayjs } from "@/lib/dayjs";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type { EnterpriseBillingProfessional } from "@/services/billing";
 import type {
   BillingWithInstallments,
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
-import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { Plus, Receipt, X } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useState } from "react";
 
@@ -31,18 +29,18 @@ type BillingDashboardEnterpriseScreenProps = {
   initialBillings: BillingWithInstallments[];
   initialMetrics: DashboardMetricsType | null;
   initialProfessionals: EnterpriseBillingProfessional[];
-  activePeriod: BillingPeriod | null;
+  activeMonth: string;
 };
 
 export default function BillingDashboardEnterpriseScreen({
   initialBillings,
   initialMetrics,
   initialProfessionals,
-  activePeriod,
+  activeMonth: initialActiveMonth,
 }: BillingDashboardEnterpriseScreenProps) {
   const [professionalFilter, setProfessionalFilter] = useState<string | null>(null);
-  const [period, setPeriod] = useState<BillingPeriod | null>(activePeriod);
   const { viewMode, setViewMode } = useBillingViewMode();
+  const [currentMonth, setCurrentMonth] = useState<string | null>(initialActiveMonth);
 
   const { execute, result, isPending } = useAction(fetchEnterpriseBilling);
 
@@ -54,8 +52,8 @@ export default function BillingDashboardEnterpriseScreen({
     result.data?.professionals ?? initialProfessionals;
 
   const fetchData = useCallback(
-    (profId: string | null, currentPeriod: BillingPeriod | null) => {
-      const dateRange = currentPeriod ? getPeriodRange(currentPeriod) : undefined;
+    (profId: string | null, month: string | null) => {
+      const dateRange = month ? getMonthRange(month) : undefined;
       execute({
         professionalId: profId ?? undefined,
         startDate: dateRange?.startDate,
@@ -65,32 +63,32 @@ export default function BillingDashboardEnterpriseScreen({
     [execute],
   );
 
-  const handlePeriodSelect = (selectedPeriod: BillingPeriod) => {
-    const newPeriod = period === selectedPeriod ? null : selectedPeriod;
-    setPeriod(newPeriod);
-    fetchData(professionalFilter, newPeriod);
-  };
-
-  const handleClearPeriod = () => {
-    setPeriod(null);
-    fetchData(professionalFilter, null);
-  };
-
   const handleProfessionalClick = (id: string) => {
     const isSame = professionalFilter === id;
     const newFilter = isSame ? null : id;
     setProfessionalFilter(newFilter);
-    fetchData(newFilter, period);
+    fetchData(newFilter, currentMonth);
   };
+
+  const handleMonthChange = (month: string | null) => {
+    setCurrentMonth(month);
+    fetchData(professionalFilter, month);
+  };
+
+  const activeMonthForHook = currentMonth ?? dayjs().format("YYYY-MM");
 
   const {
     activeFilter,
     handleFilterClick,
     filteredBillings,
     billingMetrics,
-    activePeriodLabel,
+    activeMonthLabel,
     sectionTitle,
-  } = useBillingDashboard({ billings, metrics, activePeriod: period });
+  } = useBillingDashboard({
+    billings,
+    metrics,
+    activeMonth: activeMonthForHook,
+  });
 
   const [showNewBillingModal, setShowNewBillingModal] = useState(false);
   const { execute: fetchBillingPatients, result: billingPatientsResult } = useAction(
@@ -125,18 +123,8 @@ export default function BillingDashboardEnterpriseScreen({
         <div className="space-y-4 px-4 md:px-6">
           {/* Period + professional filters bar */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {period && (
-                <Badge variant="outline" className="gap-1">
-                  {activePeriodLabel}
-                  <button type="button" onClick={handleClearPeriod}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-            </div>
+            <div />
             <div className="flex items-center gap-2">
-              <PeriodFilterDropdown activePeriod={period} onSelect={handlePeriodSelect} />
               <Button size="sm" className="gradient-primary" onClick={handleOpenNewBilling}>
                 <Plus className="mr-1 h-4 w-4" />
                 Nova Cobrança
@@ -150,6 +138,9 @@ export default function BillingDashboardEnterpriseScreen({
               metrics={billingMetrics}
               activeFilter={activeFilter}
               onFilterClick={handleFilterClick}
+              activeMonth={activeMonthForHook}
+              activeMonthLabel={activeMonthLabel}
+              onMonthChange={handleMonthChange}
             />
           )}
 
@@ -207,7 +198,7 @@ export default function BillingDashboardEnterpriseScreen({
         patients={billingPatientsResult.data?.patients ?? []}
         showModal={showNewBillingModal}
         setShowModal={setShowNewBillingModal}
-        callback={() => fetchData(professionalFilter, period)}
+        callback={() => fetchData(professionalFilter, currentMonth)}
       />
     </div>
   );
