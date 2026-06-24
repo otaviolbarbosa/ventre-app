@@ -87,14 +87,10 @@ export function DashboardMetrics({
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={handlePrev}
-              // disabled={isAllTime}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {/* <span className="min-w-[148px] text-center font-semibold text-sm">
-              {isAllTime ? "Todos os meses" : activeMonthLabel}
-            </span> */}
-            <span className="min-w-[148px] text-center font-semibold text-sm">
+            <span className="min-w-[148px] text-center font-poppins font-semibold text-sm">
               {activeMonthLabel}
             </span>
             <Button
@@ -102,7 +98,6 @@ export function DashboardMetrics({
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               onClick={handleNext}
-              // disabled={isAllTime}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -130,9 +125,6 @@ export function DashboardMetrics({
                     </p>
                   </div>
                   <TotalAmount amount={metric.amount} />
-                  {/* <p className="font-bold text-foreground text-lg leading-none">
-                    {formatCurrency(metric.amount)}
-                  </p> */}
                 </CardContent>
               </Card>
             );

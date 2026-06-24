@@ -155,7 +155,9 @@ function AppointmentGroup({
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-start gap-2">
                             <span className="font-medium">
-                              {appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
+                              {appointment.patient?.name ??
+                                appointment.external_patient_name ??
+                                "Paciente externa"}
                             </span>
                             <Badge variant="outline" className="text-xs">
                               {typeLabels[appointment.type] || appointment.type}
@@ -303,13 +305,8 @@ export function AppointmentListView({
       {" "}
       <div className="flex items-center">
         <div className="flex flex-1 justify-between gap-3">
-          <div>
-            <p className="font-medium text-muted-foreground text-sm">
-              {dayjs(visibleMonth).format("YYYY")}
-            </p>
-            <h2 className="font-semibold text-xl capitalize">
-              {dayjs(visibleMonth).format("MMMM")}
-            </h2>
+          <div className="flex items-center font-poppins font-semibold text-lg capitalize">
+            {dayjs(visibleMonth).format("MMM/YYYY")}
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" onClick={() => changeMonth("previous")}>

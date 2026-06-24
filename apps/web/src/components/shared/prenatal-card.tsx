@@ -108,7 +108,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-5 flex items-start justify-between">
-      <h3 className="font-bold text-xl tracking-tight">{title}</h3>
+      <h3 className="font-poppins font-semibold text-lg tracking-tight">{title}</h3>
       {action}
     </div>
   );

@@ -73,10 +73,8 @@ export default function PatientProfilePage() {
       <div className="space-y-6">
         <Accordion type="multiple" className="w-full">
           <AccordionItem value="informacoes">
-            <AccordionTrigger className="font-semibold text-base">
-              <div className="flex w-full items-center justify-between pr-4">
-                <span>Informações da Gestante</span>
-              </div>
+            <AccordionTrigger className="font-poppins font-semibold text-base">
+              Informações da Gestante
             </AccordionTrigger>
             <AccordionContent className="relative space-y-4 pt-4">
               <PatientInfo
@@ -89,14 +87,16 @@ export default function PatientProfilePage() {
           </AccordionItem>
 
           <AccordionItem value="documentos">
-            <AccordionTrigger className="font-semibold text-base">Documentos</AccordionTrigger>
+            <AccordionTrigger className="font-poppins font-semibold text-base">
+              Documentos
+            </AccordionTrigger>
             <AccordionContent>
               <PatientDocuments patientId={patient.id} />
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="evolucao">
-            <AccordionTrigger className="font-semibold text-base">
+            <AccordionTrigger className="font-poppins font-semibold text-base">
               Evolução da Paciente
             </AccordionTrigger>
             <AccordionContent>
