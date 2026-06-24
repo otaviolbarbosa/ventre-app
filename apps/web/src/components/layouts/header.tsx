@@ -9,9 +9,10 @@ import { useEffect, useState } from "react";
 interface HeaderProps {
   title?: React.ReactNode;
   back?: string | boolean;
+  subtitle?: React.ReactNode;
 }
 
-export function Header({ title, back }: HeaderProps) {
+export function Header({ title, back, subtitle }: HeaderProps) {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -44,31 +45,38 @@ export function Header({ title, back }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 flex min-h-16 items-center gap-2 bg-background px-4 transition-shadow duration-300 md:px-6",
+        "sticky top-0 z-40 flex min-h-16 items-center bg-background px-4 py-3 transition-shadow duration-300 md:px-6",
         isScrolled && "shadow-gray-200 shadow-lg",
       )}
     >
-      {/* Back button */}
-      {back && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mx-0 w-6 hover:bg-transparent active:bg-transparent md:hidden"
-          onClick={handleGoBack}
-        >
-          <ChevronLeft />
-        </Button>
-      )}
-      {/* Title */}
-      {title && (
-        <div className="min-w-0 flex-1">
-          {title && (
-            <h1 className="truncate font-poppins font-semibold text-xl tracking-tight">{title}</h1>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          {/* Back button */}
+          {back && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mx-0 w-6 hover:bg-transparent active:bg-transparent md:hidden"
+              onClick={handleGoBack}
+            >
+              <ChevronLeft />
+            </Button>
           )}
+          {/* Title */}
+          {title && (
+            <div className="min-w-0 flex-1">
+              {title && (
+                <h1 className="truncate font-poppins font-semibold text-xl tracking-tight">
+                  {title}
+                </h1>
+              )}
+            </div>
+          )}
+          <div className="flex justify-center gap-2">
+            <NotificationBell />
+          </div>
         </div>
-      )}
-      <div className="flex justify-center gap-2">
-        <NotificationBell />
+        {subtitle && <div className="mt-0.5">{subtitle}</div>}
       </div>
     </header>
   );

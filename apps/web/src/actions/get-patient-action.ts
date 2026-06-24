@@ -13,7 +13,7 @@ export const getPatientAction = authActionClient
     const { data: patient, error } = await supabase
       .from("patients")
       .select(
-        "*, pregnancies(id, due_date, dum, has_finished, born_at, delivery_method, observations, created_at, updated_at, patient_id)",
+        "*, pregnancies(id, baby_name, due_date, dum, has_finished, born_at, delivery_method, observations, created_at, updated_at, patient_id)",
       )
       .eq("id", parsedInput.patientId)
       .single();
