@@ -84,7 +84,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   className="-top-4 absolute right-0 hidden sm:flex"
                   onClick={() => setShowMapModal(true)}
                 >
-                  Navegar para o endereço
+                  Abrir mapa
                   <MapPinned />
                 </Button>
                 <Button

@@ -109,7 +109,7 @@ export default function BillingDashboardScreen({
 
           <div>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="font-semibold text-lg">{sectionTitle}</h2>
+              <h2 className="font-medium font-poppins text-lg">{sectionTitle}</h2>
               <BillingViewSwitcher value={viewMode} onChange={setViewMode} />
             </div>
             {filteredBillings.length === 0 ? (
