@@ -20,6 +20,7 @@ export type PatientWithPregnancyFields = Patient & {
   born_at?: string | null;
   delivery_method?: Enums<"delivery_method"> | null;
   observations?: string | null;
+  address?: Record<string, string | null> | null;
 };
 
 type GetMyPatientsResult = {
@@ -63,7 +64,7 @@ export async function getMyPatients(
     let pregnanciesQuery = supabase
       .from("pregnancies")
       .select(
-        "due_date, dum, has_finished, born_at, observations, patients!inner(id, name, phone, email, street, neighborhood, complement, number, city, state, zipcode, date_of_birth, created_at, updated_at, created_by, user_id)",
+        "due_date, dum, has_finished, born_at, observations, patients!inner(id, name, phone, email, date_of_birth, created_at, updated_at, created_by, user_id, addresses(street, number, complement, neighborhood, city, state, zipcode))",
       )
       .in("patient_id", patientIds)
       .gte("due_date", startDate)
@@ -79,9 +80,14 @@ export async function getMyPatients(
     }
 
     rows = pregnanciesData.map((preg) => {
-      const patient = preg.patients as unknown as Patient;
+      const { addresses: addrs, ...patient } = preg.patients as unknown as Patient & {
+        addresses: unknown[];
+      };
+      const address =
+        Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Record<string, string>) : null;
       return {
         ...patient,
+        address,
         due_date: preg.due_date ?? null,
         dum: preg.dum ?? null,
         has_finished: preg.has_finished ?? false,
@@ -102,7 +108,8 @@ export async function getMyPatients(
       page_offset: offset,
     });
 
-    const rpcRows = (data as (PatientWithPregnancyFields & { total_count: number })[]) || [];
+    const rpcRows =
+      (data as unknown as (PatientWithPregnancyFields & { total_count: number })[]) || [];
     totalCount = rpcRows.length > 0 ? Number(rpcRows[0]?.total_count) : 0;
     rows = rpcRows;
   }
@@ -143,16 +150,24 @@ export async function getDueDatesForUser(userId: string): Promise<{ due_date: st
   return (data ?? []).map((p) => ({ due_date: p.due_date ?? null }));
 }
 
-export async function getPatientById(patientId: string): Promise<Patient | null> {
+export async function getPatientById(
+  patientId: string,
+): Promise<(Patient & { address: Record<string, string | null> | null }) | null> {
   const supabase = await createServerSupabaseClient();
 
-  const { data: patient } = await supabase
+  const { data } = await supabase
     .from("patients")
-    .select("*")
+    .select("*, addresses(street, number, complement, neighborhood, city, state, zipcode)")
     .eq("id", patientId)
     .single();
 
-  return patient;
+  if (!data) return null;
+
+  const { addresses: addrs, ...patient } = data as typeof data & { addresses: unknown[] };
+  const address =
+    Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Record<string, string | null>) : null;
+
+  return { ...patient, address };
 }
 
 export async function createPatient(
@@ -181,13 +196,6 @@ export async function createPatient(
     email: data.email,
     phone: data.phone,
     partner_name: data.partner_name || null,
-    street: data.street,
-    neighborhood: data.neighborhood,
-    complement: data.complement,
-    number: data.number,
-    city: data.city,
-    state: data.state,
-    zipcode: data.zipcode,
     created_by: responsibleProfessionalId,
   };
 
@@ -199,6 +207,14 @@ export async function createPatient(
 
   if (patientError) {
     throw new Error(patientError.message);
+  }
+
+  if (data.address && Object.values(data.address).some(Boolean)) {
+    await supabaseAdmin.from("addresses").insert({
+      patient_id: patient.id,
+      user_id: patient.user_id ?? null,
+      ...data.address,
+    });
   }
 
   // Create pregnancy record with due_date, dum, observations

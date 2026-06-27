@@ -1,16 +1,13 @@
 "use client";
 
-import { updateProfileAction } from "@/actions/update-profile-action";
 import { useAuth } from "@/hooks/use-auth";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { InputMask } from "@react-input/mask";
+import { EditProfileModal } from "@/modals/edit-profile-modal";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import type { Tables } from "@ventre/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
 import { Button } from "@ventre/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
 import { Separator } from "@ventre/ui/separator";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import {
   Bell,
   Camera,
@@ -21,17 +18,25 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useRef, useState } from "react";
 
 type Profile = Tables<"users">;
 
+type Address = {
+  zipcode?: string | null;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+};
+
 type ProfileScreenProps = {
   profile: Profile;
+  address?: Address | null;
 };
 
 type MenuItemProps = {
@@ -75,12 +80,7 @@ function getInitials(name: string | null): string {
     .slice(0, 2);
 }
 
-const editProfileSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  phone: z.string().optional(),
-});
-
-export default function ProfileScreen({ profile }: ProfileScreenProps) {
+export default function ProfileScreen({ profile, address }: ProfileScreenProps) {
   const router = useRouter();
   const { signOut } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,41 +90,8 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
   const [profileName, setProfileName] = useState(profile.name || "");
   const [profilePhone, setProfilePhone] = useState(profile.phone || "");
 
-  const form = useForm<z.infer<typeof editProfileSchema>>({
-    resolver: zodResolver(editProfileSchema),
-    defaultValues: {
-      name: profile.name || "",
-      phone: profile.phone || "",
-    },
-  });
-
-  useEffect(() => {
-    if (isEditModalOpen) {
-      form.reset({
-        name: profileName,
-        phone: profilePhone,
-      });
-    }
-  }, [isEditModalOpen, profileName, profilePhone, form]);
-
   const handleLogout = async () => {
     await signOut();
-  };
-
-  const { executeAsync: saveProfile } = useAction(updateProfileAction);
-
-  const handleSaveProfile = async (values: z.infer<typeof editProfileSchema>) => {
-    const result = await saveProfile({ name: values.name, phone: values.phone });
-
-    if (!result?.data?.profile) {
-      alert(result?.serverError ?? "Erro ao salvar perfil");
-      return;
-    }
-
-    setProfileName(result.data.profile.name ?? "");
-    setProfilePhone(result.data.profile.phone ?? "");
-    setIsEditModalOpen(false);
-    router.refresh();
   };
 
   const handleAvatarClick = () => {
@@ -205,6 +172,9 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
       {/* Name and Email */}
       <h1 className="mt-4 font-bold text-xl">{profileName}</h1>
       <p className="text-muted-foreground">{profile.email}</p>
+      <p className="font-semibold text-foreground">
+        {professionalTypeLabels[profile.professional_type as ProfessionalType]}
+      </p>
 
       {/* Edit Profile Button */}
       <Button
@@ -214,72 +184,18 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
         Editar Perfil
       </Button>
 
-      {/* Edit Profile Modal */}
-      <ContentModal
+      <EditProfileModal
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
-        title="Editar Perfil"
-        description="Atualize suas informações pessoais"
-      >
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSaveProfile)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Seu nome completo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <InputMask
-                      mask="(__) _____-____"
-                      replacement={{ _: /\d/ }}
-                      placeholder="(00) 00000-0000"
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:font-medium file:text-foreground file:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => setIsEditModalOpen(false)}
-                disabled={form.formState.isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="gradient-primary flex-1"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Salvar"
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </ContentModal>
+        name={profileName}
+        phone={profilePhone}
+        address={address}
+        onSuccess={(name, phone) => {
+          setProfileName(name);
+          setProfilePhone(phone);
+          router.refresh();
+        }}
+      />
 
       {/* Menu Section 1 */}
       <div className="mt-8 w-full">

@@ -13,7 +13,7 @@ const schema = z.object({
 export const updatePatientAction = authActionClient
   .inputSchema(schema)
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
-    const { due_date, dum, baby_name, observations, ...patientFields } = parsedInput.data;
+    const { due_date, dum, baby_name, observations, address, ...patientFields } = parsedInput.data;
 
     const { data: patient, error } = await supabase
       .from("patients")
@@ -23,6 +23,17 @@ export const updatePatientAction = authActionClient
       .single();
 
     if (error) throw new Error(error.message);
+
+    if (address !== undefined) {
+      const { error: addressError } = await supabase
+        .from("addresses")
+        .upsert(
+          { ...address, patient_id: parsedInput.patientId },
+          { onConflict: "patient_id" },
+        );
+
+      if (addressError) throw new Error(addressError.message);
+    }
 
     // Update pregnancy fields if any pregnancy-specific fields were provided
     if (

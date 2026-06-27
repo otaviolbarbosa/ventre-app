@@ -4,6 +4,7 @@ import { updatePatientAction } from "@/actions/update-patient-action";
 import { ESTADOS_BR } from "@/lib/constants";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type UpdatePatientInput, updatePatientSchema } from "@/lib/validations/patient";
+import type { PatientAddress } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
 import { InputMask } from "@react-input/mask";
@@ -24,6 +25,7 @@ type PatientWithPrenatalDates = Tables<"patients"> & {
   due_date?: string | null;
   dum?: string | null;
   observations?: string | null;
+  address?: PatientAddress | null;
 };
 
 type EditPatientModalProps = {
@@ -34,7 +36,8 @@ type EditPatientModalProps = {
 };
 
 function hasAddress(patient: PatientWithPrenatalDates) {
-  return !!(patient.zipcode || patient.street || patient.city);
+  const addr = patient.address;
+  return !!(addr?.zipcode || addr?.street || addr?.city);
 }
 
 export function EditPatientModal({
@@ -48,10 +51,10 @@ export function EditPatientModal({
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
       if (!data) return;
-      if (data.street) form.setValue("street", data.street);
-      if (data.neighborhood) form.setValue("neighborhood", data.neighborhood);
-      if (data.city) form.setValue("city", data.city);
-      if (data.state) form.setValue("state", data.state);
+      if (data.street) form.setValue("address.street", data.street);
+      if (data.neighborhood) form.setValue("address.neighborhood", data.neighborhood);
+      if (data.city) form.setValue("address.city", data.city);
+      if (data.state) form.setValue("address.state", data.state);
       setAddressVisible(true);
     },
     onError: () => {
@@ -73,13 +76,15 @@ export function EditPatientModal({
       partner_name: "",
       due_date: "",
       dum: "",
-      street: "",
-      neighborhood: "",
-      complement: "",
-      number: "",
-      city: "",
-      state: "",
-      zipcode: "",
+      address: {
+        street: "",
+        neighborhood: "",
+        complement: "",
+        number: "",
+        city: "",
+        state: "",
+        zipcode: "",
+      },
       observations: "",
     },
   });
@@ -87,6 +92,7 @@ export function EditPatientModal({
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset only when patient or open changes
   useEffect(() => {
     if (open) {
+      const addr = patient.address;
       form.reset({
         name: patient.name,
         email: patient.email ?? undefined,
@@ -94,13 +100,15 @@ export function EditPatientModal({
         partner_name: patient.partner_name || "",
         due_date: patient.due_date ?? undefined,
         dum: patient.dum || "",
-        street: patient.street || "",
-        neighborhood: patient.neighborhood || "",
-        complement: patient.complement || "",
-        number: patient.number || "",
-        city: patient.city || "",
-        state: patient.state || "",
-        zipcode: patient.zipcode || "",
+        address: {
+          street: addr?.street || "",
+          neighborhood: addr?.neighborhood || "",
+          complement: addr?.complement || "",
+          number: addr?.number || "",
+          city: addr?.city || "",
+          state: addr?.state || "",
+          zipcode: addr?.zipcode || "",
+        },
         observations: patient.observations || "",
       });
       setAddressVisible(hasAddress(patient));
@@ -243,7 +251,7 @@ export function EditPatientModal({
 
           <FormField
             control={form.control}
-            name="zipcode"
+            name="address.zipcode"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>CEP</FormLabel>
@@ -284,7 +292,7 @@ export function EditPatientModal({
               <div className="grid grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
-                  name="street"
+                  name="address.street"
                   render={({ field }) => (
                     <FormItem className="col-span-3">
                       <FormLabel>Rua</FormLabel>
@@ -297,7 +305,7 @@ export function EditPatientModal({
                 />
                 <FormField
                   control={form.control}
-                  name="number"
+                  name="address.number"
                   render={({ field }) => (
                     <FormItem className="col-span-1">
                       <FormLabel>Número</FormLabel>
@@ -314,7 +322,7 @@ export function EditPatientModal({
               <div className="grid grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
-                  name="complement"
+                  name="address.complement"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel>Complemento</FormLabel>
@@ -327,7 +335,7 @@ export function EditPatientModal({
                 />
                 <FormField
                   control={form.control}
-                  name="neighborhood"
+                  name="address.neighborhood"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel>Bairro</FormLabel>
@@ -344,7 +352,7 @@ export function EditPatientModal({
               <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
-                  name="city"
+                  name="address.city"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel>Cidade</FormLabel>
@@ -357,7 +365,7 @@ export function EditPatientModal({
                 />
                 <FormField
                   control={form.control}
-                  name="state"
+                  name="address.state"
                   render={({ field }) => (
                     <FormItem className="col-span-1">
                       <FormLabel>UF</FormLabel>

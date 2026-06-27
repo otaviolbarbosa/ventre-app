@@ -1,5 +1,6 @@
 "use client";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
+import type { PatientAddress } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
@@ -13,6 +14,7 @@ type PatientInfoProps = {
     due_date?: string | null;
     dum?: string | null;
     observations?: string | null;
+    address?: PatientAddress | null;
   };
   onChange: () => Promise<void>;
 };
@@ -21,21 +23,23 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
 
+  const addr = patient.address as PatientAddress | null;
+
   const resolveGoogleMapsLink = useMemo(() => {
-    const address = [
-      patient.street,
-      patient.number,
-      patient.complement,
-      patient.neighborhood,
-      patient.city,
-      patient.state,
-      patient.zipcode,
+    const parts = [
+      addr?.street,
+      addr?.number,
+      addr?.complement,
+      addr?.neighborhood,
+      addr?.city,
+      addr?.state,
+      addr?.zipcode,
     ]
       .filter(Boolean)
       .join(", ")
       .replaceAll(" ", "+");
-    return `https://www.google.com/maps/search/${address}`;
-  }, [patient]);
+    return `https://www.google.com/maps/search/${parts}`;
+  }, [addr]);
 
   return (
     <>
@@ -70,11 +74,11 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         value={
           <div className="flex justify-between gap-4">
             <div>
-              <div>{[patient.street, patient.number].filter(Boolean).join(", ")}</div>
-              <div>{patient.complement}</div>
-              <div>{patient.neighborhood}</div>
-              <div>{[patient.city, patient.state].filter(Boolean).join("-")}</div>
-              <div>{patient.zipcode}</div>
+              <div>{[addr?.street, addr?.number].filter(Boolean).join(", ")}</div>
+              <div>{addr?.complement}</div>
+              <div>{addr?.neighborhood}</div>
+              <div>{[addr?.city, addr?.state].filter(Boolean).join("-")}</div>
+              <div>{addr?.zipcode}</div>
             </div>
             {resolveGoogleMapsLink ? (
               <div className="relative">

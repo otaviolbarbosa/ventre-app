@@ -72,6 +72,59 @@ export type Database = {
           },
         ]
       }
+      addresses: {
+        Row: {
+          city: string | null
+          complement: string | null
+          created_at: string
+          id: string
+          neighborhood: string | null
+          number: string | null
+          patient_id: string | null
+          state: string | null
+          street: string | null
+          updated_at: string
+          user_id: string | null
+          zipcode: string | null
+        }
+        Insert: {
+          city?: string | null
+          complement?: string | null
+          created_at?: string
+          id?: string
+          neighborhood?: string | null
+          number?: string | null
+          patient_id?: string | null
+          state?: string | null
+          street?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zipcode?: string | null
+        }
+        Update: {
+          city?: string | null
+          complement?: string | null
+          created_at?: string
+          id?: string
+          neighborhood?: string | null
+          number?: string | null
+          patient_id?: string | null
+          state?: string | null
+          street?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zipcode?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addresses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           created_at: string | null
@@ -901,8 +954,6 @@ export type Database = {
         Row: {
           allergies: string[] | null
           blood_type: Database["public"]["Enums"]["blood_type"] | null
-          city: string | null
-          complement: string | null
           created_at: string | null
           created_by: string
           date_of_birth: string | null
@@ -914,22 +965,15 @@ export type Database = {
           height_cm: number | null
           id: string
           name: string
-          neighborhood: string | null
-          number: string | null
           partner_name: string | null
           personal_notes: string | null
           phone: string
-          state: string | null
-          street: string | null
           updated_at: string | null
           user_id: string | null
-          zipcode: string | null
         }
         Insert: {
           allergies?: string[] | null
           blood_type?: Database["public"]["Enums"]["blood_type"] | null
-          city?: string | null
-          complement?: string | null
           created_at?: string | null
           created_by: string
           date_of_birth?: string | null
@@ -941,22 +985,15 @@ export type Database = {
           height_cm?: number | null
           id?: string
           name: string
-          neighborhood?: string | null
-          number?: string | null
           partner_name?: string | null
           personal_notes?: string | null
           phone: string
-          state?: string | null
-          street?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zipcode?: string | null
         }
         Update: {
           allergies?: string[] | null
           blood_type?: Database["public"]["Enums"]["blood_type"] | null
-          city?: string | null
-          complement?: string | null
           created_at?: string | null
           created_by?: string
           date_of_birth?: string | null
@@ -968,16 +1005,11 @@ export type Database = {
           height_cm?: number | null
           id?: string
           name?: string
-          neighborhood?: string | null
-          number?: string | null
           partner_name?: string | null
           personal_notes?: string | null
           phone?: string
-          state?: string | null
-          street?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zipcode?: string | null
         }
         Relationships: [
           {
@@ -1927,9 +1959,8 @@ export type Database = {
           search_query?: string
         }
         Returns: {
+          address: Json
           born_at: string
-          city: string
-          complement: string
           created_at: string
           created_by: string
           date_of_birth: string
@@ -1940,16 +1971,11 @@ export type Database = {
           has_finished: boolean
           id: string
           name: string
-          neighborhood: string
-          number: string
           observations: string
           phone: string
-          state: string
-          street: string
           total_count: number
           updated_at: string
           user_id: string
-          zipcode: string
         }[]
       }
       get_paginated_enterprises: {
