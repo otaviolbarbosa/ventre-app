@@ -6,6 +6,7 @@ import {
 } from "@/lib/gestational-age";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Json } from "@ventre/supabase/types";
 import { unstable_cache } from "next/cache";
 
 const TEAM_MEMBERS_SELECT =
@@ -16,13 +17,7 @@ type RawPatient = {
   name: string;
   phone: string;
   email: string | null;
-  street: string | null;
-  neighborhood: string | null;
-  complement: string | null;
-  number: string | null;
-  city: string | null;
-  state: string | null;
-  zipcode: string | null;
+  address: Json | null;
   date_of_birth: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -69,7 +64,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
     let query = supabase
       .from("pregnancies")
       .select(
-        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*)",
+        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*, addresses(street, number, complement, neighborhood, city, state, zipcode))",
       )
       .in("patient_id", patientIds)
       .gte("due_date", startDate)
@@ -84,14 +79,22 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
 
     if (!data || data.length === 0) return [];
 
-    rawPatients = data.map(({ patient, due_date, dum, has_finished, born_at, observations }) => ({
-      ...(patient as unknown as RawPatient),
-      due_date,
-      dum,
-      has_finished,
-      born_at,
-      observations,
-    }));
+    rawPatients = data.map(({ patient, due_date, dum, has_finished, born_at, observations }) => {
+      const { addresses: addrs, ...patientData } = patient as unknown as RawPatient & {
+        addresses: unknown[];
+      };
+      const address =
+        Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
+      return {
+        ...patientData,
+        address,
+        due_date,
+        dum,
+        has_finished,
+        born_at,
+        observations,
+      };
+    });
   } else {
     const { data, error } = await supabase
       .rpc("get_filtered_patients", {
@@ -136,7 +139,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
         days: gestationalAge?.days ?? 0,
         remainingDays: calculateRemainingDays(patient.due_date ?? ""),
         progress: calculateGestationalProgress(patient.dum ?? ""),
-      } as PatientWithGestationalInfo,
+      } as unknown as PatientWithGestationalInfo,
       teamMembers: teamMembersByPatient.get(patient.id) ?? [],
     };
   });

@@ -166,10 +166,10 @@ export default function NewPatientModal({
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
       if (!data) return;
-      if (data.street) form.setValue("street", data.street);
-      if (data.neighborhood) form.setValue("neighborhood", data.neighborhood);
-      if (data.city) form.setValue("city", data.city);
-      if (data.state) form.setValue("state", data.state);
+      if (data.street) form.setValue("address.street", data.street);
+      if (data.neighborhood) form.setValue("address.neighborhood", data.neighborhood);
+      if (data.city) form.setValue("address.city", data.city);
+      if (data.state) form.setValue("address.state", data.state);
       setAddressVisible(true);
     },
     onError: () => {
@@ -217,13 +217,15 @@ export default function NewPatientModal({
       baby_name: "",
       due_date: "",
       dum: "",
-      street: "",
-      neighborhood: "",
-      complement: "",
-      number: "",
-      city: "",
-      state: "",
-      zipcode: "",
+      address: {
+        street: "",
+        neighborhood: "",
+        complement: "",
+        number: "",
+        city: "",
+        state: "",
+        zipcode: "",
+      },
       observations: "",
       professional_ids: defaultProfessionalIds,
       enterprise_id: null,
@@ -660,7 +662,7 @@ export default function NewPatientModal({
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="zipcode"
+                  name="address.zipcode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>CEP</FormLabel>
@@ -698,7 +700,7 @@ export default function NewPatientModal({
                 <div className="grid gap-4 sm:grid-cols-4">
                   <FormField
                     control={form.control}
-                    name="city"
+                    name="address.city"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-3">
                         <FormLabel>Cidade</FormLabel>
@@ -711,7 +713,7 @@ export default function NewPatientModal({
                   />
                   <FormField
                     control={form.control}
-                    name="state"
+                    name="address.state"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
@@ -742,7 +744,7 @@ export default function NewPatientModal({
                 <div className="grid gap-4 sm:grid-cols-4">
                   <FormField
                     control={form.control}
-                    name="street"
+                    name="address.street"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-3">
                         <FormLabel>Rua</FormLabel>
@@ -759,7 +761,7 @@ export default function NewPatientModal({
                   />
                   <FormField
                     control={form.control}
-                    name="number"
+                    name="address.number"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Número</FormLabel>
@@ -775,7 +777,7 @@ export default function NewPatientModal({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="complement"
+                    name="address.complement"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Complemento</FormLabel>
@@ -788,7 +790,7 @@ export default function NewPatientModal({
                   />
                   <FormField
                     control={form.control}
-                    name="neighborhood"
+                    name="address.neighborhood"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Bairro</FormLabel>
