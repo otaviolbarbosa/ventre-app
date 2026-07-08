@@ -314,6 +314,124 @@ export type Database = {
           },
         ]
       }
+      contracts: {
+        Row: {
+          city: string | null
+          clauses_html: string
+          content_hash: string | null
+          created_at: string
+          enterprise_id: string | null
+          id: string
+          is_active: boolean | null
+          is_base_contract: boolean
+          is_signed: boolean
+          parties_details: Json | null
+          patient_id: string | null
+          pregnancy_id: string | null
+          signed_at: string | null
+          signed_by: string | null
+          signed_document_id: string | null
+          signed_ip: string | null
+          signed_user_agent: string | null
+          state: string | null
+          title: string
+          updated_at: string
+          user_id: string | null
+          verification_code: string | null
+        }
+        Insert: {
+          city?: string | null
+          clauses_html?: string
+          content_hash?: string | null
+          created_at?: string
+          enterprise_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_base_contract?: boolean
+          is_signed?: boolean
+          parties_details?: Json | null
+          patient_id?: string | null
+          pregnancy_id?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_document_id?: string | null
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          state?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          verification_code?: string | null
+        }
+        Update: {
+          city?: string | null
+          clauses_html?: string
+          content_hash?: string | null
+          created_at?: string
+          enterprise_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_base_contract?: boolean
+          is_signed?: boolean
+          parties_details?: Json | null
+          patient_id?: string | null
+          pregnancy_id?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_document_id?: string | null
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          state?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          verification_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_signed_document_id_fkey"
+            columns: ["signed_document_id"]
+            isOneToOne: false
+            referencedRelation: "patient_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enterprise_billing_fees: {
         Row: {
           created_at: string
@@ -763,6 +881,7 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          is_immutable: boolean
           patient_id: string
           storage_path: string
           uploaded_by: string
@@ -773,6 +892,7 @@ export type Database = {
           file_size: number
           file_type: string
           id?: string
+          is_immutable?: boolean
           patient_id: string
           storage_path: string
           uploaded_by: string
@@ -783,6 +903,7 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          is_immutable?: boolean
           patient_id?: string
           storage_path?: string
           uploaded_by?: string

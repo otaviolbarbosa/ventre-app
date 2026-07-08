@@ -19,7 +19,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Ventre - Gestão de Saúde para Gestantes",
+  title: "Ventre - Gestão de Saúde para Profissionais de Saúde e Gestantes",
   description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
   appleWebApp: {
     capable: true,
@@ -37,7 +37,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className="scroll-smooth" data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className="scroll-smooth"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <head>
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="theme-color" content="#BE5237" />

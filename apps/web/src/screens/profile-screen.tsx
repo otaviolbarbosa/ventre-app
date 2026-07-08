@@ -13,6 +13,7 @@ import {
   Camera,
   ChevronRight,
   CreditCard,
+  FileText,
   Info,
   Loader2,
   LogOut,
@@ -205,6 +206,11 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
             icon={<Settings className="h-5 w-5" />}
             label="Configurações"
             href="/profile/settings"
+          />
+          <MenuItem
+            icon={<FileText className="h-5 w-5" />}
+            label="Meu Contrato Pessoal"
+            href="/profile/settings/contract"
           />
           <MenuItem
             icon={<CreditCard className="h-5 w-5" />}

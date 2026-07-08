@@ -1,11 +1,12 @@
 "use client";
+import Whatsapp from "@/assets/custom-icons/whatsapp";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
 import type { PatientAddress } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import dayjs from "dayjs";
-import { MapPinned, Pencil } from "lucide-react";
+import { MapPin, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import InfoItem from "./info-item";
 
@@ -89,7 +90,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   onClick={() => setShowMapModal(true)}
                 >
                   Abrir mapa
-                  <MapPinned />
+                  <MapPin />
                 </Button>
                 <Button
                   variant="outline"
@@ -97,7 +98,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   className="-top-4 absolute right-0 flex sm:hidden"
                   onClick={() => setShowMapModal(true)}
                 >
-                  <MapPinned />
+                  <MapPin />
                 </Button>
               </div>
             ) : null}
@@ -147,7 +148,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         <div className="flex flex-col gap-3">
           <Button variant="outline" asChild>
             <a href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
-              <MapPinned />
+              <MapPin />
               Abrir no mapa
             </a>
           </Button>
@@ -157,6 +158,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
               target="_blank"
               rel="noreferrer"
             >
+              <Whatsapp />
               Compartilhar pelo WhatsApp
             </a>
           </Button>

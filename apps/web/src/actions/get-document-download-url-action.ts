@@ -20,7 +20,7 @@ export const getDocumentDownloadUrlAction = authActionClient
 
     const { data: signedUrl, error: signError } = await supabaseAdmin.storage
       .from("patient_documents")
-      .createSignedUrl(document.storage_path, 300);
+      .createSignedUrl(document.storage_path, 300, { download: document.file_name });
 
     if (signError || !signedUrl) throw new Error("Erro ao gerar URL de download");
 

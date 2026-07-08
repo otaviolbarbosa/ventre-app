@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Ventre - Gestão de Saúde para Gestantes",
+    name: "Ventre - Gestão de Saúde para Profissionais de Saúde e Gestantes",
     short_name: "Ventre",
     description: "Plataforma de gestão de saúde para profissionais acompanharem gestantes",
     start_url: "/home",

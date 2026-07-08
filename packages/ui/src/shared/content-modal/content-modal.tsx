@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@ventre/ui/dialog";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@ventre/ui/sheet";
+import { cn } from "@ventre/ui/utils";
 import { type ReactNode, useEffect, useState } from "react";
 
 interface ContentModalProps {
@@ -16,6 +17,7 @@ interface ContentModalProps {
   title: string;
   description?: string;
   children: ReactNode;
+  contentClassName?: string;
 }
 
 export function ContentModal({
@@ -24,6 +26,7 @@ export function ContentModal({
   title,
   description,
   children,
+  contentClassName,
 }: ContentModalProps) {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -47,7 +50,7 @@ export function ContentModal({
     </Sheet>
   ) : (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn("max-h-[90vh] overflow-y-auto", contentClassName)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
