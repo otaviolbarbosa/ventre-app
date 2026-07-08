@@ -1,5 +1,7 @@
 export { default as AppointmentsScreen } from "./appointments-screen";
 export { default as BillingDeductionsScreen } from "./billing-deductions-screen";
+export { default as ContractSettingsScreen } from "./contract-settings-screen";
+export { default as PersonalContractSettingsScreen } from "./personal-contract-settings-screen";
 export { default as EnterpriseSettingsScreen } from "./enterprise-settings-screen";
 export { default as HomeScreen } from "./home-screen";
 export { default as HomeEnterpriseScreen } from "./home-enterprise-screen";
