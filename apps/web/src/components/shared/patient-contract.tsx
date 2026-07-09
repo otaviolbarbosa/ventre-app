@@ -457,7 +457,7 @@ export default function PatientContract({
           if (!open) setConsentChecked(false);
         }}
         title="Assinar contrato eletronicamente"
-        description="O contrato será registrado com hash criptográfico, código de verificação e trilha de auditoria. Após a assinatura, o conteúdo não poderá mais ser alterado."
+        description="A assinatura será validada e registrada com segurança, garantindo a autenticidade do contrato. Após assinado, o conteúdo não poderá mais ser alterado."
         contentClassName="sm:max-w-[480px]"
       >
         <div className="flex items-start gap-2 pt-2">

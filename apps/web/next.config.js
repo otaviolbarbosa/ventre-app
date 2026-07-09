@@ -9,6 +9,12 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
+  // react-pdf reads these via fs at runtime (Font.register / <Image src>) using a
+  // dynamically built path, so Next's file tracing can't discover them on its own —
+  // without this they're missing from the Vercel serverless bundle (ENOENT in prod).
+  outputFileTracingIncludes: {
+    "/**": ["./public/fonts/**", "./public/images/digital-signature-stamp.png"],
+  },
   images: {
     remotePatterns: [
       {
