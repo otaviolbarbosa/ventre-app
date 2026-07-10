@@ -4,8 +4,7 @@ import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
-import { createBilling } from "@/services/billing";
-import { createPatient } from "@/services/patient";
+import { createPatientWithTeamAndBilling } from "@/services/patient-onboarding";
 import { revalidateTag } from "next/cache";
 
 export const addPatientAction = authActionClient
@@ -37,23 +36,13 @@ export const addPatientAction = authActionClient
       enterpriseId = parsedInput.enterprise_id ?? null;
     }
 
-    const patient = await createPatient(supabaseAdmin, user.id, {
-      ...parsedInput,
-      enterprise_id: enterpriseId,
-    });
-
-    if (parsedInput.billing) {
-      await createBilling(
-        supabase,
-        supabaseAdmin,
-        user.id,
-        {
-          ...parsedInput.billing,
-          patient_id: patient.id,
-        },
-        enterpriseId,
-      );
-    }
+    const { patient } = await createPatientWithTeamAndBilling(
+      supabase,
+      supabaseAdmin,
+      user.id,
+      parsedInput,
+      enterpriseId,
+    );
 
     revalidateTag(`home-patients-${user.id}`, { expire: 300 });
     revalidateTag(`home-data-${user.id}`, { expire: 300 });
