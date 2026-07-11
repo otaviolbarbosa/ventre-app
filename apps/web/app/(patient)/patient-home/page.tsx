@@ -32,13 +32,13 @@ export default async function PatientHomePage() {
           <div className="mt-3 grid grid-cols-2 gap-4">
             <div>
               <p className="text-muted-foreground text-xs">Semanas de gestação</p>
-              <p className="font-semibold text-lg text-[#433831]">
+              <p className="font-semibold text-[#433831] text-lg">
                 {gestationalWeek !== null ? `${gestationalWeek} semanas` : "—"}
               </p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Data prevista do parto</p>
-              <p className="font-semibold text-lg text-[#433831]">
+              <p className="font-semibold text-[#433831] text-lg">
                 {dayjs(pregnancy.due_date).format("DD/MM/YYYY")}
               </p>
             </div>
