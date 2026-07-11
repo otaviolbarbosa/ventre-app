@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const type = searchParams.get("type");
   const intent = searchParams.get("intent");
+  const piid = searchParams.get("piid");
   const nextParam = searchParams.get("next") ?? "/home";
   const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/home";
 
@@ -57,6 +58,22 @@ export async function GET(request: NextRequest) {
         } catch (tokenErr) {
           console.error("[auth/callback] failed to persist google calendar tokens", tokenErr);
         }
+      }
+
+      // Patient self-registration via Google: mark as patient, send to the
+      // post-OAuth data-completion step (no auth.signUp step needed here).
+      if (intent === "patient_invite" && piid) {
+        try {
+          const admin = await createServerSupabaseAdmin();
+          await admin
+            .from("users")
+            .update({ user_type: "patient" })
+            .eq("id", data.session.user.id);
+        } catch (patientErr) {
+          console.error("[auth/callback] failed to set patient user_type", patientErr);
+        }
+
+        return NextResponse.redirect(`${origin}/patient-registration/complete?piid=${piid}`);
       }
 
       // Handle password recovery
