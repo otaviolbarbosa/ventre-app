@@ -10,6 +10,10 @@ type Profile = Tables<"users">;
 export default async function Home() {
   const { profile } = await getServerAuth();
 
+  if (profile?.user_type === "patient") {
+    redirect("/patient-home");
+  }
+
   const isOnboardingComplete =
     (profile?.user_type === "professional" && profile?.professional_type !== null) ||
     (isStaff(profile) && profile?.enterprise_id !== null);
