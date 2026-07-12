@@ -10,11 +10,12 @@ import PendingInviteCard from "@/components/shared/pending-invite-card";
 import TeamMemberCard from "@/components/shared/team-member-card";
 import { useAuth } from "@/hooks/use-auth";
 import AddBackupProfessionalModal from "@/modals/add-backup-professional-modal";
+import InviteExistingPatientModal from "@/modals/invite-existing-patient-modal";
 import InviteProfessionalModal from "@/modals/invite-professional-modal";
 import type { ProfessionalType } from "@/types";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { ShieldAlert, UserMinus, UserPlus, Users } from "lucide-react";
+import { HeartHandshake, ShieldAlert, UserMinus, UserPlus, Users } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { redirect, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -27,6 +28,7 @@ export default function PatientTeamScreen() {
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [isBackupOpen, setIsBackupOpen] = useState(false);
+  const [isInvitePatientOpen, setIsInvitePatientOpen] = useState(false);
   const { confirm } = useConfirmModal();
 
   const {
@@ -126,6 +128,13 @@ export default function PatientTeamScreen() {
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-lg">Equipe de Cuidado</h2>
           <div className="flex gap-2">
+            {!patient.user_id && (
+              <Button variant="outline" onClick={() => setIsInvitePatientOpen(true)}>
+                <HeartHandshake className="mr-2 h-4 w-4" />
+                <span className="hidden sm:block">Convidar Gestante</span>
+                <span className="block sm:hidden">Convidar</span>
+              </Button>
+            )}
             {isUserInTeam && (
               <Button variant="outline" onClick={handleConfirmLeave}>
                 <UserMinus className="mr-2 h-4 w-4" />
@@ -233,6 +242,12 @@ export default function PatientTeamScreen() {
         availableTypes={availableTypes}
         isOpen={isInviteOpen}
         setIsOpen={setIsInviteOpen}
+      />
+
+      <InviteExistingPatientModal
+        patient={patient}
+        isOpen={isInvitePatientOpen}
+        setIsOpen={setIsInvitePatientOpen}
       />
 
       {currentUserMember && (

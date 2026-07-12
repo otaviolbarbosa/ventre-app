@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmInstallmentPaymentAction } from "@/actions/confirm-installment-payment-action";
 import { saveInstallmentLinkAction } from "@/actions/save-installment-link-action";
 import {
   type AppliedBillingFee,
@@ -10,7 +11,16 @@ import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
-import { Check, CheckCircle, ExternalLink, FileText, Image, LinkIcon, X } from "lucide-react";
+import {
+  Check,
+  CheckCircle,
+  ExternalLink,
+  FileText,
+  Image,
+  LinkIcon,
+  Loader2,
+  X,
+} from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -43,6 +53,18 @@ export function InstallmentList({
   const [linkValue, setLinkValue] = useState("");
 
   const { executeAsync: saveLink, isPending: saving } = useAction(saveInstallmentLinkAction);
+  const { execute: confirmPayment, status: confirmStatus, input: confirmInput } = useAction(
+    confirmInstallmentPaymentAction,
+    {
+      onSuccess: () => {
+        toast.success("Status do pagamento atualizado!");
+        onUpdate();
+      },
+      onError: ({ error }) => {
+        toast.error(error.serverError ?? "Erro ao atualizar pagamento");
+      },
+    },
+  );
 
   const handleEditLink = (installment: Installment) => {
     setEditingId(installment.id);
@@ -149,7 +171,48 @@ export function InstallmentList({
                           </a>
                         </Button>
                       ))}
-                  {installment.status !== "pago" && installment.status !== "cancelado" && (
+                  {installment.status === "em_analise" && (
+                    <div className="flex w-full items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          confirmStatus === "executing" &&
+                          confirmInput?.installmentId === installment.id
+                        }
+                        onClick={() =>
+                          confirmPayment({ installmentId: installment.id, decision: "reject" })
+                        }
+                      >
+                        {confirmStatus === "executing" &&
+                          confirmInput?.installmentId === installment.id &&
+                          confirmInput.decision === "reject" && (
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          )}
+                        Rejeitar
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={
+                          confirmStatus === "executing" &&
+                          confirmInput?.installmentId === installment.id
+                        }
+                        onClick={() =>
+                          confirmPayment({ installmentId: installment.id, decision: "confirm" })
+                        }
+                      >
+                        {confirmStatus === "executing" &&
+                          confirmInput?.installmentId === installment.id &&
+                          confirmInput.decision === "confirm" && (
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                          )}
+                        Confirmar pagamento
+                      </Button>
+                    </div>
+                  )}
+                  {installment.status !== "pago" &&
+                    installment.status !== "cancelado" &&
+                    installment.status !== "em_analise" && (
                     <div className="flex w-full justify-between">
                       {installment.payment_link && editingId !== installment.id && (
                         <Button variant="ghost" size="sm" asChild>

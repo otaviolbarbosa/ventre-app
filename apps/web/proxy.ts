@@ -46,7 +46,7 @@ export async function proxy(request: NextRequest) {
     "/paywall",
     "/check/",
     "/auth/callback",
-    "/register/patient",
+    "/patient-registration",
     "/api/stripe/webhook",
     "/api/check/",
   ];

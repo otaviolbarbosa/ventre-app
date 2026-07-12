@@ -1,5 +1,6 @@
 "use client";
 import { addPatientAction } from "@/actions/add-patient-action";
+import { createPatientInviteAction } from "@/actions/create-patient-invite-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
 import {
@@ -10,11 +11,14 @@ import {
 import { ESTADOS_BR } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
+import type { CreatePatientInviteInput } from "@/lib/validations/patient-invite";
+import PatientInviteShareModal from "@/modals/patient-invite-share-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
@@ -162,6 +166,8 @@ export default function NewPatientModal({
   const [lockedAmounts, setLockedAmounts] = useState<Record<number, number>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [inviteMode, setInviteMode] = useState(false);
+  const [createdInvite, setCreatedInvite] = useState<{ id: string; name: string } | null>(null);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
@@ -197,10 +203,30 @@ export default function NewPatientModal({
     },
   });
 
+  const { execute: executeInvite, status: inviteStatus } = useAction(createPatientInviteAction, {
+    onSuccess: ({ data }) => {
+      if (!data?.invite) return;
+      toast.success("Convite criado com sucesso!");
+      setCreatedInvite({ id: data.invite.id, name: data.invite.name ?? "Gestante" });
+      form.reset();
+      setStep(1);
+      setInviteMode(false);
+      setAddressVisible(false);
+      setShowBilling(false);
+      setProfAmounts({});
+      setIsCustomInterval(false);
+      onSuccess?.();
+      setShowModal(false);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao criar convite");
+    },
+  });
+
   const professionalsOptions =
     professionals && professionals.length > 0 ? professionals : professional ? [professional] : [];
 
-  const isSubmitting = status === "executing";
+  const isSubmitting = status === "executing" || inviteStatus === "executing";
   const showProfessionalSelector = professionalsOptions.length > 0;
   const showEnterpriseSelector = enterprises !== undefined && !showProfessionalSelector;
   const step4Label = showEnterpriseSelector ? "Empresa" : "Equipe";
@@ -379,7 +405,7 @@ export default function NewPatientModal({
   }
 
   const STEP_FIELDS: Partial<Record<StepNumber, (keyof CreatePatientInput)[]>> = {
-    1: ["name", "due_date", "dum"],
+    1: inviteMode ? ["name"] : ["name", "due_date", "dum"],
     2: ["phone"],
     4: showProfessionalSelector ? ["professional_ids"] : [],
   };
@@ -391,12 +417,81 @@ export default function NewPatientModal({
       if (!valid) return;
     }
     setIsNavigating(true);
-    setStep((prev) => Math.min(prev + 1, 5) as StepNumber);
+    setStep((prev) => {
+      let next = Math.min(prev + 1, 5) as StepNumber;
+      if (inviteMode && next === 3) next = 4;
+      return next;
+    });
     setTimeout(() => setIsNavigating(false), 400);
   }
 
   function goToPrev() {
-    setStep((prev) => Math.max(prev - 1, 1) as StepNumber);
+    setStep((prev) => {
+      let next = Math.max(prev - 1, 1) as StepNumber;
+      if (inviteMode && next === 3) next = 2;
+      return next;
+    });
+  }
+
+  async function handleInviteSubmit() {
+    const valid = await form.trigger(["name", "phone"]);
+    if (!valid) return;
+
+    const data = form.getValues();
+    const backupProfessionalIds = getBackupProfessionalIds(
+      data.professional_ids ?? [],
+      professionalsOptions,
+    );
+
+    if (showBilling && data.billing) {
+      setSubmitAttempted(true);
+
+      const hasEmptyInstallments = billingTotalAmount > 0 && installmentAmounts.some((a) => a <= 0);
+      if (hasEmptyInstallments) {
+        toast.error("Informe o valor de todas as parcelas.");
+        return;
+      }
+
+      if (hasAmountMismatch) {
+        toast.error(
+          `A soma das parcelas (${formatCurrency(installmentSum)}) não corresponde ao valor total (${formatCurrency(billingTotalAmount)}).`,
+        );
+        return;
+      }
+
+      if (isSplitBilling) {
+        if (Object.keys(profAmounts).length === 0) {
+          toast.error("Informe os valores para cada profissional.");
+          return;
+        }
+        if (Object.values(profAmounts).some((v) => v <= 0)) {
+          toast.error("Todos os valores das profissionais devem ser maiores que zero.");
+          return;
+        }
+      }
+    }
+
+    const payload: CreatePatientInviteInput = {
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      professional_ids: data.professional_ids,
+      backup_professional_ids: backupProfessionalIds,
+      enterprise_id: data.enterprise_id,
+      billing:
+        showBilling && data.billing
+          ? {
+              ...data.billing,
+              total_amount: isSplitBilling ? undefined : data.billing.total_amount,
+              splitted_billing: isSplitBilling ? profAmounts : undefined,
+              installment_interval: isCustomInterval ? null : data.billing.installment_interval,
+              first_due_date: isCustomInterval ? null : data.billing.first_due_date,
+              installment_amounts: installmentAmounts,
+            }
+          : undefined,
+    };
+
+    executeInvite(payload);
   }
 
   function onSubmit(data: CreatePatientInput) {
@@ -471,18 +566,20 @@ export default function NewPatientModal({
     setSubmitAttempted(false);
     setIsCustomInterval(false);
     setIsNavigating(false);
+    setInviteMode(false);
   }
 
   return (
-    <ContentModal
-      open={showModal}
-      onOpenChange={(open) => {
-        if (!open) resetModal();
-        setShowModal(open);
-      }}
-      title="Nova Gestante"
-      description=""
-    >
+    <>
+      <ContentModal
+        open={showModal}
+        onOpenChange={(open) => {
+          if (!open) resetModal();
+          setShowModal(open);
+        }}
+        title="Nova Gestante"
+        description=""
+      >
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -497,6 +594,25 @@ export default function NewPatientModal({
             {/* ── Step 1: Dados da Gestante ── */}
             {step === 1 && (
               <div className="space-y-4">
+                <label
+                  htmlFor="invite-mode-checkbox"
+                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed p-4 transition-colors hover:border-primary"
+                >
+                  <Checkbox
+                    id="invite-mode-checkbox"
+                    checked={inviteMode}
+                    onCheckedChange={(checked) => setInviteMode(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-sm">
+                    <span className="font-medium">Solicitar auto cadastro</span>
+                    <span className="block text-muted-foreground text-xs">
+                      A gestante preencherá seus próprios dados de gestação e endereço ao criar a
+                      conta.
+                    </span>
+                  </span>
+                </label>
+
                 <FormField
                   control={form.control}
                   name="name"
@@ -511,110 +627,114 @@ export default function NewPatientModal({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="partner_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do parceiro</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Nome do parceiro"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!inviteMode && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="partner_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do parceiro</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Nome do parceiro"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="baby_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do bebê</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Nome escolhido para o bebê"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="baby_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do bebê</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Nome escolhido para o bebê"
+                              {...field}
+                              value={field.value ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="due_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data prevista do parto (DPP) *</FormLabel>
-                        <FormControl>
-                          <DatePicker
-                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                            onChange={(date) => {
-                              field.onChange(date ? date.toISOString().slice(0, 10) : "");
-                              if (date) {
-                                form.setValue(
-                                  "dum",
-                                  dayjs(date).subtract(280, "day").format("YYYY-MM-DD"),
-                                );
-                              } else {
-                                form.setValue("dum", "");
-                              }
-                            }}
-                            placeholderText="Selecione a data"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="dum"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Última menstruação (DUM)</FormLabel>
-                        <FormControl>
-                          <DatePicker
-                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                            onChange={(date) =>
-                              field.onChange(date ? date.toISOString().slice(0, 10) : "")
-                            }
-                            placeholderText="Calculado automaticamente"
-                            disabled
-                            className="bg-muted"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="due_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Data prevista do parto (DPP) *</FormLabel>
+                            <FormControl>
+                              <DatePicker
+                                selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                                onChange={(date) => {
+                                  field.onChange(date ? date.toISOString().slice(0, 10) : "");
+                                  if (date) {
+                                    form.setValue(
+                                      "dum",
+                                      dayjs(date).subtract(280, "day").format("YYYY-MM-DD"),
+                                    );
+                                  } else {
+                                    form.setValue("dum", "");
+                                  }
+                                }}
+                                placeholderText="Selecione a data"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="dum"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Última menstruação (DUM)</FormLabel>
+                            <FormControl>
+                              <DatePicker
+                                selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                                onChange={(date) =>
+                                  field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                                }
+                                placeholderText="Calculado automaticamente"
+                                disabled
+                                className="bg-muted"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                <FormField
-                  control={form.control}
-                  name="observations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Informações adicionais sobre a paciente"
-                          rows={3}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="observations"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Observações</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Informações adicionais sobre a paciente"
+                              rows={3}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
               </div>
             )}
 
@@ -1451,6 +1571,16 @@ export default function NewPatientModal({
               >
                 Próximo
               </Button>
+            ) : inviteMode ? (
+              <Button
+                type="button"
+                className="gradient-primary flex-1"
+                onClick={handleInviteSubmit}
+                disabled={isSubmitting || isNavigating}
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enviar Convite
+              </Button>
             ) : (
               <Button
                 type="submit"
@@ -1464,6 +1594,18 @@ export default function NewPatientModal({
           </div>
         </form>
       </Form>
-    </ContentModal>
+      </ContentModal>
+
+      {createdInvite && (
+        <PatientInviteShareModal
+          inviteId={createdInvite.id}
+          patientName={createdInvite.name}
+          isOpen={!!createdInvite}
+          setIsOpen={(open) => {
+            if (!open) setCreatedInvite(null);
+          }}
+        />
+      )}
+    </>
   );
 }

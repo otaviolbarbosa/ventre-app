@@ -21,7 +21,10 @@ interface AuthContextType {
   ) => Promise<{ data: unknown; error: unknown }>;
   signOut: () => Promise<{ error: unknown }>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
-  signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>;
+  signInWithGoogle: (
+    redirectTo?: string,
+    intent?: { name: string; piid: string },
+  ) => Promise<{ data: unknown; error: unknown }>;
   connectGoogleCalendar: () => Promise<void>;
   isAuthenticated: boolean;
   isProfessional: boolean;
@@ -123,11 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
-  const signInWithGoogle = async (redirectTo?: string) => {
+  const signInWithGoogle = async (redirectTo?: string, intent?: { name: string; piid: string }) => {
+    const intentParams = intent
+      ? `&intent=${intent.name}&piid=${intent.piid}`
+      : "";
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo || "/home"}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo || "/home"}${intentParams}`,
       },
     });
     return { data, error };
