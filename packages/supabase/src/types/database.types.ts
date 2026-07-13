@@ -127,6 +127,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          confirmed_by_patient_at: string | null
           created_at: string | null
           date: string
           duration: number | null
@@ -146,6 +147,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          confirmed_by_patient_at?: string | null
           created_at?: string | null
           date: string
           duration?: number | null
@@ -165,6 +167,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          confirmed_by_patient_at?: string | null
           created_at?: string | null
           date?: string
           duration?: number | null
@@ -971,28 +974,43 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string
+          email: string | null
+          enterprise_id: string | null
           expires_at: string
           id: string
+          invite_type: string
+          metadata: Json
+          name: string | null
           patient_id: string | null
-          token: string
+          phone: string | null
           used_at: string | null
         }
         Insert: {
           created_at?: string | null
           created_by: string
-          expires_at: string
+          email?: string | null
+          enterprise_id?: string | null
+          expires_at?: string
           id?: string
+          invite_type?: string
+          metadata?: Json
+          name?: string | null
           patient_id?: string | null
-          token: string
+          phone?: string | null
           used_at?: string | null
         }
         Update: {
           created_at?: string | null
           created_by?: string
+          email?: string | null
+          enterprise_id?: string | null
           expires_at?: string
           id?: string
+          invite_type?: string
+          metadata?: Json
+          name?: string | null
           patient_id?: string | null
-          token?: string
+          phone?: string | null
           used_at?: string | null
         }
         Relationships: [
@@ -1001,6 +1019,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_invite_links_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
             referencedColumns: ["id"]
           },
           {
@@ -1989,6 +2014,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          professional_documents: Json | null
           professional_type:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -2002,6 +2028,7 @@ export type Database = {
           id: string
           name: string
           phone?: string | null
+          professional_documents?: Json | null
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -2015,6 +2042,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          professional_documents?: Json | null
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -2153,7 +2181,12 @@ export type Database = {
         | "SC"
         | "other_heterozygous"
         | "other_homozygous"
-      installment_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      installment_status:
+        | "pendente"
+        | "pago"
+        | "atrasado"
+        | "cancelado"
+        | "em_analise"
       installments_notification_status:
         | "pending"
         | "sent"
@@ -2362,7 +2395,13 @@ export const Constants = {
         "other_heterozygous",
         "other_homozygous",
       ],
-      installment_status: ["pendente", "pago", "atrasado", "cancelado"],
+      installment_status: [
+        "pendente",
+        "pago",
+        "atrasado",
+        "cancelado",
+        "em_analise",
+      ],
       installments_notification_status: [
         "pending",
         "sent",
