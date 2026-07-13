@@ -1,5 +1,7 @@
+import BottomNav from "@/components/layouts/bottom-nav";
+import { MainContent } from "@/components/layouts/main-content";
+import { Sidebar } from "@/components/layouts/sidebar";
 import { getServerAuth } from "@/lib/server-auth";
-import PatientNav from "@/components/patient-area/patient-nav";
 import { redirect } from "next/navigation";
 
 export default async function PatientLayout({ children }: { children: React.ReactNode }) {
@@ -14,9 +16,12 @@ export default async function PatientLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFAF5] pb-20">
-      <main className="mx-auto max-w-2xl px-4 py-6">{children}</main>
-      <PatientNav />
+    <div className="flex-1">
+      <div className="flex h-screen overflow-hidden">
+        <Sidebar />
+        <MainContent>{children}</MainContent>
+      </div>
+      <BottomNav />
     </div>
   );
 }

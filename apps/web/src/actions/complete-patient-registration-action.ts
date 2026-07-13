@@ -1,8 +1,8 @@
 "use server";
 
 import { actionClient } from "@/lib/safe-action";
-import { createPatientWithTeamAndBilling } from "@/services/patient-onboarding";
 import type { CreatePatientInput } from "@/lib/validations/patient";
+import { createPatientWithTeamAndBilling } from "@/services/patient-onboarding";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
 
@@ -34,14 +34,21 @@ const schema = z.object({
 export const completePatientRegistrationAction = actionClient
   .inputSchema(schema)
   .action(async ({ parsedInput }) => {
-    const { inviteId, password, name: inputName, email: inputEmail, phone: inputPhone } =
-      parsedInput;
+    const {
+      inviteId,
+      password,
+      name: inputName,
+      email: inputEmail,
+      phone: inputPhone,
+    } = parsedInput;
 
     const supabaseAdmin = await createServerSupabaseAdmin();
 
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from("patient_invite_links")
-      .select("id, invite_type, name, email, phone, patient_id, enterprise_id, metadata, expires_at, used_at")
+      .select(
+        "id, invite_type, name, email, phone, patient_id, enterprise_id, metadata, expires_at, used_at",
+      )
       .eq("id", inviteId)
       .single();
 
@@ -66,6 +73,7 @@ export const completePatientRegistrationAction = actionClient
       password,
       options: {
         data: { name: finalName, user_type: "patient" },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login?confirmation=success`,
       },
     });
 
@@ -134,7 +142,7 @@ export const completePatientRegistrationAction = actionClient
 
       const { error: linkError } = await supabaseAdmin
         .from("patients")
-        .update({ user_id: userId, phone: finalPhone })
+        .update({ user_id: userId, name: finalName, email: finalEmail, phone: finalPhone })
         .eq("id", invite.patient_id);
 
       if (linkError) {

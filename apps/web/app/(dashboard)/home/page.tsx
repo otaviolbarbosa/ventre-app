@@ -1,7 +1,8 @@
 import { isStaff } from "@/lib/access-control";
 import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
-import { HomeScreen } from "@/screens";
+import { HomeScreen, PatientHomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
+import { getMyPregnancy } from "@/services/patient-self";
 import type { Tables } from "@ventre/supabase";
 import { redirect } from "next/navigation";
 
@@ -11,7 +12,14 @@ export default async function Home() {
   const { profile } = await getServerAuth();
 
   if (profile?.user_type === "patient") {
-    redirect("/patient-home");
+    const { patient, pregnancy, error } = await getMyPregnancy();
+    return (
+      <PatientHomeScreen
+        name={profile?.name ?? patient?.name}
+        pregnancy={pregnancy}
+        error={error}
+      />
+    );
   }
 
   const isOnboardingComplete =

@@ -2,13 +2,15 @@
 
 import { completePatientRegistrationAction } from "@/actions/complete-patient-registration-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
-import { useAuth } from "@/providers/auth-provider";
+import CustomIcon from "@/components/shared/custom-icon";
+import { ESTADOS_BR } from "@/lib/constants";
 import {
   type LinkExistingPatientRegistrationInput,
-  linkExistingPatientRegistrationSchema,
   type PatientSelfRegistrationInput,
+  linkExistingPatientRegistrationSchema,
   patientSelfRegistrationSchema,
 } from "@/lib/validations/patient-invite";
+import { useAuth } from "@/providers/auth-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { supabase } from "@ventre/supabase";
@@ -19,7 +21,6 @@ import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
-import { ESTADOS_BR } from "@/lib/constants";
 import dayjs from "dayjs";
 import { Camera, Check, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -27,7 +28,6 @@ import { useRouter } from "next/navigation";
 import { Fragment, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import CustomIcon from "@/components/shared/custom-icon";
 import { z } from "zod";
 
 type Invite = {
@@ -176,7 +176,12 @@ export default function PatientRegisterScreen({
 
   const linkForm = useForm<LinkExistingPatientRegistrationInput>({
     resolver: zodResolver(linkExistingPatientRegistrationSchema),
-    defaultValues: { password: "", phone: linkedPatient?.phone ?? "" },
+    defaultValues: {
+      password: "",
+      name: linkedPatient?.name ?? "",
+      email: linkedPatient?.email ?? "",
+      phone: linkedPatient?.phone ?? "",
+    },
   });
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
@@ -221,13 +226,16 @@ export default function PatientRegisterScreen({
       const selfRegValues = isSelfReg ? (dataValues as PatientSelfRegistrationInput) : null;
       const linkValues = !isSelfReg ? (dataValues as LinkExistingPatientRegistrationInput) : null;
 
-      const finalEmail = isSelfReg ? (selfRegValues?.email ?? invite.email ?? "") : (invite.email ?? "");
+      const finalEmail = isSelfReg
+        ? (selfRegValues?.email ?? invite.email ?? "")
+        : (linkValues?.email ?? invite.email ?? "");
       const finalPhone = isSelfReg ? selfRegValues?.phone : linkValues?.phone;
+      const finalName = isSelfReg ? selfRegValues?.name : linkValues?.name;
 
       const result = await executeAsync({
         inviteId: invite.id,
         password,
-        name: selfRegValues?.name,
+        name: finalName,
         email: finalEmail || undefined,
         phone: finalPhone,
         partner_name: selfRegValues?.partner_name,
@@ -249,7 +257,7 @@ export default function PatientRegisterScreen({
       });
 
       if (signInError) {
-        router.push("/login?confirmation=registration_complete");
+        router.push(`/patient-registration/complete?piid=${invite.id}`);
         return;
       }
 
@@ -268,8 +276,8 @@ export default function PatientRegisterScreen({
   }
 
   const displayName = isType1
-    ? (selfRegForm.watch("name") || invite.name || "")
-    : (linkedPatient?.name ?? invite.name ?? "");
+    ? selfRegForm.watch("name") || invite.name || ""
+    : linkForm.watch("name") || linkedPatient?.name || invite.name || "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#FFFAF5] px-4 py-12">
@@ -297,6 +305,8 @@ export default function PatientRegisterScreen({
                 <form
                   onSubmit={passwordForm.handleSubmit((values) => {
                     setPassword(values.password);
+                    selfRegForm.setValue("password", values.password);
+                    linkForm.setValue("password", values.password);
                     setStep(2);
                   })}
                   className="space-y-4"
@@ -656,6 +666,34 @@ export default function PatientRegisterScreen({
 
                 <FormField
                   control={linkForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome completo *</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={linkForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail *</FormLabel>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={linkForm.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
@@ -672,11 +710,6 @@ export default function PatientRegisterScreen({
                     </FormItem>
                   )}
                 />
-
-                <div className="space-y-3 rounded-xl bg-muted/30 p-4 text-sm">
-                  <DataRow label="Nome" value={linkedPatient?.name ?? "—"} />
-                  <DataRow label="E-mail" value={linkedPatient?.email ?? "—"} />
-                </div>
 
                 <div className="flex gap-2 pt-1">
                   <Button
@@ -722,10 +755,43 @@ export default function PatientRegisterScreen({
                       label="DPP"
                       value={(dataValues as PatientSelfRegistrationInput).due_date}
                     />
+                    {(() => {
+                      const address = (dataValues as PatientSelfRegistrationInput).address;
+                      if (!address) return null;
+                      const addressLine = [
+                        address.street,
+                        address.number,
+                        address.complement,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
+                      const cityLine = [
+                        address.neighborhood,
+                        address.city && address.state
+                          ? `${address.city}/${address.state}`
+                          : address.city,
+                      ]
+                        .filter(Boolean)
+                        .join(" — ");
+                      return (
+                        <>
+                          {address.zipcode && <DataRow label="CEP" value={address.zipcode} />}
+                          {addressLine && <DataRow label="Endereço" value={addressLine} />}
+                          {cityLine && <DataRow label="Bairro/Cidade" value={cityLine} />}
+                        </>
+                      );
+                    })()}
                   </>
                 ) : (
                   <>
-                    <DataRow label="Nome" value={linkedPatient?.name ?? "—"} />
+                    <DataRow
+                      label="Nome"
+                      value={(dataValues as LinkExistingPatientRegistrationInput).name}
+                    />
+                    <DataRow
+                      label="E-mail"
+                      value={(dataValues as LinkExistingPatientRegistrationInput).email}
+                    />
                     <DataRow
                       label="Telefone"
                       value={(dataValues as LinkExistingPatientRegistrationInput).phone}

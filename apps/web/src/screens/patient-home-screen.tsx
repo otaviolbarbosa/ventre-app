@@ -1,21 +1,23 @@
-import { getServerAuth } from "@/lib/server-auth";
-import { getMyPregnancy } from "@/services/patient-self";
 import { dayjs } from "@/lib/dayjs";
+import type { Tables } from "@ventre/supabase";
 import Link from "next/link";
 
-export default async function PatientHomePage() {
-  const { profile } = await getServerAuth();
-  const { patient, pregnancy, error } = await getMyPregnancy();
+type PatientHomeScreenProps = {
+  name: string | null | undefined;
+  pregnancy: Tables<"pregnancies"> | null;
+  error: string | null | undefined;
+};
 
+export default function PatientHomeScreen({ name, pregnancy, error }: PatientHomeScreenProps) {
   const gestationalWeek = pregnancy?.dum
     ? Math.floor(dayjs().diff(dayjs(pregnancy.dum), "day") / 7)
     : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-6">
       <div>
         <p className="text-muted-foreground text-sm">Olá,</p>
-        <h1 className="font-bold text-2xl text-[#433831]">{profile?.name ?? patient?.name}</h1>
+        <h1 className="font-bold text-2xl text-[#433831]">{name}</h1>
       </div>
 
       {error && (

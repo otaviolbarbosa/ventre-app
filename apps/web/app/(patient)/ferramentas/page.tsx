@@ -3,7 +3,7 @@ import { Activity, HeartPulse } from "lucide-react";
 
 export default function PatientFerramentasPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4 py-6">
       <h1 className="font-bold text-2xl text-[#433831]">Ferramentas</h1>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -1,4 +1,5 @@
 import PatientRegisterCompleteScreen from "@/screens/patient-register-complete-screen";
+import RegistrationCompleteNotice from "@/screens/registration-complete-notice-screen";
 import { getServerAuth } from "@/lib/server-auth";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { redirect } from "next/navigation";
@@ -9,12 +10,8 @@ export default async function PatientRegistrationCompletePage({ searchParams }: 
   const { piid } = await searchParams;
   const { user, profile } = await getServerAuth();
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  if (!piid || profile?.user_type !== "patient") {
-    redirect("/home");
+  if (!piid) {
+    redirect(user ? "/home" : "/login");
   }
 
   const supabaseAdmin = await createServerSupabaseAdmin();
@@ -25,7 +22,25 @@ export default async function PatientRegistrationCompletePage({ searchParams }: 
     .eq("id", piid)
     .maybeSingle();
 
-  if (!invite || invite.used_at || new Date(invite.expires_at) < new Date()) {
+  if (!invite || new Date(invite.expires_at) < new Date()) {
+    redirect(user ? "/home" : "/login");
+  }
+
+  // Password-based self-registration already finished and marked the invite as used.
+  // If there is no session yet, the account is pending e-mail confirmation — show a
+  // notice instead of bouncing to /login (which has no context for this state).
+  if (invite.used_at) {
+    if (user && profile?.user_type === "patient") {
+      redirect("/home");
+    }
+    return <RegistrationCompleteNotice email={invite.email} />;
+  }
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (profile?.user_type !== "patient") {
     redirect("/home");
   }
 

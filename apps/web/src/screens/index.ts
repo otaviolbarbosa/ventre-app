@@ -6,6 +6,7 @@ export { default as EnterpriseSettingsScreen } from "./enterprise-settings-scree
 export { default as HomeScreen } from "./home-screen";
 export { default as HomeEnterpriseScreen } from "./home-enterprise-screen";
 export { default as OnboardingScreen } from "./onboarding-screen";
+export { default as PatientHomeScreen } from "./patient-home-screen";
 export { default as PatientTeamScreen } from "./patient-team-screen";
 export { default as PatientTeamEnterpriseScreen } from "./patient-team-enterprise-screen";
 export { default as PatientsEnterpriseScreen } from "./patients-enterprise-screen";

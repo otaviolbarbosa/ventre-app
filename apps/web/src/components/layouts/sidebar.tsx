@@ -3,7 +3,7 @@
 import Avatar from "@/components/shared/avatar";
 import { Logo } from "@/components/shared/logo";
 import { useAuth } from "@/hooks/use-auth";
-import { isManager, isStaff } from "@/lib/access-control";
+import { isManager, isPatient, isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
@@ -13,12 +13,14 @@ import {
   BriefcaseMedicalIcon,
   Calendar,
   CircleDollarSign,
+  Heart,
   Home,
   LogOut,
   Mail,
   PanelLeft,
   Settings,
   Users,
+  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -45,6 +47,14 @@ const navigationManager = [
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
+const navigationPatient = [
+  { name: "Início", href: "/home", icon: Home },
+  { name: "Cartão pré-natal", href: "/cartao-pre-natal", icon: Heart },
+  { name: "Agenda", href: "/agenda", icon: Calendar },
+  { name: "Financeiro", href: "/financeiro", icon: CircleDollarSign },
+  { name: "Ferramentas", href: "/ferramentas", icon: Wrench },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { signOut, profile } = useAuth();
@@ -56,6 +66,7 @@ export function Sidebar() {
   }, []);
 
   const navigation = useMemo(() => {
+    if (isPatient(profile)) return navigationPatient;
     if (isManager(profile)) return navigationManager;
     if (isStaff(profile)) return navigationStaff;
     return navigationProfessionals;
@@ -173,7 +184,9 @@ export function Sidebar() {
                 <div className="flex-1 truncate">
                   <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>
                   <p className="truncate text-gray-500 text-xs">
-                    {professionalTypeLabels[profile?.professional_type as ProfessionalType]}
+                    {isPatient(profile)
+                      ? "Gestante"
+                      : professionalTypeLabels[profile?.professional_type as ProfessionalType]}
                   </p>
                 </div>
               </Link>

@@ -2,8 +2,8 @@
 
 import { sendPatientInviteEmailAction } from "@/actions/send-patient-invite-email-action";
 import CustomIcon from "@/components/shared/custom-icon";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Button } from "@ventre/ui/button";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Check, Copy, Loader2, Mail } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
@@ -66,7 +66,7 @@ export default function PatientInviteShareModal({
   }
 
   return (
-    <ContentModal open={isOpen} onOpenChange={handleCloseModal} title="Convite enviado">
+    <ContentModal open={isOpen} onOpenChange={handleCloseModal} title="Convite criado">
       <div className="space-y-4 pt-2">
         <p className="text-muted-foreground text-sm">
           Compartilhe o link de auto cadastro com {patientName}.

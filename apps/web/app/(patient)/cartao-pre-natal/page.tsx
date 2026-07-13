@@ -17,7 +17,7 @@ export default async function PatientPrenatalCardPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4 py-6">
       <h1 className="font-bold text-2xl text-[#433831]">Cartão pré-natal</h1>
       <PrenatalCard patientId={patient.id} pregnancyId={pregnancy?.id} isEditable={false} />
     </div>

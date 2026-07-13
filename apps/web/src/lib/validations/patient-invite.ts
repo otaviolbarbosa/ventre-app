@@ -47,6 +47,8 @@ export type PatientSelfRegistrationInput = z.infer<typeof patientSelfRegistratio
 
 export const linkExistingPatientRegistrationSchema = z.object({
   password: z.string().min(8, "A senha precisa ter ao menos 8 caracteres"),
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
   phone: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
 });
 
