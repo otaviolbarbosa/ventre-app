@@ -10,9 +10,9 @@ import {
 } from "@/lib/contract-pdf";
 import { buildSignatureLocalityLine } from "@/lib/contract-signature-text";
 import { authActionClient } from "@/lib/safe-action";
+import { signPatientContractSchema } from "@/lib/validations/contract";
 import { generateVerificationCode } from "@/lib/verification-code";
 import { buildVerificationUrl } from "@/lib/verification-url";
-import { signPatientContractSchema } from "@/lib/validations/contract";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
@@ -90,7 +90,8 @@ export const signPatientContractAction = authActionClient
           .maybeSingle();
         if (!collision) verificationCode = candidate;
       }
-      if (!verificationCode) throw new Error("Erro ao gerar código de verificação. Tente novamente.");
+      if (!verificationCode)
+        throw new Error("Erro ao gerar código de verificação. Tente novamente.");
 
       const buffer = await renderContractPdfBuffer({
         headerBlocks: parties_details,

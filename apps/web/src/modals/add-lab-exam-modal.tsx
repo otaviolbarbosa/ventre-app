@@ -2,16 +2,16 @@
 
 import { addLabExamAction } from "@/actions/add-lab-exam-action";
 import { updateLabExamAction } from "@/actions/update-lab-exam-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { HEMOGLOBIN_LABELS } from "@/lib/prenatal-constants";
 import { type LabExamInput, labExamSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -124,7 +124,9 @@ export function AddLabExamModal({
                   <FormControl>
                     <DatePicker
                       selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
                       placeholderText="Selecione a data"
                     />
                   </FormControl>

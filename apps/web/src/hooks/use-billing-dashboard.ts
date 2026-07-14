@@ -1,11 +1,7 @@
 "use client";
 
 import type { FilterKey } from "@/components/billing/dashboard-metrics";
-import {
-  FILTER_LABELS,
-  buildBillingMetrics,
-  groupBillingsByFilter,
-} from "@/lib/billing/dashboard";
+import { FILTER_LABELS, buildBillingMetrics, groupBillingsByFilter } from "@/lib/billing/dashboard";
 import { dayjs } from "@/lib/dayjs";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
 import { useCallback, useMemo, useState } from "react";

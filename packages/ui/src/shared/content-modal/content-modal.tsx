@@ -42,7 +42,7 @@ export function ContentModal({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
         <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
+          <SheetTitle className="font-poppins">{title}</SheetTitle>
           {description && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
         <div className="mt-4">{children}</div>

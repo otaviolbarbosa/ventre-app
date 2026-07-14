@@ -68,6 +68,44 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Onboarding gate for authenticated users on protected routes
+  if (user && !isPublicRoute) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("user_type, professional_type")
+      .eq("id", user.id)
+      .single();
+
+    const isStaff = profile?.user_type === "manager" || profile?.user_type === "secretary";
+
+    let hasEnterprise = false;
+    if (isStaff) {
+      const { data: ueRow } = await supabase
+        .from("user_enterprises")
+        .select("enterprise_id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      hasEnterprise = ueRow?.enterprise_id != null;
+    }
+
+    const isOnboardingComplete =
+      (profile?.user_type === "professional" && profile?.professional_type !== null) ||
+      (isStaff && hasEnterprise);
+
+    if (!isOnboardingComplete && pathname !== "/onboarding") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (isOnboardingComplete && pathname === "/onboarding") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 

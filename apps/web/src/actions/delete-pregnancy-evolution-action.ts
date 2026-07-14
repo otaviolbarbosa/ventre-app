@@ -27,10 +27,7 @@ export const deletePregnancyEvolutionAction = authActionClient
       : { data: null };
     const patient = pregnancy?.patient as { id: string; name: string } | null;
 
-    const { error } = await supabase
-      .from("pregnancy_evolutions")
-      .delete()
-      .eq("id", evolutionId);
+    const { error } = await supabase.from("pregnancy_evolutions").delete().eq("id", evolutionId);
 
     if (error) throw new Error(error.message);
 

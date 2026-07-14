@@ -83,8 +83,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
       const { addresses: addrs, ...patientData } = patient as unknown as RawPatient & {
         addresses: unknown[];
       };
-      const address =
-        Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
+      const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
       return {
         ...patientData,
         address,
@@ -149,8 +148,8 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
 // Inline creation (inside getCachedHomePatients) creates a new cache namespace on every
 // call, causing consistent cache misses. We memoize one cache function per userId so
 // the reference is stable and per-user tags remain valid for targeted revalidation.
-type CachedFetchFn = (params: FetchParams) => Promise<HomePatientItem[]>
-const userCacheFns = new Map<string, CachedFetchFn>()
+type CachedFetchFn = (params: FetchParams) => Promise<HomePatientItem[]>;
+const userCacheFns = new Map<string, CachedFetchFn>();
 
 function getOrCreateUserCacheFn(userId: string): CachedFetchFn {
   if (!userCacheFns.has(userId)) {
@@ -160,11 +159,11 @@ function getOrCreateUserCacheFn(userId: string): CachedFetchFn {
         tags: [`home-patients-${userId}`],
         revalidate: 300,
       }),
-    )
+    );
   }
-  return userCacheFns.get(userId) as CachedFetchFn
+  return userCacheFns.get(userId) as CachedFetchFn;
 }
 
 export function getCachedHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
-  return getOrCreateUserCacheFn(params.userId)(params)
+  return getOrCreateUserCacheFn(params.userId)(params);
 }

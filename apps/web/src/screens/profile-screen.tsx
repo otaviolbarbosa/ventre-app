@@ -20,8 +20,8 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 type Profile = Tables<"users">;
 
@@ -83,6 +83,7 @@ function getInitials(name: string | null): string {
 
 export default function ProfileScreen({ profile, address }: ProfileScreenProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signOut } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
@@ -90,6 +91,14 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profileName, setProfileName] = useState(profile.name || "");
   const [profilePhone, setProfilePhone] = useState(profile.phone || "");
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "edit-profile") return;
+    setIsEditModalOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("action");
+    router.replace(url.pathname + (url.search || ""));
+  }, [searchParams, router]);
 
   const handleLogout = async () => {
     await signOut();
@@ -191,6 +200,8 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
         name={profileName}
         phone={profilePhone}
         address={address}
+        professionalType={profile.professional_type as ProfessionalType | null}
+        professionalDocuments={profile.professional_documents}
         onSuccess={(name, phone) => {
           setProfileName(name);
           setProfilePhone(phone);

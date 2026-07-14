@@ -35,9 +35,7 @@ export const deleteUltrasoundAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Ultrassom excluído",
-        description: patient
-          ? `Ultrassom de ${patient.name} excluído`
-          : "Ultrassom excluído",
+        description: patient ? `Ultrassom de ${patient.name} excluído` : "Ultrassom excluído",
         actionType: "exam",
         userId: user.id,
         enterpriseId: profile.enterprise_id,

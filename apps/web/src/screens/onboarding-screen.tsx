@@ -3,10 +3,16 @@
 import { joinEnterpriseAction } from "@/actions/join-enterprise-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { requestEnterpriseAction } from "@/actions/request-enterprise-action";
+import { setProfessionalDocumentsAction } from "@/actions/set-professional-documents-action";
 import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
 import { setUserTypeAction } from "@/actions/set-user-type-action";
+import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
 import { ESTADOS_BR } from "@/lib/constants";
 import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
+import {
+  type ProfessionalDocumentsInput,
+  professionalDocumentsSchema,
+} from "@/lib/validations/professional-documents";
 import type { ProfessionalType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
@@ -18,9 +24,11 @@ import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { Activity, Baby, Building2, Heart, Loader2, LockKeyhole, Stethoscope } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 type UserRoleType = Tables<"users">["user_type"];
 
@@ -90,8 +98,38 @@ const professionalTypes: {
   },
 ];
 
+function normalizeDocumentEntry<T extends { number: string; uf: string } | undefined>(
+  entry: T,
+): T | undefined {
+  if (!entry || !entry.number.trim()) return undefined;
+  return entry;
+}
+
+function normalizeProfessionalDocuments(
+  documents: ProfessionalDocumentsInput | undefined,
+): ProfessionalDocumentsInput | undefined {
+  if (!documents) return undefined;
+
+  const rqe = documents.rqe?.filter((entry) => entry.number.trim().length > 0);
+
+  const normalized: ProfessionalDocumentsInput = {
+    crm: normalizeDocumentEntry(documents.crm),
+    crefito: normalizeDocumentEntry(documents.crefito),
+    coren: normalizeDocumentEntry(documents.coren),
+    rqe: rqe && rqe.length > 0 ? rqe : undefined,
+  };
+
+  const hasData = Object.values(normalized).some((v) => v !== undefined);
+  return hasData ? normalized : undefined;
+}
+
 export default function OnboardingScreen() {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<UserRoleType | null>(null);
+  const [pendingProfessionalType, setPendingProfessionalType] = useState<ProfessionalType | null>(
+    null,
+  );
+  const [documentsStep, setDocumentsStep] = useState<ProfessionalType | null>(null);
   const [tokenDigits, setTokenDigits] = useState<string[]>(Array(5).fill(""));
   const tokenInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const token = tokenDigits.join("");
@@ -121,8 +159,37 @@ export default function OnboardingScreen() {
     },
   });
 
-  const { execute: executeProfessionalType, status: professionalTypeStatus } =
-    useAction(setProfessionalTypeAction);
+  const documentsForm = useForm<{ professional_documents?: ProfessionalDocumentsInput }>({
+    resolver: zodResolver(
+      z.object({ professional_documents: professionalDocumentsSchema.optional() }),
+    ),
+    defaultValues: { professional_documents: undefined },
+  });
+
+  const { execute: executeProfessionalType, status: professionalTypeStatus } = useAction(
+    setProfessionalTypeAction,
+    {
+      onSuccess: () => {
+        if (pendingProfessionalType === "doula") {
+          router.push("/home");
+        } else if (pendingProfessionalType) {
+          setDocumentsStep(pendingProfessionalType);
+        }
+      },
+      onError: ({ error }) => {
+        toast.error(error.serverError ?? "Erro ao selecionar especialidade.");
+      },
+    },
+  );
+
+  const { execute: executeDocuments, status: documentsStatus } = useAction(
+    setProfessionalDocumentsAction,
+    {
+      onError: ({ error }) => {
+        toast.error(error.serverError ?? "Erro ao salvar documentos profissionais.");
+      },
+    },
+  );
 
   const { execute: executeUserType, status: userTypeStatus } = useAction(setUserTypeAction);
 
@@ -172,11 +239,14 @@ export default function OnboardingScreen() {
     joinEnterpriseStatus === "executing" ||
     requestEnterpriseStatus === "executing";
 
+  const isDocumentsPending = documentsStatus === "executing";
+
   function handleRoleSelect(role: UserRoleType) {
     setSelectedRole(role);
   }
 
   function handleProfessionalTypeSelect(type: ProfessionalType) {
+    setPendingProfessionalType(type);
     executeProfessionalType({ type });
   }
 
@@ -278,9 +348,61 @@ export default function OnboardingScreen() {
     );
   }
 
-  if (selectedRole === "professional") {
+  if (documentsStep) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-4">
+        <div className="mb-8 text-center">
+          <h1 className="font-poppins font-semibold text-2xl tracking-tight">
+            Documentos profissionais
+          </h1>
+          <p className="mt-2 text-muted-foreground text-sm">
+            Opcional — você pode preencher isso depois no seu perfil
+          </p>
+        </div>
+
+        <Form {...documentsForm}>
+          <form
+            onSubmit={documentsForm.handleSubmit((values) =>
+              executeDocuments({
+                professional_documents: normalizeProfessionalDocuments(
+                  values.professional_documents,
+                ),
+              }),
+            )}
+            className="flex w-full max-w-sm flex-col gap-4"
+          >
+            <ProfessionalDocumentsFields
+              control={documentsForm.control}
+              professionalType={documentsStep}
+            />
+
+            <div className="mt-4 flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                disabled={isDocumentsPending}
+                onClick={() => executeDocuments({ professional_documents: undefined })}
+              >
+                Pular
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isDocumentsPending}>
+                {isDocumentsPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Salvar e continuar"
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    );
+  }
+
+  if (selectedRole === "professional") {
+    return (
+      <div className="flex min-h-full flex-col items-center justify-center p-4">
         <div className="mb-8 text-center">
           <h1 className="font-poppins font-semibold text-2xl tracking-tight">
             Qual é a sua especialidade?

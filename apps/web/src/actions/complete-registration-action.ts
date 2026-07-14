@@ -15,7 +15,13 @@ const schema = z.object({
 export const completeRegistrationAction = actionClient
   .inputSchema(schema)
   .action(async ({ parsedInput }) => {
-    const { inviteId, password, name: inputName, email: inputEmail, phone: inputPhone } = parsedInput;
+    const {
+      inviteId,
+      password,
+      name: inputName,
+      email: inputEmail,
+      phone: inputPhone,
+    } = parsedInput;
 
     const supabaseAdmin = await createServerSupabaseAdmin();
 

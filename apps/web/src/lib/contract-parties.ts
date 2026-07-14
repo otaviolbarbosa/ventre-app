@@ -1,6 +1,9 @@
-import { buildContractHeaderBlocks, type ContractHeaderBlocks } from "@/lib/contract-header-text";
+import { type ContractHeaderBlocks, buildContractHeaderBlocks } from "@/lib/contract-header-text";
 import type { ProfileWithEnterprise } from "@/lib/safe-action";
-import type { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import type {
+  createServerSupabaseAdmin,
+  createServerSupabaseClient,
+} from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;

@@ -1,6 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
+import { professionalDocumentsSchema } from "@/lib/validations/professional-documents";
 import { z } from "zod";
 
 const schema = z.object({
@@ -17,6 +18,7 @@ const schema = z.object({
       state: z.string().optional(),
     })
     .optional(),
+  professional_documents: professionalDocumentsSchema.optional(),
 });
 
 export const updateProfileAction = authActionClient
@@ -27,6 +29,7 @@ export const updateProfileAction = authActionClient
       .update({
         name: parsedInput.name.trim(),
         phone: parsedInput.phone?.trim() || null,
+        professional_documents: parsedInput.professional_documents ?? null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id)

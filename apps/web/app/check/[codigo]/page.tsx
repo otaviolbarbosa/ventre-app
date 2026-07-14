@@ -123,9 +123,7 @@ export default function CheckContractPage({
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-12 text-center transition-colors ${
-                  dragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
+                  dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                 }`}
               >
                 <Upload className="h-8 w-8 text-primary" />

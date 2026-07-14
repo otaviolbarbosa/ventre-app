@@ -29,7 +29,9 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
   // Todos os membros da enterprise via junction table, split por user_type
   const { data: allUeData } = await supabaseAdmin
     .from("user_enterprises")
-    .select("user_id, users!inner(id, name, email, phone, professional_type, user_type, avatar_url)")
+    .select(
+      "user_id, users!inner(id, name, email, phone, professional_type, user_type, avatar_url)",
+    )
     .eq("enterprise_id", enterpriseId);
 
   const ueData = (allUeData ?? []).filter((ue) => {

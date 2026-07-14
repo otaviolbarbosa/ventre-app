@@ -2,9 +2,16 @@
 
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { updateProfileAction } from "@/actions/update-profile-action";
+import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
 import { ESTADOS_BR } from "@/lib/constants";
+import {
+  type ProfessionalDocumentsInput,
+  professionalDocumentsSchema,
+} from "@/lib/validations/professional-documents";
+import type { ProfessionalType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
+import type { Json } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
@@ -31,6 +38,7 @@ const editProfileSchema = z.object({
       state: z.string().optional(),
     })
     .optional(),
+  professional_documents: professionalDocumentsSchema.optional(),
 });
 
 type EditProfileInput = z.infer<typeof editProfileSchema>;
@@ -51,8 +59,35 @@ type EditProfileModalProps = {
   name: string;
   phone: string;
   address?: Address | null;
+  professionalType: ProfessionalType | null;
+  professionalDocuments?: Json | null;
   onSuccess?: (name: string, phone: string) => void;
 };
+
+function normalizeDocumentEntry<T extends { number: string; uf: string } | undefined>(
+  entry: T,
+): T | undefined {
+  if (!entry || !entry.number.trim()) return undefined;
+  return entry;
+}
+
+function normalizeProfessionalDocuments(
+  documents: ProfessionalDocumentsInput | undefined,
+): ProfessionalDocumentsInput | undefined {
+  if (!documents) return undefined;
+
+  const rqe = documents.rqe?.filter((entry) => entry.number.trim().length > 0);
+
+  const normalized: ProfessionalDocumentsInput = {
+    crm: normalizeDocumentEntry(documents.crm),
+    crefito: normalizeDocumentEntry(documents.crefito),
+    coren: normalizeDocumentEntry(documents.coren),
+    rqe: rqe && rqe.length > 0 ? rqe : undefined,
+  };
+
+  const hasData = Object.values(normalized).some((v) => v !== undefined);
+  return hasData ? normalized : undefined;
+}
 
 export function EditProfileModal({
   open,
@@ -60,6 +95,8 @@ export function EditProfileModal({
   name,
   phone,
   address,
+  professionalType,
+  professionalDocuments,
   onSuccess,
 }: EditProfileModalProps) {
   const [addressVisible, setAddressVisible] = useState(false);
@@ -96,10 +133,12 @@ export function EditProfileModal({
           city: address?.city ?? "",
           state: address?.state ?? "",
         },
+        professional_documents:
+          (professionalDocuments as ProfessionalDocumentsInput | null) ?? undefined,
       });
       setAddressVisible(hasAddress);
     }
-  }, [open, name, phone, address, form]);
+  }, [open, name, phone, address, professionalDocuments, form]);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
@@ -126,7 +165,10 @@ export function EditProfileModal({
   });
 
   async function handleSubmit(values: EditProfileInput) {
-    const result = await saveProfile(values);
+    const result = await saveProfile({
+      ...values,
+      professional_documents: normalizeProfessionalDocuments(values.professional_documents),
+    });
 
     if (!result?.data?.profile) {
       toast.error(result?.serverError ?? "Erro ao salvar perfil");
@@ -180,8 +222,10 @@ export function EditProfileModal({
             )}
           />
 
+          <ProfessionalDocumentsFields control={form.control} professionalType={professionalType} />
+
           <div className="space-y-4 pt-2">
-            <p className="font-medium text-sm">Endereço</p>
+            <p className="font-medium font-poppins text-md">Endereço</p>
 
             <FormField
               control={form.control}
@@ -264,12 +308,12 @@ export function EditProfileModal({
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-4 gap-4">
               <FormField
                 control={form.control}
                 name="address.street"
                 render={({ field }) => (
-                  <FormItem className="sm:col-span-3">
+                  <FormItem className="col-span-3">
                     <FormLabel>Rua</FormLabel>
                     <FormControl>
                       <Input placeholder="Rua das Flores" disabled={!addressVisible} {...field} />

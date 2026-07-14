@@ -1,8 +1,8 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
-import { updatePatientPrenatalSchema } from "@/lib/validations/prenatal";
 import { authActionClient } from "@/lib/safe-action";
+import { updatePatientPrenatalSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
 
 const schema = z.object({
@@ -52,7 +52,11 @@ export const upsertPatientPrenatalFieldsAction = authActionClient
     if (pregnancyError) throw new Error(pregnancyError.message);
 
     if (profile.enterprise_id) {
-      const { data: patient } = await supabase.from("patients").select("name").eq("id", patientId).single();
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", patientId)
+        .single();
       insertActivityLog({
         supabaseAdmin,
         actionName: "Cartão pré-natal atualizado",

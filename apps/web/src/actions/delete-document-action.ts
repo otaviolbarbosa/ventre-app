@@ -39,9 +39,7 @@ export const deleteDocumentAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Documento excluído",
-        description: patient
-          ? `Documento de ${patient.name} excluído`
-          : "Documento excluído",
+        description: patient ? `Documento de ${patient.name} excluído` : "Documento excluído",
         actionType: "patient",
         userId: user.id,
         enterpriseId: profile.enterprise_id,

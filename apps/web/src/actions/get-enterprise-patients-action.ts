@@ -106,7 +106,10 @@ export async function getEnterprisePatients(
     rows = (patientsData ?? [])
       .map((p) => {
         const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
-        const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Record<string, string | null>) : null;
+        const address =
+          Array.isArray(addrs) && addrs.length > 0
+            ? (addrs[0] as Record<string, string | null>)
+            : null;
         return {
           ...patientData,
           address,
