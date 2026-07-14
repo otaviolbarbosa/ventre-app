@@ -7,8 +7,8 @@ import { signPatientContractAction } from "@/actions/sign-patient-contract-actio
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { useAuth } from "@/hooks/use-auth";
 import { isManager } from "@/lib/access-control";
-import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { ESTADOS_BR } from "@/lib/constants";
+import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { cn } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";

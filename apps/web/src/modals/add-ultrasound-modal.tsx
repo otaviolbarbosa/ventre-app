@@ -2,7 +2,6 @@
 
 import { addUltrasoundAction } from "@/actions/add-ultrasound-action";
 import { updateUltrasoundAction } from "@/actions/update-ultrasound-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { AMNIOTIC_FLUID_INDEX_LABELS } from "@/lib/prenatal-constants";
 import { type UltrasoundInput, ultrasoundSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,9 +9,10 @@ import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -106,7 +106,9 @@ export function AddUltrasoundModal({
                   <FormControl>
                     <DatePicker
                       selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
                       placeholderText="Selecione a data"
                     />
                   </FormControl>

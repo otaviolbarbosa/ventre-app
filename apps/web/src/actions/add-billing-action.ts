@@ -23,7 +23,13 @@ export const addBillingAction = authActionClient
       billingEnterpriseId = pregnancy?.enterprise_id ?? null;
     }
 
-    const billing = await createBilling(supabase, supabaseAdmin, user.id, parsedInput, billingEnterpriseId);
+    const billing = await createBilling(
+      supabase,
+      supabaseAdmin,
+      user.id,
+      parsedInput,
+      billingEnterpriseId,
+    );
 
     if (billingEnterpriseId) {
       const { data: patient } = await supabase
@@ -35,9 +41,7 @@ export const addBillingAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Nova cobrança criada",
-        description: patient
-          ? `Nova cobrança criada para ${patient.name}`
-          : "Nova cobrança criada",
+        description: patient ? `Nova cobrança criada para ${patient.name}` : "Nova cobrança criada",
         actionType: "billing",
         userId: user.id,
         enterpriseId: billingEnterpriseId,

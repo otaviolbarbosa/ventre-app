@@ -2,17 +2,17 @@
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { updatePatientAction } from "@/actions/update-patient-action";
 import { ESTADOS_BR } from "@/lib/constants";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { type UpdatePatientInput, updatePatientSchema } from "@/lib/validations/patient";
 import type { PatientAddress } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@ventre/supabase";
 import { InputMask } from "@react-input/mask";
+import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 
@@ -237,7 +237,9 @@ export function EditPatientModal({
                   <FormControl>
                     <DatePicker
                       selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
                       placeholderText="Calculado automaticamente"
                       disabled
                       className="bg-muted"
@@ -369,10 +371,7 @@ export function EditPatientModal({
                   render={({ field }) => (
                     <FormItem className="col-span-1">
                       <FormLabel>UF</FormLabel>
-                      <Select
-                        value={field.value ?? undefined}
-                        onValueChange={field.onChange}
-                      >
+                      <Select value={field.value ?? undefined} onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="UF" />

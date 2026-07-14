@@ -118,8 +118,7 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
 
     rawPatients = (data ?? []).map((p) => {
       const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
-      const address =
-        Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
+      const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
       return {
         ...patientData,
         address,

@@ -5,8 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import CustomIcon from "@/components/shared/custom-icon";
-import { Button } from "@ventre/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@ventre/ui/button";
 
 interface SocialLoginButtonsProps {
   redirectTo?: string;

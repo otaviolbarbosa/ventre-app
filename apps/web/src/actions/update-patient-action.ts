@@ -27,10 +27,7 @@ export const updatePatientAction = authActionClient
     if (address !== undefined) {
       const { error: addressError } = await supabase
         .from("addresses")
-        .upsert(
-          { ...address, patient_id: parsedInput.patientId },
-          { onConflict: "patient_id" },
-        );
+        .upsert({ ...address, patient_id: parsedInput.patientId }, { onConflict: "patient_id" });
 
       if (addressError) throw new Error(addressError.message);
     }

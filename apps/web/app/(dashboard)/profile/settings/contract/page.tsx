@@ -15,5 +15,7 @@ export default async function PersonalContractPage() {
     getPersonalContractHeaderData(),
   ]);
 
-  return <PersonalContractSettingsScreen initialContract={initialContract} headerData={headerData} />;
+  return (
+    <PersonalContractSettingsScreen initialContract={initialContract} headerData={headerData} />
+  );
 }

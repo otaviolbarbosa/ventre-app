@@ -37,9 +37,7 @@ export const updateOtherExamAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Outro exame atualizado",
-        description: patient
-          ? `Exame de ${patient.name} atualizado`
-          : "Exame atualizado",
+        description: patient ? `Exame de ${patient.name} atualizado` : "Exame atualizado",
         actionType: "exam",
         userId: user.id,
         enterpriseId: profile.enterprise_id,

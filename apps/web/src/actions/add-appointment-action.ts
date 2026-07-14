@@ -29,7 +29,12 @@ export const addAppointmentAction = authActionClient
       appointmentEnterpriseId = pregnancy?.enterprise_id ?? null;
     }
 
-    const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput, appointmentEnterpriseId);
+    const appointment = await createAppointment(
+      supabaseAdmin,
+      professionalId,
+      parsedInput,
+      appointmentEnterpriseId,
+    );
 
     let patientName: string | null = parsedInput.external_patient_name ?? null;
     if (!parsedInput.is_external && appointment.patient_id) {

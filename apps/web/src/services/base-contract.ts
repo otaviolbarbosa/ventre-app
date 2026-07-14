@@ -78,7 +78,12 @@ export type ContractHeaderData =
     }
   | {
       type: "autonomous";
-      user: { name: string | null; email: string | null; phone: string | null; professional_type: string | null };
+      user: {
+        name: string | null;
+        email: string | null;
+        phone: string | null;
+        professional_type: string | null;
+      };
     };
 
 export async function getPersonalContractHeaderData(): Promise<
@@ -100,7 +105,10 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
   const { profile, user } = await getServerAuth();
 
   if (!user || !profile) {
-    return { type: "autonomous", user: { name: null, email: null, phone: null, professional_type: null } };
+    return {
+      type: "autonomous",
+      user: { name: null, email: null, phone: null, professional_type: null },
+    };
   }
 
   const supabaseAdmin = await createServerSupabaseAdmin();
@@ -108,7 +116,9 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
   if (profile.enterprise_id) {
     const { data: enterprise } = await supabaseAdmin
       .from("enterprises")
-      .select("name, legal_name, cnpj, email, phone, street, number, complement, neighborhood, city, state, zipcode")
+      .select(
+        "name, legal_name, cnpj, email, phone, street, number, complement, neighborhood, city, state, zipcode",
+      )
       .eq("id", profile.enterprise_id)
       .maybeSingle();
 

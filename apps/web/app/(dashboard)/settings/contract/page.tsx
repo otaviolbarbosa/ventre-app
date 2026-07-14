@@ -11,7 +11,10 @@ export default async function ContractPage() {
     redirect("/home?error=acesso-negado");
   }
 
-  const [initialContract, headerData] = await Promise.all([getBaseContract(), getContractHeaderData()]);
+  const [initialContract, headerData] = await Promise.all([
+    getBaseContract(),
+    getContractHeaderData(),
+  ]);
 
   return <ContractSettingsScreen initialContract={initialContract} headerData={headerData} />;
 }

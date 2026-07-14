@@ -12,7 +12,9 @@ export const getPatientEvolutionsAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase } }) => {
     const { data: evolutions, error } = await supabase
       .from("patient_evolutions")
-      .select("id, content, created_at, is_public, patient_id, professional_id, professional:professional_id(id, name)")
+      .select(
+        "id, content, created_at, is_public, patient_id, professional_id, professional:professional_id(id, name)",
+      )
       .eq("patient_id", parsedInput.patientId)
       .order("created_at", { ascending: false });
 

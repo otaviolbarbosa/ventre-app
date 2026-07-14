@@ -69,10 +69,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .single();
 
     if (!error && validation.data.address) {
-      await supabase.from("addresses").upsert(
-        { patient_id: id, ...validation.data.address },
-        { onConflict: "patient_id" },
-      );
+      await supabase
+        .from("addresses")
+        .upsert({ patient_id: id, ...validation.data.address }, { onConflict: "patient_id" });
     }
 
     if (error) {
