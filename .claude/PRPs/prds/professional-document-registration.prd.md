@@ -139,8 +139,8 @@ Migration + formulário condicional (onboarding opcional e modal de edição) + 
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Database | Migration `professional_documents jsonb` + `pnpm db:types` | complete | - | - | `.claude/PRPs/plans/completed/professional-document-registration-phase-1-database.plan.md` |
 | 2 | Shared form fields | Componente + schema Zod condicional por `professional_type`, action de update estendida | complete | - | 1 | `.claude/PRPs/plans/completed/professional-document-registration-phase-2-shared-form-fields.plan.md` |
-| 3 | Onboarding | Novo passo opcional pós-card no `onboarding-screen.tsx` | in-progress | with 4 | 2 | `.claude/PRPs/plans/professional-document-registration-phase-3-onboarding.plan.md` |
-| 4 | Banner + deep link | Banner no dashboard layout (Server Component) + `?action=edit-profile` no `EditProfileModal` | pending | with 3 | 2 | - |
+| 3 | Onboarding | Novo passo opcional pós-card no `onboarding-screen.tsx` | complete | with 4 | 2 | `.claude/PRPs/plans/completed/professional-document-registration-phase-3-onboarding.plan.md` |
+| 4 | Banner + deep link | Banner no dashboard layout (Server Component) + `?action=edit-profile` no `EditProfileModal` | in-progress | with 3 | 2 | `.claude/PRPs/plans/professional-document-registration-phase-4-banner-deep-link.plan.md` |
 
 ### Phase Details
 
