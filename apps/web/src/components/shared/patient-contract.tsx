@@ -17,7 +17,7 @@ import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
-import { BadgeCheck, Download, Eye, FileText, Trash2 } from "lucide-react";
+import { Download, Eye, FileText, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -295,7 +295,7 @@ export default function PatientContract({
     return (
       <>
         <div className="space-y-3 pt-2">
-          {signatureInfo && (
+          {/* {signatureInfo && (
             <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
               <BadgeCheck className="size-4 shrink-0" />
               <span>
@@ -308,7 +308,7 @@ export default function PatientContract({
                   : ""}
               </span>
             </div>
-          )}
+          )} */}
           <ContractDocument
             headerBlocks={savedParties ?? headerBlocks}
             title={title}
@@ -443,9 +443,21 @@ export default function PatientContract({
           <Button
             className="gradient-primary"
             disabled={isSigning || isExporting}
-            onClick={() => setIsConsentOpen(true)}
+            onClick={() =>
+              signContract({
+                patientId,
+                pregnancyId: pregnancyId ?? null,
+                title,
+                clauses_html: clausesHtml,
+                city,
+                state,
+                consent: true,
+              })
+            }
+            // onClick={() => setIsConsentOpen(true)}
           >
-            Gerar e assinar
+            {/* Gerar contrato */}
+            {isSigning ? "Gerando..." : "Gerar contrato"}
           </Button>
         </div>
       </div>

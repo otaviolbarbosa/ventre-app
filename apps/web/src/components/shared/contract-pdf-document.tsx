@@ -1,6 +1,6 @@
 import path from "node:path";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
-import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import Html from "react-pdf-html";
 
 Font.register({
@@ -164,7 +164,8 @@ export function ContractPdfDocument({ data }: { data: ContractPdfData }) {
 
             <View style={styles.signatureRow}>
               <View style={styles.signatureColumn}>
-                <View style={styles.stampSlot}>
+                <View style={styles.stampSlot} />
+                {/* <View style={styles.stampSlot}>
                   <View style={styles.stampWrapper}>
                     <Image
                       src={path.join(process.cwd(), "public/images/digital-signature-stamp.png")}
@@ -181,7 +182,7 @@ export function ContractPdfDocument({ data }: { data: ContractPdfData }) {
                       <Text style={styles.stampText}>{data.signature.verificationUrl}</Text>
                     </View>
                   </View>
-                </View>
+                </View> */}
                 <View style={styles.signatureLine} />
                 <Text style={styles.signatureName}>{data.signature.contratadaName}</Text>
                 <Text style={styles.signatureLabel}>CONTRATADA</Text>
