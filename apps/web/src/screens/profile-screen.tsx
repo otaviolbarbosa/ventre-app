@@ -191,6 +191,8 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
         name={profileName}
         phone={profilePhone}
         address={address}
+        professionalType={profile.professional_type as ProfessionalType | null}
+        professionalDocuments={profile.professional_documents}
         onSuccess={(name, phone) => {
           setProfileName(name);
           setProfilePhone(phone);
