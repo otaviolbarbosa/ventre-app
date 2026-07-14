@@ -5,13 +5,13 @@ import { updateProfileAction } from "@/actions/update-profile-action";
 import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
 import { ESTADOS_BR } from "@/lib/constants";
 import {
-  professionalDocumentsSchema,
   type ProfessionalDocumentsInput,
+  professionalDocumentsSchema,
 } from "@/lib/validations/professional-documents";
 import type { ProfessionalType } from "@/types";
-import type { Json } from "@ventre/supabase/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
+import type { Json } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
@@ -222,8 +222,10 @@ export function EditProfileModal({
             )}
           />
 
+          <ProfessionalDocumentsFields control={form.control} professionalType={professionalType} />
+
           <div className="space-y-4 pt-2">
-            <p className="font-medium text-sm">Endereço</p>
+            <p className="font-medium font-poppins text-md">Endereço</p>
 
             <FormField
               control={form.control}
@@ -306,12 +308,12 @@ export function EditProfileModal({
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-4 gap-4">
               <FormField
                 control={form.control}
                 name="address.street"
                 render={({ field }) => (
-                  <FormItem className="sm:col-span-3">
+                  <FormItem className="col-span-3">
                     <FormLabel>Rua</FormLabel>
                     <FormControl>
                       <Input placeholder="Rua das Flores" disabled={!addressVisible} {...field} />
@@ -364,8 +366,6 @@ export function EditProfileModal({
               />
             </div>
           </div>
-
-          <ProfessionalDocumentsFields control={form.control} professionalType={professionalType} />
 
           <div className="flex gap-3 pt-4">
             <Button

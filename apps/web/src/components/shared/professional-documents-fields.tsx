@@ -25,33 +25,38 @@ type ProfessionalDocumentsFieldsProps<TFieldValues extends WithProfessionalDocum
   professionalType: ProfessionalType | null;
 };
 
-export default function ProfessionalDocumentsFields<TFieldValues extends WithProfessionalDocuments>({
-  control,
-  professionalType,
-}: ProfessionalDocumentsFieldsProps<TFieldValues>) {
+export default function ProfessionalDocumentsFields<
+  TFieldValues extends WithProfessionalDocuments,
+>({ control, professionalType }: ProfessionalDocumentsFieldsProps<TFieldValues>) {
   const { fields, append, remove } = useFieldArray({
     control,
     name: "professional_documents.rqe" as ArrayPath<TFieldValues>,
   });
 
-  if (professionalType !== "obstetra" && professionalType !== "fisio" && professionalType !== "enfermeiro") {
+  if (
+    professionalType !== "obstetra" &&
+    professionalType !== "fisio" &&
+    professionalType !== "enfermeiro"
+  ) {
     return null;
   }
 
-  const councilField = professionalType === "obstetra" ? "crm" : professionalType === "fisio" ? "crefito" : "coren";
-  const councilLabel = professionalType === "obstetra" ? "CRM" : professionalType === "fisio" ? "CREFITO" : "COREN";
+  const councilField =
+    professionalType === "obstetra" ? "crm" : professionalType === "fisio" ? "crefito" : "coren";
+  const councilLabel =
+    professionalType === "obstetra" ? "CRM" : professionalType === "fisio" ? "CREFITO" : "COREN";
   const hasRqe = professionalType === "obstetra" || professionalType === "fisio";
 
   return (
     <div className="space-y-4 pt-2">
-      <p className="font-medium text-sm">Documentos profissionais</p>
+      <p className="font-medium font-poppins text-md">Documentos profissionais</p>
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-4 gap-4">
         <FormField
           control={control}
           name={`professional_documents.${councilField}.number` as Path<TFieldValues>}
           render={({ field }) => (
-            <FormItem className="sm:col-span-3">
+            <FormItem className="col-span-3">
               <FormLabel>{councilLabel}</FormLabel>
               <FormControl>
                 <Input placeholder="Número" {...field} />

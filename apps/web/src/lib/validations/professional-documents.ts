@@ -32,12 +32,8 @@ const ufSiglas = [
 ] as const;
 
 const documentEntrySchema = z.object({
-  number: z
-    .string()
-    .trim()
-    .min(1, "Número é obrigatório")
-    .regex(/^\d+$/, "Apenas números"),
-  uf: z.enum(ufSiglas, { required_error: "UF é obrigatória" }),
+  number: z.string().trim().min(1, "Número é obrigatório").regex(/^\d+$/, "Apenas números"),
+  uf: z.enum(ufSiglas, { required_error: "UF obrigatória" }),
 });
 
 export const professionalDocumentsSchema = z.object({

@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export function ProfessionalDocumentsBanner() {
   return (
-    <div className="fixed inset-x-4 bottom-4 z-50 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm">
+    <div className="fixed inset-x-4 bottom-24 z-50 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:max-w-sm">
       <Link
         href="/profile?action=edit-profile"
         className="flex items-start gap-3 rounded-lg border bg-white p-4 shadow-lg"

@@ -10,8 +10,8 @@ import ProfessionalDocumentsFields from "@/components/shared/professional-docume
 import { ESTADOS_BR } from "@/lib/constants";
 import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
 import {
-  professionalDocumentsSchema,
   type ProfessionalDocumentsInput,
+  professionalDocumentsSchema,
 } from "@/lib/validations/professional-documents";
 import type { ProfessionalType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -160,7 +160,9 @@ export default function OnboardingScreen() {
   });
 
   const documentsForm = useForm<{ professional_documents?: ProfessionalDocumentsInput }>({
-    resolver: zodResolver(z.object({ professional_documents: professionalDocumentsSchema.optional() })),
+    resolver: zodResolver(
+      z.object({ professional_documents: professionalDocumentsSchema.optional() }),
+    ),
     defaultValues: { professional_documents: undefined },
   });
 
@@ -369,7 +371,10 @@ export default function OnboardingScreen() {
             )}
             className="flex w-full max-w-sm flex-col gap-4"
           >
-            <ProfessionalDocumentsFields control={documentsForm.control} professionalType={documentsStep} />
+            <ProfessionalDocumentsFields
+              control={documentsForm.control}
+              professionalType={documentsStep}
+            />
 
             <div className="mt-4 flex gap-3">
               <Button
@@ -382,7 +387,11 @@ export default function OnboardingScreen() {
                 Pular
               </Button>
               <Button type="submit" className="flex-1" disabled={isDocumentsPending}>
-                {isDocumentsPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar e continuar"}
+                {isDocumentsPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Salvar e continuar"
+                )}
               </Button>
             </div>
           </form>
@@ -393,7 +402,7 @@ export default function OnboardingScreen() {
 
   if (selectedRole === "professional") {
     return (
-      <div className="flex h-full flex-col items-center justify-center px-4">
+      <div className="flex min-h-full flex-col items-center justify-center p-4">
         <div className="mb-8 text-center">
           <h1 className="font-poppins font-semibold text-2xl tracking-tight">
             Qual é a sua especialidade?
