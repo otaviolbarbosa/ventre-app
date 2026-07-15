@@ -332,8 +332,8 @@ export default function PatientContract({
             placeholder="Título do contrato"
           />
         </div>
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-          <div className="space-y-2 sm:col-span-3">
+        <div className="mb-6 grid grid-cols-1 grid-cols-4 gap-4">
+          <div className="col-span-3 space-y-2">
             <label htmlFor="contract-city" className="font-medium text-sm">
               Cidade
             </label>
@@ -374,13 +374,41 @@ export default function PatientContract({
           <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>
             Cancelar
           </Button>
-          <Button variant="outline" disabled={isSigning} onClick={() => setIsPreviewOpen(true)}>
+          <Button
+            variant="outline"
+            disabled={isSigning}
+            onClick={() => setIsPreviewOpen(true)}
+            className="hidden sm:flex"
+          >
             <Eye className="mr-2 size-4" />
             Preview
           </Button>
-          <Button variant="outline" disabled={isSigning} onClick={() => setShowSaveNewModal(true)}>
+          <Button
+            variant="outline"
+            size="icon"
+            disabled={isSigning}
+            onClick={() => setIsPreviewOpen(true)}
+            className="block flex justify-center sm:hidden"
+          >
+            <Eye className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            disabled={isSigning}
+            onClick={() => setShowSaveNewModal(true)}
+            className="hidden sm:flex"
+          >
             <Save className="mr-2 size-4" />
             Salvar modelo
+          </Button>
+          <Button
+            size="icon"
+            variant="outline"
+            disabled={isSigning}
+            onClick={() => setShowSaveNewModal(true)}
+            className="block flex justify-center sm:hidden"
+          >
+            <Save className="size-4" />
           </Button>
           <Button
             className="gradient-primary"
@@ -399,7 +427,8 @@ export default function PatientContract({
             // onClick={() => setIsConsentOpen(true)}
           >
             {/* Gerar contrato */}
-            {isSigning ? "Gerando..." : "Gerar contrato"}
+            <span className="hidden sm:inline">{isSigning ? "Gerando..." : "Gerar contrato"}</span>
+            <span className="inline sm:hidden">{isSigning ? "Gerando..." : "Gerar"}</span>
           </Button>
         </div>
       </div>
@@ -511,16 +540,16 @@ function ContractDocument({
   const isEditing = !!children;
 
   return (
-    <div className={cn(!isEditing && "overflow-auto rounded-md bg-muted/30 py-4")}>
-      <div className={cn(!isEditing && "mx-auto max-w-[794px] rounded-md bg-white")}>
+    <div className={cn(!isEditing && "flex overflow-x-auto rounded-md bg-muted/30 py-4")}>
+      <div className={cn(!isEditing && "w-[794px] shrink-0 rounded-md bg-white shadow-md")}>
         <div
           className={cn(
-            "relative w-full text-black text-sm",
+            "relative text-black text-sm",
             isEditing
               ? "px-0 py-0"
               : isPreview
-                ? "max-w-[794px] overflow-auto rounded-md bg-white px-16 py-12 shadow-md"
-                : "max-h-[400px] max-w-[794px] overflow-auto rounded-md bg-white px-16 py-12 shadow-md",
+                ? "px-16 py-12"
+                : "max-h-[400px] overflow-auto px-16 py-12",
           )}
         >
           {headerBlocks ? (
