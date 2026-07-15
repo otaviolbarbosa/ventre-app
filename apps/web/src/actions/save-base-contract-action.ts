@@ -8,39 +8,25 @@ export const saveBaseContractAction = authActionClient
   .inputSchema(saveBaseContractSchema)
   .action(
     async ({
-      parsedInput: { title, clauses_html, city, state },
+      parsedInput: { contractId, name, title, clauses_html, city, state },
       ctx: { supabase, profile, user },
     }) => {
       if (profile.user_type !== "manager") {
         throw new Error("Apenas gestores podem configurar o contrato base.");
       }
 
-      let existingId: string | null = null;
-
-      if (profile.enterprise_id) {
-        const { data: existing } = await supabase
-          .from("contracts")
-          .select("id")
-          .eq("is_base_contract", true)
-          .eq("enterprise_id", profile.enterprise_id)
-          .maybeSingle();
-        existingId = existing?.id ?? null;
-      } else {
-        const { data: existing } = await supabase
-          .from("contracts")
-          .select("id")
-          .eq("is_base_contract", true)
-          .eq("user_id", user.id)
-          .is("enterprise_id", null)
-          .maybeSingle();
-        existingId = existing?.id ?? null;
-      }
-
-      if (existingId) {
+      if (contractId) {
         const { error } = await supabase
           .from("contracts")
-          .update({ title, clauses_html, city: city ?? null, state: state ?? null })
-          .eq("id", existingId);
+          .update({
+            title,
+            clauses_html,
+            city: city ?? null,
+            state: state ?? null,
+            ...(name !== undefined ? { name } : {}),
+          })
+          .eq("id", contractId)
+          .eq("is_base_contract", true);
 
         if (error) throw new Error(error.message);
       } else {
@@ -50,6 +36,7 @@ export const saveBaseContractAction = authActionClient
           clauses_html,
           city: city ?? null,
           state: state ?? null,
+          name: name ?? title,
           enterprise_id: profile.enterprise_id ?? null,
           user_id: profile.enterprise_id ? null : user.id,
         });

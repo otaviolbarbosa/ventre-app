@@ -3,6 +3,8 @@ import { z } from "zod";
 const DEFAULT_TITLE = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS";
 
 export const saveBaseContractSchema = z.object({
+  contractId: z.string().uuid().optional(),
+  name: z.string().min(1, "O nome não pode estar vazio").optional(),
   title: z.string().min(1, "O título não pode estar vazio").default(DEFAULT_TITLE),
   clauses_html: z.string().min(1, "As cláusulas não podem estar vazias"),
   city: z.string().optional(),
@@ -10,6 +12,19 @@ export const saveBaseContractSchema = z.object({
 });
 
 export type SaveBaseContractInput = z.infer<typeof saveBaseContractSchema>;
+
+export const createBaseContractFromPatientSchema = z.object({
+  patientId: z.string().uuid(),
+  name: z.string().min(1, "O nome do contrato não pode estar vazio"),
+  title: z.string().min(1, "O título não pode estar vazio").default(DEFAULT_TITLE),
+  clauses_html: z.string().min(1, "As cláusulas não podem estar vazias"),
+  city: z.string().optional(),
+  state: z.string().optional(),
+});
+
+export type CreateBaseContractFromPatientInput = z.infer<
+  typeof createBaseContractFromPatientSchema
+>;
 
 export const getPatientContractSchema = z.object({
   patientId: z.string().uuid(),

@@ -48,6 +48,77 @@ export async function getBaseContract(): Promise<Tables<"contracts"> | null> {
   return data;
 }
 
+export async function getPersonalBaseContracts(): Promise<Tables<"contracts">[]> {
+  const { user } = await getServerAuth();
+  if (!user) return [];
+
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  const { data, error } = await supabaseAdmin
+    .from("contracts")
+    .select("*")
+    .eq("is_base_contract", true)
+    .eq("user_id", user.id)
+    .is("enterprise_id", null)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[getPersonalBaseContracts]", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+export async function getBaseContracts(): Promise<Tables<"contracts">[]> {
+  const { profile, user } = await getServerAuth();
+  if (!user) return [];
+
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  let query = supabaseAdmin
+    .from("contracts")
+    .select("*")
+    .eq("is_base_contract", true)
+    .order("created_at", { ascending: true });
+
+  if (profile?.enterprise_id) {
+    query = query.eq("enterprise_id", profile.enterprise_id);
+  } else {
+    query = query.eq("user_id", user.id).is("enterprise_id", null);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[getBaseContracts]", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+// Uses supabaseAdmin (bypasses RLS) — only call with an id sourced from
+// getBaseContracts()/getPersonalBaseContracts() for the same owner, never
+// from unvalidated user input.
+export async function getBaseContractById(id: string): Promise<Tables<"contracts"> | null> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  const { data, error } = await supabaseAdmin
+    .from("contracts")
+    .select("*")
+    .eq("id", id)
+    .eq("is_base_contract", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getBaseContractById]", error.message);
+    return null;
+  }
+
+  return data;
+}
+
 type TeamMember = {
   id: string;
   name: string | null;

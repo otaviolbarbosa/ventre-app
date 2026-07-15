@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { isStaff } from "@/lib/access-control";
 import { EditProfileModal } from "@/modals/edit-profile-modal";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
@@ -218,11 +219,13 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
             label="Configurações"
             href="/profile/settings"
           />
-          <MenuItem
-            icon={<FileText className="h-5 w-5" />}
-            label="Meu Contrato Pessoal"
-            href="/profile/settings/contract"
-          />
+          {!isStaff(profile) && (
+            <MenuItem
+              icon={<FileText className="h-5 w-5" />}
+              label="Modelos de Contrato"
+              href="/profile/settings/contract"
+            />
+          )}
           <MenuItem
             icon={<CreditCard className="h-5 w-5" />}
             label="Minha Assinatura"

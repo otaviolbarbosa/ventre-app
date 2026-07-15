@@ -26,7 +26,7 @@ export const getPatientContractAction = authActionClient
           .maybeSingle(),
         supabase
           .from("patients")
-          .select("name, email, phone, date_of_birth")
+          .select("name, email, phone, date_of_birth, rg, cpf, marital_status, occupation")
           .eq("id", patientId)
           .maybeSingle(),
       ]);
@@ -44,42 +44,72 @@ export const getPatientContractAction = authActionClient
         signedByName = signer?.name ?? null;
       }
 
-      // Fetch personal base contract (always by user_id, enterprise_id = null)
-      const { data: personalBase } = await supabase
+      type BaseContractOption = {
+        id: string;
+        html: string;
+        title: string;
+        name: string | null;
+        city: string | null;
+        state: string | null;
+      };
+
+      // Fetch personal base contracts (always by user_id, enterprise_id = null)
+      const { data: personalBaseRows } = await supabase
         .from("contracts")
-        .select("clauses_html, title, city, state")
+        .select("id, clauses_html, title, name, city, state")
         .eq("is_base_contract", true)
         .eq("user_id", user.id)
         .is("enterprise_id", null)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
 
-      // Fetch enterprise base contract when applicable
-      let enterpriseBase: {
-        clauses_html: string;
-        title: string;
-        city: string | null;
-        state: string | null;
-      } | null = null;
+      const personalBaseOptions: BaseContractOption[] = (personalBaseRows ?? []).map((row) => ({
+        id: row.id,
+        html: row.clauses_html,
+        title: row.title,
+        name: row.name,
+        city: row.city,
+        state: row.state,
+      }));
+
+      // Fetch enterprise base contracts when applicable
+      let enterpriseBaseOptions: BaseContractOption[] = [];
       if (profile.enterprise_id) {
-        const { data: base } = await supabase
+        const { data: enterpriseBaseRows } = await supabase
           .from("contracts")
-          .select("clauses_html, title, city, state")
+          .select("id, clauses_html, title, name, city, state")
           .eq("is_base_contract", true)
           .eq("enterprise_id", profile.enterprise_id)
-          .maybeSingle();
-        enterpriseBase = base ?? null;
+          .order("created_at", { ascending: true });
+
+        enterpriseBaseOptions = (enterpriseBaseRows ?? []).map((row) => ({
+          id: row.id,
+          html: row.clauses_html,
+          title: row.title,
+          name: row.name,
+          city: row.city,
+          state: row.state,
+        }));
       }
 
-      // Legacy fields: prefer enterprise base for enterprise users, else personal
-      const baseContractHtml = enterpriseBase?.clauses_html ?? personalBase?.clauses_html ?? null;
+      // Legacy singular fields — first template in creation order, prefer enterprise.
+      // Kept for patient-contract.tsx (Phase 4 migrates it to the *Options arrays).
+      const enterpriseBase = enterpriseBaseOptions[0] ?? null;
+      const personalBase = personalBaseOptions[0] ?? null;
+      const baseContractHtml = enterpriseBase?.html ?? personalBase?.html ?? null;
       const baseTitle = enterpriseBase?.title ?? personalBase?.title ?? null;
 
-      // Fetch pregnancy and patient-specific team members in parallel
-      const pregnancyId = contract?.pregnancy_id ?? null;
+      // Fetch pregnancy and patient-specific team members in parallel.
+      // Look up by patient_id (not contract.pregnancy_id) so the due date shows up
+      // even before a personal contract has been created for this patient.
       const [pregnancyResult, teamResult] = await Promise.all([
-        pregnancyId
-          ? supabase.from("pregnancies").select("due_date").eq("id", pregnancyId).maybeSingle()
-          : Promise.resolve({ data: null }),
+        supabase
+          .from("pregnancies")
+          .select("due_date")
+          .eq("patient_id", patientId)
+          .order("has_finished", { ascending: true })
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
         supabase
           .from("team_members")
           .select("users!inner(id, name, professional_type, email, phone)")
@@ -155,7 +185,7 @@ export const getPatientContractAction = authActionClient
         contratadaName,
         enterpriseBase: enterpriseBase
           ? {
-              html: enterpriseBase.clauses_html,
+              html: enterpriseBase.html,
               title: enterpriseBase.title,
               city: enterpriseBase.city,
               state: enterpriseBase.state,
@@ -163,12 +193,14 @@ export const getPatientContractAction = authActionClient
           : null,
         personalBase: personalBase
           ? {
-              html: personalBase.clauses_html,
+              html: personalBase.html,
               title: personalBase.title,
               city: personalBase.city,
               state: personalBase.state,
             }
           : null,
+        enterpriseBaseOptions,
+        personalBaseOptions,
       };
     },
   );

@@ -68,7 +68,7 @@ export async function POST(_request: Request, { params }: Params) {
 
     const { data: patient, error: patientError } = await supabase
       .from("patients")
-      .select("id, name, email, phone, date_of_birth")
+      .select("id, name, email, phone, date_of_birth, rg, cpf, marital_status, occupation")
       .eq("id", patientId)
       .single();
 

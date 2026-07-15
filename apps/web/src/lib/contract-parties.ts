@@ -9,7 +9,10 @@ import type { Tables } from "@ventre/supabase/types";
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdmin = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
-type PatientRow = Pick<Tables<"patients">, "name" | "email" | "phone" | "date_of_birth">;
+type PatientRow = Pick<
+  Tables<"patients">,
+  "name" | "email" | "phone" | "date_of_birth" | "rg" | "cpf" | "marital_status" | "occupation"
+>;
 
 type TeamMember = {
   id: string;
@@ -34,7 +37,7 @@ export async function buildPatientContractParties(
   const [patientResult, pregnancyResult, teamResult] = await Promise.all([
     supabase
       .from("patients")
-      .select("name, email, phone, date_of_birth")
+      .select("name, email, phone, date_of_birth, rg, cpf, marital_status, occupation")
       .eq("id", patientId)
       .maybeSingle(),
     pregnancyId

@@ -1,12 +1,12 @@
 "use client";
 
+import { createBaseContractFromPatientAction } from "@/actions/create-base-contract-from-patient-action";
 import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
 import { getPatientContractAction } from "@/actions/get-patient-contract-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
-import { useAuth } from "@/hooks/use-auth";
-import { isManager } from "@/lib/access-control";
+import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import { ESTADOS_BR } from "@/lib/constants";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { cn } from "@/lib/utils";
@@ -17,18 +17,20 @@ import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
-import { Download, Eye, FileText, Trash2 } from "lucide-react";
+import { Skeleton } from "@ventre/ui/skeleton";
+import { Download, Eye, Save, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ContractSelector } from "./contract-selector";
 
-type Mode = "loading" | "no-base" | "no-contract" | "choose-base" | "editing" | "readonly";
+type Mode = "loading" | "select" | "editing" | "readonly";
 
-type BaseOption = {
+type BaseTemplate = {
+  id: string;
   html: string;
   title: string;
-  label: string;
+  name: string | null;
   city: string | null;
   state: string | null;
 };
@@ -48,7 +50,7 @@ export default function PatientContract({
   pregnancyId: string | null | undefined;
 }) {
   const [mode, setMode] = useState<Mode>("loading");
-  const [contractId, setContractId] = useState<string | null>(null);
+  const [contractId, setContractId] = useState<string>("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [title, setTitle] = useState("CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
   const [clausesHtml, setClausesHtml] = useState("");
@@ -56,9 +58,9 @@ export default function PatientContract({
   const [state, setState] = useState("");
   const [patientName, setPatientName] = useState<string | null>(null);
   const [contratadaName, setContratadaName] = useState<string | null>(null);
-  const [baseHtml, setBaseHtml] = useState<string | null>(null);
-  const [baseTitle, setBaseTitle] = useState<string | null>(null);
-  const [baseOptions, setBaseOptions] = useState<BaseOption[]>([]);
+  const [enterpriseOptions, setEnterpriseOptions] = useState<BaseTemplate[]>([]);
+  const [personalOptions, setPersonalOptions] = useState<BaseTemplate[]>([]);
+  const [showSaveNewModal, setShowSaveNewModal] = useState(false);
   const [headerBlocks, setHeaderBlocks] = useState<ContractHeaderBlocks | null>(null);
   const [enterpriseHeaderBlocks, setEnterpriseHeaderBlocks] = useState<ContractHeaderBlocks | null>(
     null,
@@ -74,72 +76,47 @@ export default function PatientContract({
   const [consentChecked, setConsentChecked] = useState(false);
   const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
 
-  const { profile } = useAuth();
+  const { execute: fetchContract, isExecuting: isLoadingFetchContract } = useAction(
+    getPatientContractAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data?.headerBlocks) {
+          setHeaderBlocks(data.headerBlocks);
+          setEnterpriseHeaderBlocks(data.headerBlocks);
+        }
+        if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
+        setPatientName(data?.patientName ?? null);
+        setContratadaName(data?.contratadaName ?? null);
 
-  const { execute: fetchContract } = useAction(getPatientContractAction, {
-    onSuccess: ({ data }) => {
-      if (data?.headerBlocks) {
-        setHeaderBlocks(data.headerBlocks);
-        setEnterpriseHeaderBlocks(data.headerBlocks);
-      }
-      if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
-      setPatientName(data?.patientName ?? null);
-      setContratadaName(data?.contratadaName ?? null);
+        setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
+        setPersonalOptions(data?.personalBaseOptions ?? []);
 
-      const options: BaseOption[] = [];
-      if (data?.enterpriseBase) {
-        options.push({
-          html: data.enterpriseBase.html,
-          title: data.enterpriseBase.title,
-          label: "Contrato da empresa",
-          city: data.enterpriseBase.city,
-          state: data.enterpriseBase.state,
-        });
-      }
-      if (data?.personalBase) {
-        options.push({
-          html: data.personalBase.html,
-          title: data.personalBase.title,
-          label: "Meu contrato pessoal",
-          city: data.personalBase.city,
-          state: data.personalBase.state,
-        });
-      }
-      setBaseOptions(options);
-
-      // Legacy fallback
-      if (data?.baseContractHtml) setBaseHtml(data.baseContractHtml);
-      if (data?.baseTitle) setBaseTitle(data.baseTitle);
-
-      if (data?.contract) {
-        setContractId(data.contract.id);
-        setTitle(data.contract.title);
-        setClausesHtml(data.contract.clauses_html);
-        setCity(data.contract.city ?? "");
-        setState(data.contract.state ?? "");
-        if (data.savedParties) setSavedParties(data.savedParties);
-        setSignatureInfo(
-          data.contract.is_signed
-            ? {
-                signedAt: data.contract.signed_at,
-                verificationCode: data.contract.verification_code,
-                signedDocumentId: data.contract.signed_document_id,
-                signedByName: data.signedByName ?? null,
-              }
-            : null,
-        );
-        setContractExists(true);
-        setMode("readonly");
-      } else if (options.length > 1) {
-        setMode("choose-base");
-      } else if (options.length === 1) {
-        setMode("no-contract");
-      } else {
-        setMode("no-base");
-      }
+        if (data?.contract) {
+          setContractId(data.contract.id);
+          setTitle(data.contract.title);
+          setClausesHtml(data.contract.clauses_html);
+          setCity(data.contract.city ?? "");
+          setState(data.contract.state ?? "");
+          if (data.savedParties) setSavedParties(data.savedParties);
+          setSignatureInfo(
+            data.contract.is_signed
+              ? {
+                  signedAt: data.contract.signed_at,
+                  verificationCode: data.contract.verification_code,
+                  signedDocumentId: data.contract.signed_document_id,
+                  signedByName: data.signedByName ?? null,
+                }
+              : null,
+          );
+          setContractExists(true);
+          setMode("readonly");
+        } else {
+          setMode("select");
+        }
+      },
+      onError: () => setMode("select"),
     },
-    onError: () => setMode("no-base"),
-  });
+  );
 
   const { execute: signContract, isExecuting: isSigning } = useAction(signPatientContractAction, {
     onSuccess: () => {
@@ -160,18 +137,30 @@ export default function PatientContract({
     {
       onSuccess: () => {
         toast.success("Contrato excluído");
-        setContractId(null);
+        setContractId("");
         setContractExists(false);
         setSavedParties(null);
         setSignatureInfo(null);
         setIsDeleteConfirmOpen(false);
-        setMode(baseOptions.length > 1 ? "choose-base" : "no-contract");
+        setMode("select");
       },
       onError: ({ error }) => toast.error(error.serverError ?? "Erro ao excluir contrato"),
     },
   );
 
-  async function handleExportPdf() {
+  const { execute: createBaseFromPatient, isExecuting: isCreatingTemplate } = useAction(
+    createBaseContractFromPatientAction,
+    {
+      onSuccess: () => {
+        toast.success("Modelo de contrato salvo com sucesso");
+        setShowSaveNewModal(false);
+        fetchContract({ patientId });
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao salvar modelo"),
+    },
+  );
+
+  const handleExportPdf = async () => {
     setIsExporting(true);
     try {
       // Signed contract: reuse the immutable signed PDF — never re-render
@@ -196,12 +185,40 @@ export default function PatientContract({
     } finally {
       setIsExporting(false);
     }
-  }
+  };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchContract
   useEffect(() => {
     fetchContract({ patientId });
   }, [patientId]);
+
+  const handleSelectBaseTemplate = (id: string) => {
+    const enterpriseMatch = enterpriseOptions.find((o) => o.id === id);
+    const match = enterpriseMatch ?? personalOptions.find((o) => o.id === id);
+    if (!match) return;
+    setContractId(id);
+    setTitle(match.title);
+    setClausesHtml(match.html);
+    setCity(match.city ?? "");
+    setState(match.state ?? "");
+    setHeaderBlocks(enterpriseMatch ? enterpriseHeaderBlocks : personalHeaderBlocks);
+    setMode("editing");
+  };
+
+  const handleNewContract = () => {
+    setContractId("");
+    setTitle("CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
+    setClausesHtml("");
+    setCity("");
+    setState("");
+    setHeaderBlocks(enterpriseHeaderBlocks);
+    setMode("editing");
+  };
+
+  const handleCancelContractForm = () => {
+    setContractId("");
+    setMode(contractExists ? "readonly" : "select");
+  };
 
   if (mode === "loading") {
     return (
@@ -211,83 +228,16 @@ export default function PatientContract({
     );
   }
 
-  if (mode === "no-base") {
+  if (mode === "select") {
     return (
-      <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-800 text-sm">
-        <p>Nenhum contrato base configurado.</p>
-        <div className="mt-1 flex flex-col gap-1">
-          {isManager(profile) && (
-            <Link href="/settings/contract" className="underline">
-              Configurar contrato da empresa →
-            </Link>
-          )}
-          {!isManager(profile) && (
-            <Link href="/profile/settings/contract" className="underline">
-              Configurar meu contrato pessoal →
-            </Link>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (mode === "choose-base") {
-    return (
-      <div className="flex flex-col items-start gap-3 py-4">
-        <p className="text-muted-foreground text-sm">
-          Escolha qual contrato base deseja usar para esta gestante:
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {baseOptions.map((opt) => {
-            const isPersonal = opt.label === "Meu contrato pessoal";
-            return (
-              <Button
-                key={opt.label}
-                variant="outline"
-                onClick={() => {
-                  setTitle(opt.title);
-                  setClausesHtml(opt.html);
-                  setBaseHtml(opt.html);
-                  setBaseTitle(opt.title);
-                  setCity(opt.city ?? "");
-                  setState(opt.state ?? "");
-                  setHeaderBlocks(isPersonal ? personalHeaderBlocks : enterpriseHeaderBlocks);
-                  setMode("editing");
-                }}
-              >
-                <FileText className="mr-2 size-4" />
-                {opt.label}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  if (mode === "no-contract") {
-    const base = baseOptions[0];
-    const isPersonalOnly = base?.label === "Meu contrato pessoal";
-    return (
-      <div className="flex flex-col items-start gap-3 py-4">
-        <p className="text-muted-foreground text-sm">
-          Nenhum contrato gerado para esta gestante ainda.
-        </p>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setTitle(base?.title ?? baseTitle ?? "CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
-            setClausesHtml(base?.html ?? baseHtml ?? "");
-            setCity(base?.city ?? "");
-            setState(base?.state ?? "");
-            if (isPersonalOnly) setHeaderBlocks(personalHeaderBlocks);
-            setMode("editing");
-          }}
-        >
-          <FileText className="mr-2 size-4" />
-          Gerar contrato
-        </Button>
-      </div>
+      <ContractSelector
+        contractId={contractId}
+        enterpriseOptions={enterpriseOptions}
+        personalOptions={personalOptions}
+        onValueChange={handleSelectBaseTemplate}
+        onNewContractSelected={handleNewContract}
+        isLoading={isLoadingFetchContract}
+      />
     );
   }
 
@@ -370,7 +320,7 @@ export default function PatientContract({
   // editing mode
   return (
     <>
-      <div className="space-y-3 px-0.5 pt-2">
+      <div className="space-y-3 px-1 pt-2">
         <div className="mb-6 space-y-2">
           <label htmlFor="contract-title" className="font-medium text-sm">
             Título do contrato
@@ -421,24 +371,16 @@ export default function PatientContract({
           />
         </ContractDocument>
         <div className="flex justify-end gap-2">
-          <Button
-            variant="ghost"
-            disabled={isSigning}
-            onClick={() =>
-              setMode(
-                contractExists
-                  ? "readonly"
-                  : baseOptions.length > 1
-                    ? "choose-base"
-                    : "no-contract",
-              )
-            }
-          >
+          <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>
             Cancelar
           </Button>
           <Button variant="outline" disabled={isSigning} onClick={() => setIsPreviewOpen(true)}>
             <Eye className="mr-2 size-4" />
             Preview
+          </Button>
+          <Button variant="outline" disabled={isSigning} onClick={() => setShowSaveNewModal(true)}>
+            <Save className="mr-2 size-4" />
+            Salvar modelo
           </Button>
           <Button
             className="gradient-primary"
@@ -526,6 +468,22 @@ export default function PatientContract({
           }}
         />
       </ContentModal>
+
+      <SaveNewTemplateModal
+        open={showSaveNewModal}
+        onOpenChange={setShowSaveNewModal}
+        isPending={isCreatingTemplate}
+        onConfirm={(name) =>
+          createBaseFromPatient({
+            patientId,
+            name,
+            title,
+            clauses_html: clausesHtml,
+            city,
+            state,
+          })
+        }
+      />
     </>
   );
 }
@@ -593,11 +551,19 @@ function ContractDocument({
               )}
             </>
           ) : (
-            <div className="mb-4 border-gray-200 border-b pb-4">
-              <p className="text-gray-400 text-xs italic">
-                Cabeçalho não disponível — dados da gestante ou profissional incompletos.
-              </p>
-            </div>
+            <>
+              <div className="mb-4 border-gray-200 border-b pb-4">
+                <p className="font-semibold">CONTRATANTE:</p>
+                <Skeleton className="mt-2 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-3/4" />
+              </div>
+
+              <div className="mb-4 border-gray-200 border-b pb-4">
+                <p className="font-semibold">CONTRATADA:</p>
+                <Skeleton className="mt-2 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-3/4" />
+              </div>
+            </>
           )}
 
           {children ?? (

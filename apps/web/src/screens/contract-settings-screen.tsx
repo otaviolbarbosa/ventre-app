@@ -4,6 +4,7 @@ import { saveBaseContractAction } from "@/actions/save-base-contract-action";
 import { Header } from "@/components/layouts/header";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { PageHeader } from "@/components/shared/page-header";
+import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import { ESTADOS_BR } from "@/lib/constants";
 import type { ContractHeaderData } from "@/services/base-contract";
 import type { Tables } from "@ventre/supabase/types";
@@ -12,41 +13,74 @@ import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
-import { Eye, Save } from "lucide-react";
+import { Eye, Plus, Save } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+const DEFAULT_TITLE = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS";
+
 type ContractSettingsScreenProps = {
-  initialContract: Tables<"contracts"> | null;
+  contracts: Tables<"contracts">[];
   headerData: ContractHeaderData;
 };
 
 export default function ContractSettingsScreen({
-  initialContract,
+  contracts,
   headerData,
 }: ContractSettingsScreenProps) {
   const router = useRouter();
-  const [title, setTitle] = useState(initialContract?.title ?? "CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
-  const [clausesHtml, setClausesHtml] = useState(initialContract?.clauses_html ?? "");
-  const [city, setCity] = useState(initialContract?.city ?? "");
-  const [state, setState] = useState(initialContract?.state ?? "");
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [title, setTitle] = useState(DEFAULT_TITLE);
+  const [clausesHtml, setClausesHtml] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [showSaveNewModal, setShowSaveNewModal] = useState(false);
+  const pendingActionRef = useRef<"edit" | "create" | null>(null);
+
+  const hasContracts = useMemo(() => contracts.length > 0, [contracts]);
+
+  function handleNewContract() {
+    setSelectedId("");
+    setTitle(DEFAULT_TITLE);
+    setClausesHtml("");
+    setCity("");
+    setState("");
+  }
+
+  function handleSelectTemplate(id: string) {
+    const contract = contracts.find((c) => c.id === id);
+    if (!contract) return;
+    setSelectedId(id);
+    setTitle(contract.title);
+    setClausesHtml(contract.clauses_html);
+    setCity(contract.city ?? "");
+    setState(contract.state ?? "");
+  }
 
   const { execute: save, isExecuting } = useAction(saveBaseContractAction, {
     onSuccess: () => {
-      toast.success("Contrato base salvo com sucesso");
+      toast.success("Modelo de contrato salvo com sucesso");
+      if (pendingActionRef.current === "create") {
+        setShowSaveNewModal(false);
+        handleNewContract();
+      }
+      pendingActionRef.current = null;
       router.refresh();
     },
-    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao salvar contrato"),
+    onError: ({ error }) => {
+      pendingActionRef.current = null;
+      toast.error(error.serverError ?? "Erro ao salvar contrato");
+    },
   });
 
   return (
     <div className="flex h-full flex-col">
-      <Header title="Contrato Padrão" back="/settings" />
+      <Header title="Modelos de Contrato" back="/settings" />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <PageHeader description="Configure as cláusulas do contrato base da organização">
+        <PageHeader description="Configure as cláusulas dos modelos contrato da organização">
           <Button variant="outline" className="hidden sm:flex" onClick={() => setShowPreview(true)}>
             <Eye className="size-4" />
             <span className="ml-1 hidden sm:inline">Preview</span>
@@ -61,21 +95,85 @@ export default function ContractSettingsScreen({
           </Button>
           <Button
             className="gradient-primary hidden sm:flex"
-            disabled={isExecuting}
-            onClick={() => save({ title, clauses_html: clausesHtml, city, state })}
+            disabled={isExecuting || !selectedId}
+            onClick={() => {
+              if (!selectedId) return;
+              pendingActionRef.current = "edit";
+              save({
+                contractId: selectedId,
+                name: undefined,
+                title,
+                clauses_html: clausesHtml,
+                city,
+                state,
+              });
+            }}
           >
             <Save className="size-4" />
-            <span className="ml-1">{isExecuting ? "Salvando..." : "Salvar contrato base"}</span>
+            <span className="ml-1">{isExecuting ? "Salvando..." : "Editar"}</span>
           </Button>
           <Button
             size="icon"
             className="gradient-primary block flex justify-center sm:hidden"
-            disabled={isExecuting}
-            onClick={() => save({ title, clauses_html: clausesHtml, city, state })}
+            disabled={isExecuting || !selectedId}
+            onClick={() => {
+              if (!selectedId) return;
+              pendingActionRef.current = "edit";
+              save({
+                contractId: selectedId,
+                name: undefined,
+                title,
+                clauses_html: clausesHtml,
+                city,
+                state,
+              });
+            }}
           >
             <Save className="size-4" />
           </Button>
+          <Button
+            variant="outline"
+            disabled={isExecuting}
+            onClick={() => setShowSaveNewModal(true)}
+          >
+            <Save className="size-4" />
+            <span className="ml-1">Criar novo</span>
+          </Button>
         </PageHeader>
+
+        <div className="mb-4 flex items-end gap-2">
+          <div className="flex-1 space-y-1.5">
+            <label htmlFor="contract-template" className="font-medium text-sm">
+              Modelo de Contrato
+            </label>
+            <Select
+              value={selectedId}
+              disabled={!hasContracts}
+              onValueChange={handleSelectTemplate}
+            >
+              <SelectTrigger id="contract-template">
+                <SelectValue
+                  placeholder={
+                    hasContracts
+                      ? "Selecione um modelo de contrato"
+                      : "Nenhum modelo de contrato disponível"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {contracts.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name ?? c.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="button" variant="outline" onClick={handleNewContract}>
+            <Plus className="size-4" />
+            <span className="ml-1">Limpar campos</span>
+          </Button>
+        </div>
 
         <div className="mb-4 space-y-1.5">
           <label htmlFor="contract-title" className="font-medium text-sm">
@@ -143,6 +241,23 @@ export default function ContractSettingsScreen({
           state={state}
         />
       </ContentModal>
+
+      <SaveNewTemplateModal
+        open={showSaveNewModal}
+        onOpenChange={setShowSaveNewModal}
+        isPending={isExecuting}
+        onConfirm={(name) => {
+          pendingActionRef.current = "create";
+          save({
+            contractId: undefined,
+            name,
+            title,
+            clauses_html: clausesHtml,
+            city,
+            state,
+          });
+        }}
+      />
     </div>
   );
 }
