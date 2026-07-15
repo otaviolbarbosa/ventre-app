@@ -77,7 +77,7 @@ export default function ContractSettingsScreen({
   });
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-[800px] flex-col">
       <Header title="Modelos de Contrato" back="/settings" />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
         <PageHeader
@@ -156,9 +156,7 @@ export default function ContractSettingsScreen({
             >
               <SelectTrigger id="contract-template">
                 <SelectValue
-                  placeholder={
-                    hasContracts ? "Selecione um modelo de contrato" : "Nenhum modelo disponível"
-                  }
+                  placeholder={hasContracts ? "Selecione um modelo" : "Nenhum modelo disponível"}
                 />
               </SelectTrigger>
               <SelectContent>
