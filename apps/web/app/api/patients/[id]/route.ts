@@ -15,9 +15,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const { data: patient, error } = await supabase
+    const { data: raw, error } = await supabase
       .from("patients")
-      .select("*")
+      .select("*, addresses(street, number, complement, neighborhood, city, state, zipcode)")
       .eq("id", id)
       .single();
 
@@ -28,7 +28,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ patient });
+    const { addresses: addrs, ...patient } = raw as typeof raw & { addresses: unknown[] };
+    const address = Array.isArray(addrs) && addrs.length > 0 ? addrs[0] : null;
+
+    return NextResponse.json({ patient: { ...patient, address } });
   } catch {
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
@@ -60,17 +63,16 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         name: validation.data.name,
         email: validation.data.email,
         phone: validation.data.phone,
-        street: validation.data.street,
-        neighborhood: validation.data.neighborhood,
-        complement: validation.data.complement,
-        number: validation.data.number,
-        city: validation.data.city,
-        state: validation.data.state,
-        zipcode: validation.data.zipcode,
       })
       .eq("id", id)
       .select()
       .single();
+
+    if (!error && validation.data.address) {
+      await supabase
+        .from("addresses")
+        .upsert({ patient_id: id, ...validation.data.address }, { onConflict: "patient_id" });
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

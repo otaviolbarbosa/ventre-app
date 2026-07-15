@@ -74,7 +74,9 @@ function LoginForm() {
     }
 
     form.reset();
-    router.push(redirectTo);
+    // Use hard navigation: router.push('/home') → server redirect('/onboarding') for new
+    // users causes a Next.js Router hooks count mismatch. Full reload avoids this.
+    window.location.href = redirectTo;
   }
 
   return (

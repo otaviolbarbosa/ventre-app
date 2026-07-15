@@ -33,6 +33,16 @@ export type Professional = {
   professional_type: ProfessionalType | null;
 };
 
+export type PatientAddress = {
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipcode?: string | null;
+};
+
 export type PatientWithGestationalInfo = Tables<"patients"> & {
   due_date: string | null;
   dum: string | null;
@@ -44,6 +54,7 @@ export type PatientWithGestationalInfo = Tables<"patients"> & {
   days: number;
   remainingDays: number;
   progress: number;
+  address?: PatientAddress | null;
 };
 
 export type PatientFilter = "all" | "recent" | "trim1" | "trim2" | "trim3" | "final" | "finished";

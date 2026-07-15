@@ -1,7 +1,6 @@
 "use client";
 
 import { upsertPatientPrenatalFieldsAction } from "@/actions/upsert-patient-prenatal-fields-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import {
   type UpdatePatientPrenatalInput,
   updatePatientPrenatalSchema,
@@ -13,6 +12,7 @@ import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -218,7 +218,12 @@ export function EditGeneralDataModal({
               <FormItem>
                 <FormLabel>IMC inicial</FormLabel>
                 <FormControl>
-                  <Input readOnly disabled value={field.value ?? ""} placeholder="Calculado automaticamente" />
+                  <Input
+                    readOnly
+                    disabled
+                    value={field.value ?? ""}
+                    placeholder="Calculado automaticamente"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

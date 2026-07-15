@@ -9,12 +9,14 @@ import dayjs from "dayjs";
 import { Baby, Calendar, Heart, Mail, Phone } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export default function PatientLayout({ children }: { children: React.ReactNode }) {
   const params = useParams();
   const pathname = usePathname();
+  const router = useRouter();
 
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
   const currentTab = pathname.includes("/billing")
@@ -25,7 +27,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         ? "team"
         : "profile";
 
-  const { execute, result, isPending } = useAction(getPatientAction);
+  const { execute, result, isPending, status } = useAction(getPatientAction);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: execute can change identity and cause request loops
   useEffect(() => {
@@ -37,22 +39,13 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   // Treat pre-fetch state as loading to avoid a "not found" flash before execute runs
   const isLoading = isPending || result.data === undefined;
 
-  // const googleMapsUrl = useMemo(() => {
-  //   if (!patient) return null;
-  //   const address = [
-  //     patient.street,
-  //     patient.number,
-  //     patient.complement,
-  //     patient.neighborhood,
-  //     patient.city,
-  //     patient.state,
-  //     patient.zipcode,
-  //   ]
-  //     .filter(Boolean)
-  //     .join(", ")
-  //     .replaceAll(" ", "+");
-  //   return address ? `https://www.google.com/maps/search/${address}` : null;
-  // }, [patient]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: router is stable, no need to track
+  useEffect(() => {
+    if (status !== "idle" && !isPending && !result.data) {
+      toast.error("Gestante não encontrada");
+      router.push("/patients");
+    }
+  }, [status, isPending, result.data]);
 
   const patientData = patient ? (
     <div className="flex flex-col gap-1">
@@ -105,19 +98,6 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             {patient.email}
           </a>
         )}
-        {/* {googleMapsUrl && (
-          <Button variant="outline" size="xs" asChild>
-            <a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 hover:text-foreground"
-            >
-              <MapPin className="h-3 w-3" />
-              Ver mapa
-            </a>
-          </Button>
-        )} */}
       </div>
     </div>
   ) : null;

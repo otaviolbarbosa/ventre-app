@@ -13,11 +13,17 @@ export const deleteDocumentAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { data: document, error: fetchError } = await supabase
       .from("patient_documents")
-      .select("storage_path, patient_id, patient:patients(name)")
+      .select("storage_path, patient_id, is_immutable, patient:patients(name)")
       .eq("id", parsedInput.documentId)
       .single();
 
     if (fetchError || !document) throw new Error("Documento não encontrado");
+
+    if (document.is_immutable) {
+      throw new Error(
+        "Este documento é imutável e não pode ser excluído (contrato assinado eletronicamente)",
+      );
+    }
 
     const { error: deleteError } = await supabase
       .from("patient_documents")
@@ -33,9 +39,7 @@ export const deleteDocumentAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Documento excluído",
-        description: patient
-          ? `Documento de ${patient.name} excluído`
-          : "Documento excluído",
+        description: patient ? `Documento de ${patient.name} excluído` : "Documento excluído",
         actionType: "patient",
         userId: user.id,
         enterpriseId: profile.enterprise_id,

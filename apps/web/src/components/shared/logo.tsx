@@ -29,7 +29,7 @@ export function Logo({ href, size = "md", className, bg = false }: LogoProps) {
         width={image}
         height={image}
         className="object-contain"
-        style={{ height: 'auto' }}
+        style={{ height: "auto" }}
         priority
       />
     </div>

@@ -3,6 +3,7 @@ import { getDppDateRange } from "@/lib/dpp-filter";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { Json } from "@ventre/supabase/types";
 import { unstable_cache } from "next/cache";
 
 const TEAM_MEMBERS_SELECT =
@@ -18,13 +19,7 @@ type RawPatient = {
   name: string;
   phone: string;
   email: string | null;
-  street: string | null;
-  neighborhood: string | null;
-  complement: string | null;
-  number: string | null;
-  city: string | null;
-  state: string | null;
-  zipcode: string | null;
+  address: Json | null;
   date_of_birth: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -110,21 +105,30 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
 
     const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
 
-    let patientsQuery = supabase.from("patients").select("*").in("id", filteredByDppIds).limit(20);
+    let patientsQuery = supabase
+      .from("patients")
+      .select("*, addresses(street, number, complement, neighborhood, city, state, zipcode)")
+      .in("id", filteredByDppIds)
+      .limit(20);
 
     if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
 
     const { data, error } = await patientsQuery;
     if (error) throw new Error(error.message);
 
-    rawPatients = (data ?? []).map((p) => ({
-      ...p,
-      due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
-      dum: pregnancyByPatient.get(p.id)?.dum ?? null,
-      has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
-      born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
-      observations: pregnancyByPatient.get(p.id)?.observations ?? null,
-    }));
+    rawPatients = (data ?? []).map((p) => {
+      const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
+      const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
+      return {
+        ...patientData,
+        address,
+        due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
+        dum: pregnancyByPatient.get(p.id)?.dum ?? null,
+        has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
+        born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
+        observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+      };
+    });
   } else {
     const { data, error } = await supabase
       .rpc("get_filtered_patients", {
@@ -179,7 +183,7 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
       family_history_twin: patient.family_history_twin ?? null,
       family_history_others: patient.family_history_others ?? null,
       partner_name: patient.partner_name ?? null,
-    } as PatientWithGestationalInfo;
+    } as unknown as PatientWithGestationalInfo;
 
     return {
       patient: patientWithInfo,

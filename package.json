@@ -10,7 +10,7 @@
     "check-types": "turbo run check-types",
     "db:push": "pnpm --filter @ventre/supabase db:push",
     "db:pull": "pnpm --filter @ventre/supabase db:pull",
-    "db:types": "pnpm --filter @ventre/supabase types",
+    "db:types": "pnpm --filter @ventre/supabase db:types",
     "prepare": "husky"
   },
   "devDependencies": {

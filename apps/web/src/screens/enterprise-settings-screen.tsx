@@ -3,7 +3,7 @@
 import { Header } from "@/components/layouts/header";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent } from "@ventre/ui/card";
-import { ChevronRight, Percent } from "lucide-react";
+import { ChevronRight, FileText, Percent } from "lucide-react";
 import Link from "next/link";
 
 const settingsSections = [
@@ -12,6 +12,12 @@ const settingsSections = [
     description: "Configure taxas fixas e percentuais aplicadas às cobranças",
     href: "/settings/billing-deductions",
     icon: Percent,
+  },
+  {
+    title: "Modelos de Contrato",
+    description: "Configure as cláusulas dos modelos contrato da organização",
+    href: "/settings/contract",
+    icon: FileText,
   },
 ];
 

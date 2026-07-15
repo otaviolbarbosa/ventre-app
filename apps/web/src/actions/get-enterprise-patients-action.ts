@@ -96,19 +96,30 @@ export async function getEnterprisePatients(
       return { patients: [], totalCount: 0, teamMembersMap: {} };
     }
 
-    let patientsQuery = supabase.from("patients").select("*").in("id", filteredIds);
+    let patientsQuery = supabase
+      .from("patients")
+      .select("*, addresses(street, number, complement, neighborhood, city, state, zipcode)")
+      .in("id", filteredIds);
     if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
     const { data: patientsData } = await patientsQuery;
 
     rows = (patientsData ?? [])
-      .map((p) => ({
-        ...p,
-        due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
-        dum: pregnancyByPatient.get(p.id)?.dum ?? null,
-        has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
-        born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
-        observations: pregnancyByPatient.get(p.id)?.observations ?? null,
-      }))
+      .map((p) => {
+        const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
+        const address =
+          Array.isArray(addrs) && addrs.length > 0
+            ? (addrs[0] as Record<string, string | null>)
+            : null;
+        return {
+          ...patientData,
+          address,
+          due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
+          dum: pregnancyByPatient.get(p.id)?.dum ?? null,
+          has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
+          born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
+          observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+        };
+      })
       .sort((a, b) => {
         if (!a.due_date) return 1;
         if (!b.due_date) return -1;
@@ -127,7 +138,8 @@ export async function getEnterprisePatients(
       page_offset: offset,
     });
 
-    const rpcRows = (data as (PatientWithPregnancyFields & { total_count: number })[]) ?? [];
+    const rpcRows =
+      (data as unknown as (PatientWithPregnancyFields & { total_count: number })[]) ?? [];
     totalCount = rpcRows.length > 0 ? Number(rpcRows[0]?.total_count) : 0;
     rows = rpcRows;
   }

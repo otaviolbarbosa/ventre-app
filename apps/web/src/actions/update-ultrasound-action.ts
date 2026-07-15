@@ -37,9 +37,7 @@ export const updateUltrasoundAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Ultrassom atualizado",
-        description: patient
-          ? `Ultrassom de ${patient.name} atualizado`
-          : "Ultrassom atualizado",
+        description: patient ? `Ultrassom de ${patient.name} atualizado` : "Ultrassom atualizado",
         actionType: "exam",
         userId: user.id,
         enterpriseId: profile.enterprise_id,

@@ -1,5 +1,5 @@
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient, createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 const ALLOWED_TYPES = [
   "image/jpeg",

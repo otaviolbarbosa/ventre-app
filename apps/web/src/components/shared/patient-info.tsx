@@ -1,10 +1,13 @@
 "use client";
+import Whatsapp from "@/assets/custom-icons/whatsapp";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
+import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
+import type { PatientAddress } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import dayjs from "dayjs";
-import { MapPinned, Pencil } from "lucide-react";
+import { MapPin, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import InfoItem from "./info-item";
 
@@ -13,6 +16,7 @@ type PatientInfoProps = {
     due_date?: string | null;
     dum?: string | null;
     observations?: string | null;
+    address?: PatientAddress | null;
   };
   onChange: () => Promise<void>;
 };
@@ -21,21 +25,27 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
 
+  const addr = patient.address as PatientAddress | null;
+
+  const maritalStatusLabel = MARITAL_STATUS_OPTIONS.find(
+    (option) => option.value === patient.marital_status,
+  )?.label;
+
   const resolveGoogleMapsLink = useMemo(() => {
-    const address = [
-      patient.street,
-      patient.number,
-      patient.complement,
-      patient.neighborhood,
-      patient.city,
-      patient.state,
-      patient.zipcode,
+    const parts = [
+      addr?.street,
+      addr?.number,
+      addr?.complement,
+      addr?.neighborhood,
+      addr?.city,
+      addr?.state,
+      addr?.zipcode,
     ]
       .filter(Boolean)
       .join(", ")
       .replaceAll(" ", "+");
-    return `https://www.google.com/maps/search/${address}`;
-  }, [patient]);
+    return `https://www.google.com/maps/search/${parts}`;
+  }, [addr]);
 
   return (
     <>
@@ -55,6 +65,16 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       <InfoItem label="Nome do parceiro" value={patient.partner_name} />
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <InfoItem label="RG" value={patient.rg} />
+        <InfoItem label="CPF" value={patient.cpf} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <InfoItem label="Estado civil" value={maritalStatusLabel} />
+        <InfoItem label="Profissão" value={patient.occupation} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <InfoItem
           label="Data prevista do parto (DPP)"
           value={patient.due_date ? dayjs(patient.due_date).format("DD/MM/YYYY") : null}
@@ -70,11 +90,11 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         value={
           <div className="flex justify-between gap-4">
             <div>
-              <div>{[patient.street, patient.number].filter(Boolean).join(", ")}</div>
-              <div>{patient.complement}</div>
-              <div>{patient.neighborhood}</div>
-              <div>{[patient.city, patient.state].filter(Boolean).join("-")}</div>
-              <div>{patient.zipcode}</div>
+              <div>{[addr?.street, addr?.number].filter(Boolean).join(", ")}</div>
+              <div>{addr?.complement}</div>
+              <div>{addr?.neighborhood}</div>
+              <div>{[addr?.city, addr?.state].filter(Boolean).join("-")}</div>
+              <div>{addr?.zipcode}</div>
             </div>
             {resolveGoogleMapsLink ? (
               <div className="relative">
@@ -85,7 +105,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   onClick={() => setShowMapModal(true)}
                 >
                   Abrir mapa
-                  <MapPinned />
+                  <MapPin />
                 </Button>
                 <Button
                   variant="outline"
@@ -93,7 +113,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   className="-top-4 absolute right-0 flex sm:hidden"
                   onClick={() => setShowMapModal(true)}
                 >
-                  <MapPinned />
+                  <MapPin />
                 </Button>
               </div>
             ) : null}
@@ -143,7 +163,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         <div className="flex flex-col gap-3">
           <Button variant="outline" asChild>
             <a href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
-              <MapPinned />
+              <MapPin />
               Abrir no mapa
             </a>
           </Button>
@@ -153,6 +173,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
               target="_blank"
               rel="noreferrer"
             >
+              <Whatsapp />
               Compartilhar pelo WhatsApp
             </a>
           </Button>

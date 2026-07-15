@@ -135,7 +135,7 @@ export function SearchableDropdown<TMultiple extends boolean = false>({
           type="button"
           disabled={disabled}
           className={cn(
-            "flex min-h-10 w-full items-center justify-between gap-2 border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+            "flex min-h-10 w-full items-center justify-between gap-2 border border-input bg-white px-3 py-2 text-sm shadow-sm ring-offset-background focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
             multiple ? "rounded-2xl text-left" : "whitespace-nowrap rounded-full",
             className,
           )}

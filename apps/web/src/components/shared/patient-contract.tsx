@@ -1,0 +1,591 @@
+"use client";
+
+import { createBaseContractFromPatientAction } from "@/actions/create-base-contract-from-patient-action";
+import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
+import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { getPatientContractAction } from "@/actions/get-patient-contract-action";
+import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
+import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
+import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
+import { ESTADOS_BR } from "@/lib/constants";
+import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
+import { cn } from "@/lib/utils";
+import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
+import { Input } from "@ventre/ui/input";
+import { Label } from "@ventre/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { RichEditor } from "@ventre/ui/shared/rich-editor";
+import { Skeleton } from "@ventre/ui/skeleton";
+import { Download, Eye, Save, Trash2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ContractSelector } from "./contract-selector";
+
+type Mode = "loading" | "select" | "editing" | "readonly";
+
+type BaseTemplate = {
+  id: string;
+  html: string;
+  title: string;
+  name: string | null;
+  city: string | null;
+  state: string | null;
+};
+
+type SignatureInfo = {
+  signedAt: string | null;
+  verificationCode: string | null;
+  signedDocumentId: string | null;
+  signedByName: string | null;
+};
+
+export default function PatientContract({
+  patientId,
+  pregnancyId,
+}: {
+  patientId: string;
+  pregnancyId: string | null | undefined;
+}) {
+  const [mode, setMode] = useState<Mode>("loading");
+  const [contractId, setContractId] = useState<string>("");
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [title, setTitle] = useState("CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
+  const [clausesHtml, setClausesHtml] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [patientName, setPatientName] = useState<string | null>(null);
+  const [contratadaName, setContratadaName] = useState<string | null>(null);
+  const [enterpriseOptions, setEnterpriseOptions] = useState<BaseTemplate[]>([]);
+  const [personalOptions, setPersonalOptions] = useState<BaseTemplate[]>([]);
+  const [showSaveNewModal, setShowSaveNewModal] = useState(false);
+  const [headerBlocks, setHeaderBlocks] = useState<ContractHeaderBlocks | null>(null);
+  const [enterpriseHeaderBlocks, setEnterpriseHeaderBlocks] = useState<ContractHeaderBlocks | null>(
+    null,
+  );
+  const [personalHeaderBlocks, setPersonalHeaderBlocks] = useState<ContractHeaderBlocks | null>(
+    null,
+  );
+  const [savedParties, setSavedParties] = useState<ContractHeaderBlocks | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [contractExists, setContractExists] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isConsentOpen, setIsConsentOpen] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
+
+  const { execute: fetchContract, isExecuting: isLoadingFetchContract } = useAction(
+    getPatientContractAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data?.headerBlocks) {
+          setHeaderBlocks(data.headerBlocks);
+          setEnterpriseHeaderBlocks(data.headerBlocks);
+        }
+        if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
+        setPatientName(data?.patientName ?? null);
+        setContratadaName(data?.contratadaName ?? null);
+
+        setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
+        setPersonalOptions(data?.personalBaseOptions ?? []);
+
+        if (data?.contract) {
+          setContractId(data.contract.id);
+          setTitle(data.contract.title);
+          setClausesHtml(data.contract.clauses_html);
+          setCity(data.contract.city ?? "");
+          setState(data.contract.state ?? "");
+          if (data.savedParties) setSavedParties(data.savedParties);
+          setSignatureInfo(
+            data.contract.is_signed
+              ? {
+                  signedAt: data.contract.signed_at,
+                  verificationCode: data.contract.verification_code,
+                  signedDocumentId: data.contract.signed_document_id,
+                  signedByName: data.signedByName ?? null,
+                }
+              : null,
+          );
+          setContractExists(true);
+          setMode("readonly");
+        } else {
+          setMode("select");
+        }
+      },
+      onError: () => setMode("select"),
+    },
+  );
+
+  const { execute: signContract, isExecuting: isSigning } = useAction(signPatientContractAction, {
+    onSuccess: () => {
+      toast.success("Contrato assinado com sucesso");
+      setContractExists(true);
+      setIsConsentOpen(false);
+      setConsentChecked(false);
+      // Reload to pick up the persisted parties_details, contract id and signature
+      fetchContract({ patientId });
+    },
+    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao assinar contrato"),
+  });
+
+  const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
+
+  const { execute: deactivateContract, isExecuting: isDeactivating } = useAction(
+    deactivatePatientContractAction,
+    {
+      onSuccess: () => {
+        toast.success("Contrato excluído");
+        setContractId("");
+        setContractExists(false);
+        setSavedParties(null);
+        setSignatureInfo(null);
+        setIsDeleteConfirmOpen(false);
+        setMode("select");
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao excluir contrato"),
+    },
+  );
+
+  const { execute: createBaseFromPatient, isExecuting: isCreatingTemplate } = useAction(
+    createBaseContractFromPatientAction,
+    {
+      onSuccess: () => {
+        toast.success("Modelo de contrato salvo com sucesso");
+        setShowSaveNewModal(false);
+        fetchContract({ patientId });
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao salvar modelo"),
+    },
+  );
+
+  const handleExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      // Signed contract: reuse the immutable signed PDF — never re-render
+      if (signatureInfo?.signedDocumentId) {
+        const res = await getDownloadUrl({ documentId: signatureInfo.signedDocumentId });
+        if (res?.data?.url) {
+          window.open(res.data.url, "_blank");
+        } else {
+          toast.error(res?.serverError ?? "Erro ao baixar contrato assinado");
+        }
+        return;
+      }
+
+      const res = await fetch(`/api/patients/${patientId}/contract/pdf`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Erro ao exportar PDF");
+      } else {
+        toast.success("PDF gerado com sucesso! Disponível em Documentos.");
+        window.open(data.signedUrl, "_blank");
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchContract
+  useEffect(() => {
+    fetchContract({ patientId });
+  }, [patientId]);
+
+  const handleSelectBaseTemplate = (id: string) => {
+    const enterpriseMatch = enterpriseOptions.find((o) => o.id === id);
+    const match = enterpriseMatch ?? personalOptions.find((o) => o.id === id);
+    if (!match) return;
+    setContractId(id);
+    setTitle(match.title);
+    setClausesHtml(match.html);
+    setCity(match.city ?? "");
+    setState(match.state ?? "");
+    setHeaderBlocks(enterpriseMatch ? enterpriseHeaderBlocks : personalHeaderBlocks);
+    setMode("editing");
+  };
+
+  const handleNewContract = () => {
+    setContractId("");
+    setTitle("CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
+    setClausesHtml("");
+    setCity("");
+    setState("");
+    setHeaderBlocks(enterpriseHeaderBlocks);
+    setMode("editing");
+  };
+
+  const handleCancelContractForm = () => {
+    setContractId("");
+    setMode(contractExists ? "readonly" : "select");
+  };
+
+  if (mode === "loading") {
+    return (
+      <div className="flex items-center gap-2 py-6 text-muted-foreground text-sm">
+        <span>Carregando contrato...</span>
+      </div>
+    );
+  }
+
+  if (mode === "select") {
+    return (
+      <ContractSelector
+        contractId={contractId}
+        enterpriseOptions={enterpriseOptions}
+        personalOptions={personalOptions}
+        onValueChange={handleSelectBaseTemplate}
+        onNewContractSelected={handleNewContract}
+        isLoading={isLoadingFetchContract}
+      />
+    );
+  }
+
+  if (mode === "readonly") {
+    return (
+      <>
+        <div className="space-y-3 pt-2">
+          {/* {signatureInfo && (
+            <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
+              <BadgeCheck className="size-4 shrink-0" />
+              <span>
+                Assinado eletronicamente
+                {signatureInfo.signedAt
+                  ? ` em ${new Date(signatureInfo.signedAt).toLocaleDateString("pt-BR")}`
+                  : ""}
+                {signatureInfo.verificationCode
+                  ? ` · Código ${signatureInfo.verificationCode}`
+                  : ""}
+              </span>
+            </div>
+          )} */}
+          <ContractDocument
+            headerBlocks={savedParties ?? headerBlocks}
+            title={title}
+            clausesHtml={clausesHtml}
+          />
+          <div className="flex justify-between gap-2">
+            <Button
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              onClick={() => setIsDeleteConfirmOpen(true)}
+            >
+              <Trash2 className="mr-2 size-4" />
+              Excluir contrato
+            </Button>
+            <div className="flex gap-2">
+              {!signatureInfo && (
+                <Button variant="outline" onClick={() => setMode("editing")}>
+                  Editar contrato
+                </Button>
+              )}
+              <Button variant="outline" disabled={isExporting} onClick={handleExportPdf}>
+                <Download className="mr-2 size-4" />
+                {isExporting ? "Gerando PDF..." : "Baixar contrato"}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <ContentModal
+          open={isDeleteConfirmOpen}
+          onOpenChange={setIsDeleteConfirmOpen}
+          title="Excluir contrato"
+          description="O contrato não será apagado permanentemente. Você poderá gerar um novo contrato para esta gestante a qualquer momento."
+          contentClassName="sm:max-w-[420px]"
+        >
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="ghost"
+              disabled={isDeactivating}
+              onClick={() => setIsDeleteConfirmOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeactivating}
+              onClick={() => {
+                if (contractId) deactivateContract({ contractId, patientId });
+              }}
+            >
+              {isDeactivating ? "Excluindo..." : "Confirmar exclusão"}
+            </Button>
+          </div>
+        </ContentModal>
+      </>
+    );
+  }
+
+  // editing mode
+  return (
+    <>
+      <div className="space-y-3 px-1 pt-2">
+        <div className="mb-6 space-y-2">
+          <label htmlFor="contract-title" className="font-medium text-sm">
+            Título do contrato
+          </label>
+          <Input
+            id="contract-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Título do contrato"
+          />
+        </div>
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <div className="space-y-2 sm:col-span-3">
+            <label htmlFor="contract-city" className="font-medium text-sm">
+              Cidade
+            </label>
+            <Input
+              id="contract-city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="Cidade"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="contract-state" className="font-medium text-sm">
+              Estado
+            </label>
+            <Select value={state || undefined} onValueChange={setState}>
+              <SelectTrigger id="contract-state">
+                <SelectValue placeholder="UF" />
+              </SelectTrigger>
+              <SelectContent>
+                {ESTADOS_BR.map((estado) => (
+                  <SelectItem key={estado.sigla} value={estado.sigla}>
+                    {estado.sigla}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <ContractDocument headerBlocks={headerBlocks} clausesHtml={null}>
+          <RichEditor
+            content={clausesHtml}
+            onChange={setClausesHtml}
+            placeholder="Cláusulas do contrato..."
+            className="max-h-[400px] min-h-[200px] bg-white"
+          />
+        </ContractDocument>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>
+            Cancelar
+          </Button>
+          <Button variant="outline" disabled={isSigning} onClick={() => setIsPreviewOpen(true)}>
+            <Eye className="mr-2 size-4" />
+            Preview
+          </Button>
+          <Button variant="outline" disabled={isSigning} onClick={() => setShowSaveNewModal(true)}>
+            <Save className="mr-2 size-4" />
+            Salvar modelo
+          </Button>
+          <Button
+            className="gradient-primary"
+            disabled={isSigning || isExporting}
+            onClick={() =>
+              signContract({
+                patientId,
+                pregnancyId: pregnancyId ?? null,
+                title,
+                clauses_html: clausesHtml,
+                city,
+                state,
+                consent: true,
+              })
+            }
+            // onClick={() => setIsConsentOpen(true)}
+          >
+            {/* Gerar contrato */}
+            {isSigning ? "Gerando..." : "Gerar contrato"}
+          </Button>
+        </div>
+      </div>
+
+      <ContentModal
+        open={isConsentOpen}
+        onOpenChange={(open) => {
+          setIsConsentOpen(open);
+          if (!open) setConsentChecked(false);
+        }}
+        title="Assinar contrato eletronicamente"
+        description="A assinatura será validada e registrada com segurança, garantindo a autenticidade do contrato. Após assinado, o conteúdo não poderá mais ser alterado."
+        contentClassName="sm:max-w-[480px]"
+      >
+        <div className="flex items-start gap-2 pt-2">
+          <Checkbox
+            id="contract-consent"
+            checked={consentChecked}
+            onCheckedChange={(checked) => setConsentChecked(checked === true)}
+          />
+          <Label htmlFor="contract-consent" className="font-normal text-sm leading-snug">
+            Declaro que li o contrato e concordo em assiná-lo eletronicamente.
+          </Label>
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="ghost" disabled={isSigning} onClick={() => setIsConsentOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            className="gradient-primary"
+            disabled={!consentChecked || isSigning}
+            onClick={() =>
+              signContract({
+                patientId,
+                pregnancyId: pregnancyId ?? null,
+                title,
+                clauses_html: clausesHtml,
+                city,
+                state,
+                consent: true,
+              })
+            }
+          >
+            {isSigning ? "Assinando..." : "Confirmar e assinar"}
+          </Button>
+        </div>
+      </ContentModal>
+
+      <ContentModal
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        title="Preview do Contrato"
+        description="Visualização com cabeçalho auto-gerado e cláusulas atuais"
+        contentClassName="sm:max-w-[900px]"
+      >
+        <ContractDocument
+          headerBlocks={headerBlocks}
+          title={title}
+          clausesHtml={clausesHtml}
+          isPreview
+          signaturePreview={{
+            city: city || null,
+            state: state || null,
+            contratanteName: patientName,
+            contratadaName,
+          }}
+        />
+      </ContentModal>
+
+      <SaveNewTemplateModal
+        open={showSaveNewModal}
+        onOpenChange={setShowSaveNewModal}
+        isPending={isCreatingTemplate}
+        onConfirm={(name) =>
+          createBaseFromPatient({
+            patientId,
+            name,
+            title,
+            clauses_html: clausesHtml,
+            city,
+            state,
+          })
+        }
+      />
+    </>
+  );
+}
+
+function ContractDocument({
+  headerBlocks,
+  title,
+  clausesHtml,
+  isPreview,
+  signaturePreview,
+  children,
+}: {
+  headerBlocks: ContractHeaderBlocks | null;
+  title?: string;
+  clausesHtml: string | null;
+  isPreview?: boolean;
+  signaturePreview?: {
+    city: string | null;
+    state: string | null;
+    contratanteName: string | null;
+    contratadaName: string | null;
+  };
+  children?: React.ReactNode;
+}) {
+  const isEditing = !!children;
+
+  return (
+    <div className={cn(!isEditing && "overflow-auto rounded-md bg-muted/30 py-4")}>
+      <div className={cn(!isEditing && "mx-auto max-w-[794px] rounded-md bg-white")}>
+        <div
+          className={cn(
+            "relative w-full text-black text-sm",
+            isEditing
+              ? "px-0 py-0"
+              : isPreview
+                ? "max-w-[794px] overflow-auto rounded-md bg-white px-16 py-12 shadow-md"
+                : "max-h-[400px] max-w-[794px] overflow-auto rounded-md bg-white px-16 py-12 shadow-md",
+          )}
+        >
+          {headerBlocks ? (
+            <>
+              {title && (
+                <div className="mb-4 border-gray-200 pb-4 text-lg">
+                  <p className="font-semibold">{title}</p>
+                </div>
+              )}
+
+              <div className="mb-4 border-gray-200 border-b pb-4">
+                <p className="font-semibold">CONTRATANTE:</p>
+                <p className="mt-1 leading-relaxed">{headerBlocks.contratanteBlock}</p>
+              </div>
+
+              <div className="mb-4 border-gray-200 border-b pb-4">
+                <p className="font-semibold">CONTRATADA:</p>
+                <p className="mt-1 leading-relaxed">{headerBlocks.contratadaBlock}</p>
+              </div>
+
+              {headerBlocks.teamMembersBlock && (
+                <div className="mb-4 border-gray-200 border-b pb-4">
+                  <p className="font-semibold">EQUIPE DE CUIDADO:</p>
+                  <p className="mt-1 whitespace-pre-wrap leading-relaxed">
+                    {headerBlocks.teamMembersBlock}
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="mb-4 border-gray-200 border-b pb-4">
+                <p className="font-semibold">CONTRATANTE:</p>
+                <Skeleton className="mt-2 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-3/4" />
+              </div>
+
+              <div className="mb-4 border-gray-200 border-b pb-4">
+                <p className="font-semibold">CONTRATADA:</p>
+                <Skeleton className="mt-2 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-3/4" />
+              </div>
+            </>
+          )}
+
+          {children ?? (
+            <div
+              className="[&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h1]:mb-2 [&_h1]:font-bold [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-xl [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled HTML from our own rich editor
+              dangerouslySetInnerHTML={{
+                __html: clausesHtml || "<p><em>Nenhuma cláusula adicionada ainda.</em></p>",
+              }}
+            />
+          )}
+
+          {signaturePreview && (
+            <ContractSignaturePreview
+              city={signaturePreview.city}
+              state={signaturePreview.state}
+              contratanteName={signaturePreview.contratanteName}
+              contratadaName={signaturePreview.contratadaName}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

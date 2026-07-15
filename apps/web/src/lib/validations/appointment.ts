@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { Database } from "@ventre/supabase/types";
+import { z } from "zod";
 
 type AppointmentType = Database["public"]["Enums"]["appointment_type"];
 type AppointmentStatus = Database["public"]["Enums"]["appointment_status"];
@@ -40,7 +40,10 @@ export const createAppointmentSchema = z
         });
       }
     } else {
-      if (!data.patient_id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patient_id)) {
+      if (
+        !data.patient_id ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patient_id)
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Selecione uma paciente",

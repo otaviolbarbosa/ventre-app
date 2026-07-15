@@ -284,7 +284,9 @@ export function AppointmentCalendarView({
                         <CardContent className="flex h-full flex-col justify-center p-3">
                           <p className="font-medium text-sm">
                             {start.format("HH:mm")} - {endTime} •{" "}
-                            {appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
+                            {appointment.patient?.name ??
+                              appointment.external_patient_name ??
+                              "Paciente externa"}
                           </p>
                           <p className="text-muted-foreground text-xs">
                             {locationLabel ? `${locationLabel} • ` : ""}

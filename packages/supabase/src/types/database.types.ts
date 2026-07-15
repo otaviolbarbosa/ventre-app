@@ -72,8 +72,62 @@ export type Database = {
           },
         ]
       }
+      addresses: {
+        Row: {
+          city: string | null
+          complement: string | null
+          created_at: string
+          id: string
+          neighborhood: string | null
+          number: string | null
+          patient_id: string | null
+          state: string | null
+          street: string | null
+          updated_at: string
+          user_id: string | null
+          zipcode: string | null
+        }
+        Insert: {
+          city?: string | null
+          complement?: string | null
+          created_at?: string
+          id?: string
+          neighborhood?: string | null
+          number?: string | null
+          patient_id?: string | null
+          state?: string | null
+          street?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zipcode?: string | null
+        }
+        Update: {
+          city?: string | null
+          complement?: string | null
+          created_at?: string
+          id?: string
+          neighborhood?: string | null
+          number?: string | null
+          patient_id?: string | null
+          state?: string | null
+          street?: string | null
+          updated_at?: string
+          user_id?: string | null
+          zipcode?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addresses_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
+          confirmed_by_patient_at: string | null
           created_at: string | null
           date: string
           duration: number | null
@@ -93,6 +147,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          confirmed_by_patient_at?: string | null
           created_at?: string | null
           date: string
           duration?: number | null
@@ -112,6 +167,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          confirmed_by_patient_at?: string | null
           created_at?: string | null
           date?: string
           duration?: number | null
@@ -257,6 +313,127 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          city: string | null
+          clauses_html: string
+          content_hash: string | null
+          created_at: string
+          enterprise_id: string | null
+          id: string
+          is_active: boolean | null
+          is_base_contract: boolean
+          is_signed: boolean
+          name: string | null
+          parties_details: Json | null
+          patient_id: string | null
+          pregnancy_id: string | null
+          signed_at: string | null
+          signed_by: string | null
+          signed_document_id: string | null
+          signed_ip: string | null
+          signed_user_agent: string | null
+          state: string | null
+          title: string
+          updated_at: string
+          user_id: string | null
+          verification_code: string | null
+        }
+        Insert: {
+          city?: string | null
+          clauses_html?: string
+          content_hash?: string | null
+          created_at?: string
+          enterprise_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_base_contract?: boolean
+          is_signed?: boolean
+          name?: string | null
+          parties_details?: Json | null
+          patient_id?: string | null
+          pregnancy_id?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_document_id?: string | null
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          state?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          verification_code?: string | null
+        }
+        Update: {
+          city?: string | null
+          clauses_html?: string
+          content_hash?: string | null
+          created_at?: string
+          enterprise_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_base_contract?: boolean
+          is_signed?: boolean
+          name?: string | null
+          parties_details?: Json | null
+          patient_id?: string | null
+          pregnancy_id?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_document_id?: string | null
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          state?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+          verification_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_signed_by_fkey"
+            columns: ["signed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_signed_document_id_fkey"
+            columns: ["signed_document_id"]
+            isOneToOne: false
+            referencedRelation: "patient_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -710,6 +887,7 @@ export type Database = {
           file_size: number
           file_type: string
           id: string
+          is_immutable: boolean
           patient_id: string
           storage_path: string
           uploaded_by: string
@@ -720,6 +898,7 @@ export type Database = {
           file_size: number
           file_type: string
           id?: string
+          is_immutable?: boolean
           patient_id: string
           storage_path: string
           uploaded_by: string
@@ -730,6 +909,7 @@ export type Database = {
           file_size?: number
           file_type?: string
           id?: string
+          is_immutable?: boolean
           patient_id?: string
           storage_path?: string
           uploaded_by?: string
@@ -797,28 +977,43 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string
+          email: string | null
+          enterprise_id: string | null
           expires_at: string
           id: string
+          invite_type: string
+          metadata: Json
+          name: string | null
           patient_id: string | null
-          token: string
+          phone: string | null
           used_at: string | null
         }
         Insert: {
           created_at?: string | null
           created_by: string
-          expires_at: string
+          email?: string | null
+          enterprise_id?: string | null
+          expires_at?: string
           id?: string
+          invite_type?: string
+          metadata?: Json
+          name?: string | null
           patient_id?: string | null
-          token: string
+          phone?: string | null
           used_at?: string | null
         }
         Update: {
           created_at?: string | null
           created_by?: string
+          email?: string | null
+          enterprise_id?: string | null
           expires_at?: string
           id?: string
+          invite_type?: string
+          metadata?: Json
+          name?: string | null
           patient_id?: string | null
-          token?: string
+          phone?: string | null
           used_at?: string | null
         }
         Relationships: [
@@ -827,6 +1022,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_invite_links_enterprise_id_fkey"
+            columns: ["enterprise_id"]
+            isOneToOne: false
+            referencedRelation: "enterprises"
             referencedColumns: ["id"]
           },
           {
@@ -901,8 +1103,7 @@ export type Database = {
         Row: {
           allergies: string[] | null
           blood_type: Database["public"]["Enums"]["blood_type"] | null
-          city: string | null
-          complement: string | null
+          cpf: string | null
           created_at: string | null
           created_by: string
           date_of_birth: string | null
@@ -913,23 +1114,20 @@ export type Database = {
           family_history_twin: boolean | null
           height_cm: number | null
           id: string
+          marital_status: string | null
           name: string
-          neighborhood: string | null
-          number: string | null
+          occupation: string | null
           partner_name: string | null
           personal_notes: string | null
           phone: string
-          state: string | null
-          street: string | null
+          rg: string | null
           updated_at: string | null
           user_id: string | null
-          zipcode: string | null
         }
         Insert: {
           allergies?: string[] | null
           blood_type?: Database["public"]["Enums"]["blood_type"] | null
-          city?: string | null
-          complement?: string | null
+          cpf?: string | null
           created_at?: string | null
           created_by: string
           date_of_birth?: string | null
@@ -940,23 +1138,20 @@ export type Database = {
           family_history_twin?: boolean | null
           height_cm?: number | null
           id?: string
+          marital_status?: string | null
           name: string
-          neighborhood?: string | null
-          number?: string | null
+          occupation?: string | null
           partner_name?: string | null
           personal_notes?: string | null
           phone: string
-          state?: string | null
-          street?: string | null
+          rg?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zipcode?: string | null
         }
         Update: {
           allergies?: string[] | null
           blood_type?: Database["public"]["Enums"]["blood_type"] | null
-          city?: string | null
-          complement?: string | null
+          cpf?: string | null
           created_at?: string | null
           created_by?: string
           date_of_birth?: string | null
@@ -967,17 +1162,15 @@ export type Database = {
           family_history_twin?: boolean | null
           height_cm?: number | null
           id?: string
+          marital_status?: string | null
           name?: string
-          neighborhood?: string | null
-          number?: string | null
+          occupation?: string | null
           partner_name?: string | null
           personal_notes?: string | null
           phone?: string
-          state?: string | null
-          street?: string | null
+          rg?: string | null
           updated_at?: string | null
           user_id?: string | null
-          zipcode?: string | null
         }
         Relationships: [
           {
@@ -1836,6 +2029,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          professional_documents: Json | null
           professional_type:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -1849,6 +2043,7 @@ export type Database = {
           id: string
           name: string
           phone?: string | null
+          professional_documents?: Json | null
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -1862,6 +2057,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          professional_documents?: Json | null
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -1927,9 +2123,8 @@ export type Database = {
           search_query?: string
         }
         Returns: {
+          address: Json
           born_at: string
-          city: string
-          complement: string
           created_at: string
           created_by: string
           date_of_birth: string
@@ -1940,16 +2135,11 @@ export type Database = {
           has_finished: boolean
           id: string
           name: string
-          neighborhood: string
-          number: string
           observations: string
           phone: string
-          state: string
-          street: string
           total_count: number
           updated_at: string
           user_id: string
-          zipcode: string
         }[]
       }
       get_paginated_enterprises: {
@@ -2006,7 +2196,12 @@ export type Database = {
         | "SC"
         | "other_heterozygous"
         | "other_homozygous"
-      installment_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      installment_status:
+        | "pendente"
+        | "pago"
+        | "atrasado"
+        | "cancelado"
+        | "em_analise"
       installments_notification_status:
         | "pending"
         | "sent"
@@ -2215,7 +2410,13 @@ export const Constants = {
         "other_heterozygous",
         "other_homozygous",
       ],
-      installment_status: ["pendente", "pago", "atrasado", "cancelado"],
+      installment_status: [
+        "pendente",
+        "pago",
+        "atrasado",
+        "cancelado",
+        "em_analise",
+      ],
       installments_notification_status: [
         "pending",
         "sent",

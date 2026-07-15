@@ -4,6 +4,7 @@ import { getPatientAction } from "@/actions/get-patient-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
 import { LoadingPatientProfile } from "@/components/shared/loading-state";
+import PatientContract from "@/components/shared/patient-contract";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
@@ -34,6 +35,7 @@ export default function PatientProfilePage() {
   }, [fetchPatient, patientId]);
 
   const patient = result.data?.patient;
+  const pregnancy = result.data?.pregnancy;
 
   function handleConfirmDelete() {
     confirm({
@@ -88,10 +90,19 @@ export default function PatientProfilePage() {
 
           <AccordionItem value="documentos">
             <AccordionTrigger className="font-poppins font-semibold text-base">
-              Documentos
+              Arquivos
             </AccordionTrigger>
             <AccordionContent>
               <PatientDocuments patientId={patient.id} />
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="contrato">
+            <AccordionTrigger className="font-poppins font-semibold text-base">
+              Contrato
+            </AccordionTrigger>
+            <AccordionContent>
+              <PatientContract patientId={patient.id} pregnancyId={pregnancy?.id ?? null} />
             </AccordionContent>
           </AccordionItem>
 

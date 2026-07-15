@@ -143,7 +143,9 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
 
   const { data: patients } = await supabase
     .from("patients")
-    .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, delivery_method, observations)")
+    .select(
+      "*, pregnancies!inner(due_date, dum, has_finished, born_at, delivery_method, observations)",
+    )
     .in("id", patientIds)
     .eq("pregnancies.has_finished", false)
     .order("due_date", { referencedTable: "pregnancies", ascending: true });

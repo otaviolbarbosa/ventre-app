@@ -9,7 +9,11 @@ import {
 } from "@/lib/billing/calculations";
 import { ESTADOS_BR } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
+import {
+  type CreatePatientInput,
+  MARITAL_STATUS_OPTIONS,
+  createPatientSchema,
+} from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
@@ -166,10 +170,10 @@ export default function NewPatientModal({
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
       if (!data) return;
-      if (data.street) form.setValue("street", data.street);
-      if (data.neighborhood) form.setValue("neighborhood", data.neighborhood);
-      if (data.city) form.setValue("city", data.city);
-      if (data.state) form.setValue("state", data.state);
+      if (data.street) form.setValue("address.street", data.street);
+      if (data.neighborhood) form.setValue("address.neighborhood", data.neighborhood);
+      if (data.city) form.setValue("address.city", data.city);
+      if (data.state) form.setValue("address.state", data.state);
       setAddressVisible(true);
     },
     onError: () => {
@@ -214,16 +218,22 @@ export default function NewPatientModal({
       email: "",
       phone: "",
       partner_name: "",
+      rg: "",
+      cpf: "",
+      marital_status: undefined,
+      occupation: "",
       baby_name: "",
       due_date: "",
       dum: "",
-      street: "",
-      neighborhood: "",
-      complement: "",
-      number: "",
-      city: "",
-      state: "",
-      zipcode: "",
+      address: {
+        street: "",
+        neighborhood: "",
+        complement: "",
+        number: "",
+        city: "",
+        state: "",
+        zipcode: "",
+      },
       observations: "",
       professional_ids: defaultProfessionalIds,
       enterprise_id: null,
@@ -527,6 +537,83 @@ export default function NewPatientModal({
                   )}
                 />
 
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="rg"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>RG</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cpf"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF</FormLabel>
+                        <FormControl>
+                          <InputMask
+                            component={Input}
+                            mask="___.___.___-__"
+                            replacement={{ _: /\d/ }}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="marital_status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado civil</FormLabel>
+                        <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {MARITAL_STATUS_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="occupation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissão</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="baby_name"
@@ -660,7 +747,7 @@ export default function NewPatientModal({
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="zipcode"
+                  name="address.zipcode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>CEP</FormLabel>
@@ -698,7 +785,7 @@ export default function NewPatientModal({
                 <div className="grid gap-4 sm:grid-cols-4">
                   <FormField
                     control={form.control}
-                    name="city"
+                    name="address.city"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-3">
                         <FormLabel>Cidade</FormLabel>
@@ -711,7 +798,7 @@ export default function NewPatientModal({
                   />
                   <FormField
                     control={form.control}
-                    name="state"
+                    name="address.state"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Estado</FormLabel>
@@ -742,7 +829,7 @@ export default function NewPatientModal({
                 <div className="grid gap-4 sm:grid-cols-4">
                   <FormField
                     control={form.control}
-                    name="street"
+                    name="address.street"
                     render={({ field }) => (
                       <FormItem className="sm:col-span-3">
                         <FormLabel>Rua</FormLabel>
@@ -759,7 +846,7 @@ export default function NewPatientModal({
                   />
                   <FormField
                     control={form.control}
-                    name="number"
+                    name="address.number"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Número</FormLabel>
@@ -775,7 +862,7 @@ export default function NewPatientModal({
                 <div className="grid gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
-                    name="complement"
+                    name="address.complement"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Complemento</FormLabel>
@@ -788,7 +875,7 @@ export default function NewPatientModal({
                   />
                   <FormField
                     control={form.control}
-                    name="neighborhood"
+                    name="address.neighborhood"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Bairro</FormLabel>

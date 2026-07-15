@@ -1,6 +1,6 @@
-import { Badge } from "@ventre/ui/badge";
 import { getPaymentMethodLabel } from "@/lib/billing/calculations";
 import type { Database } from "@ventre/supabase/types";
+import { Badge } from "@ventre/ui/badge";
 
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 
