@@ -15,7 +15,7 @@ import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
-import { Eye, Plus, Save } from "lucide-react";
+import { Eraser, Eye, Save } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
@@ -79,13 +79,21 @@ export default function PersonalContractSettingsScreen({
   });
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-[800px] flex-col">
       <Header title="Meus Modelos Contrato" back="/profile/settings" />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <PageHeader description="Configure as cláusulas do seu contrato base pessoal">
-          <Button variant="outline" onClick={() => setShowPreview(true)}>
+        <PageHeader description="Configure as cláusulas do seu contrato base pessoal" splitted>
+          <Button variant="outline" onClick={() => setShowPreview(true)} className="hidden sm:flex">
             <Eye className="size-4" />
-            <span className="ml-1 hidden sm:inline">Preview</span>
+            Preview
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowPreview(true)}
+            className="sm:hidden"
+          >
+            <Eye className="size-4" />
           </Button>
           <Button
             className="gradient-primary"
@@ -128,11 +136,7 @@ export default function PersonalContractSettingsScreen({
             >
               <SelectTrigger id="contract-template">
                 <SelectValue
-                  placeholder={
-                    hasContracts
-                      ? "Selecione um modelo de contrato"
-                      : "Nenhum modelo de contrato disponível"
-                  }
+                  placeholder={hasContracts ? "Selecione um modelo" : "Nenhum modelo disponível"}
                 />
               </SelectTrigger>
               <SelectContent>
@@ -145,8 +149,9 @@ export default function PersonalContractSettingsScreen({
             </Select>
           </div>
           <Button type="button" variant="outline" onClick={handleNewContract}>
-            <Plus className="size-4" />
-            <span className="ml-1">Limpar campos</span>
+            <Eraser className="size-4" />
+            <span className="ml-1 hidden sm:inline">Limpar campos</span>
+            <span className="ml-1 inline sm:hidden">Limpar</span>
           </Button>
         </div>
 
@@ -256,39 +261,38 @@ function ContractPreview({
   const contratadaBlock = `${user.name ?? na}, ${user.professional_type ?? na}, ${user.email ?? na}, telefone: ${user.phone ?? na}, doravante denominada simplesmente CONTRATADA.`;
 
   return (
-    <div className="flex justify-center bg-muted/30 py-4">
-      <div
-        className="min-h-[1123px] w-[794px] bg-white text-black text-sm shadow-md"
-        style={{ padding: "40px 60px" }}
-      >
-        <div className="mb-6 pb-4">
-          <p className="font-semibold text-lg">{title}</p>
+    <div className="flex overflow-x-auto bg-muted/30 py-4">
+      <div className="w-[794px] shrink-0 bg-white px-10 py-14 text-black text-sm shadow-md">
+        <div>
+          <div className="mb-6 pb-4">
+            <p className="font-semibold text-lg">{title}</p>
+          </div>
+
+          <div className="mb-6 rounded-sm border border-gray-300 border-dashed bg-gray-50 p-4 text-gray-400 italic">
+            <p className="font-medium text-gray-700 not-italic">CONTRATANTE:</p>
+            <p>[dados da gestante — preenchidos automaticamente ao gerar contrato por paciente]</p>
+          </div>
+
+          <div className="mb-4 border-gray-200 border-b pb-4">
+            <p className="font-semibold">CONTRATADA:</p>
+            <p className="mt-1 whitespace-pre-wrap">{contratadaBlock}</p>
+          </div>
+
+          <div
+            className="[&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h1]:mb-2 [&_h1]:font-bold [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-xl [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: keep it for now
+            dangerouslySetInnerHTML={{
+              __html: clausesHtml || "<p><em>Nenhuma cláusula adicionada ainda.</em></p>",
+            }}
+          />
+
+          <ContractSignaturePreview
+            city={city || null}
+            state={state || null}
+            contratanteName="[Nome da gestante]"
+            contratadaName={user.name}
+          />
         </div>
-
-        <div className="mb-6 rounded-sm border border-gray-300 border-dashed bg-gray-50 p-4 text-gray-400 italic">
-          <p className="font-medium text-gray-700 not-italic">CONTRATANTE:</p>
-          <p>[dados da gestante — preenchidos automaticamente ao gerar contrato por paciente]</p>
-        </div>
-
-        <div className="mb-4 border-gray-200 border-b pb-4">
-          <p className="font-semibold">CONTRATADA:</p>
-          <p className="mt-1 whitespace-pre-wrap">{contratadaBlock}</p>
-        </div>
-
-        <div
-          className="[&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h1]:mb-2 [&_h1]:font-bold [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-xl [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: keep it for now
-          dangerouslySetInnerHTML={{
-            __html: clausesHtml || "<p><em>Nenhuma cláusula adicionada ainda.</em></p>",
-          }}
-        />
-
-        <ContractSignaturePreview
-          city={city || null}
-          state={state || null}
-          contratanteName="[Nome da gestante]"
-          contratadaName={user.name}
-        />
       </div>
     </div>
   );

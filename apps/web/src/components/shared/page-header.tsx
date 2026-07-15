@@ -1,3 +1,4 @@
+import { cn } from "@ventre/ui/utils";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -10,10 +11,17 @@ interface PageHeaderProps {
   title?: string;
   description?: string;
   breadcrumbs?: Breadcrumb[];
+  splitted?: boolean;
   children?: React.ReactNode;
 }
 
-export function PageHeader({ title, description, breadcrumbs, children }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  breadcrumbs,
+  splitted,
+  children,
+}: PageHeaderProps) {
   return (
     <div className="mb-4">
       {/* Breadcrumbs */}
@@ -35,12 +43,21 @@ export function PageHeader({ title, description, breadcrumbs, children }: PageHe
       )}
       {/* Title and actions */}
       {(title || description || children) && (
-        <div className="flex justify-between gap-2 sm:flex-row">
+        <div
+          className={cn(
+            "flex justify-between gap-2 sm:flex-row",
+            splitted && "flex-col sm:flex-row",
+          )}
+        >
           <div>
             {title && <h1 className="font-bold text-2xl tracking-tight">{title}</h1>}
             {description && <p className="mt-1 text-muted-foreground">{description}</p>}
           </div>
-          {children && <div className="flex items-center gap-2">{children}</div>}
+          {children && (
+            <div className={cn("flex items-center gap-2", splitted && "justify-end")}>
+              {children}
+            </div>
+          )}
         </div>
       )}
     </div>
