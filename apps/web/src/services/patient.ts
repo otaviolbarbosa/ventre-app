@@ -196,6 +196,10 @@ export async function createPatient(
     email: data.email,
     phone: data.phone,
     partner_name: data.partner_name || null,
+    rg: data.rg || null,
+    cpf: data.cpf || null,
+    marital_status: data.marital_status || null,
+    occupation: data.occupation || null,
     created_by: responsibleProfessionalId,
   };
 

@@ -1,7 +1,7 @@
 import { isManager } from "@/lib/access-control";
 import { getServerAuth } from "@/lib/server-auth";
 import { ContractSettingsScreen } from "@/screens";
-import { getBaseContract, getContractHeaderData } from "@/services/base-contract";
+import { getBaseContracts, getContractHeaderData } from "@/services/base-contract";
 import { redirect } from "next/navigation";
 
 export default async function ContractPage() {
@@ -11,10 +11,7 @@ export default async function ContractPage() {
     redirect("/home?error=acesso-negado");
   }
 
-  const [initialContract, headerData] = await Promise.all([
-    getBaseContract(),
-    getContractHeaderData(),
-  ]);
+  const [contracts, headerData] = await Promise.all([getBaseContracts(), getContractHeaderData()]);
 
-  return <ContractSettingsScreen initialContract={initialContract} headerData={headerData} />;
+  return <ContractSettingsScreen contracts={contracts} headerData={headerData} />;
 }

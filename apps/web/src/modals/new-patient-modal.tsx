@@ -9,7 +9,11 @@ import {
 } from "@/lib/billing/calculations";
 import { ESTADOS_BR } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
+import {
+  type CreatePatientInput,
+  MARITAL_STATUS_OPTIONS,
+  createPatientSchema,
+} from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
@@ -214,6 +218,10 @@ export default function NewPatientModal({
       email: "",
       phone: "",
       partner_name: "",
+      rg: "",
+      cpf: "",
+      marital_status: undefined,
+      occupation: "",
       baby_name: "",
       due_date: "",
       dum: "",
@@ -528,6 +536,83 @@ export default function NewPatientModal({
                     </FormItem>
                   )}
                 />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="rg"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>RG</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cpf"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF</FormLabel>
+                        <FormControl>
+                          <InputMask
+                            component={Input}
+                            mask="___.___.___-__"
+                            replacement={{ _: /\d/ }}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="marital_status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado civil</FormLabel>
+                        <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {MARITAL_STATUS_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="occupation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissão</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

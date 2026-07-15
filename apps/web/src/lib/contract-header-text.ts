@@ -1,9 +1,21 @@
 import type { ContractHeaderData } from "@/services/base-contract";
 import type { Tables } from "@ventre/supabase/types";
+import { dayjs } from "./dayjs";
 
 const na = "[não informado]";
 
-type PatientRow = Pick<Tables<"patients">, "name" | "email" | "phone" | "date_of_birth">;
+type PatientRow = Pick<
+  Tables<"patients">,
+  "name" | "email" | "phone" | "date_of_birth" | "rg" | "cpf" | "marital_status" | "occupation"
+>;
+
+const MARITAL_STATUS_LABELS: Record<string, string> = {
+  solteira: "solteira",
+  casada: "casada",
+  uniao_estavel: "em união estável",
+  divorciada: "divorciada",
+  viuva: "viúva",
+};
 type PregnancyRow = Pick<Tables<"pregnancies">, "due_date"> | null;
 
 type TeamMember = {
@@ -28,13 +40,17 @@ export function buildContractHeaderBlocks(
   headerData: ContractHeaderData | PersonalHeaderData,
 ): ContractHeaderBlocks {
   const dueDateFormatted = pregnancy?.due_date
-    ? new Date(pregnancy.due_date).toLocaleDateString("pt-BR")
+    ? dayjs(pregnancy.due_date).format("DD/MM/YYYY")
+    : na;
+
+  const maritalStatusLabel = patient.marital_status
+    ? (MARITAL_STATUS_LABELS[patient.marital_status] ?? patient.marital_status)
     : na;
 
   const contratanteBlock = [
     `${patient.name ?? na},`,
-    `CPF: ${na}, RG: ${na},`,
-    `${na},`,
+    `CPF: ${patient.cpf ?? na}, RG: ${patient.rg ?? na},`,
+    `estado civil: ${maritalStatusLabel}, profissão: ${patient.occupation ?? na},`,
     `${patient.email ?? na}, telefone: ${patient.phone ?? na}`,
     `e data provável de parto: ${dueDateFormatted},`,
     "doravante denominada simplesmente GESTANTE.",

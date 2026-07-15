@@ -1,6 +1,6 @@
 import { getServerAuth } from "@/lib/server-auth";
 import { PersonalContractSettingsScreen } from "@/screens";
-import { getPersonalBaseContract, getPersonalContractHeaderData } from "@/services/base-contract";
+import { getPersonalBaseContracts, getPersonalContractHeaderData } from "@/services/base-contract";
 import { redirect } from "next/navigation";
 
 export default async function PersonalContractPage() {
@@ -10,12 +10,10 @@ export default async function PersonalContractPage() {
     redirect("/login");
   }
 
-  const [initialContract, headerData] = await Promise.all([
-    getPersonalBaseContract(),
+  const [contracts, headerData] = await Promise.all([
+    getPersonalBaseContracts(),
     getPersonalContractHeaderData(),
   ]);
 
-  return (
-    <PersonalContractSettingsScreen initialContract={initialContract} headerData={headerData} />
-  );
+  return <PersonalContractSettingsScreen contracts={contracts} headerData={headerData} />;
 }

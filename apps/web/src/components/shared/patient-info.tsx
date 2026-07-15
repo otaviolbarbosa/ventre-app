@@ -1,6 +1,7 @@
 "use client";
 import Whatsapp from "@/assets/custom-icons/whatsapp";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
+import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
 import type { PatientAddress } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
@@ -25,6 +26,10 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   const [showMapModal, setShowMapModal] = useState(false);
 
   const addr = patient.address as PatientAddress | null;
+
+  const maritalStatusLabel = MARITAL_STATUS_OPTIONS.find(
+    (option) => option.value === patient.marital_status,
+  )?.label;
 
   const resolveGoogleMapsLink = useMemo(() => {
     const parts = [
@@ -58,6 +63,16 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       </div>
 
       <InfoItem label="Nome do parceiro" value={patient.partner_name} />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <InfoItem label="RG" value={patient.rg} />
+        <InfoItem label="CPF" value={patient.cpf} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <InfoItem label="Estado civil" value={maritalStatusLabel} />
+        <InfoItem label="Profissão" value={patient.occupation} />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <InfoItem

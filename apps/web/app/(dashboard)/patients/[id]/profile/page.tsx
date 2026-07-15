@@ -90,7 +90,7 @@ export default function PatientProfilePage() {
 
           <AccordionItem value="documentos">
             <AccordionTrigger className="font-poppins font-semibold text-base">
-              Documentos
+              Arquivos
             </AccordionTrigger>
             <AccordionContent>
               <PatientDocuments patientId={patient.id} />
