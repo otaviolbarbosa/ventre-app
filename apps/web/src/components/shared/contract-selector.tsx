@@ -63,7 +63,7 @@ export const ContractSelector = ({
                     ? "Carregando..."
                     : !hasContracts
                       ? "Sem modelos de contrato"
-                      : "Selecione um modelo de contrato"
+                      : "Selecione um modelo"
                 }
               />
             </SelectTrigger>
@@ -94,7 +94,8 @@ export const ContractSelector = ({
         </div>
         <Button type="button" variant="outline" onClick={onNewContractSelected}>
           <Plus className="mr-2 size-4" />
-          Novo contrato
+          <span className="hidden sm:inline">Novo contrato</span>
+          <span className="inline sm:hidden">Novo</span>
         </Button>
       </div>
     </div>
