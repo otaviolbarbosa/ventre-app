@@ -76,7 +76,7 @@ export function Header({ title, back, subtitle }: HeaderProps) {
             <NotificationBell />
           </div>
         </div>
-        {subtitle && <div className="mt-0.5">{subtitle}</div>}
+        {subtitle && <div className="mt-0.5 text-muted-foreground text-sm">{subtitle}</div>}
       </div>
     </header>
   );

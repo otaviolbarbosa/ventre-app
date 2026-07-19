@@ -41,3 +41,4 @@ export function Logo({ href, size = "md", className, bg = false }: LogoProps) {
 
   return content;
 }
+
