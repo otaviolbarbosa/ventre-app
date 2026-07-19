@@ -19,16 +19,6 @@ export const DOPPLER_RESULT_LABELS: Record<string, string> = {
   not_performed: "Não realizado",
 };
 
-export const HEMOGLOBIN_LABELS: Record<string, string> = {
-  AA: "AA",
-  AS: "AS",
-  AC: "AC",
-  SS: "SS",
-  SC: "SC",
-  other_heterozygous: "Outro heterozigoto",
-  other_homozygous: "Outro homozigoto",
-};
-
 export const VACCINE_LABELS: Record<string, string> = {
   covid: "COVID-19",
   influenza: "Influenza",
