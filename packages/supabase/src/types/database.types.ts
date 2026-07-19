@@ -673,9 +673,6 @@ export type Database = {
           created_at: string
           exam_date: string
           exam_name: string
-          hemoglobin_electrophoresis:
-            | Database["public"]["Enums"]["hemoglobin_electrophoresis_result"]
-            | null
           id: string
           pregnancy_id: string
           result_numeric: number | null
@@ -686,9 +683,6 @@ export type Database = {
           created_at?: string
           exam_date: string
           exam_name: string
-          hemoglobin_electrophoresis?:
-            | Database["public"]["Enums"]["hemoglobin_electrophoresis_result"]
-            | null
           id?: string
           pregnancy_id: string
           result_numeric?: number | null
@@ -699,9 +693,6 @@ export type Database = {
           created_at?: string
           exam_date?: string
           exam_name?: string
-          hemoglobin_electrophoresis?:
-            | Database["public"]["Enums"]["hemoglobin_electrophoresis_result"]
-            | null
           id?: string
           pregnancy_id?: string
           result_numeric?: number | null
@@ -2188,14 +2179,6 @@ export type Database = {
       delivery_method: "cesarean" | "vaginal"
       doppler_result: "normal" | "abnormal" | "not_performed"
       fetal_presentation: "cephalic" | "pelvic" | "transverse"
-      hemoglobin_electrophoresis_result:
-        | "AA"
-        | "AS"
-        | "AC"
-        | "SS"
-        | "SC"
-        | "other_heterozygous"
-        | "other_homozygous"
       installment_status:
         | "pendente"
         | "pago"
@@ -2401,15 +2384,6 @@ export const Constants = {
       delivery_method: ["cesarean", "vaginal"],
       doppler_result: ["normal", "abnormal", "not_performed"],
       fetal_presentation: ["cephalic", "pelvic", "transverse"],
-      hemoglobin_electrophoresis_result: [
-        "AA",
-        "AS",
-        "AC",
-        "SS",
-        "SC",
-        "other_heterozygous",
-        "other_homozygous",
-      ],
       installment_status: [
         "pendente",
         "pago",

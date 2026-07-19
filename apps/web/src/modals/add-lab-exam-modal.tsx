@@ -2,14 +2,21 @@
 
 import { addLabExamAction } from "@/actions/add-lab-exam-action";
 import { updateLabExamAction } from "@/actions/update-lab-exam-action";
-import { HEMOGLOBIN_LABELS } from "@/lib/prenatal-constants";
 import { type LabExamInput, labExamSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Loader2 } from "lucide-react";
@@ -18,30 +25,50 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-const PRENATAL_EXAM_NAMES = [
-  "ABO-RH",
-  "Hemoglobina/Hematócrito",
-  "Plaquetas",
-  "Glicemia de Jejum",
-  "TOTG",
-  "Sífilis",
-  "VDRL",
-  "HIV/Anti HIV",
-  "Hepatite B (HBsAg)",
-  "Hepatite C",
-  "Toxoplasmose",
-  "Rubéola",
-  "Coombs Indireto",
-  "CMV",
-  "Ferritina",
-  "TSH/T4L",
-  "HTLV1e2",
-  "Vitamina D",
-  "Urina-EAS",
-  "Urocultura",
-  "Eletroforese de Hemoglobina",
-  "Outro",
-];
+const PRENATAL_EXAM_CATEGORIES_AND_NAMES = {
+  Hematologia: [
+    "Hemoglobina",
+    "Hematócrito",
+    "Leucograma",
+    "Plaquetas",
+    "MCV",
+    "Coagulograma",
+    "Eletroforese de Hemoglobina HbA1",
+    "Eletroforese de Hemoglobina HbA2",
+    "Eletroforese de Hemoglobina HbF",
+    "Eletroforese de Hemoglobina HbS",
+    "Eletroforese de Hemoglobina HbC",
+  ],
+  "Tipagem sanguínea": ["Tipagem Sanguínea e Fator Rh (ABO-Rh)", "Coombs Indireto"],
+  "Metabolismo da glicose": ["Glicemia de Jejum", "TOTG 75g", "Insulina"],
+  "Sorologias infecciosas": [
+    "Sífilis (teste rápido)",
+    "VDRL",
+    "HIV (Anti-HIV)",
+    "Hepatite B (HBsAg)",
+    "Hepatite C (Anti-HCV)",
+    "Toxoplasmose",
+    "Rubéola",
+    "Citomegalovírus (CMV)",
+    "HTLV 1 e 2",
+  ],
+  "Função tireoidiana": ["TSH/T4L"],
+  "Nutrientes e vitaminas": ["Ferro Sérico", "Ferritina", "Vitamina D", "Vitamina B12"],
+  Urina: ["Urina Tipo I (EAS)", "Urocultura", "Proteinúria (24h)"],
+  "Bioquímica hepática/renal": [
+    "Bilirrubinas (Total, Direta e Indireta)",
+    "TGO/TGP",
+    "Desidrogenase Lática (DHL)",
+    "Ureia/Creatinina (UR/CR)",
+    "Ácido Úrico",
+    "Lipidograma",
+  ],
+  "Rastreio ginecológico/microbiológico": [
+    "Cultura para Streptococcus do Grupo B (EGB)",
+    "Colpocitologia Oncótica (CCO)",
+  ],
+  "Não categorizados": ["Outros"],
+};
 
 type AddLabExamModalProps = {
   open: boolean;
@@ -78,9 +105,6 @@ export function AddLabExamModal({
         result_text: exam?.result_text ?? "",
         result_numeric: exam?.result_numeric ?? undefined,
         unit: exam?.unit ?? "",
-        hemoglobin_electrophoresis:
-          (exam?.hemoglobin_electrophoresis as LabExamInput["hemoglobin_electrophoresis"]) ??
-          undefined,
       });
     }
   }, [open, exam]);
@@ -147,10 +171,15 @@ export function AddLabExamModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {PRENATAL_EXAM_NAMES.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
+                      {Object.entries(PRENATAL_EXAM_CATEGORIES_AND_NAMES).map(([group, names]) => (
+                        <SelectGroup key={group}>
+                          <SelectLabel>{group}</SelectLabel>
+                          {names.map((name) => (
+                            <SelectItem key={name} value={name}>
+                              {name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       ))}
                     </SelectContent>
                   </Select>
@@ -205,31 +234,6 @@ export function AddLabExamModal({
               )}
             />
           </div>
-
-          <FormField
-            control={form.control}
-            name="hemoglobin_electrophoresis"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Eletroforese de Hemoglobina</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione (opcional)" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.entries(HEMOGLOBIN_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
