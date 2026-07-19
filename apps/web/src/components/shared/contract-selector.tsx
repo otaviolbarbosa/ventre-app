@@ -93,7 +93,7 @@ export const ContractSelector = ({
           </Select>
         </div>
         <Button type="button" variant="outline" onClick={onNewContractSelected}>
-          <Plus className="mr-2 size-4" />
+          <Plus className="size-4" />
           <span className="hidden sm:inline">Novo contrato</span>
           <span className="inline sm:hidden">Novo</span>
         </Button>

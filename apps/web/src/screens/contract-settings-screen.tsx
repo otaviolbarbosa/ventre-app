@@ -4,6 +4,7 @@ import { saveBaseContractAction } from "@/actions/save-base-contract-action";
 import { Header } from "@/components/layouts/header";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { PageHeader } from "@/components/shared/page-header";
+import { SaveContractChoiceModal } from "@/components/shared/save-contract-choice-modal";
 import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import { ESTADOS_BR } from "@/lib/constants";
 import type { ContractHeaderData } from "@/services/base-contract";
@@ -37,6 +38,7 @@ export default function ContractSettingsScreen({
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
   const [showSaveNewModal, setShowSaveNewModal] = useState(false);
   const pendingActionRef = useRef<"edit" | "create" | null>(null);
 
@@ -67,6 +69,9 @@ export default function ContractSettingsScreen({
         setShowSaveNewModal(false);
         handleNewContract();
       }
+      if (pendingActionRef.current === "edit") {
+        setShowSaveChoiceModal(false);
+      }
       pendingActionRef.current = null;
       router.refresh();
     },
@@ -77,13 +82,14 @@ export default function ContractSettingsScreen({
   });
 
   return (
-    <div className="flex h-full min-h-[800px] flex-col">
-      <Header title="Modelos de Contrato" back="/settings" />
+    <div className="flex h-full flex-col">
+      <Header
+        title="Modelos de Contrato"
+        subtitle="Configure as cláusulas dos modelos de contrato da organização"
+        back="/settings"
+      />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <PageHeader
-          description="Configure as cláusulas dos modelos contrato da organização"
-          splitted
-        >
+        <PageHeader splitted className="shrink-0">
           <Button variant="outline" className="hidden sm:flex" onClick={() => setShowPreview(true)}>
             <Eye className="size-4" />
             <span className="ml-1 hidden sm:inline">Preview</span>
@@ -91,139 +97,114 @@ export default function ContractSettingsScreen({
           <Button
             size="icon"
             variant="outline"
-            className="block flex justify-center sm:hidden sm:hidden"
+            className="flex justify-center sm:hidden"
             onClick={() => setShowPreview(true)}
           >
             <Eye className="size-4" />
           </Button>
           <Button
-            className="gradient-primary hidden sm:flex"
-            disabled={isExecuting || !selectedId}
-            onClick={() => {
-              if (!selectedId) return;
-              pendingActionRef.current = "edit";
-              save({
-                contractId: selectedId,
-                name: undefined,
-                title,
-                clauses_html: clausesHtml,
-                city,
-                state,
-              });
-            }}
-          >
-            <Save className="size-4" />
-            <span className="ml-1">{isExecuting ? "Salvando..." : "Editar"}</span>
-          </Button>
-          <Button
-            size="icon"
-            className="gradient-primary block flex justify-center sm:hidden"
-            disabled={isExecuting || !selectedId}
-            onClick={() => {
-              if (!selectedId) return;
-              pendingActionRef.current = "edit";
-              save({
-                contractId: selectedId,
-                name: undefined,
-                title,
-                clauses_html: clausesHtml,
-                city,
-                state,
-              });
-            }}
-          >
-            <Save className="size-4" />
-          </Button>
-          <Button
-            variant="outline"
             disabled={isExecuting}
-            onClick={() => setShowSaveNewModal(true)}
+            className="gradient-primary"
+            onClick={() => {
+              if (selectedId) {
+                setShowSaveChoiceModal(true);
+                return;
+              }
+              setShowSaveNewModal(true);
+            }}
           >
             <Save className="size-4" />
-            <span className="ml-1">Criar novo</span>
+            <span className="ml-1">{isExecuting ? "Salvando..." : "Salvar contrato"}</span>
           </Button>
         </PageHeader>
 
-        <div className="mb-4 flex items-end gap-2">
-          <div className="flex-1 space-y-1.5">
-            <label htmlFor="contract-template" className="font-medium text-sm">
-              Modelo de Contrato
-            </label>
-            <Select
-              value={selectedId}
-              disabled={!hasContracts}
-              onValueChange={handleSelectTemplate}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="mb-4 flex shrink-0 items-end gap-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <label htmlFor="contract-template" className="font-medium text-sm">
+                Modelo de Contrato
+              </label>
+              <Select
+                value={selectedId}
+                disabled={!hasContracts}
+                onValueChange={handleSelectTemplate}
+              >
+                <SelectTrigger id="contract-template">
+                  <SelectValue
+                    placeholder={hasContracts ? "Selecione um modelo" : "Nenhum modelo disponível"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {contracts.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name ?? c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleNewContract}
+              className="shrink-0"
             >
-              <SelectTrigger id="contract-template">
-                <SelectValue
-                  placeholder={hasContracts ? "Selecione um modelo" : "Nenhum modelo disponível"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {contracts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name ?? c.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Eraser className="size-4" />
+              <span className="ml-1 hidden sm:inline">Limpar campos</span>
+              <span className="ml-1 inline sm:hidden">Limpar</span>
+            </Button>
           </div>
-          <Button type="button" variant="outline" onClick={handleNewContract}>
-            <Eraser className="size-4" />
-            <span className="ml-1 hidden sm:inline">Limpar campos</span>
-            <span className="ml-1 inline sm:hidden">Limpar</span>
-          </Button>
-        </div>
 
-        <div className="mb-4 space-y-1.5">
-          <label htmlFor="contract-title" className="font-medium text-sm">
-            Título do contrato
-          </label>
-          <Input
-            id="contract-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título do contrato"
-          />
-        </div>
-
-        <div className="mb-4 grid grid-cols-4 gap-4">
-          <div className="col-span-3 space-y-1.5">
-            <label htmlFor="contract-city" className="font-medium text-sm">
-              Cidade
+          <div className="mb-4 shrink-0 space-y-1.5">
+            <label htmlFor="contract-title" className="font-medium text-sm">
+              Título do contrato
             </label>
             <Input
-              id="contract-city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Cidade"
+              id="contract-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título do contrato"
             />
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor="contract-state" className="font-medium text-sm">
-              Estado
-            </label>
-            <Select value={state || undefined} onValueChange={setState}>
-              <SelectTrigger id="contract-state">
-                <SelectValue placeholder="UF" />
-              </SelectTrigger>
-              <SelectContent>
-                {ESTADOS_BR.map((estado) => (
-                  <SelectItem key={estado.sigla} value={estado.sigla}>
-                    {estado.sigla}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
 
-        <RichEditor
-          content={clausesHtml}
-          onChange={setClausesHtml}
-          placeholder="Escreva as cláusulas do contrato..."
-          className="min-h-0 flex-1 bg-white"
-        />
+          <div className="mb-4 grid shrink-0 grid-cols-4 gap-4">
+            <div className="col-span-3 space-y-1.5">
+              <label htmlFor="contract-city" className="font-medium text-sm">
+                Cidade
+              </label>
+              <Input
+                id="contract-city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Cidade"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="contract-state" className="font-medium text-sm">
+                Estado
+              </label>
+              <Select value={state || undefined} onValueChange={setState}>
+                <SelectTrigger id="contract-state">
+                  <SelectValue placeholder="UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ESTADOS_BR.map((estado) => (
+                    <SelectItem key={estado.sigla} value={estado.sigla}>
+                      {estado.sigla}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <RichEditor
+            content={clausesHtml}
+            onChange={setClausesHtml}
+            placeholder="Escreva as cláusulas do contrato..."
+            className="min-h-[280px] flex-1 bg-white"
+          />
+        </div>
       </div>
 
       <ContentModal
@@ -241,6 +222,27 @@ export default function ContractSettingsScreen({
           state={state}
         />
       </ContentModal>
+
+      <SaveContractChoiceModal
+        open={showSaveChoiceModal}
+        onOpenChange={setShowSaveChoiceModal}
+        isPending={isExecuting}
+        onSaveCurrent={() => {
+          pendingActionRef.current = "edit";
+          save({
+            contractId: selectedId,
+            name: undefined,
+            title,
+            clauses_html: clausesHtml,
+            city,
+            state,
+          });
+        }}
+        onCreateNew={() => {
+          setShowSaveChoiceModal(false);
+          setShowSaveNewModal(true);
+        }}
+      />
 
       <SaveNewTemplateModal
         open={showSaveNewModal}
