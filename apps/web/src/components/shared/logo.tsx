@@ -1,6 +1,8 @@
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import ventreLogo from "@/assets/ventre.png";
+import ventreLogoWhite from "@/assets/ventre-white.png";
+import { cn } from "@/lib/utils";
 
 type LogoProps = {
   href?: string;
@@ -24,7 +26,7 @@ export function Logo({ href, size = "md", className, bg = false }: LogoProps) {
   const content = (
     <div className={cn("flex items-center gap-2", className)}>
       <Image
-        src={bg ? "/logo-bg.png" : "/logo.png"}
+        src={bg ? ventreLogoWhite : ventreLogo}
         alt="Ventre"
         width={image}
         height={image}

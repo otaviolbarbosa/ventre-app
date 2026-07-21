@@ -3,12 +3,12 @@
 import { savePersonalContractAction } from "@/actions/save-personal-contract-action";
 import { Header } from "@/components/layouts/header";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
-import { PageHeader } from "@/components/shared/page-header";
+import { SaveContractChoiceModal } from "@/components/shared/save-contract-choice-modal";
 import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import type { getPersonalContractHeaderData } from "@/services/base-contract";
 
 type PersonalHeaderData = Awaited<ReturnType<typeof getPersonalContractHeaderData>>;
-import { ESTADOS_BR } from "@/lib/constants";
+
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
@@ -16,10 +16,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Eraser, Eye, Save } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
+import { useAction } from "next-safe-action/hooks";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ESTADOS_BR } from "@/lib/constants";
 
 const DEFAULT_TITLE = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS";
 
@@ -39,6 +40,7 @@ export default function PersonalContractSettingsScreen({
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
   const [showSaveNewModal, setShowSaveNewModal] = useState(false);
   const pendingActionRef = useRef<"edit" | "create" | null>(null);
 
@@ -69,6 +71,9 @@ export default function PersonalContractSettingsScreen({
         setShowSaveNewModal(false);
         handleNewContract();
       }
+      if (pendingActionRef.current === "edit") {
+        setShowSaveChoiceModal(false);
+      }
       pendingActionRef.current = null;
       router.refresh();
     },
@@ -79,10 +84,14 @@ export default function PersonalContractSettingsScreen({
   });
 
   return (
-    <div className="flex h-full min-h-[800px] flex-col">
-      <Header title="Meus Modelos Contrato" back="/profile/settings" />
+    <div className="flex h-full flex-col">
+      <Header
+        title="Meus Modelos Contrato"
+        back="/profile/settings"
+        subtitle="Configure as cláusulas dos modelos de contrato pessoal"
+      />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <PageHeader description="Configure as cláusulas do seu contrato base pessoal" splitted>
+        <div className="mb-4 flex shrink-0 justify-end">
           <Button variant="outline" onClick={() => setShowPreview(true)} className="hidden sm:flex">
             <Eye className="size-4" />
             Preview
@@ -96,114 +105,108 @@ export default function PersonalContractSettingsScreen({
             <Eye className="size-4" />
           </Button>
           <Button
+            disabled={isExecuting}
             className="gradient-primary"
-            disabled={isExecuting || !selectedId}
             onClick={() => {
-              if (!selectedId) return;
-              pendingActionRef.current = "edit";
-              save({
-                contractId: selectedId,
-                name: undefined,
-                title,
-                clauses_html: clausesHtml,
-                city,
-                state,
-              });
+              if (selectedId) {
+                setShowSaveChoiceModal(true);
+                return;
+              }
+              setShowSaveNewModal(true);
             }}
           >
             <Save className="size-4" />
-            <span className="ml-1">{isExecuting ? "Salvando..." : "Editar"}</span>
+            <span className="ml-1">{isExecuting ? "Salvando..." : "Salvar modelo"}</span>
           </Button>
-          <Button
-            variant="outline"
-            disabled={isExecuting}
-            onClick={() => setShowSaveNewModal(true)}
-          >
-            <Save className="size-4" />
-            <span className="ml-1">Criar novo</span>
-          </Button>
-        </PageHeader>
+        </div>
 
-        <div className="mb-4 flex items-end gap-2">
-          <div className="flex-1 space-y-1.5">
-            <label htmlFor="contract-template" className="font-medium text-sm">
-              Modelo de Contrato
-            </label>
-            <Select
-              value={selectedId}
-              disabled={!hasContracts}
-              onValueChange={handleSelectTemplate}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="mb-4 flex shrink-0 items-end gap-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <label htmlFor="contract-template" className="font-medium text-sm">
+                Modelo de Contrato
+              </label>
+              <Select
+                value={selectedId}
+                disabled={!hasContracts}
+                onValueChange={handleSelectTemplate}
+              >
+                <SelectTrigger id="contract-template">
+                  <SelectValue
+                    placeholder={hasContracts ? "Selecione um modelo" : "Nenhum modelo disponível"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {contracts.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name ?? c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleNewContract}
+              className="shrink-0"
             >
-              <SelectTrigger id="contract-template">
-                <SelectValue
-                  placeholder={hasContracts ? "Selecione um modelo" : "Nenhum modelo disponível"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {contracts.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name ?? c.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Eraser className="size-4" />
+              <span className="ml-1 hidden sm:inline">Limpar campos</span>
+              <span className="ml-1 inline sm:hidden">Limpar</span>
+            </Button>
           </div>
-          <Button type="button" variant="outline" onClick={handleNewContract}>
-            <Eraser className="size-4" />
-            <span className="ml-1 hidden sm:inline">Limpar campos</span>
-            <span className="ml-1 inline sm:hidden">Limpar</span>
-          </Button>
-        </div>
 
-        <div className="mb-4 space-y-1.5">
-          <label htmlFor="contract-title" className="font-medium text-sm">
-            Título do contrato
-          </label>
-          <Input
-            id="contract-title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título do contrato"
-          />
-        </div>
-
-        <div className="mb-4 grid grid-cols-4 gap-4">
-          <div className="col-span-3 space-y-1.5">
-            <label htmlFor="contract-city" className="font-medium text-sm">
-              Cidade
+          <div className="mb-4 shrink-0 space-y-1.5">
+            <label htmlFor="contract-title" className="font-medium text-sm">
+              Título do contrato
             </label>
             <Input
-              id="contract-city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Cidade"
+              id="contract-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título do contrato"
             />
           </div>
-          <div className="space-y-1.5">
-            <label htmlFor="contract-state" className="font-medium text-sm">
-              Estado
-            </label>
-            <Select value={state || undefined} onValueChange={setState}>
-              <SelectTrigger id="contract-state">
-                <SelectValue placeholder="UF" />
-              </SelectTrigger>
-              <SelectContent>
-                {ESTADOS_BR.map((estado) => (
-                  <SelectItem key={estado.sigla} value={estado.sigla}>
-                    {estado.sigla}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
 
-        <RichEditor
-          content={clausesHtml}
-          onChange={setClausesHtml}
-          placeholder="Escreva as cláusulas do contrato..."
-          className="min-h-0 flex-1 bg-white"
-        />
+          <div className="mb-4 grid shrink-0 grid-cols-4 gap-4">
+            <div className="col-span-3 space-y-1.5">
+              <label htmlFor="contract-city" className="font-medium text-sm">
+                Cidade
+              </label>
+              <Input
+                id="contract-city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Cidade"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="contract-state" className="font-medium text-sm">
+                Estado
+              </label>
+              <Select value={state || undefined} onValueChange={setState}>
+                <SelectTrigger id="contract-state">
+                  <SelectValue placeholder="UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ESTADOS_BR.map((estado) => (
+                    <SelectItem key={estado.sigla} value={estado.sigla}>
+                      {estado.sigla}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <RichEditor
+            content={clausesHtml}
+            onChange={setClausesHtml}
+            placeholder="Escreva as cláusulas do contrato..."
+            className="min-h-[280px] flex-1 bg-white"
+          />
+        </div>
       </div>
 
       <ContentModal
@@ -221,6 +224,27 @@ export default function PersonalContractSettingsScreen({
           state={state}
         />
       </ContentModal>
+
+      <SaveContractChoiceModal
+        open={showSaveChoiceModal}
+        onOpenChange={setShowSaveChoiceModal}
+        isPending={isExecuting}
+        onSaveCurrent={() => {
+          pendingActionRef.current = "edit";
+          save({
+            contractId: selectedId,
+            name: undefined,
+            title,
+            clauses_html: clausesHtml,
+            city,
+            state,
+          });
+        }}
+        onCreateNew={() => {
+          setShowSaveChoiceModal(false);
+          setShowSaveNewModal(true);
+        }}
+      />
 
       <SaveNewTemplateModal
         open={showSaveNewModal}
@@ -258,7 +282,27 @@ function ContractPreview({
   const na = "[não informado]";
   const { user } = headerData;
 
-  const contratadaBlock = `${user.name ?? na}, ${user.professional_type ?? na}, ${user.email ?? na}, telefone: ${user.phone ?? na}, doravante denominada simplesmente CONTRATADA.`;
+  const contratadaBlock = [
+    `${user.name ?? na}, ${user.professional_type ?? na},`,
+    `CPF: ${user.personal_documents?.cpf ?? na}, RG: ${user.personal_documents?.rg ?? na}${
+      user.personal_documents?.rg_issuing_body
+        ? ` (${user.personal_documents.rg_issuing_body})`
+        : ""
+    },`,
+    `${user.email ?? na}, telefone: ${user.phone ?? na},`,
+    `residente e domiciliado(a) à ${
+      [
+        user.address?.street,
+        user.address?.number,
+        user.address?.neighborhood,
+        user.address?.city,
+        user.address?.state,
+      ]
+        .filter(Boolean)
+        .join(", ") || na
+    },`,
+    "doravante denominada simplesmente CONTRATADA.",
+  ].join(" ");
 
   return (
     <div className="flex overflow-x-auto bg-muted/30 py-4">

@@ -6,10 +6,10 @@ import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-ur
 import { getPatientContractAction } from "@/actions/get-patient-contract-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
-import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import { ESTADOS_BR } from "@/lib/constants";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { cn } from "@/lib/utils";
+import { patientContractFormSchema } from "@/lib/validations/contract";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { Download, Eye, Save, Trash2 } from "lucide-react";
+import { Download, Eye, Plus, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -60,7 +60,6 @@ export default function PatientContract({
   const [contratadaName, setContratadaName] = useState<string | null>(null);
   const [enterpriseOptions, setEnterpriseOptions] = useState<BaseTemplate[]>([]);
   const [personalOptions, setPersonalOptions] = useState<BaseTemplate[]>([]);
-  const [showSaveNewModal, setShowSaveNewModal] = useState(false);
   const [headerBlocks, setHeaderBlocks] = useState<ContractHeaderBlocks | null>(null);
   const [enterpriseHeaderBlocks, setEnterpriseHeaderBlocks] = useState<ContractHeaderBlocks | null>(
     null,
@@ -72,9 +71,13 @@ export default function PatientContract({
   const [isExporting, setIsExporting] = useState(false);
   const [contractExists, setContractExists] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isConsentOpen, setIsConsentOpen] = useState(false);
-  const [consentChecked, setConsentChecked] = useState(false);
+  const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
   const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<"title" | "city" | "state" | "clausesHtml", string>>
+  >({});
 
   const { execute: fetchContract, isExecuting: isLoadingFetchContract } = useAction(
     getPatientContractAction,
@@ -118,17 +121,21 @@ export default function PatientContract({
     },
   );
 
-  const { execute: signContract, isExecuting: isSigning } = useAction(signPatientContractAction, {
-    onSuccess: () => {
-      toast.success("Contrato assinado com sucesso");
-      setContractExists(true);
-      setIsConsentOpen(false);
-      setConsentChecked(false);
-      // Reload to pick up the persisted parties_details, contract id and signature
-      fetchContract({ patientId });
+  const { executeAsync: signContractAsync, isExecuting: isSigning } = useAction(
+    signPatientContractAction,
+    {
+      onSuccess: () => {
+        toast.success("Contrato criado com sucesso");
+        setContractExists(true);
+        setIsGenerateModalOpen(false);
+        setSaveAsTemplate(false);
+        setTemplateName("");
+        // Reload to pick up the persisted parties_details, contract id and signature
+        fetchContract({ patientId });
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao assinar contrato"),
     },
-    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao assinar contrato"),
-  });
+  );
 
   const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
 
@@ -148,17 +155,63 @@ export default function PatientContract({
     },
   );
 
-  const { execute: createBaseFromPatient, isExecuting: isCreatingTemplate } = useAction(
+  const { executeAsync: createBaseFromPatientAsync, isExecuting: isCreatingTemplate } = useAction(
     createBaseContractFromPatientAction,
     {
       onSuccess: () => {
         toast.success("Modelo de contrato salvo com sucesso");
-        setShowSaveNewModal(false);
-        fetchContract({ patientId });
       },
       onError: ({ error }) => toast.error(error.serverError ?? "Erro ao salvar modelo"),
     },
   );
+
+  const isGenerating = isSigning || isCreatingTemplate;
+
+  const validateForm = () => {
+    const result = patientContractFormSchema.safeParse({
+      title,
+      city,
+      state,
+      clauses_html: clausesHtml,
+    });
+
+    if (!result.success) {
+      const errors: typeof fieldErrors = {};
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] === "clauses_html" ? "clausesHtml" : (issue.path[0] as string);
+        errors[field as keyof typeof fieldErrors] = issue.message;
+      }
+      setFieldErrors(errors);
+      return false;
+    }
+
+    setFieldErrors({});
+    return true;
+  };
+
+  const handleGenerateContract = async () => {
+    if (saveAsTemplate) {
+      const templateResult = await createBaseFromPatientAsync({
+        patientId,
+        name: templateName,
+        title,
+        clauses_html: clausesHtml,
+        city,
+        state,
+      });
+      if (!templateResult?.data) return;
+    }
+
+    await signContractAsync({
+      patientId,
+      pregnancyId: pregnancyId ?? null,
+      title,
+      clauses_html: clausesHtml,
+      city,
+      state,
+      consent: true,
+    });
+  };
 
   const handleExportPdf = async () => {
     setIsExporting(true);
@@ -202,6 +255,7 @@ export default function PatientContract({
     setCity(match.city ?? "");
     setState(match.state ?? "");
     setHeaderBlocks(enterpriseMatch ? enterpriseHeaderBlocks : personalHeaderBlocks);
+    setFieldErrors({});
     setMode("editing");
   };
 
@@ -212,11 +266,13 @@ export default function PatientContract({
     setCity("");
     setState("");
     setHeaderBlocks(enterpriseHeaderBlocks);
+    setFieldErrors({});
     setMode("editing");
   };
 
   const handleCancelContractForm = () => {
     setContractId("");
+    setFieldErrors({});
     setMode(contractExists ? "readonly" : "select");
   };
 
@@ -270,17 +326,23 @@ export default function PatientContract({
               className="text-destructive hover:text-destructive"
               onClick={() => setIsDeleteConfirmOpen(true)}
             >
-              <Trash2 className="mr-2 size-4" />
+              <Trash2 className="size-4" />
               Excluir contrato
             </Button>
             <div className="flex gap-2">
               {!signatureInfo && (
-                <Button variant="outline" onClick={() => setMode("editing")}>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFieldErrors({});
+                    setMode("editing");
+                  }}
+                >
                   Editar contrato
                 </Button>
               )}
               <Button variant="outline" disabled={isExporting} onClick={handleExportPdf}>
-                <Download className="mr-2 size-4" />
+                <Download className="size-4" />
                 {isExporting ? "Gerando PDF..." : "Baixar contrato"}
               </Button>
             </div>
@@ -328,9 +390,14 @@ export default function PatientContract({
           <Input
             id="contract-title"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              if (fieldErrors.title) setFieldErrors((prev) => ({ ...prev, title: undefined }));
+            }}
             placeholder="Título do contrato"
+            aria-invalid={!!fieldErrors.title}
           />
+          {fieldErrors.title && <p className="text-destructive text-sm">{fieldErrors.title}</p>}
         </div>
         <div className="mb-6 grid grid-cols-1 grid-cols-4 gap-4">
           <div className="col-span-3 space-y-2">
@@ -340,16 +407,27 @@ export default function PatientContract({
             <Input
               id="contract-city"
               value={city}
-              onChange={(e) => setCity(e.target.value)}
+              onChange={(e) => {
+                setCity(e.target.value);
+                if (fieldErrors.city) setFieldErrors((prev) => ({ ...prev, city: undefined }));
+              }}
               placeholder="Cidade"
+              aria-invalid={!!fieldErrors.city}
             />
+            {fieldErrors.city && <p className="text-destructive text-sm">{fieldErrors.city}</p>}
           </div>
           <div className="space-y-2">
             <label htmlFor="contract-state" className="font-medium text-sm">
               Estado
             </label>
-            <Select value={state || undefined} onValueChange={setState}>
-              <SelectTrigger id="contract-state">
+            <Select
+              value={state || undefined}
+              onValueChange={(value) => {
+                setState(value);
+                if (fieldErrors.state) setFieldErrors((prev) => ({ ...prev, state: undefined }));
+              }}
+            >
+              <SelectTrigger id="contract-state" aria-invalid={!!fieldErrors.state}>
                 <SelectValue placeholder="UF" />
               </SelectTrigger>
               <SelectContent>
@@ -360,16 +438,27 @@ export default function PatientContract({
                 ))}
               </SelectContent>
             </Select>
+            {fieldErrors.state && <p className="text-destructive text-sm">{fieldErrors.state}</p>}
           </div>
         </div>
         <ContractDocument headerBlocks={headerBlocks} clausesHtml={null}>
           <RichEditor
             content={clausesHtml}
-            onChange={setClausesHtml}
+            onChange={(html) => {
+              setClausesHtml(html);
+              if (fieldErrors.clausesHtml)
+                setFieldErrors((prev) => ({ ...prev, clausesHtml: undefined }));
+            }}
             placeholder="Cláusulas do contrato..."
-            className="max-h-[400px] min-h-[200px] bg-white"
+            className={cn(
+              "max-h-[400px] min-h-[200px] bg-white",
+              fieldErrors.clausesHtml && "border-destructive",
+            )}
           />
         </ContractDocument>
+        {fieldErrors.clausesHtml && (
+          <p className="text-destructive text-sm">{fieldErrors.clausesHtml}</p>
+        )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>
             Cancelar
@@ -380,7 +469,7 @@ export default function PatientContract({
             onClick={() => setIsPreviewOpen(true)}
             className="hidden sm:flex"
           >
-            <Eye className="mr-2 size-4" />
+            <Eye className="size-4" />
             Preview
           </Button>
           <Button
@@ -393,86 +482,81 @@ export default function PatientContract({
             <Eye className="size-4" />
           </Button>
           <Button
-            variant="outline"
-            disabled={isSigning}
-            onClick={() => setShowSaveNewModal(true)}
-            className="hidden sm:flex"
-          >
-            <Save className="mr-2 size-4" />
-            Salvar modelo
-          </Button>
-          <Button
-            size="icon"
-            variant="outline"
-            disabled={isSigning}
-            onClick={() => setShowSaveNewModal(true)}
-            className="block flex justify-center sm:hidden"
-          >
-            <Save className="size-4" />
-          </Button>
-          <Button
             className="gradient-primary"
             disabled={isSigning || isExporting}
-            onClick={() =>
-              signContract({
-                patientId,
-                pregnancyId: pregnancyId ?? null,
-                title,
-                clauses_html: clausesHtml,
-                city,
-                state,
-                consent: true,
-              })
-            }
-            // onClick={() => setIsConsentOpen(true)}
+            onClick={() => {
+              if (validateForm()) setIsGenerateModalOpen(true);
+            }}
           >
-            {/* Gerar contrato */}
-            <span className="hidden sm:inline">{isSigning ? "Gerando..." : "Gerar contrato"}</span>
-            <span className="inline sm:hidden">{isSigning ? "Gerando..." : "Gerar"}</span>
+            <Plus className="size-4" />
+            {isSigning ? "Gerando contrato..." : "Gerar contrato"}
           </Button>
         </div>
       </div>
 
       <ContentModal
-        open={isConsentOpen}
+        open={isGenerateModalOpen}
         onOpenChange={(open) => {
-          setIsConsentOpen(open);
-          if (!open) setConsentChecked(false);
+          setIsGenerateModalOpen(open);
+          if (!open) {
+            setSaveAsTemplate(false);
+            setTemplateName("");
+          }
         }}
-        title="Assinar contrato eletronicamente"
+        title="Gerar contrato"
         description="A assinatura será validada e registrada com segurança, garantindo a autenticidade do contrato. Após assinado, o conteúdo não poderá mais ser alterado."
         contentClassName="sm:max-w-[480px]"
       >
-        <div className="flex items-start gap-2 pt-2">
-          <Checkbox
-            id="contract-consent"
-            checked={consentChecked}
-            onCheckedChange={(checked) => setConsentChecked(checked === true)}
-          />
-          <Label htmlFor="contract-consent" className="font-normal text-sm leading-snug">
-            Declaro que li o contrato e concordo em assiná-lo eletronicamente.
-          </Label>
+        <div className="space-y-4 pt-2">
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="save-as-template"
+              checked={saveAsTemplate}
+              onCheckedChange={(checked) => setSaveAsTemplate(checked === true)}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="save-as-template" className="font-normal text-sm leading-snug">
+                Criar modelo de contrato a partir deste documento
+              </Label>
+              <p className="text-muted-foreground text-xs leading-snug">
+                Um modelo de contrato pode ser reutilizado para outras pacientes.
+              </p>
+            </div>
+          </div>
+
+          {
+            <div className="space-y-2">
+              <Label htmlFor="template-name">Nome do modelo</Label>
+              <Input
+                id="template-name"
+                disabled={!saveAsTemplate}
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Nome do modelo"
+              />
+            </div>
+          }
         </div>
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" disabled={isSigning} onClick={() => setIsConsentOpen(false)}>
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            variant="ghost"
+            disabled={isGenerating}
+            onClick={() => setIsGenerateModalOpen(false)}
+          >
             Cancelar
           </Button>
           <Button
             className="gradient-primary"
-            disabled={!consentChecked || isSigning}
-            onClick={() =>
-              signContract({
-                patientId,
-                pregnancyId: pregnancyId ?? null,
-                title,
-                clauses_html: clausesHtml,
-                city,
-                state,
-                consent: true,
-              })
-            }
+            disabled={isGenerating || (saveAsTemplate && !templateName.trim())}
+            onClick={handleGenerateContract}
           >
-            {isSigning ? "Assinando..." : "Confirmar e assinar"}
+            {saveAsTemplate
+              ? isGenerating
+                ? "Salvando e gerando..."
+                : "Salvar e Gerar"
+              : isGenerating
+                ? "Gerando..."
+                : "Gerar contrato"}
           </Button>
         </div>
       </ContentModal>
@@ -497,22 +581,6 @@ export default function PatientContract({
           }}
         />
       </ContentModal>
-
-      <SaveNewTemplateModal
-        open={showSaveNewModal}
-        onOpenChange={setShowSaveNewModal}
-        isPending={isCreatingTemplate}
-        onConfirm={(name) =>
-          createBaseFromPatient({
-            patientId,
-            name,
-            title,
-            clauses_html: clausesHtml,
-            city,
-            state,
-          })
-        }
-      />
     </>
   );
 }

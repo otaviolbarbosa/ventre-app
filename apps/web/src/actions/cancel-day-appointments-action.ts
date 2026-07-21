@@ -1,10 +1,10 @@
 "use server";
 
+import { z } from "zod";
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { syncDeleteToGoogleCalendar } from "@/services/google-calendar";
-import { z } from "zod";
 
 export const cancelDayAppointmentsAction = authActionClient
   .inputSchema(
@@ -61,8 +61,8 @@ export const cancelDayAppointmentsAction = authActionClient
     if (profile.enterprise_id) {
       insertActivityLog({
         supabaseAdmin,
-        actionName: "Consultas do dia canceladas",
-        description: `Consultas do dia ${parsedInput.date} canceladas`,
+        actionName: "Agendamentos do dia cancelados",
+        description: `Agendamentos do dia ${parsedInput.date} cancelados`,
         actionType: "appointment",
         userId: user.id,
         enterpriseId: profile.enterprise_id,

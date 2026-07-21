@@ -3,7 +3,11 @@
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
-import { createAppointmentSchema } from "@/lib/validations/appointment";
+import {
+  createAppointmentSchema,
+  newAppointmentBookedLabel,
+  newAppointmentLabel,
+} from "@/lib/validations/appointment";
 import { createAppointment } from "@/services/appointment";
 import { syncCreateToGoogleCalendar } from "@/services/google-calendar";
 import type { Patient } from "@/types";
@@ -48,9 +52,8 @@ export const addAppointmentAction = authActionClient
     }
 
     if (appointmentEnterpriseId) {
-      const isConsulta = parsedInput.type === "consulta";
-      const actionName = isConsulta ? "Nova consulta agendada" : "Novo encontro agendado";
-      const typeLabel = isConsulta ? "Consulta pré-natal" : "Encontro preparatório";
+      const actionName = newAppointmentBookedLabel[appointment.type];
+      const typeLabel = newAppointmentLabel[appointment.type];
 
       const description = patientName
         ? `${typeLabel} para ${patientName} em ${appointment.date} às ${appointment.time.slice(0, 5)}`

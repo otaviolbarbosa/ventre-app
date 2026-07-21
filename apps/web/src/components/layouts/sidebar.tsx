@@ -1,12 +1,5 @@
 "use client";
 
-import Avatar from "@/components/shared/avatar";
-import { Logo } from "@/components/shared/logo";
-import { useAuth } from "@/hooks/use-auth";
-import { isManager, isStaff } from "@/lib/access-control";
-import { cn } from "@/lib/utils";
-import type { ProfessionalType } from "@/types";
-import { professionalTypeLabels } from "@/utils/team";
 import { Button } from "@ventre/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@ventre/ui/tooltip";
 import {
@@ -23,6 +16,13 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import Avatar from "@/components/shared/avatar";
+import { Logo } from "@/components/shared/logo";
+import { useAuth } from "@/hooks/use-auth";
+import { isManager, isStaff } from "@/lib/access-control";
+import { cn } from "@/lib/utils";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 
 const navigationProfessionals = [
   { name: "Home", href: "/home", icon: Home },

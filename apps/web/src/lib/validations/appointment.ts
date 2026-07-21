@@ -4,7 +4,11 @@ import { z } from "zod";
 type AppointmentType = Database["public"]["Enums"]["appointment_type"];
 type AppointmentStatus = Database["public"]["Enums"]["appointment_status"];
 
-const appointmentTypes = ["consulta", "encontro"] as const satisfies readonly AppointmentType[];
+const appointmentTypes = [
+  "exame",
+  "consulta",
+  "encontro",
+] as const satisfies readonly AppointmentType[];
 const appointmentStatuses = [
   "agendada",
   "realizada",
@@ -73,3 +77,21 @@ export const updateAppointmentSchema = z.object({
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
+
+export const appointmentLabel: Record<AppointmentType, string> = {
+  exame: "Exame",
+  consulta: "Consulta",
+  encontro: "Encontro",
+};
+
+export const newAppointmentLabel: Record<AppointmentType, string> = {
+  exame: "Exame pré-natal",
+  consulta: "Consulta pré-natal",
+  encontro: "Encontro preparatório",
+};
+
+export const newAppointmentBookedLabel: Record<AppointmentType, string> = {
+  exame: "Novo exame agendado",
+  consulta: "Nova consulta agendada",
+  encontro: "Novo encontro agendado",
+};

@@ -2,6 +2,7 @@ import type { Enums, Tables } from "@ventre/supabase";
 
 export type ProfessionalType = "obstetra" | "enfermeiro" | "doula" | "fisio";
 
+export type User = Tables<"users">;
 export type Appointment = Tables<"appointments">;
 export type Patient = Tables<"patients">;
 
@@ -14,7 +15,11 @@ export type Invite = {
     name: string;
     pregnancies: { due_date: string; dum: string | null }[];
   } | null;
-  inviter: { id: string; name: string; professional_type: string | null } | null;
+  inviter: {
+    id: string;
+    name: string;
+    professional_type: string | null;
+  } | null;
 };
 
 export type TeamMember = {
@@ -23,7 +28,12 @@ export type TeamMember = {
   professional_type: ProfessionalType;
   joined_at: string | null;
   is_backup: boolean | null;
-  professional: { id: string; name: string; email: string; avatar_url: string } | null;
+  professional: {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url: string;
+  } | null;
 };
 
 export type Professional = {

@@ -1,15 +1,24 @@
-import loginBg from "@/assets/login-bg.jpg";
 import { Baby, Heart, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import loginBg from "@/assets/login-bg.jpg";
+import ventreLogo from "@/assets/ventre.png";
+import ventreLogoWhite from "@/assets/ventre-white.png";
 
 const highlights = [
   { icon: Heart, text: "Acompanhamento gestacional completo e personalizado" },
   { icon: Baby, text: "Gestão de equipes multidisciplinares de cuidado" },
-  { icon: Shield, text: "Dados protegidos com os mais altos padrões de segurança" },
+  {
+    icon: Shield,
+    text: "Dados protegidos com os mais altos padrões de segurança",
+  },
 ];
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex min-h-screen">
       {/* ── Left: brand panel ─────────────────────────────── */}
@@ -38,11 +47,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div>
             <Link href="/">
               <Image
-                src="/logo-white.png"
+                src={ventreLogoWhite}
                 alt="logo"
-                className="object-conten"
-                width={160}
-                height={160}
+                className="object-contain"
+                width={200}
+                height={200}
               />
             </Link>
           </div>
@@ -77,8 +86,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 sm:px-10">
         {/* Mobile logo */}
         <div className="mb-10 space-y-4 lg:hidden">
-          {/* <Logo className="justify-center" href="/" size="2xl" /> */}
-          <Image src="/logo.png" alt="logo" className="object-conten" width={160} height={160} />
+          <Image src={ventreLogo} alt="logo" className="object-contain" width={240} height={240} />
         </div>
 
         <div className="w-full max-w-[380px]">{children}</div>

@@ -1,6 +1,7 @@
 import { CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import ventreLogo from "@/assets/ventre.png";
 
 export default function PaymentConfirmationPage() {
   return (
@@ -15,7 +16,7 @@ export default function PaymentConfirmationPage() {
       {/* Logo */}
       <div className="hero-animate hero-animate-1 relative z-10 mb-10">
         <Image
-          src="/logo.png"
+          src={ventreLogo}
           alt="Ventre — Agenda de Parto"
           width={180}
           height={64}

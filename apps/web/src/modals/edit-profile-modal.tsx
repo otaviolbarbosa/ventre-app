@@ -1,14 +1,5 @@
 "use client";
 
-import { lookupCepAction } from "@/actions/lookup-cep-action";
-import { updateProfileAction } from "@/actions/update-profile-action";
-import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
-import { ESTADOS_BR } from "@/lib/constants";
-import {
-  type ProfessionalDocumentsInput,
-  professionalDocumentsSchema,
-} from "@/lib/validations/professional-documents";
-import type { ProfessionalType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import type { Json } from "@ventre/supabase/types";
@@ -23,6 +14,20 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { lookupCepAction } from "@/actions/lookup-cep-action";
+import { updateProfileAction } from "@/actions/update-profile-action";
+import PersonalDocumentsFields from "@/components/shared/personal-documents-fields";
+import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
+import { ESTADOS_BR } from "@/lib/constants";
+import {
+  type PersonalDocumentsInput,
+  personalDocumentsSchema,
+} from "@/lib/validations/personal-documents";
+import {
+  type ProfessionalDocumentsInput,
+  professionalDocumentsSchema,
+} from "@/lib/validations/professional-documents";
+import type { ProfessionalType } from "@/types";
 
 const editProfileSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -39,6 +44,7 @@ const editProfileSchema = z.object({
     })
     .optional(),
   professional_documents: professionalDocumentsSchema.optional(),
+  personal_documents: personalDocumentsSchema.optional(),
 });
 
 type EditProfileInput = z.infer<typeof editProfileSchema>;
@@ -61,6 +67,7 @@ type EditProfileModalProps = {
   address?: Address | null;
   professionalType: ProfessionalType | null;
   professionalDocuments?: Json | null;
+  personalDocuments?: Json | null;
   onSuccess?: (name: string, phone: string) => void;
 };
 
@@ -89,6 +96,21 @@ function normalizeProfessionalDocuments(
   return hasData ? normalized : undefined;
 }
 
+function normalizePersonalDocuments(
+  documents: PersonalDocumentsInput | undefined,
+): PersonalDocumentsInput | undefined {
+  if (!documents) return undefined;
+
+  const normalized: PersonalDocumentsInput = {
+    cpf: documents.cpf?.trim() || undefined,
+    rg: documents.rg?.trim() || undefined,
+    rg_issuing_body: documents.rg_issuing_body?.trim() || undefined,
+  };
+
+  const hasData = Object.values(normalized).some((v) => v !== undefined);
+  return hasData ? normalized : undefined;
+}
+
 export function EditProfileModal({
   open,
   onOpenChange,
@@ -97,6 +119,7 @@ export function EditProfileModal({
   address,
   professionalType,
   professionalDocuments,
+  personalDocuments,
   onSuccess,
 }: EditProfileModalProps) {
   const [addressVisible, setAddressVisible] = useState(false);
@@ -135,10 +158,11 @@ export function EditProfileModal({
         },
         professional_documents:
           (professionalDocuments as ProfessionalDocumentsInput | null) ?? undefined,
+        personal_documents: (personalDocuments as PersonalDocumentsInput | null) ?? undefined,
       });
       setAddressVisible(hasAddress);
     }
-  }, [open, name, phone, address, professionalDocuments, form]);
+  }, [open, name, phone, address, professionalDocuments, personalDocuments, form]);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
@@ -168,6 +192,7 @@ export function EditProfileModal({
     const result = await saveProfile({
       ...values,
       professional_documents: normalizeProfessionalDocuments(values.professional_documents),
+      personal_documents: normalizePersonalDocuments(values.personal_documents),
     });
 
     if (!result?.data?.profile) {
@@ -221,6 +246,8 @@ export function EditProfileModal({
               </FormItem>
             )}
           />
+
+          <PersonalDocumentsFields control={form.control} />
 
           <ProfessionalDocumentsFields control={form.control} professionalType={professionalType} />
 

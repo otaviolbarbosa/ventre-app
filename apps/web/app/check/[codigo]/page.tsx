@@ -3,6 +3,7 @@
 import { BadgeCheck, Loader2, Upload, XCircle } from "lucide-react";
 import Image from "next/image";
 import { use, useRef, useState } from "react";
+import ventreLogo from "@/assets/ventre.png";
 
 type VerificationState = "idle" | "uploading" | "success" | "failure";
 
@@ -85,7 +86,7 @@ export default function CheckContractPage({
       {/* Logo */}
       <div className="relative z-10 mb-10">
         <Image
-          src="/logo.png"
+          src={ventreLogo}
           alt="Ventre — Agenda de Parto"
           width={180}
           height={64}

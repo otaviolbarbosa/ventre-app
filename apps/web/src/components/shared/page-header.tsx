@@ -13,6 +13,7 @@ interface PageHeaderProps {
   breadcrumbs?: Breadcrumb[];
   splitted?: boolean;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export function PageHeader({
@@ -21,9 +22,10 @@ export function PageHeader({
   breadcrumbs,
   splitted,
   children,
+  className,
 }: PageHeaderProps) {
   return (
-    <div className="mb-4">
+    <div className={cn("mb-4", className)}>
       {/* Breadcrumbs */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="mb-2 flex items-center space-x-1 text-muted-foreground text-sm">
@@ -49,10 +51,12 @@ export function PageHeader({
             splitted && "flex-col sm:flex-row",
           )}
         >
-          <div>
-            {title && <h1 className="font-bold text-2xl tracking-tight">{title}</h1>}
-            {description && <p className="mt-1 text-muted-foreground">{description}</p>}
-          </div>
+          {(title || description) && (
+            <div>
+              {title && <h1 className="font-bold text-2xl tracking-tight">{title}</h1>}
+              {description && <p className="mt-1 text-muted-foreground">{description}</p>}
+            </div>
+          )}
           {children && (
             <div className={cn("flex items-center gap-2", splitted && "justify-end")}>
               {children}
