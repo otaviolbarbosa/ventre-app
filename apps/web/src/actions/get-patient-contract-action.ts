@@ -3,7 +3,11 @@
 import { type ContractHeaderBlocks, buildContractHeaderBlocks } from "@/lib/contract-header-text";
 import { authActionClient } from "@/lib/safe-action";
 import { getPatientContractSchema } from "@/lib/validations/contract";
-import { personalDocumentsSchema } from "@/lib/validations/personal-documents";
+import {
+  personalDocumentsSchema,
+  type PersonalDocumentsInput,
+} from "@/lib/validations/personal-documents";
+import { type ContratadaAddress, getTeamMembersDetails } from "@/services/base-contract";
 
 type TeamMember = {
   id: string;
@@ -11,6 +15,8 @@ type TeamMember = {
   professional_type: string | null;
   email: string | null;
   phone: string | null;
+  personal_documents: PersonalDocumentsInput | null;
+  address: ContratadaAddress | null;
 };
 
 export const getPatientContractAction = authActionClient
@@ -105,7 +111,7 @@ export const getPatientContractAction = authActionClient
       const [pregnancyResult, teamResult] = await Promise.all([
         supabase
           .from("pregnancies")
-          .select("due_date")
+          .select("due_date, enterprise_id")
           .eq("patient_id", patientId)
           .order("has_finished", { ascending: true })
           .order("created_at", { ascending: false })
@@ -119,16 +125,23 @@ export const getPatientContractAction = authActionClient
 
       const pregnancy = pregnancyResult.data ?? null;
 
-      const teamMembers: TeamMember[] = ((teamResult.data ?? []) as unknown[]).map((r) => {
-        const u = (r as { users: TeamMember }).users;
-        return {
-          id: u.id,
-          name: u.name,
-          professional_type: u.professional_type,
-          email: u.email,
-          phone: u.phone,
-        };
-      });
+      const baseTeamMembers = ((teamResult.data ?? []) as unknown[]).map(
+        (r) =>
+          (r as { users: Pick<TeamMember, "id" | "name" | "professional_type" | "email" | "phone"> })
+            .users,
+      );
+      const { personalDocumentsById, addressById } = await getTeamMembersDetails(
+        baseTeamMembers.map((u) => u.id),
+      );
+      const teamMembers: TeamMember[] = baseTeamMembers.map((u) => ({
+        id: u.id,
+        name: u.name,
+        professional_type: u.professional_type,
+        email: u.email,
+        phone: u.phone,
+        personal_documents: personalDocumentsById.get(u.id) ?? null,
+        address: addressById.get(u.id) ?? null,
+      }));
 
       // Build header data with patient-specific team members
       let headerBlocks = null;
@@ -136,13 +149,13 @@ export const getPatientContractAction = authActionClient
       let contratadaName: string | null = null;
 
       if (patient) {
-        if (profile.enterprise_id) {
+        if (pregnancy?.enterprise_id) {
           const { data: enterprise } = await supabaseAdmin
             .from("enterprises")
             .select(
               "name, legal_name, cnpj, email, phone, street, number, complement, neighborhood, city, state, zipcode",
             )
-            .eq("id", profile.enterprise_id)
+            .eq("id", pregnancy.enterprise_id)
             .maybeSingle();
 
           headerBlocks = buildContractHeaderBlocks(patient, pregnancy, {
@@ -152,14 +165,17 @@ export const getPatientContractAction = authActionClient
           });
           contratadaName = enterprise?.legal_name ?? enterprise?.name ?? null;
         } else {
-          const { data: professionalAddress } = await supabaseAdmin
-            .from("addresses")
-            .select("street, number, complement, neighborhood, city, state, zipcode")
-            .eq("user_id", user.id)
-            .maybeSingle();
+          const [{ data: professionalAddress }, { data: professionalUser }] = await Promise.all([
+            supabaseAdmin
+              .from("addresses")
+              .select("street, number, complement, neighborhood, city, state, zipcode")
+              .eq("user_id", user.id)
+              .maybeSingle(),
+            supabaseAdmin.from("users").select("personal_documents").eq("id", user.id).maybeSingle(),
+          ]);
 
           const personalDocumentsResult = personalDocumentsSchema.safeParse(
-            profile.personal_documents ?? {},
+            professionalUser?.personal_documents ?? {},
           );
 
           headerBlocks = buildContractHeaderBlocks(patient, pregnancy, {

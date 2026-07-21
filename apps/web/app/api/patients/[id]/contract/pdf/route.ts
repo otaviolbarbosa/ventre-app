@@ -5,7 +5,7 @@ import {
   sanitizeClausesHtml,
   uploadContractPdf,
 } from "@/lib/contract-pdf";
-import { getContractHeaderData } from "@/services/base-contract";
+import { getContractHeaderData, getTeamMembersDetails } from "@/services/base-contract";
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -105,26 +105,33 @@ export async function POST(_request: Request, { params }: Params) {
           .select("users!inner(id, name, professional_type, email, phone)")
           .eq("patient_id", patientId);
 
-        headerData.teamMembers = ((teamRows ?? []) as unknown[]).map((r) => {
-          const u = (
-            r as {
-              users: {
-                id: string;
-                name: string | null;
-                professional_type: string | null;
-                email: string | null;
-                phone: string | null;
-              };
-            }
-          ).users;
-          return {
-            id: u.id,
-            name: u.name,
-            professional_type: u.professional_type,
-            email: u.email,
-            phone: u.phone,
-          };
-        });
+        const baseTeamMembers = ((teamRows ?? []) as unknown[]).map(
+          (r) =>
+            (
+              r as {
+                users: {
+                  id: string;
+                  name: string | null;
+                  professional_type: string | null;
+                  email: string | null;
+                  phone: string | null;
+                };
+              }
+            ).users,
+        );
+        const { personalDocumentsById, addressById } = await getTeamMembersDetails(
+          baseTeamMembers.map((u) => u.id),
+        );
+
+        headerData.teamMembers = baseTeamMembers.map((u) => ({
+          id: u.id,
+          name: u.name,
+          professional_type: u.professional_type,
+          email: u.email,
+          phone: u.phone,
+          personal_documents: personalDocumentsById.get(u.id) ?? null,
+          address: addressById.get(u.id) ?? null,
+        }));
       }
 
       headerBlocks = buildContractHeaderBlocks(patient, pregnancy, headerData);
