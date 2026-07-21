@@ -2,28 +2,27 @@ import { resend } from "@/lib/resend";
 import { professionalTypeLabels } from "@/utils/team";
 
 type SendProfessionalInviteParams = {
-	to: string;
-	name: string;
-	enterpriseName: string;
-	professional_type: string;
-	inviteLink: string;
+  to: string;
+  name: string;
+  enterpriseName: string;
+  professional_type: string;
+  inviteLink: string;
 };
 
 export async function sendProfessionalInvite({
-	to,
-	name,
-	enterpriseName,
-	professional_type,
-	inviteLink,
+  to,
+  name,
+  enterpriseName,
+  professional_type,
+  inviteLink,
 }: SendProfessionalInviteParams) {
-	const typeLabel =
-		professionalTypeLabels[professional_type] ?? professional_type;
+  const typeLabel = professionalTypeLabels[professional_type] ?? professional_type;
 
-	const { error } = await resend.emails.send({
-		from: "Ventre <naoresponda@ventre.app>",
-		to,
-		subject: `${enterpriseName} te convidou para o Ventre`,
-		html: `
+  const { error } = await resend.emails.send({
+    from: "Ventre <naoresponda@ventre.app>",
+    to,
+    subject: `${enterpriseName} te convidou para o Ventre`,
+    html: `
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -118,10 +117,10 @@ export async function sendProfessionalInvite({
 
 </html>
     `,
-	});
+  });
 
-	if (error) {
-		console.log(error);
-		throw new Error("Erro ao enviar e-mail de convite.");
-	}
+  if (error) {
+    console.log(error);
+    throw new Error("Erro ao enviar e-mail de convite.");
+  }
 }

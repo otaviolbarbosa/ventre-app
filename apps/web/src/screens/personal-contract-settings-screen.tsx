@@ -3,13 +3,12 @@
 import { savePersonalContractAction } from "@/actions/save-personal-contract-action";
 import { Header } from "@/components/layouts/header";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
-import { PageHeader } from "@/components/shared/page-header";
 import { SaveContractChoiceModal } from "@/components/shared/save-contract-choice-modal";
 import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import type { getPersonalContractHeaderData } from "@/services/base-contract";
 
 type PersonalHeaderData = Awaited<ReturnType<typeof getPersonalContractHeaderData>>;
-import { ESTADOS_BR } from "@/lib/constants";
+
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
@@ -17,10 +16,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Eraser, Eye, Save } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
+import { useAction } from "next-safe-action/hooks";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ESTADOS_BR } from "@/lib/constants";
 
 const DEFAULT_TITLE = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS";
 
@@ -91,7 +91,7 @@ export default function PersonalContractSettingsScreen({
         subtitle="Configure as cláusulas dos modelos de contrato pessoal"
       />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <PageHeader splitted className="shrink-0">
+        <div className="mb-4 flex shrink-0 justify-end">
           <Button variant="outline" onClick={() => setShowPreview(true)} className="hidden sm:flex">
             <Eye className="size-4" />
             Preview
@@ -118,7 +118,7 @@ export default function PersonalContractSettingsScreen({
             <Save className="size-4" />
             <span className="ml-1">{isExecuting ? "Salvando..." : "Salvar modelo"}</span>
           </Button>
-        </PageHeader>
+        </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="mb-4 flex shrink-0 items-end gap-2">
@@ -282,7 +282,27 @@ function ContractPreview({
   const na = "[não informado]";
   const { user } = headerData;
 
-  const contratadaBlock = `${user.name ?? na}, ${user.professional_type ?? na}, ${user.email ?? na}, telefone: ${user.phone ?? na}, doravante denominada simplesmente CONTRATADA.`;
+  const contratadaBlock = [
+    `${user.name ?? na}, ${user.professional_type ?? na},`,
+    `CPF: ${user.personal_documents?.cpf ?? na}, RG: ${user.personal_documents?.rg ?? na}${
+      user.personal_documents?.rg_issuing_body
+        ? ` (${user.personal_documents.rg_issuing_body})`
+        : ""
+    },`,
+    `${user.email ?? na}, telefone: ${user.phone ?? na},`,
+    `residente e domiciliado(a) à ${
+      [
+        user.address?.street,
+        user.address?.number,
+        user.address?.neighborhood,
+        user.address?.city,
+        user.address?.state,
+      ]
+        .filter(Boolean)
+        .join(", ") || na
+    },`,
+    "doravante denominada simplesmente CONTRATADA.",
+  ].join(" ");
 
   return (
     <div className="flex overflow-x-auto bg-muted/30 py-4">

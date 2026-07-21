@@ -1,4 +1,5 @@
-import type { ContractHeaderData } from "@/services/base-contract";
+import type { ContractHeaderData, ContratadaAddress } from "@/services/base-contract";
+import type { PersonalDocumentsInput } from "@/lib/validations/personal-documents";
 import type { Tables } from "@ventre/supabase/types";
 import { dayjs } from "./dayjs";
 
@@ -24,9 +25,26 @@ type TeamMember = {
   professional_type: string | null;
   email: string | null;
   phone: string | null;
+  personal_documents: PersonalDocumentsInput | null;
+  address: ContratadaAddress | null;
 };
 
 type PersonalHeaderData = { type: "team-personal"; teamMembers: TeamMember[] };
+
+function formatTeamMemberBlock(m: TeamMember): string {
+  return [
+    `${m.name ?? na}, ${m.professional_type ?? na},`,
+    `CPF: ${m.personal_documents?.cpf ?? na}, RG: ${m.personal_documents?.rg ?? na}${
+      m.personal_documents?.rg_issuing_body ? ` (${m.personal_documents.rg_issuing_body})` : ""
+    },`,
+    `${m.email ?? na}, telefone: ${m.phone ?? na},`,
+    `residente e domiciliado(a) à ${
+      [m.address?.street, m.address?.number, m.address?.neighborhood, m.address?.city, m.address?.state]
+        .filter(Boolean)
+        .join(", ") || na
+    }`,
+  ].join(" ");
+}
 
 export type ContractHeaderBlocks = {
   contratanteBlock: string;
@@ -59,12 +77,7 @@ export function buildContractHeaderBlocks(
   if (headerData.type === "team-personal") {
     const contratadaBlock =
       headerData.teamMembers.length > 0
-        ? headerData.teamMembers
-            .map(
-              (m) =>
-                `${m.name ?? na}, ${m.professional_type ?? na}, ${m.email ?? na}, telefone: ${m.phone ?? na}`,
-            )
-            .join("\n")
+        ? headerData.teamMembers.map(formatTeamMemberBlock).join("\n")
         : na;
 
     return { contratanteBlock, contratadaBlock, teamMembersBlock: null };
@@ -89,17 +102,34 @@ export function buildContractHeaderBlocks(
           "doravante denominada simplesmente EQUIPE DE CUIDADO.",
         ].join(" ")
       : headerData.type === "autonomous"
-        ? `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na}, ${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na}, doravante denominada simplesmente EQUIPE DE CUIDADO.`
+        ? [
+            `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na},`,
+            `CPF: ${headerData.user.personal_documents?.cpf ?? na}, RG: ${
+              headerData.user.personal_documents?.rg ?? na
+            }${
+              headerData.user.personal_documents?.rg_issuing_body
+                ? ` (${headerData.user.personal_documents.rg_issuing_body})`
+                : ""
+            },`,
+            `${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na},`,
+            `residente e domiciliado(a) à ${
+              [
+                headerData.user.address?.street,
+                headerData.user.address?.number,
+                headerData.user.address?.neighborhood,
+                headerData.user.address?.city,
+                headerData.user.address?.state,
+              ]
+                .filter(Boolean)
+                .join(", ") || na
+            },`,
+            "doravante denominada simplesmente EQUIPE DE CUIDADO.",
+          ].join(" ")
         : na;
 
   const teamMembersBlock =
     headerData.type === "enterprise" && headerData.teamMembers.length > 0
-      ? headerData.teamMembers
-          .map(
-            (m) =>
-              `${m.name ?? na}, ${m.professional_type ?? na}, ${m.email ?? na}, ${m.phone ?? na}`,
-          )
-          .join("\n")
+      ? headerData.teamMembers.map(formatTeamMemberBlock).join("\n")
       : null;
 
   return { contratanteBlock, contratadaBlock, teamMembersBlock };

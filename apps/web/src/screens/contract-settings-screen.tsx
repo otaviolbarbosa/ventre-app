@@ -3,7 +3,6 @@
 import { saveBaseContractAction } from "@/actions/save-base-contract-action";
 import { Header } from "@/components/layouts/header";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
-import { PageHeader } from "@/components/shared/page-header";
 import { SaveContractChoiceModal } from "@/components/shared/save-contract-choice-modal";
 import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import { ESTADOS_BR } from "@/lib/constants";
@@ -89,7 +88,7 @@ export default function ContractSettingsScreen({
         back="/settings"
       />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <PageHeader splitted className="shrink-0">
+        <div className="mb-4 flex shrink-0 justify-end">
           <Button variant="outline" className="hidden sm:flex" onClick={() => setShowPreview(true)}>
             <Eye className="size-4" />
             <span className="ml-1 hidden sm:inline">Preview</span>
@@ -116,7 +115,7 @@ export default function ContractSettingsScreen({
             <Save className="size-4" />
             <span className="ml-1">{isExecuting ? "Salvando..." : "Salvar contrato"}</span>
           </Button>
-        </PageHeader>
+        </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="mb-4 flex shrink-0 items-end gap-2">
@@ -295,7 +294,29 @@ function ContractPreview({
           "doravante denominada simplesmente EQUIPE CONTRATADA.",
         ].join(" ")
       : headerData.type === "autonomous"
-        ? `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na}, ${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na}, doravante denominada simplesmente EQUIPE CONTRATADA.`
+        ? [
+            `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na},`,
+            `CPF: ${headerData.user.personal_documents?.cpf ?? na}, RG: ${
+              headerData.user.personal_documents?.rg ?? na
+            }${
+              headerData.user.personal_documents?.rg_issuing_body
+                ? ` (${headerData.user.personal_documents.rg_issuing_body})`
+                : ""
+            },`,
+            `${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na},`,
+            `residente e domiciliado(a) à ${
+              [
+                headerData.user.address?.street,
+                headerData.user.address?.number,
+                headerData.user.address?.neighborhood,
+                headerData.user.address?.city,
+                headerData.user.address?.state,
+              ]
+                .filter(Boolean)
+                .join(", ") || na
+            },`,
+            "doravante denominada simplesmente EQUIPE CONTRATADA.",
+          ].join(" ")
         : na;
 
   return (

@@ -1,4 +1,8 @@
 import { getServerAuth } from "@/lib/server-auth";
+import {
+  type PersonalDocumentsInput,
+  personalDocumentsSchema,
+} from "@/lib/validations/personal-documents";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
 
@@ -119,13 +123,20 @@ export async function getBaseContractById(id: string): Promise<Tables<"contracts
   return data;
 }
 
-type TeamMember = {
+export type TeamMember = {
   id: string;
   name: string | null;
   professional_type: string | null;
   email: string | null;
   phone: string | null;
+  personal_documents: PersonalDocumentsInput | null;
+  address: ContratadaAddress | null;
 };
+
+export type ContratadaAddress = Pick<
+  Tables<"addresses">,
+  "street" | "number" | "complement" | "neighborhood" | "city" | "state" | "zipcode"
+>;
 
 export type ContractHeaderData =
   | {
@@ -154,13 +165,79 @@ export type ContractHeaderData =
         email: string | null;
         phone: string | null;
         professional_type: string | null;
+        personal_documents: PersonalDocumentsInput | null;
+        address: ContratadaAddress | null;
       };
     };
+
+async function getContratadaAddress(userId: string): Promise<ContratadaAddress | null> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("addresses")
+    .select("street, number, complement, neighborhood, city, state, zipcode")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
+async function getContratadaPersonalDocuments(userId: string): Promise<PersonalDocumentsInput | null> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("users")
+    .select("personal_documents")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return parsePersonalDocuments(data?.personal_documents);
+}
+
+function parsePersonalDocuments(json: unknown): PersonalDocumentsInput | null {
+  const result = personalDocumentsSchema.safeParse(json ?? {});
+  return result.success ? result.data : null;
+}
+
+export async function getTeamMembersDetails(userIds: string[]): Promise<{
+  personalDocumentsById: Map<string, PersonalDocumentsInput | null>;
+  addressById: Map<string, ContratadaAddress | null>;
+}> {
+  if (userIds.length === 0) return { personalDocumentsById: new Map(), addressById: new Map() };
+
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const [{ data: usersRows }, { data: addressRows }] = await Promise.all([
+    supabaseAdmin.from("users").select("id, personal_documents").in("id", userIds),
+    supabaseAdmin
+      .from("addresses")
+      .select("user_id, street, number, complement, neighborhood, city, state, zipcode")
+      .in("user_id", userIds),
+  ]);
+
+  const personalDocumentsById = new Map(
+    (usersRows ?? []).map((r) => [r.id, parsePersonalDocuments(r.personal_documents)]),
+  );
+  const addressById = new Map(
+    (addressRows ?? []).map((r) => [
+      r.user_id as string,
+      {
+        street: r.street,
+        number: r.number,
+        complement: r.complement,
+        neighborhood: r.neighborhood,
+        city: r.city,
+        state: r.state,
+        zipcode: r.zipcode,
+      },
+    ]),
+  );
+
+  return { personalDocumentsById, addressById };
+}
 
 export async function getPersonalContractHeaderData(): Promise<
   Extract<ContractHeaderData, { type: "autonomous" }>
 > {
-  const { profile } = await getServerAuth();
+  const { profile, user } = await getServerAuth();
+
   return {
     type: "autonomous",
     user: {
@@ -168,6 +245,8 @@ export async function getPersonalContractHeaderData(): Promise<
       email: profile?.email ?? null,
       phone: profile?.phone ?? null,
       professional_type: profile?.professional_type ?? null,
+      personal_documents: user ? await getContratadaPersonalDocuments(user.id) : null,
+      address: user ? await getContratadaAddress(user.id) : null,
     },
   };
 }
@@ -178,7 +257,14 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
   if (!user || !profile) {
     return {
       type: "autonomous",
-      user: { name: null, email: null, phone: null, professional_type: null },
+      user: {
+        name: null,
+        email: null,
+        phone: null,
+        professional_type: null,
+        personal_documents: null,
+        address: null,
+      },
     };
   }
 
@@ -198,16 +284,26 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
       .select("users!inner(id, name, professional_type, email, phone)")
       .eq("enterprise_id", profile.enterprise_id);
 
-    const teamMembers: TeamMember[] = (teamRows ?? []).map((r) => {
-      const u = r.users as unknown as TeamMember;
-      return {
-        id: u.id,
-        name: u.name,
-        professional_type: u.professional_type,
-        email: u.email,
-        phone: u.phone,
-      };
-    });
+    const baseTeamMembers = (teamRows ?? []).map(
+      (r) =>
+        r.users as unknown as Pick<
+          TeamMember,
+          "id" | "name" | "professional_type" | "email" | "phone"
+        >,
+    );
+    const { personalDocumentsById, addressById } = await getTeamMembersDetails(
+      baseTeamMembers.map((u) => u.id),
+    );
+
+    const teamMembers: TeamMember[] = baseTeamMembers.map((u) => ({
+      id: u.id,
+      name: u.name,
+      professional_type: u.professional_type,
+      email: u.email,
+      phone: u.phone,
+      personal_documents: personalDocumentsById.get(u.id) ?? null,
+      address: addressById.get(u.id) ?? null,
+    }));
 
     return { type: "enterprise", enterprise: enterprise ?? null, teamMembers };
   }
@@ -219,6 +315,8 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
       email: profile.email,
       phone: profile.phone ?? null,
       professional_type: profile.professional_type ?? null,
+      personal_documents: await getContratadaPersonalDocuments(user.id),
+      address: await getContratadaAddress(user.id),
     },
   };
 }

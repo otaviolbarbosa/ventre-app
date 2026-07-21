@@ -10,11 +10,12 @@ import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
+import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { CheckCircle2, SearchX, Trash2 } from "lucide-react";
+import { CalendarPlus, CheckCircle2, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,6 +25,7 @@ export default function PatientProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const { confirm } = useConfirmModal();
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
@@ -73,7 +75,14 @@ export default function PatientProfilePage() {
   return (
     <>
       <div className="space-y-6">
-        <Accordion type="multiple" className="w-full">
+        <div className="flex justify-end">
+          <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
+            <CalendarPlus className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        </div>
+
+        <Accordion type="multiple" className="w-full" defaultValue={["informacoes"]}>
           <AccordionItem value="informacoes">
             <AccordionTrigger className="font-poppins font-semibold text-base">
               Informações da Gestante
@@ -168,6 +177,13 @@ export default function PatientProfilePage() {
         onOpenChange={setShowFinishModal}
         patientId={patientId}
         onSuccess={() => fetchPatient({ patientId })}
+      />
+
+      <NewAppointmentModal
+        patientId={patientId}
+        patients={[]}
+        showModal={showNewAppointmentModal}
+        setShowModal={setShowNewAppointmentModal}
       />
     </>
   );
