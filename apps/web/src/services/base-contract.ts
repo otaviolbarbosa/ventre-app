@@ -1,4 +1,8 @@
 import { getServerAuth } from "@/lib/server-auth";
+import {
+  type PersonalDocumentsInput,
+  personalDocumentsSchema,
+} from "@/lib/validations/personal-documents";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
 
@@ -127,6 +131,11 @@ type TeamMember = {
   phone: string | null;
 };
 
+export type ContratadaAddress = Pick<
+  Tables<"addresses">,
+  "street" | "number" | "complement" | "neighborhood" | "city" | "state" | "zipcode"
+>;
+
 export type ContractHeaderData =
   | {
       type: "enterprise";
@@ -154,13 +163,32 @@ export type ContractHeaderData =
         email: string | null;
         phone: string | null;
         professional_type: string | null;
+        personal_documents: PersonalDocumentsInput | null;
+        address: ContratadaAddress | null;
       };
     };
+
+async function getContratadaAddress(userId: string): Promise<ContratadaAddress | null> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data } = await supabaseAdmin
+    .from("addresses")
+    .select("street, number, complement, neighborhood, city, state, zipcode")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return data ?? null;
+}
+
+function parsePersonalDocuments(json: unknown): PersonalDocumentsInput | null {
+  const result = personalDocumentsSchema.safeParse(json ?? {});
+  return result.success ? result.data : null;
+}
 
 export async function getPersonalContractHeaderData(): Promise<
   Extract<ContractHeaderData, { type: "autonomous" }>
 > {
-  const { profile } = await getServerAuth();
+  const { profile, user } = await getServerAuth();
+
   return {
     type: "autonomous",
     user: {
@@ -168,6 +196,8 @@ export async function getPersonalContractHeaderData(): Promise<
       email: profile?.email ?? null,
       phone: profile?.phone ?? null,
       professional_type: profile?.professional_type ?? null,
+      personal_documents: parsePersonalDocuments(profile?.personal_documents),
+      address: user ? await getContratadaAddress(user.id) : null,
     },
   };
 }
@@ -178,7 +208,14 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
   if (!user || !profile) {
     return {
       type: "autonomous",
-      user: { name: null, email: null, phone: null, professional_type: null },
+      user: {
+        name: null,
+        email: null,
+        phone: null,
+        professional_type: null,
+        personal_documents: null,
+        address: null,
+      },
     };
   }
 
@@ -219,6 +256,8 @@ export async function getContractHeaderData(): Promise<ContractHeaderData> {
       email: profile.email,
       phone: profile.phone ?? null,
       professional_type: profile.professional_type ?? null,
+      personal_documents: parsePersonalDocuments(profile.personal_documents),
+      address: await getContratadaAddress(user.id),
     },
   };
 }

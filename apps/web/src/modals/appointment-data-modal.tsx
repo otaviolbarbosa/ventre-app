@@ -1,16 +1,20 @@
 "use client";
 
-import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
-import { useAuth } from "@/hooks/use-auth";
-import { dayjs } from "@/lib/dayjs";
-import type { AppointmentWithPatient } from "@/services/appointment";
-import { professionalTypeLabels } from "@/utils/team";
+import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
 import { Clock, MapPin, Pencil, Stethoscope, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
+import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
+import { useAuth } from "@/hooks/use-auth";
+import { dayjs } from "@/lib/dayjs";
+import { calculateGestationalAge } from "@/lib/gestational-age";
+import type { Appointment, PatientWithGestationalInfo, User } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import { EditAppointmentModal } from "./edit-appointment-modal";
 
 const typeLabels: Record<string, string> = {
@@ -25,7 +29,9 @@ export type ExternalPatientValues = {
 };
 
 type AppointmentDataModalProps = {
-  appointment: AppointmentWithPatient | null;
+  appointment: Appointment | null;
+  patient: PatientWithGestationalInfo | null;
+  professional: User;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCancel?: VoidFunction;
@@ -35,6 +41,8 @@ type AppointmentDataModalProps = {
 
 export function AppointmentDataModal({
   appointment,
+  patient,
+  professional,
   open,
   onOpenChange,
   onCancel,
@@ -43,6 +51,8 @@ export function AppointmentDataModal({
 }: AppointmentDataModalProps) {
   const { isStaff } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const patientName = patient?.name ?? appointment?.external_patient_name ?? "Paciente externa";
 
   const { execute: cancelAppointment, isPending } = useAction(cancelDayAppointmentsAction, {
     onSuccess: () => {
@@ -67,11 +77,32 @@ export function AppointmentDataModal({
       <ContentModal
         open={open}
         onOpenChange={onOpenChange}
-        title={appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
-        description={typeLabels[appointment.type] ?? appointment.type}
+        title={typeLabels[appointment.type] ?? appointment.type}
       >
         <div className="space-y-4">
-          <div className="absolute top-10 right-4">
+          <div className="flex justify-between gap-2">
+            {patient && (
+              <Link
+                href={`/patients/${patient.id}`}
+                className="relative flex flex-1 shrink-0 items-center gap-2 rounded-full p-2 hover:bg-accent"
+              >
+                <UserAvatar
+                  user={{
+                    name: patientName,
+                    avatar_url: null,
+                  }}
+                  size={12}
+                />
+                <div className="">
+                  <h4 className="font-medium">{patientName}</h4>
+                  <div>
+                    <Badge variant="outline" className="bg-background">
+                      {calculateGestationalAge(patient?.dum as string)?.label}
+                    </Badge>
+                  </div>
+                </div>
+              </Link>
+            )}
             <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
               <Pencil className="h-3.5 w-3.5" />
               Editar
@@ -96,16 +127,16 @@ export function AppointmentDataModal({
               </div>
             )}
 
-            {isStaff && appointment.professional?.name && (
+            {isStaff && professional?.name && (
               <div className="flex items-center gap-2 text-sm">
                 <Stethoscope className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span>
-                  {appointment.professional.name}
-                  {appointment.professional.professional_type && (
+                  {professional.name}
+                  {professional.professional_type && (
                     <span className="ml-1 text-muted-foreground">
                       ·{" "}
-                      {professionalTypeLabels[appointment.professional.professional_type] ??
-                        appointment.professional.professional_type}
+                      {professionalTypeLabels[professional.professional_type] ??
+                        professional.professional_type}
                     </span>
                   )}
                 </span>
@@ -156,6 +187,8 @@ export function AppointmentDataModal({
       </ContentModal>
       <EditAppointmentModal
         appointment={appointment}
+        patient={patient}
+        professional={professional}
         open={showEditModal}
         onOpenChange={setShowEditModal}
         onSuccess={() => {

@@ -1,10 +1,4 @@
 "use client";
-import { EmptyState } from "@/components/shared/empty-state";
-import { dayjs } from "@/lib/dayjs";
-import { cn } from "@/lib/utils";
-import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
-import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
-import type { AppointmentWithPatient } from "@/services/appointment";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
@@ -20,6 +14,13 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/shared/empty-state";
+import { dayjs } from "@/lib/dayjs";
+import { cn } from "@/lib/utils";
+import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
+import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
+import type { AppointmentWithPatient } from "@/services/appointment";
+import type { User } from "@/types";
 
 const statusLabels: Record<string, string> = {
   agendada: "Agendada",
@@ -99,7 +100,7 @@ function AppointmentGroup({
       >
         <Button onClick={onAddAppointment}>
           <CalendarPlus />
-          <span className="ml-1">Adicionar Agendamento</span>
+          <span className="ml-1">Novo Agendamento</span>
         </Button>
       </EmptyState>
     );
@@ -215,6 +216,8 @@ function AppointmentGroup({
 
       <AppointmentDataModal
         appointment={selectedAppointment}
+        patient={selectedAppointment?.patient ?? null}
+        professional={selectedAppointment?.professional as User}
         open={selectedAppointment !== null}
         onOpenChange={(open) => !open && setSelectedAppointment(null)}
         onCancel={onUpdateAppointments}

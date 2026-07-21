@@ -1,5 +1,6 @@
 import { type ContractHeaderBlocks, buildContractHeaderBlocks } from "@/lib/contract-header-text";
 import type { ProfileWithEnterprise } from "@/lib/safe-action";
+import { personalDocumentsSchema } from "@/lib/validations/personal-documents";
 import type {
   createServerSupabaseAdmin,
   createServerSupabaseClient,
@@ -82,6 +83,16 @@ export async function buildPatientContractParties(
       });
       contratadaName = enterprise?.legal_name ?? enterprise?.name ?? null;
     } else {
+      const { data: professionalAddress } = await supabaseAdmin
+        .from("addresses")
+        .select("street, number, complement, neighborhood, city, state, zipcode")
+        .eq("user_id", profile.id)
+        .maybeSingle();
+
+      const personalDocumentsResult = personalDocumentsSchema.safeParse(
+        profile.personal_documents ?? {},
+      );
+
       parties_details = buildContractHeaderBlocks(patient, pregnancy, {
         type: "autonomous",
         user: {
@@ -89,6 +100,8 @@ export async function buildPatientContractParties(
           email: profile.email,
           phone: profile.phone ?? null,
           professional_type: profile.professional_type ?? null,
+          personal_documents: personalDocumentsResult.success ? personalDocumentsResult.data : null,
+          address: professionalAddress ?? null,
         },
       });
       contratadaName = profile.name ?? null;

@@ -1,19 +1,5 @@
 "use client";
 
-import { joinEnterpriseAction } from "@/actions/join-enterprise-action";
-import { lookupCepAction } from "@/actions/lookup-cep-action";
-import { requestEnterpriseAction } from "@/actions/request-enterprise-action";
-import { setProfessionalDocumentsAction } from "@/actions/set-professional-documents-action";
-import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
-import { setUserTypeAction } from "@/actions/set-user-type-action";
-import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
-import { ESTADOS_BR } from "@/lib/constants";
-import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
-import {
-  type ProfessionalDocumentsInput,
-  professionalDocumentsSchema,
-} from "@/lib/validations/professional-documents";
-import type { ProfessionalType } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import type { Tables } from "@ventre/supabase/types";
@@ -22,13 +8,33 @@ import { Card } from "@ventre/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
-import { Activity, Baby, Building2, Heart, Loader2, LockKeyhole, Stethoscope } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
+import { Baby, Building2, Heart, Loader2, LockKeyhole, LogOut, Stethoscope } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { joinEnterpriseAction } from "@/actions/join-enterprise-action";
+import { lookupCepAction } from "@/actions/lookup-cep-action";
+import { requestEnterpriseAction } from "@/actions/request-enterprise-action";
+import { setProfessionalDocumentsAction } from "@/actions/set-professional-documents-action";
+import { setProfessionalTypeAction } from "@/actions/set-professional-type-action";
+import { setUserTypeAction } from "@/actions/set-user-type-action";
+import PersonalDocumentsFields from "@/components/shared/personal-documents-fields";
+import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
+import { useAuth } from "@/hooks/use-auth";
+import { ESTADOS_BR } from "@/lib/constants";
+import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
+import {
+  type PersonalDocumentsInput,
+  personalDocumentsSchema,
+} from "@/lib/validations/personal-documents";
+import {
+  type ProfessionalDocumentsInput,
+  professionalDocumentsSchema,
+} from "@/lib/validations/professional-documents";
+import type { ProfessionalType } from "@/types";
 
 type UserRoleType = Tables<"users">["user_type"];
 
@@ -90,12 +96,12 @@ const professionalTypes: {
     description: "Suporte contínuo durante a gestação e parto",
     icon: Baby,
   },
-  {
-    type: "fisio",
-    label: "Fisioterapeuta",
-    description: "Fisioterapia obstétrica e pélvica",
-    icon: Activity,
-  },
+  // {
+  // 	type: "fisio",
+  // 	label: "Fisioterapeuta",
+  // 	description: "Fisioterapia obstétrica e pélvica",
+  // 	icon: Activity,
+  // },
 ];
 
 function normalizeDocumentEntry<T extends { number: string; uf: string } | undefined>(
@@ -123,8 +129,24 @@ function normalizeProfessionalDocuments(
   return hasData ? normalized : undefined;
 }
 
+function normalizePersonalDocuments(
+  documents: PersonalDocumentsInput | undefined,
+): PersonalDocumentsInput | undefined {
+  if (!documents) return undefined;
+
+  const normalized: PersonalDocumentsInput = {
+    cpf: documents.cpf?.trim() || undefined,
+    rg: documents.rg?.trim() || undefined,
+    rg_issuing_body: documents.rg_issuing_body?.trim() || undefined,
+  };
+
+  const hasData = Object.values(normalized).some((v) => v !== undefined);
+  return hasData ? normalized : undefined;
+}
+
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const [selectedRole, setSelectedRole] = useState<UserRoleType | null>(null);
   const [pendingProfessionalType, setPendingProfessionalType] = useState<ProfessionalType | null>(
     null,
@@ -159,11 +181,20 @@ export default function OnboardingScreen() {
     },
   });
 
-  const documentsForm = useForm<{ professional_documents?: ProfessionalDocumentsInput }>({
+  const documentsForm = useForm<{
+    professional_documents?: ProfessionalDocumentsInput;
+    personal_documents?: PersonalDocumentsInput;
+  }>({
     resolver: zodResolver(
-      z.object({ professional_documents: professionalDocumentsSchema.optional() }),
+      z.object({
+        professional_documents: professionalDocumentsSchema.optional(),
+        personal_documents: personalDocumentsSchema.optional(),
+      }),
     ),
-    defaultValues: { professional_documents: undefined },
+    defaultValues: {
+      professional_documents: undefined,
+      personal_documents: undefined,
+    },
   });
 
   const { execute: executeProfessionalType, status: professionalTypeStatus } = useAction(
@@ -314,9 +345,22 @@ export default function OnboardingScreen() {
     }
   }
 
+  const logoutButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className="fixed top-4 right-4 z-50 rounded-full"
+      onClick={() => signOut()}
+    >
+      <LogOut className="h-4 w-4" />
+      Sair
+    </Button>
+  );
+
   if (!selectedRole) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-4">
+        {logoutButton}
         <div className="mb-8 text-center">
           <h1 className="font-poppins font-semibold text-2xl tracking-tight">
             Qual é o seu perfil?
@@ -351,6 +395,7 @@ export default function OnboardingScreen() {
   if (documentsStep) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-4">
+        {logoutButton}
         <div className="mb-8 text-center">
           <h1 className="font-poppins font-semibold text-2xl tracking-tight">
             Documentos profissionais
@@ -367,6 +412,7 @@ export default function OnboardingScreen() {
                 professional_documents: normalizeProfessionalDocuments(
                   values.professional_documents,
                 ),
+                personal_documents: normalizePersonalDocuments(values.personal_documents),
               }),
             )}
             className="flex w-full max-w-sm flex-col gap-4"
@@ -376,13 +422,20 @@ export default function OnboardingScreen() {
               professionalType={documentsStep}
             />
 
+            <PersonalDocumentsFields control={documentsForm.control} />
+
             <div className="mt-4 flex gap-3">
               <Button
                 type="button"
                 variant="outline"
                 className="flex-1"
                 disabled={isDocumentsPending}
-                onClick={() => executeDocuments({ professional_documents: undefined })}
+                onClick={() =>
+                  executeDocuments({
+                    professional_documents: undefined,
+                    personal_documents: undefined,
+                  })
+                }
               >
                 Pular
               </Button>
@@ -403,6 +456,7 @@ export default function OnboardingScreen() {
   if (selectedRole === "professional") {
     return (
       <div className="flex min-h-full flex-col items-center justify-center p-4">
+        {logoutButton}
         <div className="mb-8 text-center">
           <h1 className="font-poppins font-semibold text-2xl tracking-tight">
             Qual é a sua especialidade?
@@ -445,6 +499,7 @@ export default function OnboardingScreen() {
 
   return (
     <div className="flex min-h-full flex-col items-center justify-start px-4 py-8">
+      {logoutButton}
       <div className="mb-6 text-center">
         <div className="mb-4 flex justify-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">

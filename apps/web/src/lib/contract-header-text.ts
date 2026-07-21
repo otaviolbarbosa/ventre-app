@@ -89,7 +89,29 @@ export function buildContractHeaderBlocks(
           "doravante denominada simplesmente EQUIPE DE CUIDADO.",
         ].join(" ")
       : headerData.type === "autonomous"
-        ? `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na}, ${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na}, doravante denominada simplesmente EQUIPE DE CUIDADO.`
+        ? [
+            `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na},`,
+            `CPF: ${headerData.user.personal_documents?.cpf ?? na}, RG: ${
+              headerData.user.personal_documents?.rg ?? na
+            }${
+              headerData.user.personal_documents?.rg_issuing_body
+                ? ` (${headerData.user.personal_documents.rg_issuing_body})`
+                : ""
+            },`,
+            `${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na},`,
+            `residente e domiciliado(a) à ${
+              [
+                headerData.user.address?.street,
+                headerData.user.address?.number,
+                headerData.user.address?.neighborhood,
+                headerData.user.address?.city,
+                headerData.user.address?.state,
+              ]
+                .filter(Boolean)
+                .join(", ") || na
+            },`,
+            "doravante denominada simplesmente EQUIPE DE CUIDADO.",
+          ].join(" ")
         : na;
 
   const teamMembersBlock =

@@ -3,6 +3,7 @@
 import { type ContractHeaderBlocks, buildContractHeaderBlocks } from "@/lib/contract-header-text";
 import { authActionClient } from "@/lib/safe-action";
 import { getPatientContractSchema } from "@/lib/validations/contract";
+import { personalDocumentsSchema } from "@/lib/validations/personal-documents";
 
 type TeamMember = {
   id: string;
@@ -151,6 +152,16 @@ export const getPatientContractAction = authActionClient
           });
           contratadaName = enterprise?.legal_name ?? enterprise?.name ?? null;
         } else {
+          const { data: professionalAddress } = await supabaseAdmin
+            .from("addresses")
+            .select("street, number, complement, neighborhood, city, state, zipcode")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          const personalDocumentsResult = personalDocumentsSchema.safeParse(
+            profile.personal_documents ?? {},
+          );
+
           headerBlocks = buildContractHeaderBlocks(patient, pregnancy, {
             type: "autonomous",
             user: {
@@ -158,6 +169,10 @@ export const getPatientContractAction = authActionClient
               email: profile.email,
               phone: profile.phone ?? null,
               professional_type: profile.professional_type ?? null,
+              personal_documents: personalDocumentsResult.success
+                ? personalDocumentsResult.data
+                : null,
+              address: professionalAddress ?? null,
             },
           });
           contratadaName = profile.name ?? null;

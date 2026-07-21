@@ -1,11 +1,4 @@
 "use client";
-import { addAppointmentAction } from "@/actions/add-appointment-action";
-import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
-import {
-  type CreateAppointmentInput,
-  createAppointmentSchema,
-} from "@/lib/validations/appointment";
-import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import type { Tables } from "@ventre/supabase";
@@ -24,6 +17,13 @@ import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { type DefaultValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { addAppointmentAction } from "@/actions/add-appointment-action";
+import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
+import {
+  type CreateAppointmentInput,
+  createAppointmentSchema,
+} from "@/lib/validations/appointment";
+import type { AppointmentWithPatient } from "@/services/appointment";
 
 type Patient = Tables<"patients">;
 
@@ -111,7 +111,10 @@ export default function NewAppointmentModal({
   const staffPatients = patientsByProfessionalResult.data?.patients ?? [];
   console.log(isStaff, selectedProfessionalId);
   const patientList = isStaff && selectedProfessionalId ? staffPatients : patients;
-  const patientOptions = patientList.map((p) => ({ value: p.id, label: p.name ?? p.id }));
+  const patientOptions = patientList.map((p) => ({
+    value: p.id,
+    label: p.name ?? p.id,
+  }));
   const professionalOptions = professionals.map((p) => ({
     value: p.id,
     label: p.name ?? p.id,
@@ -305,6 +308,7 @@ export default function NewAppointmentModal({
               )}
             </>
           )}
+
           <FormField
             control={form.control}
             name="type"
@@ -318,6 +322,7 @@ export default function NewAppointmentModal({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="exame">Exame</SelectItem>
                     <SelectItem value="consulta">Consulta</SelectItem>
                     <SelectItem value="encontro">Encontro</SelectItem>
                   </SelectContent>

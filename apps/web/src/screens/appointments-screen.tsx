@@ -1,5 +1,11 @@
 "use client";
 
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { CalendarPlus, CalendarSync, Plus } from "lucide-react";
+import Link from "next/link";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useMemo, useState } from "react";
 import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
 import { getAppointmentsAction } from "@/actions/get-appointments-action";
 import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-professionals-action";
@@ -14,12 +20,6 @@ import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import type { EnterpriseProfessional } from "@/services/professional";
-import type { Tables } from "@ventre/supabase";
-import { Button } from "@ventre/ui/button";
-import { CalendarPlus, CalendarSync, Plus } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 
 type AppointmentsScreenProps = {
   appointments: AppointmentWithPatient[];
@@ -103,7 +103,7 @@ export default function AppointmentsScreen({
 
       <Button className="gradient-primary hidden md:flex" onClick={handleOpenNewModal}>
         <CalendarPlus />
-        <span className="ml-1">Adicionar Agendamento</span>
+        <span className="ml-1">Novo Agendamento</span>
       </Button>
       <Button size="icon" className="gradient-primary flex md:hidden" onClick={handleOpenNewModal}>
         <Plus />
@@ -148,7 +148,9 @@ export default function AppointmentsScreen({
             onCancelDay={handleCancelDay}
             onAddAppointment={() => setShowNewModal(true)}
             onUpdateAppointments={() =>
-              fetchAppointments({ professionalId: professionalFilter ?? undefined })
+              fetchAppointments({
+                professionalId: professionalFilter ?? undefined,
+              })
             }
             onRegisterExternalPatient={handleRegisterExternalPatient}
           />
@@ -160,7 +162,9 @@ export default function AppointmentsScreen({
             onCancelDay={handleCancelDay}
             onAddAppointment={() => setShowNewModal(true)}
             onUpdateAppointments={() =>
-              fetchAppointments({ professionalId: professionalFilter ?? undefined })
+              fetchAppointments({
+                professionalId: professionalFilter ?? undefined,
+              })
             }
             onRegisterExternalPatient={handleRegisterExternalPatient}
           />
