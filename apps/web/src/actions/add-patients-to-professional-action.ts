@@ -21,7 +21,7 @@ export const addPatientsToProfessionalAction = authActionClient
       .from("pregnancies")
       .select("id, patient_id")
       .in("patient_id", patientIds)
-      .order("created_at", { ascending: false });
+      .eq("has_finished", false);
 
     const pregnancyByPatient = new Map<string, string>();
     for (const preg of pregnancies ?? []) {
