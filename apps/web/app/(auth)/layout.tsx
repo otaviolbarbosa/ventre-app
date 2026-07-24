@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import loginBg from "@/assets/login-bg.jpg";
 import ventreLogo from "@/assets/ventre.png";
-import ventreLogoWhite from "@/assets/ventre-white.png";
+import ventreLogoWhite from "@/assets/ventre-light.png";
 
 const highlights = [
   { icon: Heart, text: "Acompanhamento gestacional completo e personalizado" },

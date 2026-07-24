@@ -5,8 +5,8 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Ventre - Gestão Integrada para Profissionais do Parto e Gestantes",
     short_name: "Ventre",
     description:
-      "Plataforma de gestão integrada de saúde e acompanhamento gestacional para profissionais do parto e gestantes",
-    start_url: "/home",
+      "Plataforma de gestão integrada de saúde para profissionais do parto e acompanhamento gestacional para gestantes",
+    start_url: "/landing",
     display: "standalone",
     background_color: "#802F2D",
     theme_color: "#802F2D",
@@ -30,6 +30,12 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
+      },
+      {
+        src: "/icons/icon-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   };
