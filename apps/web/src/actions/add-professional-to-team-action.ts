@@ -39,7 +39,9 @@ export const addProfessionalToTeamAction = authActionClient
         .limit(1);
 
       if (existing?.[0]) {
-        throw new Error(`Já existe um profissional titular para a especialidade ${professionalType}`);
+        throw new Error(
+          `Já existe um profissional titular para a especialidade ${professionalType}`,
+        );
       }
     }
 

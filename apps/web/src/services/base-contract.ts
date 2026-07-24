@@ -181,7 +181,9 @@ async function getContratadaAddress(userId: string): Promise<ContratadaAddress |
   return data ?? null;
 }
 
-async function getContratadaPersonalDocuments(userId: string): Promise<PersonalDocumentsInput | null> {
+async function getContratadaPersonalDocuments(
+  userId: string,
+): Promise<PersonalDocumentsInput | null> {
   const supabaseAdmin = await createServerSupabaseAdmin();
   const { data } = await supabaseAdmin
     .from("users")
