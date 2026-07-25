@@ -1,13 +1,13 @@
 "use client";
 
+import ventreIcon from "@/assets/ventre-icon-light-p-0.png";
+import ventreLogo from "@/assets/ventre-light.png";
+import { useAuth } from "@/providers/auth-provider";
 import { Button } from "@ventre/ui/button";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import ventreIcon from "@/assets/ventre-icon-light-p-0.png";
-import ventreLogo from "@/assets/ventre-light.png";
-import { useAuth } from "@/providers/auth-provider";
 
 const HIDE_WELCOME_PAGE = "hide_welcome_page";
 
@@ -27,7 +27,7 @@ export default function LandingScreen() {
   };
 
   return (
-    <div className="relative flex h-svh w-full flex-col overflow-hidden bg-[#7f2d2c]">
+    <div className="relative flex h-svh w-full flex-col overflow-hidden bg-[#78130A]">
       {/* Bottom-left decorative icon, bleeding off the corner */}
       <div className="pointer-events-none absolute bottom-0 left-0 h-56 w-56 translate-x-[-36%] translate-y-[44%] sm:h-64 sm:w-64">
         <Image
