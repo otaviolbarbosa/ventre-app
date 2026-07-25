@@ -1,5 +1,5 @@
 import { PATIENTS_PER_PAGE } from "@/lib/constants";
-import { getDppDateRange } from "@/lib/dpp-filter";
+import { getDppDateRange, isCurrentDppMonth } from "@/lib/dpp-filter";
 import { getServerUser } from "@/lib/server-auth";
 import type { CreatePatientInput } from "@/lib/validations/patient";
 import type { PatientFilter, TeamMember } from "@/types";
@@ -60,6 +60,9 @@ export async function getMyPatients(
 
   if (dppMonth !== undefined && dppYear !== undefined) {
     const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
+    // Overdue-but-not-finished pregnancies roll into the current month's bucket, so the
+    // lower due_date bound is dropped only when browsing the current month.
+    const rollsOverdueIn = isCurrentDppMonth(dppMonth, dppYear);
 
     let pregnanciesQuery = supabase
       .from("pregnancies")
@@ -67,10 +70,11 @@ export async function getMyPatients(
         "due_date, dum, has_finished, born_at, observations, patients!inner(id, name, phone, email, date_of_birth, created_at, updated_at, created_by, user_id, addresses(street, number, complement, neighborhood, city, state, zipcode))",
       )
       .in("patient_id", patientIds)
-      .gte("due_date", startDate)
+      .eq("has_finished", false)
       .lte("due_date", endDate)
       .order("due_date", { ascending: true });
 
+    if (!rollsOverdueIn) pregnanciesQuery = pregnanciesQuery.gte("due_date", startDate);
     if (search) pregnanciesQuery = pregnanciesQuery.ilike("patients.name", `%${search}%`);
 
     const { data: pregnanciesData } = await pregnanciesQuery;
@@ -146,7 +150,8 @@ export async function getDueDatesForUser(userId: string): Promise<{ due_date: st
   const { data } = await supabase
     .from("pregnancies")
     .select("due_date")
-    .in("patient_id", patientIds);
+    .in("patient_id", patientIds)
+    .eq("has_finished", false);
   return (data ?? []).map((p) => ({ due_date: p.due_date ?? null }));
 }
 

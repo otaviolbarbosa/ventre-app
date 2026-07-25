@@ -6,7 +6,7 @@ import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
 import { createBilling } from "@/services/billing";
 import { createPatient } from "@/services/patient";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 export const addPatientAction = authActionClient
   .inputSchema(createPatientSchema)
@@ -55,11 +55,11 @@ export const addPatientAction = authActionClient
       );
     }
 
-    revalidateTag(`home-patients-${user.id}`, { expire: 300 });
-    revalidateTag(`home-data-${user.id}`, { expire: 300 });
+    updateTag(`home-patients-${user.id}`);
+    updateTag(`home-data-${user.id}`);
 
     if (enterpriseId) {
-      revalidateTag(`enterprise-patients-${enterpriseId}`, { expire: 300 });
+      updateTag(`enterprise-patients-${enterpriseId}`);
 
       insertActivityLog({
         supabaseAdmin,
