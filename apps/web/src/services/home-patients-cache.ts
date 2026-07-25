@@ -1,4 +1,4 @@
-import { getDppDateRange } from "@/lib/dpp-filter";
+import { getDppDateRange, isCurrentDppMonth } from "@/lib/dpp-filter";
 import {
   calculateGestationalAge,
   calculateGestationalProgress,
@@ -60,6 +60,9 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
 
   if (dppMonth !== undefined && dppYear !== undefined) {
     const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
+    // Overdue-but-not-finished pregnancies roll into the current month's bucket, so the
+    // lower due_date bound is dropped only when browsing the current month without finished ones.
+    const rollsOverdueIn = !showFinished && isCurrentDppMonth(dppMonth, dppYear);
 
     let query = supabase
       .from("pregnancies")
@@ -67,10 +70,10 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
         "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*, addresses(street, number, complement, neighborhood, city, state, zipcode))",
       )
       .in("patient_id", patientIds)
-      .gte("due_date", startDate)
       .lte("due_date", endDate)
       .order("due_date", { ascending: true });
 
+    if (!rollsOverdueIn) query = query.gte("due_date", startDate);
     if (!showFinished) query = query.eq("has_finished", false);
     if (search) query = query.filter("patient.name", "ilike", `%${search}%`);
 

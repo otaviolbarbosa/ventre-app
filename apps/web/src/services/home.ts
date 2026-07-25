@@ -66,15 +66,20 @@ export function buildDppByMonth(
   const currentMonth = today.month(); // 0-indexed
   const currentYear = today.year();
 
-  // Count patients per month/year
+  // Count patients per month/year. Overdue pregnancies (due_date before the current
+  // month) haven't finished yet by construction — the callers already filter out
+  // has_finished patients — so they roll into the current month's bucket instead of
+  // being dropped.
   const countMap = new Map<string, number>();
   for (const patient of patients) {
     if (!patient.due_date) continue;
     const dueDate = dayjs(patient.due_date);
-    const m = dueDate.month();
-    const y = dueDate.year();
-    // Only count from current month onwards
-    if (y < currentYear || (y === currentYear && m < currentMonth)) continue;
+    let m = dueDate.month();
+    let y = dueDate.year();
+    if (y < currentYear || (y === currentYear && m < currentMonth)) {
+      m = currentMonth;
+      y = currentYear;
+    }
     const key = `${y}-${m}`;
     countMap.set(key, (countMap.get(key) ?? 0) + 1);
   }
