@@ -163,6 +163,22 @@
   animation-delay: 0.68s;
 }
 
+/* Hero headline typewriter caret */
+@keyframes caret-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-caret-blink {
+  animation: caret-blink 1.1s steps(1, end) infinite;
+}
+
 /* Decorative blob float animations — 3 waypoints with fade-out at each stop */
 @keyframes blob-float-1 {
   0% {
