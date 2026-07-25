@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import ventreLogo from "@/assets/ventre.png";
-import ventreLogoWhite from "@/assets/ventre-white.png";
+import ventreLogoWhite from "@/assets/ventre-light.png";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {

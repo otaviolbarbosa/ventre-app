@@ -39,7 +39,13 @@ function formatTeamMemberBlock(m: TeamMember): string {
     },`,
     `${m.email ?? na}, telefone: ${m.phone ?? na},`,
     `residente e domiciliado(a) à ${
-      [m.address?.street, m.address?.number, m.address?.neighborhood, m.address?.city, m.address?.state]
+      [
+        m.address?.street,
+        m.address?.number,
+        m.address?.neighborhood,
+        m.address?.city,
+        m.address?.state,
+      ]
         .filter(Boolean)
         .join(", ") || na
     }`,

@@ -1,14 +1,14 @@
 "use client";
-import Whatsapp from "@/assets/custom-icons/whatsapp";
-import { EditPatientModal } from "@/modals/edit-patient-modal";
-import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
-import type { PatientAddress } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import dayjs from "dayjs";
 import { MapPin, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
+import Whatsapp from "@/assets/custom-icons/whatsapp";
+import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
+import { EditPatientModal } from "@/modals/edit-patient-modal";
+import type { PatientAddress } from "@/types";
 import InfoItem from "./info-item";
 
 type PatientInfoProps = {
@@ -49,32 +49,22 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <InfoItem label="Nome completo" value={patient.name} />
+        <InfoItem label="Email" value={patient.email} />
+        <InfoItem label="Telefone" value={patient.phone} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <InfoItem label="RG" value={patient.rg ?? "-"} />
+        <InfoItem label="CPF" value={patient.cpf ?? "-"} />
         <InfoItem
           label="Data de nascimento"
           value={patient.date_of_birth ? dayjs(patient.date_of_birth).format("DD/MM/YYYY") : null}
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <InfoItem label="Email" value={patient.email} />
-        <InfoItem label="Telefone" value={patient.phone} />
-      </div>
-
-      <InfoItem label="Nome do parceiro" value={patient.partner_name} />
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <InfoItem label="RG" value={patient.rg} />
-        <InfoItem label="CPF" value={patient.cpf} />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <InfoItem label="Estado civil" value={maritalStatusLabel} />
-        <InfoItem label="Profissão" value={patient.occupation} />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <InfoItem
           label="Data prevista do parto (DPP)"
           value={patient.due_date ? dayjs(patient.due_date).format("DD/MM/YYYY") : null}
@@ -83,43 +73,50 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
           label="Data da última menstruação (DUM)"
           value={patient.dum ? dayjs(patient.dum).format("DD/MM/YYYY") : null}
         />
+        <InfoItem
+          label="Endereço"
+          value={
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div>{[addr?.street, addr?.number].filter(Boolean).join(", ")}</div>
+                <div>{addr?.complement}</div>
+                <div>
+                  {[addr?.neighborhood, [addr?.city, addr?.state].filter(Boolean).join("-")].join(
+                    ", ",
+                  )}
+                </div>
+                {addr?.zipcode && <div>CEP: {addr?.zipcode}</div>}
+              </div>
+              {resolveGoogleMapsLink ? (
+                <>
+                  <Button
+                    variant="outline"
+                    className="hidden shrink-0 sm:flex"
+                    onClick={() => setShowMapModal(true)}
+                  >
+                    <MapPin />
+                    Abrir mapa
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="flex shrink-0 sm:hidden"
+                    onClick={() => setShowMapModal(true)}
+                  >
+                    <MapPin />
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          }
+        />
       </div>
 
-      <InfoItem
-        label="Endereço"
-        value={
-          <div className="flex justify-between gap-4">
-            <div>
-              <div>{[addr?.street, addr?.number].filter(Boolean).join(", ")}</div>
-              <div>{addr?.complement}</div>
-              <div>{addr?.neighborhood}</div>
-              <div>{[addr?.city, addr?.state].filter(Boolean).join("-")}</div>
-              <div>{addr?.zipcode}</div>
-            </div>
-            {resolveGoogleMapsLink ? (
-              <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="-top-4 absolute right-0 hidden sm:flex"
-                  onClick={() => setShowMapModal(true)}
-                >
-                  Abrir mapa
-                  <MapPin />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="-top-4 absolute right-0 flex sm:hidden"
-                  onClick={() => setShowMapModal(true)}
-                >
-                  <MapPin />
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        }
-      />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <InfoItem label="Nome do parceiro" value={patient.partner_name} />
+        <InfoItem label="Estado civil" value={maritalStatusLabel ?? "-"} />
+        <InfoItem label="Profissão" value={patient.occupation ?? "-"} />
+      </div>
 
       <InfoItem label="Observações" value={patient.observations} />
 

@@ -127,8 +127,11 @@ export const getPatientContractAction = authActionClient
 
       const baseTeamMembers = ((teamResult.data ?? []) as unknown[]).map(
         (r) =>
-          (r as { users: Pick<TeamMember, "id" | "name" | "professional_type" | "email" | "phone"> })
-            .users,
+          (
+            r as {
+              users: Pick<TeamMember, "id" | "name" | "professional_type" | "email" | "phone">;
+            }
+          ).users,
       );
       const { personalDocumentsById, addressById } = await getTeamMembersDetails(
         baseTeamMembers.map((u) => u.id),
@@ -171,7 +174,11 @@ export const getPatientContractAction = authActionClient
               .select("street, number, complement, neighborhood, city, state, zipcode")
               .eq("user_id", user.id)
               .maybeSingle(),
-            supabaseAdmin.from("users").select("personal_documents").eq("id", user.id).maybeSingle(),
+            supabaseAdmin
+              .from("users")
+              .select("personal_documents")
+              .eq("id", user.id)
+              .maybeSingle(),
           ]);
 
           const personalDocumentsResult = personalDocumentsSchema.safeParse(

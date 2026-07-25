@@ -2,6 +2,7 @@
 
 import { ConfirmationModalProvider } from "@ventre/ui/contexts/confirmation-modal-provider";
 import { Toaster } from "@ventre/ui/sonner";
+import { PwaInstallBanner } from "@/components/shared/pwa-install-banner";
 import { AuthProvider } from "./auth-provider";
 import { NotificationsProvider } from "./notifications-provider";
 import { PwaProvider } from "./pwa-provider";
@@ -14,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <NotificationsProvider>
           <PwaProvider>
             <ConfirmationModalProvider>{children}</ConfirmationModalProvider>
+            <PwaInstallBanner />
             <Toaster />
           </PwaProvider>
         </NotificationsProvider>
