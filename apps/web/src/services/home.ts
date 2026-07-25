@@ -203,9 +203,26 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
   };
 }
 
+// unstable_cache must be a stable function reference created at module level.
+// Inline creation (inside getCachedHomeData) creates a new cache namespace on every
+// call, causing consistent cache misses. We memoize one cache function per userId so
+// the reference is stable and per-user tags remain valid for targeted revalidation.
+type CachedHomeDataFn = () => Promise<HomeData>;
+const userHomeDataCacheFns = new Map<string, CachedHomeDataFn>();
+
+function getOrCreateHomeDataCacheFn(userId: string): CachedHomeDataFn {
+  if (!userHomeDataCacheFns.has(userId)) {
+    userHomeDataCacheFns.set(
+      userId,
+      unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
+        tags: [`home-data-${userId}`],
+        revalidate: 3600,
+      }),
+    );
+  }
+  return userHomeDataCacheFns.get(userId) as CachedHomeDataFn;
+}
+
 export function getCachedHomeData(userId: string): Promise<HomeData> {
-  return unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
-    tags: [`home-data-${userId}`],
-    revalidate: 3600,
-  })();
+  return getOrCreateHomeDataCacheFn(userId)();
 }
