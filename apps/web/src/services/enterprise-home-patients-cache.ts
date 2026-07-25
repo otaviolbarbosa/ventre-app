@@ -1,5 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
-import { getDppDateRange } from "@/lib/dpp-filter";
+import { getDppDateRange, isCurrentDppMonth } from "@/lib/dpp-filter";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
@@ -89,14 +89,21 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
 
   if (dppMonth !== undefined && dppYear !== undefined) {
     const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
+    // Overdue-but-not-finished pregnancies roll into the current month's bucket, so the
+    // lower due_date bound is dropped only when browsing the current month.
+    const rollsOverdueIn = isCurrentDppMonth(dppMonth, dppYear);
 
-    const { data: pregnancies, error: pregError } = await supabase
+    let pregnanciesQuery = supabase
       .from("pregnancies")
       .select("patient_id, due_date, dum, has_finished, born_at, observations")
       .in("patient_id", allPatientIds)
-      .gte("due_date", startDate)
+      .eq("has_finished", false)
       .lte("due_date", endDate)
       .order("due_date", { ascending: true });
+
+    if (!rollsOverdueIn) pregnanciesQuery = pregnanciesQuery.gte("due_date", startDate);
+
+    const { data: pregnancies, error: pregError } = await pregnanciesQuery;
 
     if (pregError) throw new Error(pregError.message);
 

@@ -269,8 +269,14 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
   useEffect(() => {
     fetchHomeData({});
     fetchPatients({ filter: activeFilter, search: searchQuery });
-    fetchAllPatients();
   }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetch only on first modal open
+  useEffect(() => {
+    if (showNewAppointment && !allPatientsResult.data) {
+      fetchAllPatients();
+    }
+  }, [showNewAppointment]);
 
   const homeData = homeDataResult.data;
   const dppByMonth = homeData?.dppByMonth ?? [];

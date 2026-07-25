@@ -2,7 +2,7 @@
 
 import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 
 const schema = z.object({
@@ -37,8 +37,12 @@ export const finishPatientCareAction = authActionClient
     }
 
     revalidatePath("/patients");
+    updateTag(`home-patients-${user.id}`);
+    updateTag(`home-data-${user.id}`);
 
     if (profile.enterprise_id) {
+      updateTag(`enterprise-patients-${profile.enterprise_id}`);
+
       const { data: patient } = await supabase
         .from("patients")
         .select("name")

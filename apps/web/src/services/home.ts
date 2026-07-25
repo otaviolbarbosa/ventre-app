@@ -66,15 +66,20 @@ export function buildDppByMonth(
   const currentMonth = today.month(); // 0-indexed
   const currentYear = today.year();
 
-  // Count patients per month/year
+  // Count patients per month/year. Overdue pregnancies (due_date before the current
+  // month) haven't finished yet by construction — the callers already filter out
+  // has_finished patients — so they roll into the current month's bucket instead of
+  // being dropped.
   const countMap = new Map<string, number>();
   for (const patient of patients) {
     if (!patient.due_date) continue;
     const dueDate = dayjs(patient.due_date);
-    const m = dueDate.month();
-    const y = dueDate.year();
-    // Only count from current month onwards
-    if (y < currentYear || (y === currentYear && m < currentMonth)) continue;
+    let m = dueDate.month();
+    let y = dueDate.year();
+    if (y < currentYear || (y === currentYear && m < currentMonth)) {
+      m = currentMonth;
+      y = currentYear;
+    }
     const key = `${y}-${m}`;
     countMap.set(key, (countMap.get(key) ?? 0) + 1);
   }
@@ -203,9 +208,26 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
   };
 }
 
+// unstable_cache must be a stable function reference created at module level.
+// Inline creation (inside getCachedHomeData) creates a new cache namespace on every
+// call, causing consistent cache misses. We memoize one cache function per userId so
+// the reference is stable and per-user tags remain valid for targeted revalidation.
+type CachedHomeDataFn = () => Promise<HomeData>;
+const userHomeDataCacheFns = new Map<string, CachedHomeDataFn>();
+
+function getOrCreateHomeDataCacheFn(userId: string): CachedHomeDataFn {
+  if (!userHomeDataCacheFns.has(userId)) {
+    userHomeDataCacheFns.set(
+      userId,
+      unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
+        tags: [`home-data-${userId}`],
+        revalidate: 3600,
+      }),
+    );
+  }
+  return userHomeDataCacheFns.get(userId) as CachedHomeDataFn;
+}
+
 export function getCachedHomeData(userId: string): Promise<HomeData> {
-  return unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
-    tags: [`home-data-${userId}`],
-    revalidate: 3600,
-  })();
+  return getOrCreateHomeDataCacheFn(userId)();
 }
