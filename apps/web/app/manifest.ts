@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Plataforma de gestão integrada de saúde para profissionais do parto e acompanhamento gestacional para gestantes",
     start_url: "/landing",
     display: "standalone",
-    background_color: "#802F2D",
-    theme_color: "#802F2D",
+    background_color: "#78130A",
+    theme_color: "#78130A",
     lang: "pt-BR",
     orientation: "portrait-primary",
     icons: [
