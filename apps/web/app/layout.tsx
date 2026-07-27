@@ -66,7 +66,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className="scroll-smooth"
+      className="h-full scroll-smooth"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
@@ -74,7 +74,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${poppinsSans.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${poppinsSans.variable} h-full font-sans antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

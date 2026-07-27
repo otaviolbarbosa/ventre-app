@@ -17,7 +17,7 @@ type Props = {
   userId?: string;
 };
 
-export function LandingHeaderClient({ userId }: Props) {
+export function PublicHeaderClient({ userId }: Props) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
