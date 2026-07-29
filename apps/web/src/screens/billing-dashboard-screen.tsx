@@ -4,6 +4,7 @@ import { getBillingDashboardAction } from "@/actions/get-billing-dashboard-actio
 import { getPatientsAction } from "@/actions/get-patients-action";
 import { BillingGroupCard } from "@/components/billing/billing-group-card";
 import { BillingGroupCardExpanded } from "@/components/billing/billing-group-card-expanded";
+import { BillingListSkeleton } from "@/components/billing/billing-list-skeleton";
 import { BillingTable } from "@/components/billing/billing-table";
 import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
@@ -22,7 +23,9 @@ import type {
 import { Button } from "@ventre/ui/button";
 import { Plus, Receipt } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const MONTH_CHANGE_DEBOUNCE_MS = 600;
 
 type BillingDashboardScreenProps = {
   billings: BillingWithInstallments[];
@@ -39,7 +42,7 @@ export default function BillingDashboardScreen({
   const { viewMode, setViewMode } = useBillingViewMode();
   const [currentMonth, setCurrentMonth] = useState<string | null>(initialActiveMonth);
 
-  const { execute, result } = useAction(getBillingDashboardAction);
+  const { execute, result, isPending } = useAction(getBillingDashboardAction);
 
   const billings: BillingWithInstallments[] =
     (result.data?.billings as BillingWithInstallments[] | undefined) ?? initialBillings;
@@ -57,21 +60,39 @@ export default function BillingDashboardScreen({
     [execute],
   );
 
+  const monthChangeDebounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const [isMonthChangePending, setIsMonthChangePending] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (monthChangeDebounceRef.current) clearTimeout(monthChangeDebounceRef.current);
+    };
+  }, []);
+
   const handleMonthChange = (month: string | null) => {
     setCurrentMonth(month);
-    fetchData(month);
+    setIsMonthChangePending(true);
+
+    if (monthChangeDebounceRef.current) clearTimeout(monthChangeDebounceRef.current);
+    monthChangeDebounceRef.current = setTimeout(() => {
+      setIsMonthChangePending(false);
+      fetchData(month);
+    }, MONTH_CHANGE_DEBOUNCE_MS);
   };
+
+  const isLoadingBillings = isMonthChangePending || isPending;
 
   const activeMonthForHook = currentMonth ?? dayjs().format("YYYY-MM");
 
   const {
     activeFilter,
     handleFilterClick,
-    filteredBillings,
+    statusSections,
     billingMetrics,
     activeMonthLabel,
-    sectionTitle,
   } = useBillingDashboard({ billings, metrics, activeMonth: activeMonthForHook });
+
+  const hasBillings = statusSections.some((section) => section.billings.length > 0);
 
   const [showNewBillingModal, setShowNewBillingModal] = useState(false);
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
@@ -104,15 +125,18 @@ export default function BillingDashboardScreen({
               activeMonth={activeMonthForHook}
               activeMonthLabel={activeMonthLabel}
               onMonthChange={handleMonthChange}
+              isLoading={isLoadingBillings}
             />
           )}
 
           <div>
             <div className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="font-medium font-poppins text-lg">{sectionTitle}</h2>
+              <h2 className="font-medium font-poppins text-lg">Cobranças</h2>
               <BillingViewSwitcher value={viewMode} onChange={setViewMode} />
             </div>
-            {filteredBillings.length === 0 ? (
+            {isLoadingBillings ? (
+              <BillingListSkeleton viewMode={viewMode} />
+            ) : !hasBillings ? (
               <EmptyState
                 icon={Receipt}
                 title="Nenhuma cobrança"
@@ -122,29 +146,46 @@ export default function BillingDashboardScreen({
                     : "Suas cobranças aparecerão aqui."
                 }
               />
-            ) : viewMode === "expanded" ? (
-              <div className="flex flex-col gap-3">
-                {filteredBillings.map((billing) => (
-                  <BillingGroupCardExpanded
-                    key={billing.id}
-                    billing={billing}
-                    installments={billing.filteredInstallments}
-                    professionalId={user?.id as string}
-                  />
-                ))}
-              </div>
-            ) : viewMode === "table" ? (
-              <BillingTable billings={filteredBillings} professionalId={user?.id as string} />
             ) : (
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                {filteredBillings.map((billing) => (
-                  <BillingGroupCard
-                    key={billing.id}
-                    billing={billing}
-                    installments={billing.filteredInstallments}
-                    professionalId={user?.id as string}
-                  />
-                ))}
+              <div className="space-y-6">
+                {statusSections.map(
+                  (section) =>
+                    section.billings.length > 0 && (
+                      <div key={section.key}>
+                        <h3 className="mb-3 font-medium text-muted-foreground text-sm">
+                          {section.label} ({section.billings.length})
+                        </h3>
+                        {viewMode === "expanded" ? (
+                          <div className="flex flex-col gap-3">
+                            {section.billings.map((billing) => (
+                              <BillingGroupCardExpanded
+                                key={billing.id}
+                                billing={billing}
+                                installments={billing.filteredInstallments}
+                                professionalId={user?.id as string}
+                              />
+                            ))}
+                          </div>
+                        ) : viewMode === "table" ? (
+                          <BillingTable
+                            billings={section.billings}
+                            professionalId={user?.id as string}
+                          />
+                        ) : (
+                          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                            {section.billings.map((billing) => (
+                              <BillingGroupCard
+                                key={billing.id}
+                                billing={billing}
+                                installments={billing.filteredInstallments}
+                                professionalId={user?.id as string}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ),
+                )}
               </div>
             )}
           </div>
