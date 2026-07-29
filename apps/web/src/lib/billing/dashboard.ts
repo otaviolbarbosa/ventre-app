@@ -1,18 +1,11 @@
 import type { FilterKey, MetricItem } from "@/components/billing/dashboard-metrics";
 import type { BillingPeriod } from "@/lib/billing/period-range";
+import { getMonthRange } from "@/lib/billing/period-range";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
-import type { Json, Tables } from "@ventre/supabase/types";
+import type { Tables } from "@ventre/supabase/types";
 import { AlertTriangle, Clock, TrendingUp } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export type FlatInstallment = Tables<"installments"> & {
-  description: string;
-  patient_name: string;
-  patient_id: string;
-  billing_installment_count: number;
-  applied_billing_fees: Json;
-};
 
 export type GroupedBilling = BillingWithInstallments & {
   filteredInstallments: Tables<"installments">[];
@@ -34,59 +27,70 @@ export const PERIOD_OPTIONS: PeriodOption[] = [
   { key: "next_quarter", label: "Próximo trimestre" },
 ];
 
-export const FILTER_LABELS: Record<FilterKey, string> = {
-  total: "Total a Receber",
-  paid: "Recebido",
-  overdue: "Em Atraso",
-  upcoming: "Próximos Vencimentos",
-};
-
 // ─── Pure functions ───────────────────────────────────────────────────────────
 
-export function flattenInstallments(billings: BillingWithInstallments[]): FlatInstallment[] {
-  return billings.flatMap((billing) =>
-    billing.installments.map((installment) => ({
-      ...installment,
-      patient_name: billing.patient.name,
-      description: billing.description,
-      patient_id: billing.patient_id,
-      billing_installment_count: billing.installments.length,
-      applied_billing_fees: billing.applied_billing_fees,
-    })),
+type InstallmentStatusSection = "atrasado" | "pendente" | "pago";
+
+export type StatusSection = {
+  key: InstallmentStatusSection;
+  label: string;
+  billings: GroupedBilling[];
+};
+
+const STATUS_SECTIONS: { key: InstallmentStatusSection; label: string }[] = [
+  { key: "atrasado", label: "Em Atraso" },
+  { key: "pendente", label: "Pendente" },
+  { key: "pago", label: "Pago" },
+];
+
+const FILTER_TO_STATUS: Partial<Record<FilterKey, InstallmentStatusSection>> = {
+  paid: "pago",
+  overdue: "atrasado",
+  upcoming: "pendente",
+};
+
+function matchesStatusSection(
+  installment: Tables<"installments">,
+  status: InstallmentStatusSection,
+  monthRange: { startDate: string; endDate: string },
+): boolean {
+  if (installment.status !== status) return false;
+
+  if (status === "pago") {
+    return (
+      !!installment.paid_at &&
+      installment.paid_at >= monthRange.startDate &&
+      installment.paid_at <= monthRange.endDate
+    );
+  }
+
+  return (
+    installment.due_date >= monthRange.startDate && installment.due_date <= monthRange.endDate
   );
 }
 
-function matchesFilter(installment: Tables<"installments">, filter: FilterKey | null): boolean {
-  if (!filter) return true;
-  switch (filter) {
-    case "paid":
-      return installment.status === "pago";
-    case "overdue":
-      return installment.status === "atrasado";
-    case "upcoming":
-      return installment.status === "pendente";
-    default:
-      return true;
-  }
-}
-
-export function filterInstallments(
-  installments: FlatInstallment[],
-  filter: FilterKey | null,
-): FlatInstallment[] {
-  return installments.filter((i) => matchesFilter(i, filter));
-}
-
-export function groupBillingsByFilter(
+export function groupBillingsByStatusSections(
   billings: BillingWithInstallments[],
+  activeMonth: string,
   filter: FilterKey | null,
-): GroupedBilling[] {
-  return billings
-    .map((billing) => ({
-      ...billing,
-      filteredInstallments: billing.installments.filter((i) => matchesFilter(i, filter)),
-    }))
-    .filter((billing) => billing.filteredInstallments.length > 0);
+): StatusSection[] {
+  const monthRange = getMonthRange(activeMonth);
+  const targetStatus = filter ? FILTER_TO_STATUS[filter] : undefined;
+
+  return STATUS_SECTIONS.filter((section) => !targetStatus || section.key === targetStatus).map(
+    (section) => ({
+      key: section.key,
+      label: section.label,
+      billings: billings
+        .map((billing) => ({
+          ...billing,
+          filteredInstallments: billing.installments.filter((i) =>
+            matchesStatusSection(i, section.key, monthRange),
+          ),
+        }))
+        .filter((billing) => billing.filteredInstallments.length > 0),
+    }),
+  );
 }
 
 export function buildBillingMetrics(metrics: DashboardMetrics): MetricItem[] {
