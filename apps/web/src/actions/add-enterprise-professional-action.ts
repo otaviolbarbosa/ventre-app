@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
@@ -52,6 +53,10 @@ export const addEnterpriseProfessionalAction = authActionClient
       userId: user.id,
       enterpriseId: profile.enterprise_id,
       metadata: { professional_id: targetUser.id, professional_email: targetUser.email },
+    });
+
+    await captureServerEvent(user.id, "add_enterprise_professional", {
+      professional_id: targetUser.id,
     });
 
     return { name: targetUser.name, email: targetUser.email };

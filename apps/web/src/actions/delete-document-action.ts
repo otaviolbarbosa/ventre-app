@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -47,6 +48,8 @@ export const deleteDocumentAction = authActionClient
         metadata: { document_id: parsedInput.documentId },
       });
     }
+
+    await captureServerEvent(user.id, "delete_document", { document_id: parsedInput.documentId });
 
     return { success: true };
   });

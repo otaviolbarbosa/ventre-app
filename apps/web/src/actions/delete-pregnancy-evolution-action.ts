@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -45,6 +46,8 @@ export const deletePregnancyEvolutionAction = authActionClient
         metadata: { evolution_id: evolutionId },
       });
     }
+
+    await captureServerEvent(user.id, "delete_pregnancy_evolution", { evolution_id: evolutionId });
 
     return { success: true };
   });

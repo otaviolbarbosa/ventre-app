@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import type { ProfessionalType } from "@/types";
 import { z } from "zod";
@@ -82,6 +83,11 @@ export const addBackupProfessionalAction = authActionClient
         metadata: { professional_id: parsedInput.professionalId, pregnancy_id: pregnancy.id },
       });
     }
+
+    await captureServerEvent(user.id, "add_backup_professional", {
+      patient_id: parsedInput.patientId,
+      professional_id: parsedInput.professionalId,
+    });
 
     return { success: true };
   });

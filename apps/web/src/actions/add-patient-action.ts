@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
 import { createBilling } from "@/services/billing";
@@ -72,6 +73,8 @@ export const addPatientAction = authActionClient
         metadata: { patient_id: patient.id },
       });
     }
+
+    await captureServerEvent(user.id, "add_patient", { patient_id: patient.id });
 
     return { patient };
   });

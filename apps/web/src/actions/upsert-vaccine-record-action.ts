@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { vaccineRecordSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -50,6 +51,8 @@ export const upsertVaccineRecordAction = authActionClient
         metadata: { pregnancy_id: pregnancyId },
       });
     }
+
+    await captureServerEvent(user.id, "upsert_vaccine_record", { pregnancy_id: pregnancyId });
 
     return { success: true };
   });

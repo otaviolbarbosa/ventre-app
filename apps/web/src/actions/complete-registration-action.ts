@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { actionClient } from "@/lib/safe-action";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
@@ -85,6 +86,11 @@ export const completeRegistrationAction = actionClient
       .from("registration_invites")
       .update({ completed_at: new Date().toISOString() })
       .eq("id", inviteId);
+
+    await captureServerEvent(signUpData.user.id, "complete_registration", {
+      professional_type: invite.professional_type,
+      enterprise_id: invite.enterprise_id,
+    });
 
     return { email: finalEmail };
   });

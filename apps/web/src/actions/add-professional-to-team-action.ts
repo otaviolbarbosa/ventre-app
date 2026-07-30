@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -83,6 +84,11 @@ export const addProfessionalToTeamAction = authActionClient
         },
       });
     }
+
+    await captureServerEvent(user.id, "add_professional_to_team", {
+      patient_id: patientId,
+      professional_id: professionalId,
+    });
 
     return { success: true };
   });

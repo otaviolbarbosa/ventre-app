@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { revalidatePath } from "next/cache";
 
@@ -13,6 +14,8 @@ export const disconnectGoogleCalendarAction = authActionClient.action(
     if (error) throw new Error("Erro ao desconectar Google Agenda");
 
     revalidatePath("/profile/settings");
+
+    await captureServerEvent(user.id, "disconnect_google_calendar");
   },
 );
 

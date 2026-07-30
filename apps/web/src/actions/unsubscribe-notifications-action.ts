@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -17,6 +18,8 @@ export const unsubscribeNotificationsAction = authActionClient
       .eq("user_id", user.id);
 
     if (error) throw new Error(error.message);
+
+    await captureServerEvent(user.id, "unsubscribe_notifications");
 
     return { success: true };
   });

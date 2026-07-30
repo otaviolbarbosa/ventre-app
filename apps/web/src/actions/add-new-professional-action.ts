@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { sendProfessionalInvite } from "@/lib/emails/send-professional-invite";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -14,7 +15,7 @@ const schema = z.object({
 
 export const addNewProfessionalAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabaseAdmin, profile } }) => {
+  .action(async ({ parsedInput, ctx: { supabaseAdmin, user, profile } }) => {
     if (!isStaff(profile)) throw new Error("Acesso não autorizado");
     if (!profile.enterprise_id) throw new Error("Você não está associado a nenhuma organização.");
 
@@ -44,6 +45,8 @@ export const addNewProfessionalAction = authActionClient
       await supabaseAdmin
         .from("user_enterprises")
         .insert({ user_id: existing.id, enterprise_id: enterpriseId });
+
+      await captureServerEvent(user.id, "add_new_professional", { professional_id: existing.id });
 
       return { name, email: normalizedEmail };
     }
@@ -98,6 +101,8 @@ export const addNewProfessionalAction = authActionClient
       professional_type,
       inviteLink,
     });
+
+    await captureServerEvent(user.id, "add_new_professional", { invite_id: invite.id });
 
     return { name, email: normalizedEmail };
   });

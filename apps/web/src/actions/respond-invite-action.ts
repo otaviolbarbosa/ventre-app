@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { respondToInvite } from "@/services/invite";
 import { z } from "zod";
@@ -46,6 +47,11 @@ export const respondInviteAction = authActionClient
         metadata: { invite_id: parsedInput.inviteId },
       });
     }
+
+    await captureServerEvent(user.id, "respond_invite", {
+      invite_id: parsedInput.inviteId,
+      patient_id: result.patientId,
+    });
 
     return { success: true, patientId: result.patientId };
   });
