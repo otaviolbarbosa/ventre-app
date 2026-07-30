@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -43,6 +44,8 @@ export const deleteUltrasoundAction = authActionClient
         metadata: { ultrasound_id: ultrasoundId },
       });
     }
+
+    await captureServerEvent(user.id, "delete_ultrasound", { ultrasound_id: ultrasoundId });
 
     return { success: true };
   });

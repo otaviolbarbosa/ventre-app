@@ -1,6 +1,7 @@
 "use server";
 
 import { dayjs } from "@/lib/dayjs";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import Stripe from "stripe";
 import { z } from "zod";
@@ -73,6 +74,8 @@ export const createStripeCheckoutSessionAction = authActionClient
     };
 
     const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+
+    await captureServerEvent(user.id, "create_stripe_checkout_session", { plan_id: plan.id });
 
     return checkoutSession.url;
   });

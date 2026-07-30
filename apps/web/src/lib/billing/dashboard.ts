@@ -64,9 +64,7 @@ function matchesStatusSection(
     );
   }
 
-  return (
-    installment.due_date >= monthRange.startDate && installment.due_date <= monthRange.endDate
-  );
+  return installment.due_date >= monthRange.startDate && installment.due_date <= monthRange.endDate;
 }
 
 export function groupBillingsByStatusSections(

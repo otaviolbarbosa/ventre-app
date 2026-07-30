@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -41,6 +42,11 @@ export const updateBillingAction = authActionClient
         metadata: { billing_id: parsedInput.billingId, status: parsedInput.status },
       });
     }
+
+    await captureServerEvent(user.id, "update_billing", {
+      billing_id: parsedInput.billingId,
+      status: parsedInput.status,
+    });
 
     return { billing };
   });

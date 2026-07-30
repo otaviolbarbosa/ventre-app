@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { ultrasoundSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -45,6 +46,8 @@ export const updateUltrasoundAction = authActionClient
         metadata: { ultrasound_id: ultrasoundId },
       });
     }
+
+    await captureServerEvent(user.id, "update_ultrasound", { ultrasound_id: ultrasoundId });
 
     return { success: true };
   });

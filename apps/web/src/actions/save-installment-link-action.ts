@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -50,6 +51,11 @@ export const saveInstallmentLinkAction = authActionClient
         metadata: { billing_id: parsedInput.billingId, installment_id: parsedInput.installmentId },
       });
     }
+
+    await captureServerEvent(user.id, "save_installment_link", {
+      billing_id: parsedInput.billingId,
+      installment_id: parsedInput.installmentId,
+    });
 
     return { success: true };
   });

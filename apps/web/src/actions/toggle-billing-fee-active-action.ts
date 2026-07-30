@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { toggleBillingFeeActiveSchema } from "@/lib/validations/enterprise-billing-fees";
 
@@ -34,6 +35,11 @@ export const toggleBillingFeeActiveAction = authActionClient
         userId: user.id,
         enterpriseId: profile.enterprise_id,
         metadata: { fee_id: fee.id, is_active },
+      });
+
+      await captureServerEvent(user.id, "toggle_billing_fee_active", {
+        fee_id: fee.id,
+        is_active,
       });
 
       return { fee };

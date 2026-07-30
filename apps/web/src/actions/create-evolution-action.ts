@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createEvolutionSchema } from "@/lib/validations/evolution";
 import { z } from "zod";
@@ -46,6 +47,8 @@ export const createEvolutionAction = authActionClient
         metadata: { evolution_id: evolution.id },
       });
     }
+
+    await captureServerEvent(user.id, "create_evolution", { evolution_id: evolution.id });
 
     return { evolution };
   });

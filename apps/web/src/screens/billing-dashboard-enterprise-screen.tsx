@@ -97,17 +97,12 @@ export default function BillingDashboardEnterpriseScreen({
 
   const activeMonthForHook = currentMonth ?? dayjs().format("YYYY-MM");
 
-  const {
-    activeFilter,
-    handleFilterClick,
-    statusSections,
-    billingMetrics,
-    activeMonthLabel,
-  } = useBillingDashboard({
-    billings,
-    metrics,
-    activeMonth: activeMonthForHook,
-  });
+  const { activeFilter, handleFilterClick, statusSections, billingMetrics, activeMonthLabel } =
+    useBillingDashboard({
+      billings,
+      metrics,
+      activeMonth: activeMonthForHook,
+    });
 
   const hasBillings = statusSections.some((section) => section.billings.length > 0);
 

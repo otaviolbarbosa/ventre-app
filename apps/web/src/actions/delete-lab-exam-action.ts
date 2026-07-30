@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -45,6 +46,8 @@ export const deleteLabExamAction = authActionClient
         metadata: { exam_id: examId },
       });
     }
+
+    await captureServerEvent(user.id, "delete_lab_exam", { exam_id: examId });
 
     return { success: true };
   });

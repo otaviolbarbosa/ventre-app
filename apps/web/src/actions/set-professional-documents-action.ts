@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { personalDocumentsSchema } from "@/lib/validations/personal-documents";
 import { professionalDocumentsSchema } from "@/lib/validations/professional-documents";
@@ -26,6 +27,8 @@ export const setProfessionalDocumentsAction = authActionClient
 
       if (error) throw new Error("Erro ao salvar documentos profissionais");
     }
+
+    await captureServerEvent(user.id, "set_professional_documents", {});
 
     redirect("/home");
   });

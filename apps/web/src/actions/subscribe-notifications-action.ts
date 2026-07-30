@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import type { Json } from "@ventre/supabase/types";
 import { z } from "zod";
@@ -24,6 +25,8 @@ export const subscribeNotificationsAction = authActionClient
     );
 
     if (error) throw new Error(error.message);
+
+    await captureServerEvent(user.id, "subscribe_notifications", {});
 
     return { success: true };
   });

@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { updatePatientSchema } from "@/lib/validations/patient";
 import { z } from "zod";
@@ -70,6 +71,8 @@ export const updatePatientAction = authActionClient
         metadata: { patient_id: parsedInput.patientId },
       });
     }
+
+    await captureServerEvent(user.id, "update_patient", { patient_id: parsedInput.patientId });
 
     return { patient };
   });

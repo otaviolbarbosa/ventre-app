@@ -290,7 +290,8 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
     for (const inst of billing.installments) {
       if (inst.status === "pago") {
         const paidAt = inst.paid_at;
-        const paidInRange = !!paidAt && (!startDate || paidAt >= startDate) && (!endDate || paidAt <= endDate);
+        const paidInRange =
+          !!paidAt && (!startDate || paidAt >= startDate) && (!endDate || paidAt <= endDate);
         if (!paidInRange) continue;
 
         metrics.paid_amount +=

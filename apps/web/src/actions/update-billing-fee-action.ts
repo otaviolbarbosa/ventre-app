@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { updateBillingFeeSchema } from "@/lib/validations/enterprise-billing-fees";
 import { z } from "zod";
@@ -41,6 +42,8 @@ export const updateBillingFeeAction = authActionClient
         enterpriseId: profile.enterprise_id,
         metadata: { fee_id: fee.id, ...updates },
       });
+
+      await captureServerEvent(user.id, "update_billing_fee", { fee_id: fee.id });
 
       return { fee };
     },

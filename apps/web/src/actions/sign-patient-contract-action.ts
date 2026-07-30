@@ -9,6 +9,7 @@ import {
   uploadContractPdf,
 } from "@/lib/contract-pdf";
 import { buildSignatureLocalityLine } from "@/lib/contract-signature-text";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { signPatientContractSchema } from "@/lib/validations/contract";
 import { generateVerificationCode } from "@/lib/verification-code";
@@ -154,6 +155,12 @@ export const signPatientContractAction = authActionClient
       }
 
       revalidatePath(`/patients/${patientId}/profile`);
+
+      await captureServerEvent(user.id, "sign_patient_contract", {
+        patient_id: patientId,
+        contract_id: contractId,
+      });
+
       return { success: true };
     },
   );

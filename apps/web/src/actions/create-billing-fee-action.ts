@@ -2,6 +2,7 @@
 
 import { insertActivityLog } from "@/lib/activity-log";
 import { formatCurrency } from "@/lib/billing/calculations";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createBillingFeeSchema } from "@/lib/validations/enterprise-billing-fees";
 
@@ -43,6 +44,8 @@ export const createBillingFeeAction = authActionClient
         enterpriseId: profile.enterprise_id,
         metadata: { fee_id: fee.id, fee_type, value },
       });
+
+      await captureServerEvent(user.id, "create_billing_fee", { fee_id: fee.id });
 
       return { fee };
     },

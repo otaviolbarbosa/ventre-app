@@ -1,4 +1,8 @@
+import { SeverityNumber } from "@opentelemetry/api-logs";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loggerProvider } from "../../instrumentation";
+
+const logger = loggerProvider?.getLogger("nascere-web");
 
 type ActionType =
   | "appointment"
@@ -43,6 +47,32 @@ export async function insertActivityLog({
 
   if (error) {
     console.error("[insertActivityLog]", error.message);
+    logger?.emit({
+      body: `Failed to insert activity log: ${actionName}`,
+      severityNumber: SeverityNumber.ERROR,
+      attributes: {
+        actionName,
+        actionType,
+        userId,
+        enterpriseId,
+        patientId: patientId ?? null,
+        error: error.message,
+      },
+    });
     // failure never propagates — logging is observability only
+    return;
   }
+
+  logger?.emit({
+    body: description,
+    severityNumber: SeverityNumber.INFO,
+    attributes: {
+      actionName,
+      actionType,
+      userId,
+      enterpriseId,
+      patientId: patientId ?? null,
+      ...metadata,
+    },
+  });
 }
