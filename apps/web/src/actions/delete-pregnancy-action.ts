@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
@@ -56,6 +57,11 @@ export const deletePregnancyAction = authActionClient
       userId: user.id,
       enterpriseId: profile.enterprise_id,
       metadata: { patient_id: parsedInput.patientId, pregnancy_id: pregnancy?.id },
+    });
+
+    await captureServerEvent(user.id, "delete_pregnancy", {
+      patient_id: parsedInput.patientId,
+      pregnancy_id: pregnancy?.id,
     });
 
     return { success: true };

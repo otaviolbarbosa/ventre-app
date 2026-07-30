@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { pregnancyEvolutionSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -50,6 +51,8 @@ export const updatePregnancyEvolutionAction = authActionClient
         metadata: { evolution_id: evolutionId },
       });
     }
+
+    await captureServerEvent(user.id, "update_pregnancy_evolution", { evolution_id: evolutionId });
 
     return { success: true };
   });

@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
@@ -63,6 +64,10 @@ export const finishPatientCareAction = authActionClient
         metadata: { delivery_method: parsedInput.deliveryMethod ?? null },
       });
     }
+
+    await captureServerEvent(user.id, "finish_patient_care", {
+      patient_id: parsedInput.patientId,
+    });
 
     return { success: true };
   });

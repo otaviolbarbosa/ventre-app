@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { labExamSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -47,6 +48,8 @@ export const updateLabExamAction = authActionClient
         metadata: { exam_id: examId },
       });
     }
+
+    await captureServerEvent(user.id, "update_lab_exam", { exam_id: examId });
 
     return { success: true };
   });

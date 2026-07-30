@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { syncDeleteToGoogleCalendar } from "@/services/google-calendar";
 
@@ -69,4 +70,6 @@ export const cancelDayAppointmentsAction = authActionClient
         metadata: { date: parsedInput.date },
       });
     }
+
+    await captureServerEvent(user.id, "cancel_day_appointments", { date: parsedInput.date });
   });

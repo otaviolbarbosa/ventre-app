@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createBillingSchema } from "@/lib/validations/billing";
 import { createBilling } from "@/services/billing";
@@ -49,6 +50,8 @@ export const addBillingAction = authActionClient
         metadata: { billing_id: billing.id },
       });
     }
+
+    await captureServerEvent(user.id, "add_billing", { billing_id: billing.id });
 
     return { billing };
   });

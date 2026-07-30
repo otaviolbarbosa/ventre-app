@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import Stripe from "stripe";
 import { z } from "zod";
@@ -10,7 +11,7 @@ const schema = z.object({
 
 export const cancelSubscriptionAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, profile } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     if (!process.env.STRIPE_SECRET_KEY) {
       throw new Error("Stripe não configurado.");
     }
@@ -46,6 +47,10 @@ export const cancelSubscriptionAction = authActionClient
     if (updateError) {
       throw new Error("Erro ao atualizar status da assinatura.");
     }
+
+    await captureServerEvent(user.id, "cancel_subscription", {
+      subscription_id: subscription.id,
+    });
 
     return { success: true };
   });

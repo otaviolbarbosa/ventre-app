@@ -95,8 +95,12 @@ export async function getEnterpriseBillings(
     query = query.not(`splitted_billing->>${professionalId}`, "is", null);
   }
 
-  if (startDate) query = query.gte("installments.due_date", startDate);
-  if (endDate) query = query.lte("installments.due_date", endDate);
+  if (startDate && endDate) {
+    query = query.or(
+      `and(due_date.gte.${startDate},due_date.lte.${endDate}),and(status.eq.pago,paid_at.gte.${startDate},paid_at.lte.${endDate})`,
+      { referencedTable: "installments" },
+    );
+  }
 
   const { data, error } = await query;
   if (error) return { billings: [], metrics: null, professionals: [] };
@@ -226,8 +230,12 @@ export async function getBillings(startDate?: string, endDate?: string) {
     .order("created_at", { ascending: false })
     .order("installment_number", { ascending: true, referencedTable: "installments" });
 
-  if (startDate) query = query.gte("installments.due_date", startDate);
-  if (endDate) query = query.lte("installments.due_date", endDate);
+  if (startDate && endDate) {
+    query = query.or(
+      `and(due_date.gte.${startDate},due_date.lte.${endDate}),and(status.eq.pago,paid_at.gte.${startDate},paid_at.lte.${endDate})`,
+      { referencedTable: "installments" },
+    );
+  }
 
   const { data, error } = await query;
   if (error) return { billings: [], error: error.message };
@@ -247,8 +255,12 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
     `)
     .not(`splitted_billing->>${user.id}`, "is", null);
 
-  if (startDate) query = query.gte("installments.due_date", startDate);
-  if (endDate) query = query.lte("installments.due_date", endDate);
+  if (startDate && endDate) {
+    query = query.or(
+      `and(due_date.gte.${startDate},due_date.lte.${endDate}),and(status.eq.pago,paid_at.gte.${startDate},paid_at.lte.${endDate})`,
+      { referencedTable: "installments" },
+    );
+  }
 
   const { data: billings, error } = await query;
 
@@ -276,19 +288,20 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
       (metrics.by_payment_method[billing.payment_method] || 0) + 1;
 
     for (const inst of billing.installments) {
-      const dueDate = inst.due_date;
-      const inRange = (!startDate || dueDate >= startDate) && (!endDate || dueDate <= endDate);
+      if (inst.status === "pago") {
+        const paidAt = inst.paid_at;
+        const paidInRange =
+          !!paidAt && (!startDate || paidAt >= startDate) && (!endDate || paidAt <= endDate);
+        if (!paidInRange) continue;
 
-      console.log(dueDate, inRange, inst.amount, inst.status);
-
-      if (!inRange) {
+        metrics.paid_amount +=
+          (inst.splitted_installment as Record<string, number>)?.[user.id] ?? 0;
         continue;
       }
 
-      if (inst.status === "pago") {
-        metrics.paid_amount +=
-          (inst.splitted_installment as Record<string, number>)?.[user.id] ?? 0;
-      }
+      const dueDate = inst.due_date;
+      const inRange = (!startDate || dueDate >= startDate) && (!endDate || dueDate <= endDate);
+      if (!inRange) continue;
 
       if (inst.status === "atrasado") {
         metrics.overdue_amount +=

@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { updatePatientPrenatalSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -70,6 +71,11 @@ export const upsertPatientPrenatalFieldsAction = authActionClient
         metadata: { pregnancy_id: pregnancyId },
       });
     }
+
+    await captureServerEvent(user.id, "upsert_patient_prenatal_fields", {
+      patient_id: patientId,
+      pregnancy_id: pregnancyId,
+    });
 
     return { success: true };
   });

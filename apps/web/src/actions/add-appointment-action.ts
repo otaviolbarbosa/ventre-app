@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import {
   createAppointmentSchema,
@@ -79,6 +80,8 @@ export const addAppointmentAction = authActionClient
     ).catch((err) => {
       console.error("[google-calendar] create sync failed", err);
     });
+
+    await captureServerEvent(user.id, "add_appointment", { appointment_id: appointment.id });
 
     return { appointment };
   });

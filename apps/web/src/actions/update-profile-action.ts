@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { personalDocumentsSchema } from "@/lib/validations/personal-documents";
 import { professionalDocumentsSchema } from "@/lib/validations/professional-documents";
@@ -76,6 +77,8 @@ export const updateProfileAction = authActionClient
         }
       }
     }
+
+    await captureServerEvent(user.id, "update_profile", {});
 
     return { profile };
   });

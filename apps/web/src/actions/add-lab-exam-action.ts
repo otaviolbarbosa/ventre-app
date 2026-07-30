@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { labExamSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -42,6 +43,8 @@ export const addLabExamAction = authActionClient
         metadata: { pregnancy_id: pregnancyId },
       });
     }
+
+    await captureServerEvent(user.id, "add_lab_exam", { pregnancy_id: pregnancyId });
 
     return { success: true };
   });

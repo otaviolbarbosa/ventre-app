@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import dayjs from "dayjs";
 import { z } from "zod";
@@ -22,6 +23,11 @@ export const inviteProfessionalDirectAction = authActionClient
       .limit(1);
 
     if (existing?.[0]) {
+      await captureServerEvent(user.id, "invite_professional_direct", {
+        patient_id: parsedInput.patientId,
+        professional_id: parsedInput.professionalId,
+      });
+
       return { invite: existing[0] };
     }
 
@@ -60,6 +66,11 @@ export const inviteProfessionalDirectAction = authActionClient
         metadata: { invite_id: invite.id, professional_id: parsedInput.professionalId },
       });
     }
+
+    await captureServerEvent(user.id, "invite_professional_direct", {
+      patient_id: parsedInput.patientId,
+      professional_id: parsedInput.professionalId,
+    });
 
     return { invite };
   });

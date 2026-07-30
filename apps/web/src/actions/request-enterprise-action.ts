@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -85,6 +86,8 @@ export const requestEnterpriseAction = authActionClient
     if (joinError) {
       throw new Error(joinError.message);
     }
+
+    await captureServerEvent(user.id, "request_enterprise", { enterprise_id: enterprise.id });
 
     redirect("/home");
   });

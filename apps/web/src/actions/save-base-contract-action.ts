@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { saveBaseContractSchema } from "@/lib/validations/contract";
 import { revalidatePath } from "next/cache";
@@ -45,6 +46,11 @@ export const saveBaseContractAction = authActionClient
       }
 
       revalidatePath("/settings/contract");
+
+      await captureServerEvent(user.id, "save_base_contract", {
+        contract_id: contractId,
+      });
+
       return { success: true };
     },
   );

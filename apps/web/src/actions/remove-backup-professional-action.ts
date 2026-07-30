@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -65,6 +66,10 @@ export const removeBackupProfessionalAction = authActionClient
         metadata: { team_member_id: parsedInput.teamMemberId },
       });
     }
+
+    await captureServerEvent(user.id, "remove_backup_professional", {
+      team_member_id: parsedInput.teamMemberId,
+    });
 
     return { success: true };
   });

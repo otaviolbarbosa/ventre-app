@@ -1,5 +1,6 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createBaseContractFromPatientSchema } from "@/lib/validations/contract";
 import { revalidatePath } from "next/cache";
@@ -25,6 +26,9 @@ export const createBaseContractFromPatientAction = authActionClient
       if (error) throw new Error(error.message);
 
       revalidatePath(`/patients/${patientId}/profile`);
+
+      await captureServerEvent(user.id, "create_base_contract_from_patient", { patientId });
+
       return { success: true };
     },
   );
