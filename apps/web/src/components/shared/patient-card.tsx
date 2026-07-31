@@ -13,8 +13,6 @@ export function PatientCard({
   patient: PatientWithGestationalInfo;
   teamMembers?: TeamMember[];
 }) {
-  const mainTeamMembers = teamMembers?.filter((teamMember) => !teamMember.is_backup);
-
   const dppFormatted = dayjs(patient.due_date).format("DD/MM");
   const statusColor = patient.weeks >= 37 ? "#be5237" : patient.weeks >= 28 ? "#60a5fa" : "#4ade80";
 
@@ -70,11 +68,16 @@ export function PatientCard({
               )}
             </div>
           </div>
-          {mainTeamMembers && mainTeamMembers.length > 0 && (
+          {teamMembers?.length && (
+            <div>
+              <TeamMembersAvatars teamMembers={teamMembers} patientId={patient.id} />
+            </div>
+          )}
+          {/* {mainTeamMembers?.length && (
             <div>
               <TeamMembersAvatars teamMembers={mainTeamMembers} patientId={patient.id} />
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

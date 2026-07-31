@@ -24,9 +24,9 @@ export default function PendingInviteCard({
           <div className="relative flex min-h-10 min-w-10 items-center justify-center rounded-full bg-muted font-poppins font-semibold text-muted-foreground">
             <Avatar src={avatarUrl ?? ""} name={name} size={12} />
           </div>
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex flex-1 justify-between gap-2 overflow-hidden truncate whitespace-nowrap">
-              <p className="font-medium">{name}</p>
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate font-medium">{name}</p>
               <div className="flex shrink-0 items-center gap-1">
                 <Badge variant="outline" className="gap-1 rounded-full text-muted-foreground">
                   <Clock className="h-3 w-3" />
@@ -37,7 +37,7 @@ export default function PendingInviteCard({
                 </Badge>
               </div>
             </div>
-            <p className="text-muted-foreground text-sm">{email}</p>
+            <p className="truncate text-muted-foreground text-sm">{email}</p>
           </div>
         </div>
       </CardContent>

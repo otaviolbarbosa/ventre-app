@@ -64,9 +64,9 @@ export default function TeamMemberCard({ member, isOwner, onRemoved }: TeamMembe
               <span className="-right-0.5 absolute bottom-0 block size-3 rounded-full border-2 border-white bg-green-500" />
             )}
           </div>
-          <div className="flex flex-1 flex-col gap-1">
-            <div className="flex flex-1 justify-between gap-2 truncate whitespace-nowrap">
-              <p className="font-medium">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate font-medium">
                 {isExternal ? "Equipe Externa" : member.professional?.name}
               </p>
               <div className="flex shrink-0 items-center gap-1">
@@ -75,8 +75,8 @@ export default function TeamMemberCard({ member, isOwner, onRemoved }: TeamMembe
                 </Badge>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <p className="text-muted-foreground text-sm">{member.professional?.email}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-muted-foreground text-sm">{member.professional?.email}</p>
               {canRemove && (
                 <Button variant="ghost" size="icon-sm" onClick={handleConfirmRemove}>
                   <Trash stroke="hsl(var(--destructive))" />
