@@ -1,0 +1,11 @@
+{
+  "extends": "@ventre/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", ".storybook", "next-env.d.ts", "global.d.ts"],
+  "exclude": ["node_modules"]
+}
