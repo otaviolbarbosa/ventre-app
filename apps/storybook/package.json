@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "storybook dev -p 6006",
     "build": "storybook build",
+    "preview": "storybook build --output-dir storybook-static && npx http-server storybook-static",
     "lint": "biome lint .",
     "check-types": "tsc --noEmit"
   },
