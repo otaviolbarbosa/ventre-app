@@ -47,6 +47,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.enqueue_notification FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.enqueue_notification FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.enqueue_notification TO service_role;
 
 CREATE OR REPLACE FUNCTION public.cancel_notifications_for_reference(
@@ -80,4 +81,5 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.cancel_notifications_for_reference FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.cancel_notifications_for_reference FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.cancel_notifications_for_reference TO service_role;
