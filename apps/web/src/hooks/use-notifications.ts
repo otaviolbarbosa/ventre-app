@@ -41,15 +41,27 @@ export function useNotifications() {
   useEffect(() => {
     if (typeof window === "undefined" || !user) return;
 
-    const unsubscribe = onForegroundMessage((payload) => {
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    onForegroundMessage((payload) => {
       const { title, body } = payload.notification ?? {};
       if (title) {
         toast(title, { description: body });
         setUnreadCount((c) => c + 1);
       }
+    }).then((unsub) => {
+      if (cancelled) {
+        unsub();
+      } else {
+        unsubscribe = unsub;
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [user]);
 
   const subscribe = useCallback(async () => {
