@@ -36,3 +36,6 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Superpowers SDD workspace (ledgers, briefs, review packages — scratch, not source)
+.superpowers/
