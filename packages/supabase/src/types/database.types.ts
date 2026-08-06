@@ -2284,6 +2284,7 @@ export type Database = {
         Args: never
         Returns: undefined
       }
+      process_notification_queues: { Args: never; Returns: undefined }
       process_scheduled_notifications: { Args: never; Returns: undefined }
       requeue_with_backoff: {
         Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number }
