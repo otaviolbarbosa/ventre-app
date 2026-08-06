@@ -93,6 +93,17 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": ["node_modules", ".next", "dist", ".turbo", "*.gen.ts", "**/public/sw.js", ".agents"]
+    "ignore": [
+      "node_modules",
+      ".next",
+      "dist",
+      ".turbo",
+      "*.gen.ts",
+      "**/public/sw.js",
+      ".agents",
+      "**/.expo",
+      "**/ios",
+      "**/android"
+    ]
   }
 }
