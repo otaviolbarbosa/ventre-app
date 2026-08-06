@@ -99,6 +99,16 @@ export async function requeueWithBackoff(
   if (error) throw new Error(`requeueWithBackoff failed: ${error.message}`);
 }
 
+export async function getQueueLength(queueName: QueueName): Promise<number> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data, error } = await supabaseAdmin.rpc("notification_queue_length", {
+    p_queue_name: queueName,
+  });
+
+  if (error) throw new Error(`getQueueLength failed: ${error.message}`);
+  return data ?? 0;
+}
+
 export async function deadLetterNotification(params: {
   queueName: QueueName;
   msgId: number;
