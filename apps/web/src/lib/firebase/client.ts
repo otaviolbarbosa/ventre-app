@@ -1,5 +1,11 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { type MessagePayload, getMessaging, getToken, onMessage } from "firebase/messaging";
+import {
+  type MessagePayload,
+  getMessaging,
+  getToken,
+  isSupported,
+  onMessage,
+} from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,13 +17,16 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-function getMessagingInstance() {
+async function getMessagingInstance() {
   if (typeof window === "undefined") return null;
+  // WebViews (e.g. the mobile app) and some browsers lack IndexedDB/Service
+  // Worker/Push APIs — getMessaging() throws if called without this check.
+  if (!(await isSupported())) return null;
   return getMessaging(app);
 }
 
 export async function requestFcmToken(): Promise<string | null> {
-  const messaging = getMessagingInstance();
+  const messaging = await getMessagingInstance();
   if (!messaging) return null;
 
   try {
@@ -37,8 +46,8 @@ export async function requestFcmToken(): Promise<string | null> {
   }
 }
 
-export function onForegroundMessage(callback: (payload: MessagePayload) => void) {
-  const messaging = getMessagingInstance();
+export async function onForegroundMessage(callback: (payload: MessagePayload) => void) {
+  const messaging = await getMessagingInstance();
   if (!messaging)
     return () => {
       /* noop */

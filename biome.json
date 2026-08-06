@@ -102,6 +102,9 @@
       "**/public/sw.js",
       ".agents",
       "**/storybook-static"
+      "**/.expo",
+      "**/ios",
+      "**/android"
     ]
   }
 }
