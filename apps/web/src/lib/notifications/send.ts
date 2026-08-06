@@ -32,7 +32,16 @@ type NotificationPayload = {
   data?: Record<string, string>;
 };
 
-export async function sendNotificationToUser(userId: string, payload: NotificationPayload) {
+export type SendNotificationResult = {
+  tokenCount: number;
+  successCount: number;
+  failureCount: number;
+};
+
+export async function sendNotificationToUser(
+  userId: string,
+  payload: NotificationPayload,
+): Promise<SendNotificationResult> {
   const supabaseAdmin = await createServerSupabaseAdmin();
 
   // Check user's notification settings
@@ -44,7 +53,7 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
 
   if (settings) {
     const settingKey = payload.type as keyof typeof settings;
-    if (settings[settingKey] === false) return;
+    if (settings[settingKey] === false) return { tokenCount: 0, successCount: 0, failureCount: 0 };
   }
 
   // Check billing-specific notification preferences
@@ -57,12 +66,10 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
       .single();
 
     if (billingPrefs) {
-      if (payload.type === "billing_reminder" && !billingPrefs.enable_billing_reminders) return;
-      if (
-        payload.type === "billing_payment_received" &&
-        !billingPrefs.enable_payment_confirmations
-      )
-        return;
+      if (payload.type === "billing_reminder" && !billingPrefs.enable_billing_reminders)
+        return { tokenCount: 0, successCount: 0, failureCount: 0 };
+      if (payload.type === "billing_payment_received" && !billingPrefs.enable_payment_confirmations)
+        return { tokenCount: 0, successCount: 0, failureCount: 0 };
     }
   }
 
@@ -75,6 +82,9 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
 
   const tokens = subscriptions?.map((s) => s.fcm_token) ?? [];
 
+  let successCount = 0;
+  let failureCount = 0;
+
   // Send push notification
   if (tokens.length > 0) {
     const result = await sendMulticastNotification(tokens, {
@@ -82,6 +92,9 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
       body: payload.body,
       data: { ...payload.data, type: payload.type },
     });
+
+    successCount = result.successCount;
+    failureCount = result.failureCount;
 
     // Deactivate invalid tokens
     if (result.invalidTokens.length > 0) {
@@ -101,6 +114,8 @@ export async function sendNotificationToUser(userId: string, payload: Notificati
     body: payload.body,
     data: payload.data || {},
   });
+
+  return { tokenCount: tokens.length, successCount, failureCount };
 }
 
 export async function sendNotificationToTeam(
