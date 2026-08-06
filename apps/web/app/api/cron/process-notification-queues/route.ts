@@ -8,6 +8,7 @@ import {
   type DequeuedNotification,
 } from "@/lib/notifications/queue";
 import { type NotificationType, sendNotificationToUser } from "@/lib/notifications/send";
+import { dayjs } from "@/lib/dayjs";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -26,11 +27,15 @@ async function resolvePushRecipientAndTemplate(
   supabaseAdmin: Awaited<ReturnType<typeof createServerSupabaseAdmin>>,
 ): Promise<ResolvedPushNotification | null> {
   if (notification.notificationType === "appointment_reminder") {
-    const { data: appointment } = await supabaseAdmin
+    const { data: appointment, error: appointmentError } = await supabaseAdmin
       .from("appointments")
       .select("*, patient:patients!appointments_patient_id_fkey(id, name, user_id)")
       .eq("id", notification.referenceId)
-      .single();
+      .maybeSingle();
+
+    if (appointmentError) {
+      throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${appointmentError.message}`);
+    }
 
     if (!appointment || appointment.status !== "agendada") return null;
 
@@ -53,16 +58,39 @@ async function resolvePushRecipientAndTemplate(
   }
 
   if (notification.notificationType === "dpp_approaching") {
-    const { data: patient } = await supabaseAdmin
+    const { data: patient, error: patientError } = await supabaseAdmin
       .from("patients")
       .select("id, name, user_id")
       .eq("id", notification.referenceId)
-      .single();
+      .maybeSingle();
+
+    if (patientError) {
+      throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${patientError.message}`);
+    }
 
     if (!patient?.user_id) return null;
 
+    // Mesmo padrão de schedule_dpp_reminders(): gestação ativa mais recente (não finalizada).
+    const { data: pregnancy, error: pregnancyError } = await supabaseAdmin
+      .from("pregnancies")
+      .select("due_date")
+      .eq("patient_id", patient.id)
+      .eq("has_finished", false)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (pregnancyError) {
+      throw new Error(`Falha ao buscar gestação de ${patient.id}: ${pregnancyError.message}`);
+    }
+
+    if (!pregnancy?.due_date) return null;
+
+    const daysUntilDpp = dayjs(pregnancy.due_date).startOf("day").diff(dayjs().startOf("day"), "day");
+
     const template = getNotificationTemplate("dpp_approaching", {
       patientName: patient.name,
+      daysUntilDpp,
     });
 
     return {
