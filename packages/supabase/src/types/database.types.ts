@@ -703,6 +703,81 @@ export type Database = {
           },
         ];
       };
+      notification_log: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"];
+          created_at: string;
+          error_reason: string | null;
+          external_message_id: string | null;
+          id: string;
+          notification_type: string;
+          recipient_id: string;
+          recipient_type: string;
+          reference_id: string | null;
+          reference_type: string | null;
+          status: Database["public"]["Enums"]["notification_log_status"];
+          updated_at: string;
+        };
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"];
+          created_at?: string;
+          error_reason?: string | null;
+          external_message_id?: string | null;
+          id?: string;
+          notification_type: string;
+          recipient_id: string;
+          recipient_type: string;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          status: Database["public"]["Enums"]["notification_log_status"];
+          updated_at?: string;
+        };
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"];
+          created_at?: string;
+          error_reason?: string | null;
+          external_message_id?: string | null;
+          id?: string;
+          notification_type?: string;
+          recipient_id?: string;
+          recipient_type?: string;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          status?: Database["public"]["Enums"]["notification_log_status"];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notification_queue_index: {
+        Row: {
+          created_at: string;
+          dedup_key: string;
+          msg_id: number;
+          notification_type: string;
+          queue_name: string;
+          reference_id: string;
+          reference_type: string;
+        };
+        Insert: {
+          created_at?: string;
+          dedup_key?: string;
+          msg_id: number;
+          notification_type: string;
+          queue_name: string;
+          reference_id: string;
+          reference_type: string;
+        };
+        Update: {
+          created_at?: string;
+          dedup_key?: string;
+          msg_id?: number;
+          notification_type?: string;
+          queue_name?: string;
+          reference_id?: string;
+          reference_type?: string;
+        };
+        Relationships: [];
+      };
       notification_settings: {
         Row: {
           appointment_cancelled: boolean;
@@ -2072,7 +2147,51 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      ack_notification: {
+        Args: { p_msg_id: number; p_queue_name: string };
+        Returns: boolean;
+      };
       call_send_notification: { Args: { p_payload: Json }; Returns: undefined };
+      cancel_notifications_for_reference: {
+        Args: { p_reference_id: string; p_reference_type: string };
+        Returns: number;
+      };
+      dead_letter_notification: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["notification_channel"];
+          p_msg_id: number;
+          p_notification_type: string;
+          p_queue_name: string;
+          p_reason: string;
+          p_recipient_id: string;
+          p_recipient_type: string;
+          p_reference_id: string;
+          p_reference_type: string;
+        };
+        Returns: undefined;
+      };
+      dequeue_notifications: {
+        Args: { p_qty?: number; p_queue_name: string; p_vt?: number };
+        Returns: {
+          enqueued_at: string;
+          message: Json;
+          msg_id: number;
+          read_ct: number;
+        }[];
+      };
+      enqueue_notification: {
+        Args: {
+          p_dedup_key?: string;
+          p_delay_seconds?: number;
+          p_notification_type: string;
+          p_queue_name: string;
+          p_recipient_id: string;
+          p_recipient_type: string;
+          p_reference_id: string;
+          p_reference_type: string;
+        };
+        Returns: number;
+      };
       gestational_weeks: { Args: { dum: string }; Returns: number };
       get_filtered_patients: {
         Args: {
@@ -2131,7 +2250,16 @@ export type Database = {
         Args: never;
         Returns: undefined;
       };
+      notification_queue_length: {
+        Args: { p_queue_name: string };
+        Returns: number;
+      };
+      process_notification_queues: { Args: never; Returns: undefined };
       process_scheduled_notifications: { Args: never; Returns: undefined };
+      requeue_with_backoff: {
+        Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number };
+        Returns: undefined;
+      };
       schedule_dpp_reminders: { Args: never; Returns: undefined };
     };
     Enums: {
@@ -2151,6 +2279,8 @@ export type Database = {
       installment_status: "pendente" | "pago" | "atrasado" | "cancelado" | "em_analise";
       installments_notification_status: "pending" | "sent" | "cancelled" | "failed";
       installments_notification_type: "due_in_7_days" | "due_in_3_days" | "due_today" | "overdue";
+      notification_channel: "push" | "whatsapp";
+      notification_log_status: "sent" | "delivered" | "read" | "failed" | "dead_letter";
       notification_type:
         | "appointment_created"
         | "appointment_updated"
@@ -2329,6 +2459,8 @@ export const Constants = {
       installment_status: ["pendente", "pago", "atrasado", "cancelado", "em_analise"],
       installments_notification_status: ["pending", "sent", "cancelled", "failed"],
       installments_notification_type: ["due_in_7_days", "due_in_3_days", "due_today", "overdue"],
+      notification_channel: ["push", "whatsapp"],
+      notification_log_status: ["sent", "delivered", "read", "failed", "dead_letter"],
       notification_type: [
         "appointment_created",
         "appointment_updated",
