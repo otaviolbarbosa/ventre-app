@@ -58,17 +58,26 @@ export const cancelDayAppointmentsAction = authActionClient
           console.error("[google-calendar] delete sync failed", err);
         });
       }
+    }
 
+    // Dedupe by patient: several cancelled appointments for the same patient on the
+    // same day would otherwise trigger byte-identical WhatsApp messages.
+    const patientsToNotify = new Map<string, string>();
+    for (const appt of appointmentsToCancel ?? []) {
       const patient = appt.patient as { id: string; name: string } | null;
       if (patient) {
-        sendWhatsAppToUser(
-          { recipientType: "patient", recipientId: patient.id },
-          "appointment_cancelled",
-          { patientName: patient.name, date: parsedInput.date },
-        ).catch((err) => {
-          console.error("[whatsapp] cancel-day-appointments send failed", err);
-        });
+        patientsToNotify.set(patient.id, patient.name);
       }
+    }
+
+    for (const [patientId, patientName] of patientsToNotify) {
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patientId },
+        "appointment_cancelled",
+        { patientName, date: parsedInput.date },
+      ).catch((err) => {
+        console.error("[whatsapp] cancel-day-appointments send failed", err);
+      });
     }
 
     if (profile.enterprise_id) {

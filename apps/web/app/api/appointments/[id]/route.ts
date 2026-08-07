@@ -68,6 +68,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       notes: validation.data.notes,
     };
 
+    // Capture pre-update date/time so we can tell a real reschedule apart from a
+    // field-only edit (notes, location, duration) before sending WhatsApp.
+    const { data: previousAppointment } = await supabase
+      .from("appointments")
+      .select("date, time")
+      .eq("id", id)
+      .single();
+
     const { data: appointment, error } = await supabase
       .from("appointments")
       .update(updateData)
@@ -95,13 +103,23 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         data: { url: "/appointments" },
       });
 
-      sendWhatsAppToUser(
-        { recipientType: "patient", recipientId: patient.id },
-        isCancelled ? "appointment_cancelled" : "appointment_updated",
-        { patientName: patient.name, date: appointment.date, time: appointment.time },
-      ).catch((err) => {
-        console.error("[whatsapp] appointment update/cancel send failed", err);
-      });
+      // WhatsApp goes to the patient's personal phone (Meta bills per conversation and
+      // penalizes low-relevance sends), so only fire appointment_updated when the date
+      // or time actually changed — not on every notes/location/duration edit.
+      const isReschedule =
+        previousAppointment != null &&
+        (previousAppointment.date !== appointment.date ||
+          previousAppointment.time !== appointment.time);
+
+      if (isCancelled || isReschedule) {
+        sendWhatsAppToUser(
+          { recipientType: "patient", recipientId: patient.id },
+          isCancelled ? "appointment_cancelled" : "appointment_updated",
+          { patientName: patient.name, date: appointment.date, time: appointment.time },
+        ).catch((err) => {
+          console.error("[whatsapp] appointment update/cancel send failed", err);
+        });
+      }
     }
 
     return NextResponse.json({ appointment });
