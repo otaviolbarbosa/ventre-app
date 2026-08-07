@@ -23,31 +23,38 @@ export async function sendWhatsAppTemplateMessage(params: {
     throw new WhatsAppApiError("WhatsApp credentials not configured", "not_configured");
   }
 
-  const response = await fetch(
-    `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${phoneNumberId}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to: params.to,
-        type: "template",
-        template: {
-          name: params.templateName,
-          language: { code: params.languageCode ?? "pt_BR" },
-          components: [
-            {
-              type: "body",
-              parameters: params.parameters.map((text) => ({ type: "text", text })),
-            },
-          ],
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-      }),
-    },
-  );
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: params.to,
+          type: "template",
+          template: {
+            name: params.templateName,
+            language: { code: params.languageCode ?? "pt_BR" },
+            components: [
+              {
+                type: "body",
+                parameters: params.parameters.map((text) => ({ type: "text", text })),
+              },
+            ],
+          },
+        }),
+        signal: AbortSignal.timeout(10000),
+      },
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new WhatsAppApiError(message, "network_error");
+  }
 
   const json = await response.json().catch(() => null);
 
