@@ -2300,6 +2300,7 @@ export type Database = {
         Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number }
         Returns: undefined
       }
+      schedule_appointment_unconfirmed: { Args: never; Returns: undefined }
       schedule_dpp_reminders: { Args: never; Returns: undefined }
     }
     Enums: {
