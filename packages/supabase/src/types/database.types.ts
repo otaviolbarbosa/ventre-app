@@ -2305,6 +2305,10 @@ export type Database = {
       schedule_daily_agenda_summary: { Args: never; Returns: undefined }
       schedule_dpp_passed_no_birth_record: { Args: never; Returns: undefined }
       schedule_dpp_reminders: { Args: never; Returns: undefined }
+      schedule_installment_overdue_professional: {
+        Args: never
+        Returns: undefined
+      }
       schedule_installment_reminders: { Args: never; Returns: undefined }
       schedule_installment_under_review_stalled: {
         Args: never
