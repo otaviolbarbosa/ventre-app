@@ -2310,6 +2310,7 @@ export type Database = {
         Args: never
         Returns: undefined
       }
+      schedule_monthly_billing_report: { Args: never; Returns: undefined }
       schedule_prenatal_followup_gap: { Args: never; Returns: undefined }
     }
     Enums: {
