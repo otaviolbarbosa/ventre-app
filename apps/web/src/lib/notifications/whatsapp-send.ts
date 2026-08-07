@@ -15,9 +15,11 @@ export async function sendWhatsAppToUser(
   notificationType: WhatsAppNotificationType,
   templateParams: WhatsAppTemplateParams,
 ): Promise<void> {
-  const supabaseAdmin = await createServerSupabaseAdmin();
+  let supabaseAdmin: SupabaseAdmin | undefined;
 
   try {
+    supabaseAdmin = await createServerSupabaseAdmin();
+
     const { phone, whatsappEnabled } = await resolveRecipientPhone(supabaseAdmin, recipient);
 
     if (!whatsappEnabled) {
@@ -75,6 +77,13 @@ export async function sendWhatsAppToUser(
     console.error(
       `[whatsapp] failed to send ${notificationType} to ${recipient.recipientType} ${recipient.recipientId}: ${reason}`,
     );
+
+    if (!supabaseAdmin) {
+      console.error(
+        `[whatsapp] could not write notification_log row for ${notificationType} to ${recipient.recipientType} ${recipient.recipientId}: failed to construct Supabase admin client`,
+      );
+      return;
+    }
 
     await logWhatsAppAttempt(supabaseAdmin, recipient, notificationType, "failed", reason);
   }
