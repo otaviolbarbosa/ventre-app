@@ -808,6 +808,7 @@ export type Database = {
           updated_at: string
           user_id: string
           vaccine_updated: boolean
+          whatsapp_enabled: boolean
         }
         Insert: {
           appointment_cancelled?: boolean
@@ -832,6 +833,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           vaccine_updated?: boolean
+          whatsapp_enabled?: boolean
         }
         Update: {
           appointment_cancelled?: boolean
@@ -856,6 +858,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vaccine_updated?: boolean
+          whatsapp_enabled?: boolean
         }
         Relationships: [
           {
@@ -1189,6 +1192,7 @@ export type Database = {
           rg: string | null
           updated_at: string | null
           user_id: string | null
+          whatsapp_enabled: boolean
         }
         Insert: {
           allergies?: string[] | null
@@ -1213,6 +1217,7 @@ export type Database = {
           rg?: string | null
           updated_at?: string | null
           user_id?: string | null
+          whatsapp_enabled?: boolean
         }
         Update: {
           allergies?: string[] | null
@@ -1237,6 +1242,7 @@ export type Database = {
           rg?: string | null
           updated_at?: string | null
           user_id?: string | null
+          whatsapp_enabled?: boolean
         }
         Relationships: [
           {
