@@ -1,5 +1,6 @@
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { updateAppointmentSchema } from "@/lib/validations/appointment";
 import { createServerSupabaseClient } from "@ventre/supabase/server";
 import type { TablesUpdate } from "@ventre/supabase/types";
@@ -82,15 +83,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (appointment?.patient) {
       const isCancelled = validation.data.status === "cancelada";
       const notificationType = isCancelled ? "appointment_cancelled" : "appointment_updated";
+      const patient = appointment.patient as { id: string; name: string };
       const template = getNotificationTemplate(notificationType, {
-        patientName: (appointment.patient as { name: string }).name,
+        patientName: patient.name,
         date: appointment.date,
         time: appointment.time,
       });
-      sendNotificationToTeam((appointment.patient as { id: string }).id, user.id, {
+      sendNotificationToTeam(patient.id, user.id, {
         type: notificationType,
         ...template,
         data: { url: "/appointments" },
+      });
+
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patient.id },
+        isCancelled ? "appointment_cancelled" : "appointment_updated",
+        { patientName: patient.name, date: appointment.date, time: appointment.time },
+      ).catch((err) => {
+        console.error("[whatsapp] appointment update/cancel send failed", err);
       });
     }
 
