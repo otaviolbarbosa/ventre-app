@@ -185,7 +185,7 @@ async function handlePrenatalFollowupGap(
   if (error) throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
   if (!patient) return { action: "skip" };
 
-  const { data: lastVisit } = await supabaseAdmin
+  const { data: lastVisit, error: lastVisitError } = await supabaseAdmin
     .from("appointments")
     .select("date")
     .eq("patient_id", notification.referenceId)
@@ -193,14 +193,20 @@ async function handlePrenatalFollowupGap(
     .order("date", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (lastVisitError) {
+    throw new Error(`Falha ao buscar última consulta de ${notification.referenceId}: ${lastVisitError.message}`);
+  }
   if (!lastVisit) return { action: "skip" };
 
-  const { count: upcomingCount } = await supabaseAdmin
+  const { count: upcomingCount, error: upcomingCountError } = await supabaseAdmin
     .from("appointments")
     .select("id", { count: "exact", head: true })
     .eq("patient_id", notification.referenceId)
     .eq("status", "agendada")
     .gte("date", dayjs().format("YYYY-MM-DD"));
+  if (upcomingCountError) {
+    throw new Error(`Falha ao buscar consultas futuras de ${notification.referenceId}: ${upcomingCountError.message}`);
+  }
   if ((upcomingCount ?? 0) > 0) return { action: "skip" };
 
   const gapDays = dayjs().startOf("day").diff(dayjs(lastVisit.date).startOf("day"), "day");
@@ -245,12 +251,15 @@ async function handleDailyAgendaSummary(
   if (error) throw new Error(`Falha ao buscar profissional ${notification.referenceId}: ${error.message}`);
   if (!professional) return { action: "skip" };
 
-  const { count } = await supabaseAdmin
+  const { count, error: countError } = await supabaseAdmin
     .from("appointments")
     .select("id", { count: "exact", head: true })
     .eq("professional_id", notification.referenceId)
     .eq("status", "agendada")
     .eq("date", dayjs().format("YYYY-MM-DD"));
+  if (countError) {
+    throw new Error(`Falha ao buscar agenda do profissional ${notification.referenceId}: ${countError.message}`);
+  }
   if (!count) return { action: "skip" };
 
   return {
@@ -311,12 +320,15 @@ async function handleMonthlyBillingReport(
   const monthStart = dayjs().subtract(1, "month").startOf("month");
   const monthEnd = dayjs().subtract(1, "month").endOf("month");
 
-  const { data: billings } = await supabaseAdmin
+  const { data: billings, error: billingsError } = await supabaseAdmin
     .from("billings")
     .select("paid_amount, patient:patients!inner(created_by)")
     .eq("patient.created_by", notification.referenceId)
     .gte("created_at", monthStart.toISOString())
     .lte("created_at", monthEnd.toISOString());
+  if (billingsError) {
+    throw new Error(`Falha ao buscar faturamento do profissional ${notification.referenceId}: ${billingsError.message}`);
+  }
 
   const total = (billings ?? []).reduce((sum, b) => sum + (b.paid_amount ?? 0), 0);
   if (total === 0) return { action: "skip" };
