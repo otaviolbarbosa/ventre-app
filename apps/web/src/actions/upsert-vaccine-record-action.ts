@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { vaccineRecordSchema } from "@/lib/validations/prenatal";
@@ -31,13 +32,24 @@ export const upsertVaccineRecordAction = authActionClient
       if (error) throw new Error(error.message);
     }
 
+    const { data: pregnancy } = await supabase
+      .from("pregnancies")
+      .select("patient:patients(id, name)")
+      .eq("id", pregnancyId)
+      .single();
+    const patient = pregnancy?.patient as { id: string; name: string } | null;
+
+    if (patient) {
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patient.id },
+        "vaccine_record_updated",
+        { patientName: patient.name },
+      ).catch((err) => {
+        console.error("[whatsapp] vaccine_record_updated send failed", err);
+      });
+    }
+
     if (profile.enterprise_id) {
-      const { data: pregnancy } = await supabase
-        .from("pregnancies")
-        .select("patient:patients(id, name)")
-        .eq("id", pregnancyId)
-        .single();
-      const patient = pregnancy?.patient as { id: string; name: string } | null;
       insertActivityLog({
         supabaseAdmin,
         actionName: "Registro de vacina atualizado",

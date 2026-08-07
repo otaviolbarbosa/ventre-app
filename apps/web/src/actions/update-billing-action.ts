@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
@@ -22,13 +23,23 @@ export const updateBillingAction = authActionClient
 
     if (error) throw new Error(error.message);
 
-    if (profile.enterprise_id) {
-      const { data: patient } = await supabase
-        .from("patients")
-        .select("name")
-        .eq("id", billing.patient_id)
-        .single();
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("id, name")
+      .eq("id", billing.patient_id)
+      .single();
 
+    if (patient) {
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patient.id },
+        "billing_status_updated",
+        { patientName: patient.name, status: parsedInput.status },
+      ).catch((err) => {
+        console.error("[whatsapp] billing_status_updated send failed", err);
+      });
+    }
+
+    if (profile.enterprise_id) {
       insertActivityLog({
         supabaseAdmin,
         actionName: "Cobrança atualizada",
