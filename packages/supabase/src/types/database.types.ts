@@ -2303,6 +2303,10 @@ export type Database = {
       schedule_appointment_unconfirmed: { Args: never; Returns: undefined }
       schedule_dpp_reminders: { Args: never; Returns: undefined }
       schedule_installment_reminders: { Args: never; Returns: undefined }
+      schedule_installment_under_review_stalled: {
+        Args: never
+        Returns: undefined
+      }
     }
     Enums: {
       amniotic_fluid_index:
