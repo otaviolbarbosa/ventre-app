@@ -2308,6 +2308,7 @@ export type Database = {
         Args: never
         Returns: undefined
       }
+      schedule_prenatal_followup_gap: { Args: never; Returns: undefined }
     }
     Enums: {
       amniotic_fluid_index:
