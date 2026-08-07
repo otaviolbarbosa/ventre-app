@@ -1,5 +1,6 @@
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { createAppointmentSchema } from "@/lib/validations/appointment";
 import { createServerSupabaseClient } from "@ventre/supabase/server";
 import type { TablesInsert } from "@ventre/supabase/types";
@@ -108,6 +109,14 @@ export async function POST(request: Request) {
           type: "appointment_created",
           ...template,
           data: { url: "/appointments" },
+        });
+
+        sendWhatsAppToUser(
+          { recipientType: "patient", recipientId: validation.data.patient_id },
+          "appointment_scheduled",
+          { patientName: patient.name, date: validation.data.date, time: validation.data.time },
+        ).catch((err) => {
+          console.error("[whatsapp] appointment_scheduled send failed", err);
         });
       }
     }
