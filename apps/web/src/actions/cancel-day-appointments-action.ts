@@ -1,11 +1,12 @@
 "use server";
 
-import { z } from "zod";
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { syncDeleteToGoogleCalendar } from "@/services/google-calendar";
+import { z } from "zod";
 
 export const cancelDayAppointmentsAction = authActionClient
   .inputSchema(
@@ -18,7 +19,7 @@ export const cancelDayAppointmentsAction = authActionClient
     // Fetch appointments with google_event_id before cancelling so we can delete GCal events
     let fetchQuery = supabase
       .from("appointments")
-      .select("id, google_event_id")
+      .select("id, google_event_id, patient_id, patient:patients(id, name)")
       .eq("status", "agendada")
       .eq("date", parsedInput.date);
 
@@ -55,6 +56,17 @@ export const cancelDayAppointmentsAction = authActionClient
       if (appt.google_event_id) {
         syncDeleteToGoogleCalendar(appt.google_event_id, user.id).catch((err) => {
           console.error("[google-calendar] delete sync failed", err);
+        });
+      }
+
+      const patient = appt.patient as { id: string; name: string } | null;
+      if (patient) {
+        sendWhatsAppToUser(
+          { recipientType: "patient", recipientId: patient.id },
+          "appointment_cancelled",
+          { patientName: patient.name, date: parsedInput.date },
+        ).catch((err) => {
+          console.error("[whatsapp] cancel-day-appointments send failed", err);
         });
       }
     }
