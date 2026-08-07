@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
@@ -41,6 +42,12 @@ export const addPatientAction = authActionClient
     const patient = await createPatient(supabaseAdmin, user.id, {
       ...parsedInput,
       enterprise_id: enterpriseId,
+    });
+
+    sendWhatsAppToUser({ recipientType: "patient", recipientId: patient.id }, "patient_welcome", {
+      patientName: patient.name,
+    }).catch((err) => {
+      console.error("[whatsapp] patient_welcome send failed", err);
     });
 
     if (parsedInput.billing) {
