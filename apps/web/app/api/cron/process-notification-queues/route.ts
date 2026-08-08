@@ -1,14 +1,17 @@
-import { classifyPushError } from "@/lib/notifications/errors";
+import { classifyPushError, classifyWhatsAppError } from "@/lib/notifications/errors";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 import {
   ackNotification,
   deadLetterNotification,
   dequeueNotifications,
-  getQueueLength,
   requeueWithBackoff,
   type DequeuedNotification,
 } from "@/lib/notifications/queue";
 import { type NotificationType, sendNotificationToUser } from "@/lib/notifications/send";
+import { WHATSAPP_QUEUE_HANDLERS } from "@/lib/notifications/whatsapp-queue-handlers";
+import { sendWhatsAppTemplateFromQueue } from "@/lib/notifications/whatsapp-queue-send";
+import { WhatsAppApiError } from "@/lib/whatsapp/client";
+import type { WhatsAppNotificationType } from "@/lib/whatsapp/templates";
 import { dayjs } from "@/lib/dayjs";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
@@ -149,6 +152,30 @@ async function insertNotificationLog(
   }
 }
 
+async function insertWhatsAppQueueLog(
+  supabaseAdmin: Awaited<ReturnType<typeof createServerSupabaseAdmin>>,
+  notification: DequeuedNotification,
+  status: "sent" | "failed",
+  errorReason: string | null,
+  externalMessageId?: string,
+) {
+  const { error } = await supabaseAdmin.from("notification_log").insert({
+    channel: "whatsapp",
+    notification_type: notification.notificationType,
+    reference_type: notification.referenceType,
+    reference_id: notification.referenceId,
+    recipient_type: notification.recipientType,
+    recipient_id: notification.recipientId,
+    status,
+    error_reason: errorReason,
+    external_message_id: externalMessageId ?? null,
+  });
+
+  if (error) {
+    console.error("[process-notification-queues] failed to write whatsapp notification_log row:", error);
+  }
+}
+
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
@@ -246,14 +273,106 @@ export async function GET(request: Request) {
     }
   }
 
-  // Fase 1: fila de whatsapp existe mas ainda não tem remetente — só confirma o tamanho
-  // da fila sem consumir mensagens (pgmq.metrics via notification_queue_length), em vez
-  // de um dequeue destrutivo que queimaria read_ct na mensagem da cabeça sem nunca dar ack.
-  const whatsappPending = await getQueueLength("whatsapp_notifications");
+  let whatsappSent = 0;
+  let whatsappSkipped = 0;
+  let whatsappFailed = 0;
+
+  const whatsappMessages = await dequeueNotifications("whatsapp_notifications", 20, 60);
+
+  for (const notification of whatsappMessages) {
+    try {
+      const handler =
+        WHATSAPP_QUEUE_HANDLERS[notification.notificationType as WhatsAppNotificationType];
+
+      if (!handler) {
+        // Tipo desconhecido (ex.: mensagem de uma versão futura/antiga do worker) — descarta
+        // sem tentar reenviar, não é um erro retentável.
+        await ackNotification("whatsapp_notifications", notification.msgId);
+        whatsappSkipped++;
+        continue;
+      }
+
+      const resolved = await handler(supabaseAdmin, notification);
+
+      if (resolved.action === "skip") {
+        await insertWhatsAppQueueLog(
+          supabaseAdmin,
+          notification,
+          "failed",
+          "skipped: condition no longer valid",
+        );
+        await ackNotification("whatsapp_notifications", notification.msgId);
+        whatsappSkipped++;
+        continue;
+      }
+
+      if (DRY_RUN) {
+        await insertWhatsAppQueueLog(supabaseAdmin, notification, "sent", "dry_run (send skipped)");
+        await ackNotification("whatsapp_notifications", notification.msgId);
+        whatsappSent++;
+        continue;
+      }
+
+      const sendResult = await sendWhatsAppTemplateFromQueue(
+        supabaseAdmin,
+        resolved.recipient,
+        notification.notificationType as WhatsAppNotificationType,
+        resolved.templateParams,
+      );
+
+      if (sendResult.outcome === "skipped") {
+        await insertWhatsAppQueueLog(supabaseAdmin, notification, "failed", sendResult.reason);
+        await ackNotification("whatsapp_notifications", notification.msgId);
+        whatsappSkipped++;
+        continue;
+      }
+
+      await insertWhatsAppQueueLog(
+        supabaseAdmin,
+        notification,
+        "sent",
+        null,
+        sendResult.externalMessageId,
+      );
+      await ackNotification("whatsapp_notifications", notification.msgId);
+      whatsappSent++;
+    } catch (err) {
+      const classification = classifyWhatsAppError(
+        err instanceof WhatsAppApiError
+          ? { code: err.code, message: err.message }
+          : { message: err instanceof Error ? err.message : String(err) },
+      );
+      const reason = err instanceof Error ? err.message : "unknown error";
+
+      try {
+        if (classification === "permanent" || notification.readCt >= MAX_ATTEMPTS) {
+          await deadLetterNotification({
+            queueName: "whatsapp_notifications",
+            msgId: notification.msgId,
+            channel: "whatsapp",
+            notificationType: notification.notificationType,
+            referenceType: notification.referenceType,
+            referenceId: notification.referenceId,
+            recipientType: notification.recipientType,
+            recipientId: notification.recipientId,
+            reason,
+          });
+        } else {
+          await requeueWithBackoff("whatsapp_notifications", notification.msgId, notification.readCt);
+        }
+      } catch (cleanupErr) {
+        console.error(
+          `[process-notification-queues] failed to dead-letter/requeue whatsapp msgId=${notification.msgId}:`,
+          cleanupErr,
+        );
+      }
+      whatsappFailed++;
+    }
+  }
 
   return NextResponse.json({
     push: { sent: pushSent, skipped: pushSkipped, failed: pushFailed },
-    whatsapp: { pending: whatsappPending },
+    whatsapp: { sent: whatsappSent, skipped: whatsappSkipped, failed: whatsappFailed },
     dryRun: DRY_RUN,
   });
 }

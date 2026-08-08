@@ -89,7 +89,7 @@ export async function sendWhatsAppToUser(
   }
 }
 
-async function resolveRecipientPhone(
+export async function resolveRecipientPhone(
   supabaseAdmin: SupabaseAdmin,
   recipient: WhatsAppRecipient,
 ): Promise<{ phone: string | null; whatsappEnabled: boolean }> {

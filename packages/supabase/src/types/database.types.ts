@@ -2300,7 +2300,24 @@ export type Database = {
         Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number }
         Returns: undefined
       }
+      schedule_appointment_unconfirmed: { Args: never; Returns: undefined }
+      schedule_contract_pending_signature: { Args: never; Returns: undefined }
+      schedule_daily_agenda_summary: { Args: never; Returns: undefined }
+      schedule_dpp_passed_no_birth_record: { Args: never; Returns: undefined }
       schedule_dpp_reminders: { Args: never; Returns: undefined }
+      schedule_installment_overdue_professional: {
+        Args: never
+        Returns: undefined
+      }
+      schedule_installment_reminders: { Args: never; Returns: undefined }
+      schedule_installment_under_review_stalled: {
+        Args: never
+        Returns: undefined
+      }
+      schedule_monthly_billing_report: { Args: never; Returns: undefined }
+      schedule_prenatal_followup_gap: { Args: never; Returns: undefined }
+      schedule_subscription_billing_issue: { Args: never; Returns: undefined }
+      schedule_team_invite_pending: { Args: never; Returns: undefined }
     }
     Enums: {
       amniotic_fluid_index:

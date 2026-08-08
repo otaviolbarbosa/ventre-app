@@ -1,4 +1,5 @@
 export type WhatsAppNotificationType =
+  // Fase 2 — action-triggered
   | "appointment_scheduled"
   | "appointment_updated"
   | "appointment_cancelled"
@@ -7,14 +8,38 @@ export type WhatsAppNotificationType =
   | "installment_payment_link"
   | "contract_signed"
   | "billing_status_updated"
-  | "vaccine_record_updated";
+  | "vaccine_record_updated"
+  // Fase 3 — trigger/cron-based (paciente)
+  | "appointment_reminder"
+  | "appointment_unconfirmed"
+  | "installment_payment_reminder"
+  | "installment_under_review_stalled"
+  | "dpp_approaching"
+  | "dpp_passed_no_birth_record"
+  | "prenatal_followup_gap"
+  | "contract_pending_signature"
+  // Fase 3 — trigger/cron-based (profissional)
+  | "daily_agenda_summary"
+  | "payment_received"
+  | "monthly_billing_report"
+  | "installment_overdue_professional"
+  | "appointment_last_minute_cancel"
+  | "team_invite_pending"
+  | "subscription_billing_issue";
 
 type WhatsAppTemplateParams = {
   patientName?: string;
+  professionalName?: string;
   date?: string;
   time?: string;
   status?: string;
   paymentLink?: string;
+  dueDate?: string;
+  daysUntilDpp?: number;
+  gapDays?: number;
+  appointmentCount?: number;
+  amount?: string;
+  month?: string;
 };
 
 type WhatsAppTemplate = {
@@ -67,6 +92,71 @@ export function getWhatsAppTemplate(
     vaccine_record_updated: () => ({
       name: "vaccine_record_updated",
       parameters: [params.patientName ?? ""],
+    }),
+    appointment_reminder: () => ({
+      name: "appointment_reminder",
+      parameters: [params.patientName ?? "", params.date ?? "", params.time ?? ""],
+    }),
+    appointment_unconfirmed: () => ({
+      name: "appointment_unconfirmed",
+      parameters: [params.patientName ?? "", params.date ?? "", params.time ?? ""],
+    }),
+    installment_payment_reminder: () => ({
+      name: "installment_payment_reminder",
+      parameters: [params.patientName ?? "", params.dueDate ?? "", params.status ?? ""],
+    }),
+    installment_under_review_stalled: () => ({
+      name: "installment_under_review_stalled",
+      parameters: [params.patientName ?? ""],
+    }),
+    dpp_approaching: () => ({
+      name: "dpp_approaching",
+      parameters: [params.patientName ?? "", String(params.daysUntilDpp ?? "")],
+    }),
+    dpp_passed_no_birth_record: () => ({
+      name: "dpp_passed_no_birth_record",
+      parameters: [params.patientName ?? ""],
+    }),
+    prenatal_followup_gap: () => ({
+      name: "prenatal_followup_gap",
+      parameters: [params.patientName ?? "", String(params.gapDays ?? "")],
+    }),
+    contract_pending_signature: () => ({
+      name: "contract_pending_signature",
+      parameters: [params.patientName ?? ""],
+    }),
+    daily_agenda_summary: () => ({
+      name: "daily_agenda_summary",
+      parameters: [params.professionalName ?? "", String(params.appointmentCount ?? "")],
+    }),
+    payment_received: () => ({
+      name: "payment_received",
+      parameters: [params.professionalName ?? "", params.patientName ?? "", params.amount ?? ""],
+    }),
+    monthly_billing_report: () => ({
+      name: "monthly_billing_report",
+      parameters: [params.professionalName ?? "", params.month ?? "", params.amount ?? ""],
+    }),
+    installment_overdue_professional: () => ({
+      name: "installment_overdue_professional",
+      parameters: [params.professionalName ?? "", params.patientName ?? ""],
+    }),
+    appointment_last_minute_cancel: () => ({
+      name: "appointment_last_minute_cancel",
+      parameters: [
+        params.professionalName ?? "",
+        params.patientName ?? "",
+        params.date ?? "",
+        params.time ?? "",
+      ],
+    }),
+    team_invite_pending: () => ({
+      name: "team_invite_pending",
+      parameters: [params.professionalName ?? ""],
+    }),
+    subscription_billing_issue: () => ({
+      name: "subscription_billing_issue",
+      parameters: [params.professionalName ?? ""],
     }),
   };
 

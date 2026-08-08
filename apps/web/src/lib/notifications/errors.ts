@@ -26,3 +26,25 @@ export function classifyPushError(error: {
   }
   return "retryable";
 }
+
+// Códigos de erro da Meta Cloud API (WhatsApp Business Platform). Ver seção "Classificação de
+// erro da Meta" da spec: 131030/131026 = dado do destinatário (permanente), 132001/131009 =
+// configuração de template (permanente), "not_configured" = credenciais ausentes (permanente,
+// nunca deve ser retentado — é erro de configuração do ambiente, não de mensagem individual).
+const PERMANENT_WHATSAPP_ERROR_CODES = new Set([
+  "131030",
+  "131026",
+  "132001",
+  "131009",
+  "not_configured",
+]);
+
+export function classifyWhatsAppError(error: {
+  code?: string;
+  message?: string;
+}): NotificationErrorClassification {
+  if (error.code && PERMANENT_WHATSAPP_ERROR_CODES.has(error.code)) {
+    return "permanent";
+  }
+  return "retryable";
+}
