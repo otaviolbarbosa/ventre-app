@@ -288,11 +288,14 @@ async function handlePaymentReceived(
   )?.billing?.patient;
   if (!patient) return { action: "skip" };
 
-  const { data: professional } = await supabaseAdmin
+  const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
     .select("name")
     .eq("id", notification.recipientId)
     .maybeSingle();
+  if (professionalError) {
+    throw new Error(`Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`);
+  }
 
   return {
     action: "send",
@@ -357,11 +360,14 @@ async function handleInstallmentOverdueProfessional(
   if (!installment || installment.status !== "atrasado") return { action: "skip" };
 
   const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)?.patient;
-  const { data: professional } = await supabaseAdmin
+  const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
     .select("name")
     .eq("id", notification.recipientId)
     .maybeSingle();
+  if (professionalError) {
+    throw new Error(`Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`);
+  }
 
   return {
     action: "send",
@@ -383,11 +389,14 @@ async function handleAppointmentLastMinuteCancel(
   if (!appointment || appointment.status !== "cancelada") return { action: "skip" };
 
   const patient = appointment.patient as unknown as { name: string } | null;
-  const { data: professional } = await supabaseAdmin
+  const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
     .select("name")
     .eq("id", notification.recipientId)
     .maybeSingle();
+  if (professionalError) {
+    throw new Error(`Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`);
+  }
 
   return {
     action: "send",
@@ -413,11 +422,14 @@ async function handleTeamInvitePending(
   if (error) throw new Error(`Falha ao buscar convite ${notification.referenceId}: ${error.message}`);
   if (!invite || invite.status !== "pending" || !invite.invited_professional_id) return { action: "skip" };
 
-  const { data: professional } = await supabaseAdmin
+  const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
     .select("name")
     .eq("id", invite.invited_professional_id)
     .maybeSingle();
+  if (professionalError) {
+    throw new Error(`Falha ao buscar profissional ${invite.invited_professional_id}: ${professionalError.message}`);
+  }
 
   return {
     action: "send",
@@ -438,11 +450,14 @@ async function handleSubscriptionBillingIssue(
   if (error) throw new Error(`Falha ao buscar assinatura ${notification.referenceId}: ${error.message}`);
   if (!subscription || !subscription.user_id || subscription.status !== "failed") return { action: "skip" };
 
-  const { data: professional } = await supabaseAdmin
+  const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
     .select("name")
     .eq("id", subscription.user_id)
     .maybeSingle();
+  if (professionalError) {
+    throw new Error(`Falha ao buscar profissional ${subscription.user_id}: ${professionalError.message}`);
+  }
 
   return {
     action: "send",
