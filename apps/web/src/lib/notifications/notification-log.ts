@@ -38,18 +38,53 @@ export async function findNotificationLogByExternalId(
   };
 }
 
+// Ordem de progresso dos status de entrega. A Meta não garante ordem de entrega dos
+// callbacks de status (um "delivered" pode chegar depois de um "read" já processado), e
+// "failed" é terminal — nunca deve ser sobrescrito por um delivered/read atrasado.
+const STATUS_RANK = { sent: 0, delivered: 1, read: 2, failed: 3 } as const;
+
 // Best-effort: se o external_message_id não bate com nenhuma linha (log nunca gravado, ou já
 // expirado/limpo), não lança — só não atualiza nada. O webhook precisa responder 200 de
 // qualquer forma (ver rota, Task 5), então uma falha aqui nunca deve virar exceção não tratada.
+//
+// Só avança o status, nunca regride: lê o status atual antes de decidir se a atualização deve
+// ser aplicada (rank da nova leitura >= rank atual, e o atual não pode já ser "failed" — esse é
+// terminal). error_reason só é escrito quando o novo status é "failed"; para delivered/read a
+// coluna nem entra no payload do update, preservando qualquer motivo de falha já registrado.
 export async function updateNotificationLogStatusByExternalId(
   supabaseAdmin: SupabaseAdmin,
   externalMessageId: string,
   status: "delivered" | "read" | "failed",
   errorReason?: string | null,
 ): Promise<void> {
+  const { data: current, error: fetchError } = await supabaseAdmin
+    .from("notification_log")
+    .select("status")
+    .eq("external_message_id", externalMessageId)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error("[notification-log] failed to read current status by external_message_id:", fetchError);
+    return;
+  }
+  if (!current) return;
+
+  const currentStatus = current.status as keyof typeof STATUS_RANK;
+  const currentRank = STATUS_RANK[currentStatus] ?? 0;
+  const newRank = STATUS_RANK[status];
+
+  if (currentStatus === "failed" || newRank < currentRank) {
+    return;
+  }
+
+  const updatePayload: { status: typeof status; error_reason?: string | null } = { status };
+  if (status === "failed") {
+    updatePayload.error_reason = errorReason ?? null;
+  }
+
   const { error } = await supabaseAdmin
     .from("notification_log")
-    .update({ status, error_reason: errorReason ?? null })
+    .update(updatePayload)
     .eq("external_message_id", externalMessageId);
 
   if (error) {
