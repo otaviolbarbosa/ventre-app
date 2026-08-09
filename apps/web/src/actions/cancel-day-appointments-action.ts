@@ -61,20 +61,24 @@ export const cancelDayAppointmentsAction = authActionClient
     }
 
     // Dedupe by patient: several cancelled appointments for the same patient on the
-    // same day would otherwise trigger byte-identical WhatsApp messages.
-    const patientsToNotify = new Map<string, string>();
+    // same day would otherwise trigger byte-identical WhatsApp messages. Keeps the first
+    // appointment id encountered per patient as the notification_log reference — with
+    // several appointments cancelled for the same patient/day there's no single "correct"
+    // appointment to attribute the message to, so this is a best-effort choice.
+    const patientsToNotify = new Map<string, { patientName: string; appointmentId: string }>();
     for (const appt of appointmentsToCancel ?? []) {
       const patient = appt.patient as { id: string; name: string } | null;
-      if (patient) {
-        patientsToNotify.set(patient.id, patient.name);
+      if (patient && !patientsToNotify.has(patient.id)) {
+        patientsToNotify.set(patient.id, { patientName: patient.name, appointmentId: appt.id });
       }
     }
 
-    for (const [patientId, patientName] of patientsToNotify) {
+    for (const [patientId, { patientName, appointmentId }] of patientsToNotify) {
       sendWhatsAppToUser(
         { recipientType: "patient", recipientId: patientId },
         "appointment_cancelled",
         { patientName, date: parsedInput.date },
+        { referenceType: "appointment", referenceId: appointmentId },
       ).catch((err) => {
         console.error("[whatsapp] cancel-day-appointments send failed", err);
       });

@@ -10,10 +10,21 @@ export type WhatsAppRecipient =
 type WhatsAppTemplateParams = Parameters<typeof getWhatsAppTemplate>[1];
 type SupabaseAdmin = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
+// Referência opcional (ex: appointment id) associada ao envio, para que o webhook inbound
+// (handleConfirmAppointmentPresence etc.) consiga localizar a entidade relacionada a partir
+// do notification_log — mesmo padrão de reference_type/reference_id usado pelo path da fila
+// (ver process-notification-queues/route.ts). Chamadores sem uma referência disponível podem
+// omitir; nesse caso as colunas continuam NULL, como antes.
+export type WhatsAppReference = {
+  referenceType: string;
+  referenceId: string;
+};
+
 export async function sendWhatsAppToUser(
   recipient: WhatsAppRecipient,
   notificationType: WhatsAppNotificationType,
   templateParams: WhatsAppTemplateParams,
+  reference?: WhatsAppReference,
 ): Promise<void> {
   let supabaseAdmin: SupabaseAdmin | undefined;
 
@@ -23,7 +34,15 @@ export async function sendWhatsAppToUser(
     const { phone, whatsappEnabled } = await resolveRecipientPhone(supabaseAdmin, recipient);
 
     if (!whatsappEnabled) {
-      await logWhatsAppAttempt(supabaseAdmin, recipient, notificationType, "failed", "skipped: opt-out");
+      await logWhatsAppAttempt(
+        supabaseAdmin,
+        recipient,
+        notificationType,
+        "failed",
+        "skipped: opt-out",
+        undefined,
+        reference,
+      );
       return;
     }
 
@@ -34,6 +53,8 @@ export async function sendWhatsAppToUser(
         notificationType,
         "failed",
         "skipped: no phone on file",
+        undefined,
+        reference,
       );
       return;
     }
@@ -46,6 +67,8 @@ export async function sendWhatsAppToUser(
         notificationType,
         "failed",
         "skipped: invalid phone format",
+        undefined,
+        reference,
       );
       return;
     }
@@ -65,6 +88,7 @@ export async function sendWhatsAppToUser(
       "sent",
       null,
       externalMessageId,
+      reference,
     );
   } catch (err) {
     const reason =
@@ -85,7 +109,15 @@ export async function sendWhatsAppToUser(
       return;
     }
 
-    await logWhatsAppAttempt(supabaseAdmin, recipient, notificationType, "failed", reason);
+    await logWhatsAppAttempt(
+      supabaseAdmin,
+      recipient,
+      notificationType,
+      "failed",
+      reason,
+      undefined,
+      reference,
+    );
   }
 }
 
@@ -127,10 +159,13 @@ async function logWhatsAppAttempt(
   status: "sent" | "failed",
   errorReason: string | null,
   externalMessageId?: string,
+  reference?: WhatsAppReference,
 ): Promise<void> {
   const { error } = await supabaseAdmin.from("notification_log").insert({
     channel: "whatsapp",
     notification_type: notificationType,
+    reference_type: reference?.referenceType ?? null,
+    reference_id: reference?.referenceId ?? null,
     recipient_type: recipient.recipientType,
     recipient_id: recipient.recipientId,
     status,

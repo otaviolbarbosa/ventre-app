@@ -116,6 +116,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
           { recipientType: "patient", recipientId: patient.id },
           isCancelled ? "appointment_cancelled" : "appointment_updated",
           { patientName: patient.name, date: appointment.date, time: appointment.time },
+          { referenceType: "appointment", referenceId: id },
         ).catch((err) => {
           console.error("[whatsapp] appointment update/cancel send failed", err);
         });
