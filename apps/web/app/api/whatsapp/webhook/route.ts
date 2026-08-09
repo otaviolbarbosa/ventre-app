@@ -33,52 +33,62 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
   }
 
-  const json = JSON.parse(rawBody);
-  const parseResult = whatsappWebhookPayloadSchema.safeParse(json);
-  if (!parseResult.success) {
-    // Assinatura já validada (é a Meta de verdade), mas o formato não bateu com o schema —
-    // loga e responde 200 mesmo assim, igual a qualquer outra anomalia de negócio abaixo.
-    console.error("[whatsapp-webhook] payload failed schema validation:", parseResult.error.message);
+  // A partir daqui a assinatura já foi validada (é a Meta de verdade) — qualquer erro
+  // inesperado (JSON malformado, falha de infra no Supabase, etc.) deve ser logado e
+  // ainda assim responder 200. Deixar uma exceção escapar viraria 500, e a Meta reage a
+  // 500 retentando agressivamente contra um banco que já pode estar com problema — o
+  // exato cenário que o contrato "sempre 200" existe para evitar.
+  try {
+    const json = JSON.parse(rawBody);
+    const parseResult = whatsappWebhookPayloadSchema.safeParse(json);
+    if (!parseResult.success) {
+      // Assinatura já validada (é a Meta de verdade), mas o formato não bateu com o schema —
+      // loga e responde 200 mesmo assim, igual a qualquer outra anomalia de negócio abaixo.
+      console.error("[whatsapp-webhook] payload failed schema validation:", parseResult.error.message);
+      return NextResponse.json({ received: true });
+    }
+
+    const supabaseAdmin = await createServerSupabaseAdmin();
+    const payload = parseResult.data;
+
+    for (const statusUpdate of extractStatusUpdates(payload)) {
+      if (statusUpdate.status === "sent") continue; // já gravado como "sent" no envio (worker)
+      await updateNotificationLogStatusByExternalId(
+        supabaseAdmin,
+        statusUpdate.messageId,
+        statusUpdate.status,
+        statusUpdate.errorTitle,
+      );
+    }
+
+    for (const buttonReply of extractButtonReplies(payload)) {
+      const logEntry = await findNotificationLogByExternalId(supabaseAdmin, buttonReply.contextMessageId);
+      if (!logEntry) {
+        console.error(
+          `[whatsapp-webhook] button reply "${buttonReply.buttonPayload}" references unknown message ${buttonReply.contextMessageId}`,
+        );
+        continue;
+      }
+
+      const handler = WHATSAPP_INBOUND_BUTTON_HANDLERS[buttonReply.buttonPayload];
+      if (!handler) {
+        console.error(`[whatsapp-webhook] no handler registered for button payload "${buttonReply.buttonPayload}"`);
+        continue;
+      }
+
+      try {
+        const result = await handler(supabaseAdmin, logEntry);
+        if (!result.handled) {
+          console.error(`[whatsapp-webhook] button handler did not apply: ${result.reason}`);
+        }
+      } catch (err) {
+        console.error("[whatsapp-webhook] button handler threw:", err);
+      }
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    console.error("[whatsapp-webhook] uncaught error processing webhook payload:", err);
     return NextResponse.json({ received: true });
   }
-
-  const supabaseAdmin = await createServerSupabaseAdmin();
-  const payload = parseResult.data;
-
-  for (const statusUpdate of extractStatusUpdates(payload)) {
-    if (statusUpdate.status === "sent") continue; // já gravado como "sent" no envio (worker)
-    await updateNotificationLogStatusByExternalId(
-      supabaseAdmin,
-      statusUpdate.messageId,
-      statusUpdate.status,
-      statusUpdate.errorTitle,
-    );
-  }
-
-  for (const buttonReply of extractButtonReplies(payload)) {
-    const logEntry = await findNotificationLogByExternalId(supabaseAdmin, buttonReply.contextMessageId);
-    if (!logEntry) {
-      console.error(
-        `[whatsapp-webhook] button reply "${buttonReply.buttonPayload}" references unknown message ${buttonReply.contextMessageId}`,
-      );
-      continue;
-    }
-
-    const handler = WHATSAPP_INBOUND_BUTTON_HANDLERS[buttonReply.buttonPayload];
-    if (!handler) {
-      console.error(`[whatsapp-webhook] no handler registered for button payload "${buttonReply.buttonPayload}"`);
-      continue;
-    }
-
-    try {
-      const result = await handler(supabaseAdmin, logEntry);
-      if (!result.handled) {
-        console.error(`[whatsapp-webhook] button handler did not apply: ${result.reason}`);
-      }
-    } catch (err) {
-      console.error("[whatsapp-webhook] button handler threw:", err);
-    }
-  }
-
-  return NextResponse.json({ received: true });
 }
