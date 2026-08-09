@@ -115,6 +115,7 @@ export async function POST(request: Request) {
           { recipientType: "patient", recipientId: validation.data.patient_id },
           "appointment_scheduled",
           { patientName: patient.name, date: validation.data.date, time: validation.data.time },
+          { referenceType: "appointment", referenceId: appointment.id },
         ).catch((err) => {
           console.error("[whatsapp] appointment_scheduled send failed", err);
         });
