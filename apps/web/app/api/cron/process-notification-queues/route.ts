@@ -21,11 +21,10 @@ export const maxDuration = 60;
 const MAX_ATTEMPTS = 5;
 
 // Segura por padrão: qualquer valor diferente de "false" (incluindo unset) mantém o
-// modo dry-run ativo. Isso evita que o worker comece a enviar pushes reais por acidente
-// enquanto o pipeline legado (scheduled_notifications + pg_cron jobid 1/2) ainda está
-// ativo e envia os MESMOS lembretes pelo mesmo canal — ligar as duas pipelines ao mesmo
-// tempo duplicaria todo envio. Só desarme (definir "false" no ambiente do app) depois
-// que o pipeline legado for desligado.
+// modo dry-run ativo. Funciona como kill switch manual do worker — valida o pipeline
+// inteiro (dequeue, resolução de destinatário/template, gravação em log) sem disparar
+// envios reais. Útil para religar em modo seguro caso algo se comporte de forma
+// inesperada em produção. Defina "false" no ambiente do app para enviar de verdade.
 const DRY_RUN = process.env.NOTIFICATION_QUEUE_DRY_RUN !== "false";
 
 type ResolvedPushNotification = {
@@ -262,7 +261,7 @@ export async function GET(request: Request) {
       if (DRY_RUN) {
         // Modo shadow: valida o pipeline inteiro (dequeue, resolução de destinatário/
         // template, gravação em notification_log) sem disparar o envio real via Firebase
-        // — evita duplicar envios enquanto o pipeline legado ainda está ativo (ver Fix 1).
+        // — ver comentário do DRY_RUN acima.
         await insertNotificationLog(supabaseAdmin, notification, "sent", "dry_run (send skipped)");
         await ackNotification("push_notifications", notification.msgId);
         pushSent++;
