@@ -135,3 +135,17 @@ export async function deadLetterNotification(params: {
 
   if (error) throw new Error(`deadLetterNotification failed: ${error.message}`);
 }
+
+export async function cancelNotificationsForReference(
+  referenceType: string,
+  referenceId: string,
+): Promise<number> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+  const { data, error } = await supabaseAdmin.rpc("cancel_notifications_for_reference", {
+    p_reference_type: referenceType,
+    p_reference_id: referenceId,
+  });
+
+  if (error) throw new Error(`cancelNotificationsForReference failed: ${error.message}`);
+  return data as number;
+}

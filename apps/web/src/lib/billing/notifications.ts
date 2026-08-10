@@ -1,6 +1,7 @@
 import { dayjs } from "@/lib/dayjs";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Database } from "@ventre/supabase/types";
+import { cancelNotificationsForReference, enqueueNotification } from "@/lib/notifications/queue";
 import { formatCurrency } from "./calculations";
 
 type InstallmentsNotificationType = Database["public"]["Enums"]["installments_notification_type"];
@@ -82,6 +83,27 @@ export async function scheduleBillingNotifications(billingId: string) {
             type: nt.type,
             scheduled_for: scheduledFor.toISOString(),
           });
+
+          try {
+            await enqueueNotification({
+              queueName: "push_notifications",
+              notificationType: "billing_reminder",
+              referenceType: "installment",
+              referenceId: installment.id,
+              recipientType: "user",
+              recipientId: userId,
+              delaySeconds: Math.max(scheduledFor.diff(now, "second"), 0),
+              dedupKey: `${nt.type}_${userId}`,
+            });
+          } catch (err) {
+            console.error(
+              "[billing-notifications] Failed to enqueue pgmq push notification for installment:",
+              installment.id,
+              "user:",
+              userId,
+              err,
+            );
+          }
         }
       }
     }
@@ -109,6 +131,16 @@ export async function cancelInstallmentNotifications(installmentId: string) {
     console.error(
       "[billing-notifications] Failed to cancel notifications for installment:",
       installmentId,
+    );
+  }
+
+  try {
+    await cancelNotificationsForReference("installment", installmentId);
+  } catch (err) {
+    console.error(
+      "[billing-notifications] Failed to cancel pgmq push notifications for installment:",
+      installmentId,
+      err,
     );
   }
 }
