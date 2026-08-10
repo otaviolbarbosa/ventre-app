@@ -122,6 +122,39 @@ async function resolvePushRecipientAndTemplate(
     };
   }
 
+  if (notification.notificationType === "billing_reminder") {
+    const { data: installment, error: installmentError } = await supabaseAdmin
+      .from("installments")
+      .select("id, amount, due_date, status, billing:billings!installments_billing_id_fkey(description, patient_id)")
+      .eq("id", notification.referenceId)
+      .maybeSingle();
+
+    if (installmentError) {
+      throw new Error(
+        `Falha ao buscar parcela ${notification.referenceId}: ${installmentError.message}`,
+      );
+    }
+
+    if (!installment || installment.status === "pago" || installment.status === "cancelado") {
+      return null;
+    }
+
+    const billing = installment.billing as unknown as { description: string; patient_id: string };
+
+    const template = getNotificationTemplate("billing_reminder", {
+      amount: String(installment.amount),
+      dueDate: dayjs(installment.due_date).format("DD/MM/YYYY"),
+    });
+
+    return {
+      type: "billing_reminder",
+      userId: notification.recipientId,
+      title: template.title,
+      body: template.body,
+      url: `/patients/${billing.patient_id}/billing`,
+    };
+  }
+
   return null;
 }
 
