@@ -125,7 +125,7 @@ async function resolvePushRecipientAndTemplate(
   if (notification.notificationType === "billing_reminder") {
     const { data: installment, error: installmentError } = await supabaseAdmin
       .from("installments")
-      .select("id, amount, due_date, status, billing:billings!installments_billing_id_fkey(description, patient_id)")
+      .select("amount, due_date, status, billing:billings!installments_billing_id_fkey(patient_id)")
       .eq("id", notification.referenceId)
       .maybeSingle();
 
@@ -139,7 +139,8 @@ async function resolvePushRecipientAndTemplate(
       return null;
     }
 
-    const billing = installment.billing as unknown as { description: string; patient_id: string };
+    const billing = installment.billing as unknown as { patient_id: string } | null;
+    if (!billing?.patient_id) return null;
 
     const template = getNotificationTemplate("billing_reminder", {
       amount: String(installment.amount),
@@ -164,11 +165,14 @@ async function insertNotificationLog(
   status: "sent" | "failed",
   errorReason: string | null,
 ) {
-  // Nota: recipient_id aqui é sempre patients.id (não patients.user_id) para os tipos
-  // dpp_approaching/appointment_reminder — o enqueue usa patients.id tanto como
+  // Nota: para os tipos dpp_approaching/appointment_reminder, recipient_id aqui é sempre
+  // patients.id (não patients.user_id) — o enqueue usa patients.id tanto como
   // reference_id quanto recipient_id; o destinatário real do push (patients.user_id) só
-  // é resolvido depois, em resolvePushRecipientAndTemplate. Não leia
-  // idx_notification_log_recipient como "quem recebeu o push de verdade".
+  // é resolvido depois, em resolvePushRecipientAndTemplate. Para billing_reminder (e
+  // qualquer tipo futuro que use recipientType: "user"), recipient_id JÁ é o user_id real
+  // (recipient_type = "user") — sem indireção via patients.id. Não leia
+  // idx_notification_log_recipient como "quem recebeu o push de verdade" sem considerar o
+  // recipient_type do tipo em questão.
   const { error } = await supabaseAdmin.from("notification_log").insert({
     channel: "push",
     notification_type: notification.notificationType,
