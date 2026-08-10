@@ -125,7 +125,9 @@ async function resolvePushRecipientAndTemplate(
   if (notification.notificationType === "billing_reminder") {
     const { data: installment, error: installmentError } = await supabaseAdmin
       .from("installments")
-      .select("amount, due_date, status, billing:billings!installments_billing_id_fkey(patient_id)")
+      .select(
+        "amount, due_date, status, billing:billings!installments_billing_id_fkey(patient_id, description)",
+      )
       .eq("id", notification.referenceId)
       .maybeSingle();
 
@@ -139,12 +141,30 @@ async function resolvePushRecipientAndTemplate(
       return null;
     }
 
-    const billing = installment.billing as unknown as { patient_id: string } | null;
+    const billing = installment.billing as unknown as {
+      patient_id: string;
+      description: string;
+    } | null;
     if (!billing?.patient_id) return null;
+
+    const today = dayjs().startOf("day");
+    const dueDate = dayjs(installment.due_date).startOf("day");
+    const diffDays = dueDate.diff(today, "day");
+
+    const billingReminderType: "due_in_7_days" | "due_in_3_days" | "due_today" | "overdue" =
+      installment.status === "atrasado" || diffDays < 0
+        ? "overdue"
+        : diffDays <= 0
+          ? "due_today"
+          : diffDays <= 3
+            ? "due_in_3_days"
+            : "due_in_7_days";
 
     const template = getNotificationTemplate("billing_reminder", {
       amount: String(installment.amount),
-      dueDate: dayjs(installment.due_date).format("DD/MM/YYYY"),
+      dueDate: dueDate.format("DD/MM/YYYY"),
+      description: billing.description,
+      billingReminderType,
     });
 
     return {
