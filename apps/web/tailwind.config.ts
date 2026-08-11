@@ -21,6 +21,8 @@ const config: Config = {
           "700": "#4C2EBC",
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          dark: "hsl(var(--primary-dark))",
+          medium: "hsl(var(--primary-medium))",
         },
         secondary: {
           "50": "#FFF1F5",

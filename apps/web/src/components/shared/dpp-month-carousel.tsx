@@ -37,7 +37,7 @@ export function DppMonthCarousel({
             className={cn(
               "flex min-w-28 shrink-0 items-center rounded-full border px-2 py-2 shadow-sm transition-all",
               isSelected
-                ? "gradient-primary bg-primary text-white"
+                ? "gradient-primary border-primary bg-primary text-white"
                 : "bg-white text-gray-800 hover:border-gray-300",
             )}
           >

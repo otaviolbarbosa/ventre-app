@@ -14,7 +14,7 @@ export function PatientCard({
   teamMembers?: TeamMember[];
 }) {
   const dppFormatted = dayjs(patient.due_date).format("DD/MM");
-  const statusColor = patient.weeks >= 37 ? "#be5237" : patient.weeks >= 28 ? "#60a5fa" : "#4ade80";
+  const statusColor = patient.weeks >= 37 ? "#802f2d" : patient.weeks >= 28 ? "#cc8a00" : "#dfd1a7";
 
   return (
     <div className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50">

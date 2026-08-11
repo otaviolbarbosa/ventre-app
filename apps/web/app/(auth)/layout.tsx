@@ -1,9 +1,8 @@
+import ventreLogoWhite from "@/assets/ventre-light.png";
+import ventreLogo from "@/assets/ventre.png";
 import { Baby, Heart, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import loginBg from "@/assets/login-bg.jpg";
-import ventreLogo from "@/assets/ventre.png";
-import ventreLogoWhite from "@/assets/ventre-light.png";
 
 const highlights = [
   { icon: Heart, text: "Acompanhamento gestacional completo e personalizado" },
@@ -22,26 +21,7 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen">
       {/* ── Left: brand panel ─────────────────────────────── */}
-      <div
-        className="relative hidden overflow-hidden lg:flex lg:w-[420px] lg:flex-col lg:justify-between xl:w-[480px]"
-        style={{ background: "var(--gradient-primary)" }}
-      >
-        <div className="absolute inset-0 z-0 h-[560px] md:h-screen">
-          <Image
-            src={loginBg}
-            alt="Imagem de fundo de autenticação"
-            className="h-full w-full object-cover"
-          />
-
-          {/* Overlay with brand colors */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[hsl(var(--primary))]/60 via-[hsl(var(--primary))]/80 to-[hsl(var(--chart-4))]" />
-        </div>
-
-        {/* Decorative blobs */}
-        <div className="-right-24 -top-24 absolute h-80 w-80 rounded-full bg-white/10 blur" />
-        <div className="-bottom-16 -left-16 absolute h-64 w-64 rounded-full bg-black/5 blur" />
-        <div className="absolute right-8 bottom-1/3 h-40 w-40 rounded-full bg-white/10 blur" />
-
+      <div className="relative hidden overflow-hidden bg-primary-dark lg:flex lg:w-[420px] lg:flex-col lg:justify-between xl:w-[480px]">
         {/* Logo */}
         <div className="relative z-10 p-10">
           <div>
