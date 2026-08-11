@@ -5,24 +5,29 @@
 @layer base {
   /* Color scheme based on Ventre logo — warm terracotta, burgundy & cream */
   :root {
-    --background: 25 40% 97%;
+    --background: 45 50% 95.29%;
+    --background-2: 0 14.29% 98.63%;
     --foreground: 15 20% 22%;
     --card: 0 0% 100%;
     --card-foreground: 15 20% 22%;
     --popover: 0 0% 100%;
     --popover-foreground: 15 20% 22%;
-    --primary: 12 55% 48%;
+    --primary: 1.45 47.98% 33.92%;
+    --primary-dark: 1.2 48.08% 20.39%;
+    --primary-medium: 40.59 100% 40%;
+    --primary-light: 45 46.67% 76.47%;
+    /* --primary: 1.82 27.5% 47.06%; */
     --primary-foreground: 0 0% 100%;
     --secondary: 22 55% 92%;
     --secondary-foreground: 10 30% 30%;
-    --muted: 25 45% 95%;
+    --muted: 45 50% 95.29%;
     --muted-foreground: 15 10% 46%;
     --accent: 18 50% 90%;
     --accent-foreground: 15 20% 22%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 22 40% 90%;
-    --input: 22 40% 90%;
+    --border: 45 45.83% 81.18%;
+    --input: 45 45.83% 81.18%;
     --ring: 12 55% 48%;
     --chart-1: 12 55% 48%;
     --chart-2: 8 50% 40%;
@@ -41,7 +46,7 @@
     --radius: 0.5rem;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(355, 50%, 32%));
+    --gradient-primary: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(1.45, 47.98%, 33.92%));
     --gradient-soft: linear-gradient(180deg, hsl(25, 40%, 97%), hsl(22, 55%, 92%));
     --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(25, 45%, 95%));
     --gradient-cta: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(355, 45%, 35%));
@@ -94,7 +99,18 @@
   }
   body {
     @apply bg-background text-foreground;
+    position: relative;
   }
+  /* body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("../src/assets/bg-fingerprint.png");
+    background-repeat: repeat;
+    opacity: 0.03;
+    pointer-events: none;
+  } */
 }
 
 @layer utilities {

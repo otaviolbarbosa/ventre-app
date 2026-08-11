@@ -53,6 +53,8 @@ export async function proxy(request: NextRequest) {
     "/register/patient",
     "/api/stripe/webhook",
     "/api/check/",
+    "/api/cron/",
+    "/api/whatsapp/webhook",
   ];
   const isPublicRoute =
     pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route));

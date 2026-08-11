@@ -136,6 +136,8 @@ export async function POST(request: Request) {
         type: "team_invite_received",
         ...template,
         data: { url: "/invites" },
+      }).catch((err) => {
+        console.error("[team/invites] Failed to send invite notification:", err);
       });
     }
 

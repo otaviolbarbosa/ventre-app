@@ -9,6 +9,7 @@ import {
   uploadContractPdf,
 } from "@/lib/contract-pdf";
 import { buildSignatureLocalityLine } from "@/lib/contract-signature-text";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { signPatientContractSchema } from "@/lib/validations/contract";
@@ -155,6 +156,12 @@ export const signPatientContractAction = authActionClient
       }
 
       revalidatePath(`/patients/${patientId}/profile`);
+
+      sendWhatsAppToUser({ recipientType: "patient", recipientId: patientId }, "contract_signed", {
+        patientName: patient.name,
+      }).catch((err) => {
+        console.error("[whatsapp] contract_signed send failed", err);
+      });
 
       await captureServerEvent(user.id, "sign_patient_contract", {
         patient_id: patientId,

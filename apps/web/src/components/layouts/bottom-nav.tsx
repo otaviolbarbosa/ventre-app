@@ -1,4 +1,8 @@
 "use client";
+import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
+import { isManager, isStaff } from "@/lib/access-control";
+import { cn } from "@/lib/utils";
 import {
   BriefcaseMedicalIcon,
   Calendar,
@@ -10,9 +14,9 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAction } from "next-safe-action/hooks";
 import {
   type ForwardRefExoticComponent,
   type RefAttributes,
@@ -21,10 +25,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
-import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import { isManager, isStaff } from "@/lib/access-control";
-import { cn } from "@/lib/utils";
 import { useAuth } from "../../providers/auth-provider";
 import Avatar from "../shared/avatar";
 

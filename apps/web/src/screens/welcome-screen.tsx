@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@ventre/ui/button";
-import Image, { type StaticImageData } from "next/image";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
 import ventreLogo from "@/assets/ventre.png";
 import welcomeSlide1 from "@/assets/welcome-slide-1.png";
 import welcomeSlide2 from "@/assets/welcome-slide-2.png";
 import welcomeSlide3 from "@/assets/welcome-slide-3.png";
+import { Button } from "@ventre/ui/button";
+import Image, { type StaticImageData } from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 const TRANSITION_MS = 500;
 const FADE_MS = TRANSITION_MS / 2;

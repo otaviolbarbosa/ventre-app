@@ -1,19 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { InputMask } from "@react-input/mask";
-import type { Json } from "@ventre/supabase/types";
-import { Button } from "@ventre/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { Loader2 } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { updateProfileAction } from "@/actions/update-profile-action";
 import PersonalDocumentsFields from "@/components/shared/personal-documents-fields";
@@ -28,6 +14,20 @@ import {
   professionalDocumentsSchema,
 } from "@/lib/validations/professional-documents";
 import type { ProfessionalType } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
+import type { Json } from "@ventre/supabase/types";
+import { Button } from "@ventre/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { Loader2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 const editProfileSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),

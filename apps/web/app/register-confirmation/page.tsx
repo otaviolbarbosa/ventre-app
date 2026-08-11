@@ -1,7 +1,7 @@
+import ventreLogo from "@/assets/ventre.png";
 import { Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import ventreLogo from "@/assets/ventre.png";
 
 export default function RegisterConfirmationPage() {
   return (

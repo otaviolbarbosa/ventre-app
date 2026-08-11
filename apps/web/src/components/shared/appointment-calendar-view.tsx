@@ -1,5 +1,12 @@
 "use client";
 
+import { EmptyState } from "@/components/shared/empty-state";
+import { dayjs } from "@/lib/dayjs";
+import { cn } from "@/lib/utils";
+import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
+import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
+import type { AppointmentWithPatient } from "@/services/appointment";
+import type { User } from "@/types";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
 import {
@@ -12,13 +19,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState } from "@/components/shared/empty-state";
-import { dayjs } from "@/lib/dayjs";
-import { cn } from "@/lib/utils";
-import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
-import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
-import type { AppointmentWithPatient } from "@/services/appointment";
-import type { User } from "@/types";
 
 const typeLabels: Record<string, string> = {
   consulta: "Consulta",
@@ -150,7 +150,7 @@ export function AppointmentCalendarView({
         {actions}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2 sm:max-w-[360px]">
         {weekDays.map((day) => {
           const isSelected = day.key === selectedDate;
           const hasAppointments = Boolean(appointmentsByDate[day.key]?.length);
