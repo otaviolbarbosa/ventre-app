@@ -27,7 +27,7 @@ export default function AuthLayout({
 
         {/* Center content */}
         <div className="relative z-10 px-10 pb-4">
-          <p className="flex flex-col gap-4 font-poppins font-semibold text-2xl text-primary-medium uppercase leading-snug">
+          <p className="flex flex-col gap-4 font-fraunces font-semibold text-2xl text-primary-medium uppercase leading-snug">
             <span>Tecnologia</span>
             <span>que organiza</span>
             <span>o cuidado.</span>
