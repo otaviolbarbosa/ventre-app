@@ -3,7 +3,6 @@ import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
 import { UserAvatar } from "@ventre/ui/shared/user-avatar";
-import { Flame } from "lucide-react";
 import TeamMembersAvatars from "./team-members-avatars";
 
 export function PatientCard({
@@ -60,9 +59,6 @@ export function PatientCard({
                   &bull;
                   <span className="flex items-center gap-2 text-muted-foreground">
                     {calculateGestationalAge(patient.dum)?.label}
-                    {patient.weeks >= 40 && (
-                      <Flame className="size-4 text-destructive" fill="hsl(var(--destructive))" />
-                    )}
                   </span>
                 </>
               )}
@@ -73,11 +69,6 @@ export function PatientCard({
               <TeamMembersAvatars teamMembers={teamMembers} patientId={patient.id} />
             </div>
           )}
-          {/* {mainTeamMembers?.length && (
-            <div>
-              <TeamMembersAvatars teamMembers={mainTeamMembers} patientId={patient.id} />
-            </div>
-          )} */}
         </div>
       </div>
     </div>

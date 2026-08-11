@@ -1,17 +1,7 @@
-import ventreLogoWhite from "@/assets/ventre-light.png";
+import ventreLogoWhite from "@/assets/ventre-light-tag.png";
 import ventreLogo from "@/assets/ventre.png";
-import { Baby, Heart, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-
-const highlights = [
-  { icon: Heart, text: "Acompanhamento gestacional completo e personalizado" },
-  { icon: Baby, text: "Gestão de equipes multidisciplinares de cuidado" },
-  {
-    icon: Shield,
-    text: "Dados protegidos com os mais altos padrões de segurança",
-  },
-];
 
 export default function AuthLayout({
   children,
@@ -23,34 +13,32 @@ export default function AuthLayout({
       {/* ── Left: brand panel ─────────────────────────────── */}
       <div className="relative hidden overflow-hidden bg-primary-dark lg:flex lg:w-[420px] lg:flex-col lg:justify-between xl:w-[480px]">
         {/* Logo */}
-        <div className="relative z-10 p-10">
-          <div>
-            <Link href="/">
-              <Image
-                src={ventreLogoWhite}
-                alt="logo"
-                className="object-contain"
-                width={200}
-                height={200}
-              />
-            </Link>
-          </div>
+        <div className="relative z-10">
+          <Link href="/" className="flex justify-center">
+            <Image
+              src={ventreLogoWhite}
+              alt="logo"
+              className="object-contain"
+              width={240}
+              height={240}
+            />
+          </Link>
         </div>
 
         {/* Center content */}
         <div className="relative z-10 px-10 pb-4">
-          <p className="font-poppins font-semibold text-2xl text-white leading-snug">
-            "O cuidado que cada gestante merece, na palma da sua mão."
+          <p className="flex flex-col gap-4 font-poppins font-semibold text-2xl text-primary-medium uppercase leading-snug">
+            <span>Tecnologia</span>
+            <span>que organiza</span>
+            <span>o cuidado.</span>
           </p>
           <div className="mt-8 space-y-4">
-            {highlights.map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20">
-                  <Icon className="h-3 w-3 text-white" />
-                </div>
-                <span className="text-sm text-white/80 leading-relaxed">{text}</span>
-              </div>
-            ))}
+            <div className="flex items-start gap-3">
+              <span className="font-lato text-sm text-white/80 leading-relaxed">
+                O Ventre integra pessoas, informações e cuidado para que você possa estar presente
+                onde realmente importa.
+              </span>
+            </div>
           </div>
         </div>
 
