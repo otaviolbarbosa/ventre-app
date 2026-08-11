@@ -1,4 +1,5 @@
 "use client";
+import bgFingerprint from "@/assets/bg-fingerprint.png";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { cn } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
@@ -8,11 +9,12 @@ import { useEffect, useState } from "react";
 
 interface HeaderProps {
   title?: React.ReactNode;
-  back?: string | boolean;
   subtitle?: React.ReactNode;
+  back?: string | boolean;
+  noBg?: boolean;
 }
 
-export function Header({ title, back, subtitle }: HeaderProps) {
+export function Header({ title, back, subtitle, noBg = false }: HeaderProps) {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -45,10 +47,22 @@ export function Header({ title, back, subtitle }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 flex min-h-16 items-center bg-background px-4 py-3 transition-shadow duration-300 md:px-6",
-        isScrolled && "shadow-gray-200 shadow-lg",
+        "sticky top-0 z-40 mb-6 flex min-h-16 items-center px-4 py-3 transition-shadow duration-300 md:px-6",
+        isScrolled && "bg-background shadow-gray-200 shadow-lg",
       )}
     >
+      {!noBg && (
+        <div
+          className="-z-10 pointer-events-none absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `url(${bgFingerprint.src})`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "1600px",
+            backgroundPositionX: "-355px",
+            backgroundPositionY: "-100px",
+          }}
+        />
+      )}
       <div className="flex-1">
         <div className="flex items-center gap-2">
           {/* Back button */}

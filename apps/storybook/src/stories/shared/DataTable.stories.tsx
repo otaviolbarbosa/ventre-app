@@ -56,6 +56,7 @@ function buildPatient(overrides: Partial<Patient>): Patient {
     partner_name: null,
     personal_notes: null,
     rg: null,
+    whatsapp_enabled: true,
     ...overrides,
   };
 }

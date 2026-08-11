@@ -1,14 +1,8 @@
 import { dayjs } from "@/lib/dayjs";
+import { cancelNotificationsForReference, enqueueNotification } from "@/lib/notifications/queue";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
-import type { Database } from "@ventre/supabase/types";
-import { formatCurrency } from "./calculations";
 
-type InstallmentsNotificationType = Database["public"]["Enums"]["installments_notification_type"];
-
-type NotificationMessage = {
-  title: string;
-  body: string;
-};
+type InstallmentsNotificationType = "due_in_7_days" | "due_in_3_days" | "due_today";
 
 const notificationTypes: {
   type: InstallmentsNotificationType;
@@ -62,8 +56,6 @@ export async function scheduleBillingNotifications(billingId: string) {
     if (userIds.length === 0) return;
 
     const now = dayjs();
-    const rows: Database["public"]["Tables"]["installments_scheduled_notifications"]["Insert"][] =
-      [];
 
     for (const installment of installments) {
       for (const nt of notificationTypes) {
@@ -76,18 +68,28 @@ export async function scheduleBillingNotifications(billingId: string) {
         if (scheduledFor.isBefore(now)) continue;
 
         for (const userId of userIds) {
-          rows.push({
-            installment_id: installment.id,
-            user_id: userId,
-            type: nt.type,
-            scheduled_for: scheduledFor.toISOString(),
-          });
+          try {
+            await enqueueNotification({
+              queueName: "push_notifications",
+              notificationType: "billing_reminder",
+              referenceType: "installment",
+              referenceId: installment.id,
+              recipientType: "user",
+              recipientId: userId,
+              delaySeconds: Math.max(scheduledFor.diff(now, "second"), 0),
+              dedupKey: `${nt.type}_${userId}`,
+            });
+          } catch (err) {
+            console.error(
+              "[billing-notifications] Failed to enqueue pgmq push notification for installment:",
+              installment.id,
+              "user:",
+              userId,
+              err,
+            );
+          }
         }
       }
-    }
-
-    if (rows.length > 0) {
-      await supabaseAdmin.from("installments_scheduled_notifications").insert(rows);
     }
   } catch {
     console.error(
@@ -99,47 +101,18 @@ export async function scheduleBillingNotifications(billingId: string) {
 
 export async function cancelInstallmentNotifications(installmentId: string) {
   try {
-    const supabaseAdmin = await createServerSupabaseAdmin();
-    await supabaseAdmin
-      .from("installments_scheduled_notifications")
-      .update({ status: "cancelled" })
-      .eq("installment_id", installmentId)
-      .eq("status", "pending");
-  } catch {
+    // cancel_notifications_for_reference filtra só por (reference_type, reference_id) — não
+    // por queue_name ou notification_type — então cancela mensagens pendentes em TODAS as
+    // filas/tipos desta parcela: não só o billing_reminder de push, mas também os lembretes
+    // WhatsApp da Fase 3 (installment_payment_reminder / installment_under_review_stalled /
+    // installment_overdue_professional), que também usam reference_type = "installment".
+    // Intencional: uma parcela paga/cancelada não deve receber lembrete em nenhum canal.
+    await cancelNotificationsForReference("installment", installmentId);
+  } catch (err) {
     console.error(
-      "[billing-notifications] Failed to cancel notifications for installment:",
+      "[billing-notifications] Failed to cancel pgmq notifications for installment:",
       installmentId,
+      err,
     );
   }
-}
-
-export function getBillingNotificationMessage(
-  type: InstallmentsNotificationType,
-  amount: number,
-  dueDate: string,
-  description: string,
-): NotificationMessage {
-  const formattedAmount = formatCurrency(amount);
-  const formattedDate = dayjs(dueDate).format("DD/MM/YYYY");
-
-  const messages: Record<InstallmentsNotificationType, NotificationMessage> = {
-    due_in_7_days: {
-      title: "Vencimento em 7 dias",
-      body: `Parcela de ${formattedAmount} (${description}) vence em ${formattedDate}.`,
-    },
-    due_in_3_days: {
-      title: "Vencimento em 3 dias",
-      body: `Parcela de ${formattedAmount} (${description}) vence em ${formattedDate}.`,
-    },
-    due_today: {
-      title: "Parcela vence hoje",
-      body: `Parcela de ${formattedAmount} (${description}) vence hoje (${formattedDate}).`,
-    },
-    overdue: {
-      title: "Parcela em atraso",
-      body: `Parcela de ${formattedAmount} (${description}) venceu em ${formattedDate}.`,
-    },
-  };
-
-  return messages[type];
 }

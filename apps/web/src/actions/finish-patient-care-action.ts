@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { revalidatePath, updateTag } from "next/cache";
@@ -41,14 +42,23 @@ export const finishPatientCareAction = authActionClient
     updateTag(`home-patients-${user.id}`);
     updateTag(`home-data-${user.id}`);
 
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("id, name")
+      .eq("id", parsedInput.patientId)
+      .single();
+
+    if (patient) {
+      sendWhatsAppToUser({ recipientType: "patient", recipientId: patient.id }, "care_finished", {
+        patientName: patient.name,
+      }).catch((err) => {
+        console.error("[whatsapp] care_finished send failed", err);
+      });
+    }
+
     if (profile.enterprise_id) {
       updateTag(`enterprise-patients-${profile.enterprise_id}`);
 
-      const { data: patient } = await supabase
-        .from("patients")
-        .select("name")
-        .eq("id", parsedInput.patientId)
-        .single();
       const deliveryLabel =
         parsedInput.deliveryMethod === "cesarean" ? "parto cesariana" : "parto vaginal";
       insertActivityLog({

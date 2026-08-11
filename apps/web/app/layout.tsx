@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins } from "next/font/google";
+import { Fraunces, Lato, Poppins } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/providers";
@@ -8,6 +8,17 @@ const poppinsSans = Poppins({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-poppins",
+});
+const fraunces = Fraunces({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+});
+
+const lato = Lato({
+  weight: ["300", "400", "700"],
+  subsets: ["latin"],
+  variable: "--font-lato",
 });
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -56,6 +67,8 @@ export const viewport: Viewport = {
   themeColor: "#78130A",
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -74,7 +87,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${poppinsSans.variable} h-full font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${poppinsSans.variable} ${fraunces.variable} ${lato.variable} h-full font-lato antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

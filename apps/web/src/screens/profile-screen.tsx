@@ -234,8 +234,8 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
           />
           <MenuItem
             icon={<Bell className="h-5 w-5" />}
-            label="Minhas Notificações"
-            href="/profile/notifications"
+            label="Notificações"
+            href="/notifications"
           />
         </div>
 

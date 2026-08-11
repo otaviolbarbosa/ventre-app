@@ -1,20 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { InputMask } from "@react-input/mask";
-import type { Tables } from "@ventre/supabase/types";
-import { Button } from "@ventre/ui/button";
-import { Card } from "@ventre/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
-import { Baby, Building2, Heart, Loader2, LockKeyhole, LogOut, Stethoscope } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useAction } from "next-safe-action/hooks";
-import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { z } from "zod";
 import { joinEnterpriseAction } from "@/actions/join-enterprise-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { requestEnterpriseAction } from "@/actions/request-enterprise-action";
@@ -35,6 +20,21 @@ import {
   professionalDocumentsSchema,
 } from "@/lib/validations/professional-documents";
 import type { ProfessionalType } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
+import type { Tables } from "@ventre/supabase/types";
+import { Button } from "@ventre/ui/button";
+import { Card } from "@ventre/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Baby, Building2, Heart, Loader2, LockKeyhole, LogOut, Stethoscope } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 type UserRoleType = Tables<"users">["user_type"];
 

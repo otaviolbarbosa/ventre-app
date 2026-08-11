@@ -63,3 +63,10 @@ All mutations use `next-safe-action` via `authActionClient` from `@/lib/safe-act
 ### PWA
 
 Service worker via Serwist (`app/sw.ts`), disabled in development. `next.config.js` uses `withSerwist` wrapper.
+
+### Scheduled jobs — two mechanisms
+
+This repo drives cron-style work through two independent schedulers. If a scheduled job doesn't seem to be firing, check both:
+
+- **Vercel Cron** (`vercel.json`) — hits `apps/web/app/api/cron/*` routes directly (`billing-statuses`). Each route checks `Authorization: Bearer $CRON_SECRET`.
+- **`pg_cron` + `pg_net`** — SQL jobs (`SELECT cron.job`) that call a `SECURITY DEFINER` Postgres function, which uses `net.http_get`/`net.http_post` to call back into an `apps/web/app/api/cron/*` route with the same `CRON_SECRET` header. Used by `process_scheduled_notifications()` (legacy, `20260209000001_notification_cron.sql`) and `process_notification_queues()` (`20260805100006_process_notification_queues_cron.sql`), which drives `/api/cron/process-notification-queues`. This path requires `app.settings.web_app_url` / `app.settings.cron_secret` to be set at the database level (`ALTER DATABASE ... SET ...`) or the function silently no-ops.

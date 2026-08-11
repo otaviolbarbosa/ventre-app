@@ -7,12 +7,15 @@ const config: Config = {
     extend: {
       fontFamily: {
         poppins: ["var(--font-poppins)", "sans-serif"],
+        fraunces: ["var(--font-fraunces)", "serif"],
+        lato: ["var(--font-lato)", "serif"],
       },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
+        "background-2": "hsl(var(--background-2))",
         foreground: "hsl(var(--foreground))",
         primary: {
           "50": "#F5F3FF",
@@ -21,6 +24,9 @@ const config: Config = {
           "700": "#4C2EBC",
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          dark: "hsl(var(--primary-dark))",
+          medium: "hsl(var(--primary-medium))",
+          light: "hsl(var(--primary-light))",
         },
         secondary: {
           "50": "#FFF1F5",

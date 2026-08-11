@@ -3,7 +3,6 @@ import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
 import { UserAvatar } from "@ventre/ui/shared/user-avatar";
-import { Flame } from "lucide-react";
 import TeamMembersAvatars from "./team-members-avatars";
 
 export function PatientCard({
@@ -14,7 +13,7 @@ export function PatientCard({
   teamMembers?: TeamMember[];
 }) {
   const dppFormatted = dayjs(patient.due_date).format("DD/MM");
-  const statusColor = patient.weeks >= 37 ? "#be5237" : patient.weeks >= 28 ? "#60a5fa" : "#4ade80";
+  const statusColor = patient.weeks >= 37 ? "#802f2d" : patient.weeks >= 28 ? "#cc8a00" : "#dfd1a7";
 
   return (
     <div className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50">
@@ -60,9 +59,6 @@ export function PatientCard({
                   &bull;
                   <span className="flex items-center gap-2 text-muted-foreground">
                     {calculateGestationalAge(patient.dum)?.label}
-                    {patient.weeks >= 40 && (
-                      <Flame className="size-4 text-destructive" fill="hsl(var(--destructive))" />
-                    )}
                   </span>
                 </>
               )}
@@ -73,11 +69,6 @@ export function PatientCard({
               <TeamMembersAvatars teamMembers={teamMembers} patientId={patient.id} />
             </div>
           )}
-          {/* {mainTeamMembers?.length && (
-            <div>
-              <TeamMembersAvatars teamMembers={mainTeamMembers} patientId={patient.id} />
-            </div>
-          )} */}
         </div>
       </div>
     </div>

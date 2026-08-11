@@ -20,7 +20,7 @@ export default function TeamMembersAvatars({ teamMembers, patientId }: TeamMembe
       }}
       title="Ver equipe"
       className={cn(
-        "grid gap-0.5 rounded-[1rem] bg-primary/5 p-1 transition-opacity hover:opacity-80",
+        "grid gap-0.5 rounded-[1rem] transition-opacity",
         teamMembers.length === 1
           ? "grid-cols-1"
           : teamMembers.length === 2
