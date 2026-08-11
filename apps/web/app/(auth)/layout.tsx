@@ -27,14 +27,14 @@ export default function AuthLayout({
 
         {/* Center content */}
         <div className="relative z-10 px-10 pb-4">
-          <p className="flex flex-col gap-4 font-fraunces font-semibold text-2xl text-primary-medium uppercase leading-snug">
+          <p className="flex flex-col font-poppins font-semibold text-[40px] text-primary-medium leading-tight">
             <span>Tecnologia</span>
             <span>que organiza</span>
             <span>o cuidado.</span>
           </p>
           <div className="mt-8 space-y-4">
             <div className="flex items-start gap-3">
-              <span className="font-lato text-sm text-white/80 leading-relaxed">
+              <span className="font-lato text-white/80 leading-relaxed">
                 O Ventre integra pessoas, informações e cuidado para que você possa estar presente
                 onde realmente importa.
               </span>

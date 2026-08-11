@@ -79,7 +79,7 @@ export function Sidebar() {
     <TooltipProvider delayDuration={200}>
       <div
         className={cn(
-          "relative hidden h-full flex-col border-r bg-primary-dark transition-all duration-300 md:flex",
+          "relative hidden h-full flex-col border-r bg-primary transition-all duration-300 md:flex",
           isCollapsed ? "w-16" : "w-64",
         )}
       >
@@ -170,7 +170,7 @@ export function Sidebar() {
                 <Avatar src={profile?.avatar_url ?? ""} name={profile?.name ?? ""} size={10} />
                 <div className="flex-1 truncate">
                   <p className="truncate font-medium text-background text-sm">{profile?.name}</p>
-                  <p className="truncate text-background/60 text-xs">
+                  <p className="truncate text-background/70 text-xs">
                     {professionalTypeLabels[profile?.professional_type as ProfessionalType]}
                   </p>
                 </div>

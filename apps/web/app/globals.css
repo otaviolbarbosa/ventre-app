@@ -6,6 +6,7 @@
   /* Color scheme based on Ventre logo — warm terracotta, burgundy & cream */
   :root {
     --background: 45 50% 95.29%;
+    --background-2: 0 14.29% 98.63%;
     --foreground: 15 20% 22%;
     --card: 0 0% 100%;
     --card-foreground: 15 20% 22%;
@@ -45,7 +46,7 @@
     --radius: 0.5rem;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(1.45, 47.98%, 33.92%), hsl(1.2, 48.08%, 20.39%));
+    --gradient-primary: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(1.45, 47.98%, 33.92%));
     --gradient-soft: linear-gradient(180deg, hsl(25, 40%, 97%), hsl(22, 55%, 92%));
     --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%), hsl(25, 45%, 95%));
     --gradient-cta: linear-gradient(135deg, hsl(12, 55%, 48%), hsl(355, 45%, 35%));

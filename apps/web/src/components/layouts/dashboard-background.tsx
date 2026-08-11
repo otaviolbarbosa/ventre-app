@@ -10,13 +10,13 @@ export function DashboardBackground() {
 
   return (
     <div
-      className="-z-10 pointer-events-none absolute inset-0 opacity-[0.03]"
+      className="-z-10 pointer-events-none absolute inset-0 opacity-[0.02]"
       style={{
         backgroundImage: `url(${bgFingerprint.src})`,
         backgroundRepeat: "repeat",
-        backgroundSize: "1600px",
+        backgroundSize: "3200px",
         backgroundPositionX: "-100px",
-        backgroundPositionY: "-100px",
+        backgroundPositionY: "-200px",
       }}
     />
   );
