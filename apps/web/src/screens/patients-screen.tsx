@@ -285,7 +285,7 @@ export default function PatientsScreen({
                 <Link
                   key={patient.id}
                   href={`/patients/${patient.id}`}
-                  className="rounded-xl border bg-white"
+                  className="overflow-hidden rounded-xl border bg-white"
                 >
                   <PatientCard patient={patient} teamMembers={teamMembersMap[patient.id] ?? []} />
                 </Link>
