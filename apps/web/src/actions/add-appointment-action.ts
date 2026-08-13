@@ -11,6 +11,7 @@ import {
 } from "@/lib/validations/appointment";
 import { createAppointment } from "@/services/appointment";
 import { syncCreateToGoogleCalendar } from "@/services/google-calendar";
+import { revalidateHomeData } from "@/services/home-cache";
 import type { Patient } from "@/types";
 
 export const addAppointmentAction = authActionClient
@@ -40,6 +41,8 @@ export const addAppointmentAction = authActionClient
       parsedInput,
       appointmentEnterpriseId,
     );
+
+    revalidateHomeData(professionalId);
 
     let patientName: string | null = parsedInput.external_patient_name ?? null;
     if (!parsedInput.is_external && appointment.patient_id) {
