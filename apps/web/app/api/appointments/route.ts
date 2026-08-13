@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@ventre/supabase/server";
-import { createAppointmentSchema } from "@/lib/validations/appointment";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
+import { createAppointmentSchema } from "@/lib/validations/appointment";
+import { createServerSupabaseClient } from "@ventre/supabase/server";
 import type { TablesInsert } from "@ventre/supabase/types";
+import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
   try {
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
       notes: validation.data.notes,
       external_patient_name: is_external ? (validation.data.external_patient_name ?? null) : null,
       external_patient_phone: is_external ? (validation.data.external_patient_phone ?? null) : null,
-      external_patient_email: is_external ? (validation.data.external_patient_email || null) : null,
+      external_patient_email: is_external ? validation.data.external_patient_email || null : null,
     };
 
     const { data: appointment, error } = await supabase
@@ -108,6 +109,15 @@ export async function POST(request: Request) {
           type: "appointment_created",
           ...template,
           data: { url: "/appointments" },
+        });
+
+        sendWhatsAppToUser(
+          { recipientType: "patient", recipientId: validation.data.patient_id },
+          "appointment_scheduled",
+          { patientName: patient.name, date: validation.data.date, time: validation.data.time },
+          { referenceType: "appointment", referenceId: appointment.id },
+        ).catch((err) => {
+          console.error("[whatsapp] appointment_scheduled send failed", err);
         });
       }
     }

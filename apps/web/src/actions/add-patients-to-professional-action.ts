@@ -1,6 +1,7 @@
 "use server";
 
 import { isStaff } from "@/lib/access-control";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -12,7 +13,7 @@ const schema = z.object({
 
 export const addPatientsToProfessionalAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabaseAdmin, profile } }) => {
+  .action(async ({ parsedInput, ctx: { supabaseAdmin, user, profile } }) => {
     if (!isStaff(profile)) throw new Error("Acesso não autorizado");
 
     const { professionalId, professionalType, patientIds } = parsedInput;
@@ -21,7 +22,7 @@ export const addPatientsToProfessionalAction = authActionClient
       .from("pregnancies")
       .select("id, patient_id")
       .in("patient_id", patientIds)
-      .order("created_at", { ascending: false });
+      .eq("has_finished", false);
 
     const pregnancyByPatient = new Map<string, string>();
     for (const preg of pregnancies ?? []) {
@@ -44,6 +45,10 @@ export const addPatientsToProfessionalAction = authActionClient
 
     const { error } = await supabaseAdmin.from("team_members").insert(inserts);
     if (error) throw new Error(error.message);
+
+    await captureServerEvent(user.id, "add_patients_to_professional", {
+      professional_id: professionalId,
+    });
 
     return { successCount: inserts.length };
   });

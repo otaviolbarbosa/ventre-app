@@ -1,8 +1,9 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
-import { riskFactorsSchema } from "@/lib/validations/prenatal";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
+import { riskFactorsSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
 
 const schema = z.object({
@@ -46,6 +47,8 @@ export const upsertRiskFactorsAction = authActionClient
         metadata: { pregnancy_id: pregnancyId },
       });
     }
+
+    await captureServerEvent(user.id, "upsert_risk_factors", { pregnancy_id: pregnancyId });
 
     return { success: true };
   });

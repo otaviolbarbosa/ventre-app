@@ -4,8 +4,8 @@ import { finishPatientCareAction } from "@/actions/finish-patient-care-action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -116,7 +116,9 @@ export function FinishCareModal({
                       <FormControl>
                         <DatePicker
                           selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                          onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                          onChange={(date) =>
+                            field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                          }
                           placeholderText="Selecione a data"
                         />
                       </FormControl>
@@ -170,7 +172,11 @@ export function FinishCareModal({
               <FormItem>
                 <FormLabel>Descrição</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Descreva como foi o acompanhamento..." rows={4} {...field} />
+                  <Textarea
+                    placeholder="Descreva como foi o acompanhamento..."
+                    rows={4}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

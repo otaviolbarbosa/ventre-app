@@ -1,7 +1,7 @@
 "use server";
 
 import { PATIENTS_PER_PAGE } from "@/lib/constants";
-import { getDppDateRange } from "@/lib/dpp-filter";
+import { getDppDateRange, isCurrentDppMonth } from "@/lib/dpp-filter";
 import type { PatientWithPregnancyFields } from "@/services/patient";
 import type { PatientFilter, TeamMember } from "@/types";
 import { createServerSupabaseClient } from "@ventre/supabase/server";
@@ -22,7 +22,8 @@ export async function getEnterpriseDueDates(
   let pregnanciesQuery = supabase
     .from("pregnancies")
     .select("due_date, patient_id")
-    .eq("enterprise_id", enterpriseId);
+    .eq("enterprise_id", enterpriseId)
+    .eq("has_finished", false);
 
   if (professionalId) {
     const { data: teamMemberships } = await supabase
@@ -80,14 +81,21 @@ export async function getEnterprisePatients(
   if (dppMonth !== undefined && dppYear !== undefined) {
     // DPP filter path: query pregnancies directly
     const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
+    // Overdue-but-not-finished pregnancies roll into the current month's bucket, so the
+    // lower due_date bound is dropped only when browsing the current month.
+    const rollsOverdueIn = isCurrentDppMonth(dppMonth, dppYear);
 
-    const { data: pregnancies } = await supabase
+    let pregnanciesQuery = supabase
       .from("pregnancies")
       .select("patient_id, due_date, dum, has_finished, born_at, observations")
       .in("patient_id", patientIds)
-      .gte("due_date", startDate)
+      .eq("has_finished", false)
       .lte("due_date", endDate)
       .order("due_date", { ascending: true });
+
+    if (!rollsOverdueIn) pregnanciesQuery = pregnanciesQuery.gte("due_date", startDate);
+
+    const { data: pregnancies } = await pregnanciesQuery;
 
     const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
     const filteredIds = (pregnancies ?? []).map((p) => p.patient_id);
@@ -106,7 +114,10 @@ export async function getEnterprisePatients(
     rows = (patientsData ?? [])
       .map((p) => {
         const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
-        const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Record<string, string | null>) : null;
+        const address =
+          Array.isArray(addrs) && addrs.length > 0
+            ? (addrs[0] as Record<string, string | null>)
+            : null;
         return {
           ...patientData,
           address,

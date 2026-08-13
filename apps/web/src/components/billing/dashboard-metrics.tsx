@@ -2,6 +2,7 @@
 import { dayjs } from "@/lib/dayjs";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
+import { Skeleton } from "@ventre/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { TotalAmount } from "./total-amount";
@@ -56,6 +57,7 @@ type MetricsProps = {
   activeMonth: string;
   activeMonthLabel: string;
   onMonthChange: (month: string | null) => void;
+  isLoading?: boolean;
 };
 
 export function DashboardMetrics({
@@ -65,6 +67,7 @@ export function DashboardMetrics({
   activeMonth,
   activeMonthLabel,
   onMonthChange,
+  isLoading,
 }: MetricsProps) {
   const handlePrev = () => {
     const prev = dayjs(activeMonth).subtract(1, "month").format("YYYY-MM");
@@ -106,29 +109,45 @@ export function DashboardMetrics({
 
         {/* Metric cards */}
         <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
-          {metrics.map((metric) => {
-            const isActive = activeFilter === metric.key;
-            const styles = METRIC_STYLES[metric.key];
-            return (
-              <Card
-                key={metric.key}
-                className={`w-44 shrink-0 cursor-pointer border transition-all duration-150 hover:shadow-md sm:w-auto sm:shrink ${styles.border} ${isActive ? `ring-2 ${styles.ring} shadow-sm` : "hover:border-transparent"}`}
-                onClick={() => onFilterClick(metric.key)}
-              >
-                <CardContent className="p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <div className={`rounded-lg p-1.5 ${styles.bg}`}>
-                      <metric.icon className={`h-4 w-4 ${styles.color}`} />
+          {isLoading
+            ? Array.from({ length: 3 }, (_, i) => (
+                <Card
+                  // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders sem dados reais, ordem nunca muda
+                  key={`dashboard-metric-skeleton-${i}`}
+                  className="w-44 shrink-0 border sm:w-auto sm:shrink"
+                >
+                  <CardContent className="p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Skeleton className="h-7 w-7 rounded-lg" />
+                      <Skeleton className="h-3 w-20" />
                     </div>
-                    <p className={`whitespace-nowrap font-medium text-xs ${styles.label}`}>
-                      {metric.title}
-                    </p>
-                  </div>
-                  <TotalAmount amount={metric.amount} />
-                </CardContent>
-              </Card>
-            );
-          })}
+                    <Skeleton className="h-6 w-24" />
+                  </CardContent>
+                </Card>
+              ))
+            : metrics.map((metric) => {
+                const isActive = activeFilter === metric.key;
+                const styles = METRIC_STYLES[metric.key];
+                return (
+                  <Card
+                    key={metric.key}
+                    className={`w-44 shrink-0 cursor-pointer border transition-all duration-150 hover:shadow-md sm:w-auto sm:shrink ${styles.border} ${isActive ? `ring-2 ${styles.ring} shadow-sm` : "hover:border-transparent"}`}
+                    onClick={() => onFilterClick(metric.key)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <div className={`rounded-lg p-1.5 ${styles.bg}`}>
+                          <metric.icon className={`h-4 w-4 ${styles.color}`} />
+                        </div>
+                        <p className={`whitespace-nowrap font-medium text-xs ${styles.label}`}>
+                          {metric.title}
+                        </p>
+                      </div>
+                      <TotalAmount amount={metric.amount} />
+                    </CardContent>
+                  </Card>
+                );
+              })}
         </div>
       </CardContent>
     </Card>

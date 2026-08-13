@@ -99,7 +99,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         .single();
 
       if (!pregnancy?.id) {
-        return NextResponse.json({ error: "Paciente não possui gestação registrada" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Paciente não possui gestação registrada" },
+          { status: 400 },
+        );
       }
 
       const teamMemberData: TablesInsert<"team_members"> = {

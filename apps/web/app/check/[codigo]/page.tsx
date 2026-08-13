@@ -1,5 +1,6 @@
 "use client";
 
+import ventreLogo from "@/assets/ventre.png";
 import { BadgeCheck, Loader2, Upload, XCircle } from "lucide-react";
 import Image from "next/image";
 import { use, useRef, useState } from "react";
@@ -85,7 +86,7 @@ export default function CheckContractPage({
       {/* Logo */}
       <div className="relative z-10 mb-10">
         <Image
-          src="/logo.png"
+          src={ventreLogo}
           alt="Ventre — Agenda de Parto"
           width={180}
           height={64}
@@ -123,9 +124,7 @@ export default function CheckContractPage({
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 className={`flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed py-12 text-center transition-colors ${
-                  dragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
+                  dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                 }`}
               >
                 <Upload className="h-8 w-8 text-primary" />

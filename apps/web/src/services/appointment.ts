@@ -1,6 +1,8 @@
 import { isStaff } from "@/lib/access-control";
+import { buildPatientWithGestationalInfo } from "@/lib/gestational-age";
 import { getServerAuth } from "@/lib/server-auth";
 import type { CreateAppointmentInput } from "@/lib/validations/appointment";
+import type { PatientWithGestationalInfo } from "@/types";
 import type {
   createServerSupabaseAdmin,
   createServerSupabaseClient,
@@ -13,11 +15,43 @@ type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>
 type Appointment = Tables<"appointments">;
 type Patient = Tables<"patients">;
 type User = Tables<"users">;
+type Pregnancy = Tables<"pregnancies">;
 
 export type AppointmentWithPatient = Appointment & {
-  patient: Pick<Patient, "id" | "name"> | null;
+  patient: PatientWithGestationalInfo | null;
   professional?: Pick<User, "id" | "name" | "professional_type"> | null;
 };
+
+export const APPOINTMENT_WITH_PATIENT_SELECT = `
+  *,
+  patient:patients(*, pregnancies(due_date, dum, has_finished, born_at, delivery_method, observations)),
+  professional:users!appointments_professional_id_fkey(id, name, professional_type)
+`;
+
+type PregnancyInfo = Pick<
+  Pregnancy,
+  "due_date" | "dum" | "has_finished" | "born_at" | "delivery_method" | "observations"
+>;
+
+type RawAppointment = Appointment & {
+  patient: (Patient & { pregnancies: PregnancyInfo[] | null }) | null;
+  professional?: Pick<User, "id" | "name" | "professional_type"> | null;
+};
+
+export function mapAppointmentsWithPatient(rows: RawAppointment[]): AppointmentWithPatient[] {
+  return rows.map(({ patient, ...appointment }) => {
+    if (!patient) return { ...appointment, patient: null };
+
+    const { pregnancies, ...patientData } = patient;
+    const activePregnancy =
+      pregnancies?.find((pregnancy) => !pregnancy.has_finished) ?? pregnancies?.[0] ?? null;
+
+    return {
+      ...appointment,
+      patient: buildPatientWithGestationalInfo(patientData, activePregnancy),
+    };
+  });
+}
 
 type GetMyAppointmentsResult = {
   appointments: AppointmentWithPatient[];
@@ -33,13 +67,7 @@ export async function getMyAppointments(): Promise<GetMyAppointmentsResult> {
 
   let query = supabase
     .from("appointments")
-    .select(
-      `
-      *,
-      patient:patients(id, name),
-      professional:users!appointments_professional_id_fkey(id, name, professional_type)
-    `,
-    )
+    .select(APPOINTMENT_WITH_PATIENT_SELECT)
     .order("date", { ascending: true })
     .order("time", { ascending: true });
 
@@ -49,7 +77,9 @@ export async function getMyAppointments(): Promise<GetMyAppointmentsResult> {
 
   const { data: appointments } = await query.eq("status", "agendada");
 
-  return { appointments: (appointments as AppointmentWithPatient[]) || [] };
+  return {
+    appointments: mapAppointmentsWithPatient((appointments ?? []) as unknown as RawAppointment[]),
+  };
 }
 
 export async function createAppointment(

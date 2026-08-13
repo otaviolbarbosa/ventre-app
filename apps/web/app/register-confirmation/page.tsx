@@ -1,3 +1,4 @@
+import ventreLogo from "@/assets/ventre.png";
 import { Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,8 +16,8 @@ export default function RegisterConfirmationPage() {
       {/* Logo */}
       <div className="hero-animate hero-animate-1 relative z-10 mb-10">
         <Image
-          src="/logo.png"
-          alt="Ventre — Agenda de Parto"
+          src={ventreLogo}
+          alt="Ventre Logo"
           width={180}
           height={64}
           priority

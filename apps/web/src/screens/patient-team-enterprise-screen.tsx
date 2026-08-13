@@ -7,11 +7,12 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientTeam } from "@/components/shared/loading-state";
 import PendingInviteCard from "@/components/shared/pending-invite-card";
 import TeamMemberCard from "@/components/shared/team-member-card";
+import { cn } from "@/lib/utils";
 import AddBackupProfessionalModal from "@/modals/add-backup-professional-modal";
 import AddProfessionalModal from "@/modals/add-professional-modal";
 import type { ProfessionalType } from "@/types";
 import { Button } from "@ventre/ui/button";
-import { ShieldAlert, UserPlus, Users } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -65,9 +66,9 @@ export default function PatientTeamEnterpriseScreen() {
   const backupByType = Object.fromEntries(
     ROLE_ORDER.map((role) => [
       role,
-      teamMembers.find((m) => m.professional_type === role && m.is_backup),
+      teamMembers.filter((m) => m.professional_type === role && m.is_backup),
     ]),
-  ) as Record<ProfessionalType, (typeof teamMembers)[0] | undefined>;
+  ) as Record<ProfessionalType, (typeof teamMembers)[0][]>;
 
   const rawInvites = invitesResult.data?.invites ?? [];
   const pendingInviteByType = Object.fromEntries(
@@ -122,7 +123,7 @@ export default function PatientTeamEnterpriseScreen() {
             </div>
             {activeRoles.map((role) => {
               const primary = primaryByType[role];
-              const backup = backupByType[role];
+              const backups = backupByType[role];
               const pendingInvite = pendingInviteByType[role];
 
               const pendingProfessional = pendingInvite
@@ -132,7 +133,7 @@ export default function PatientTeamEnterpriseScreen() {
                 : null;
 
               return (
-                <div key={role} className="grid gap-4 sm:grid-cols-2">
+                <div key={role} className="grid items-start gap-4 sm:grid-cols-2">
                   {primary ? (
                     <TeamMemberCard
                       member={primary}
@@ -150,22 +151,38 @@ export default function PatientTeamEnterpriseScreen() {
                       }
                     />
                   ) : null}
-                  {backup ? (
-                    <TeamMemberCard
-                      member={backup}
-                      isOwner={patientOwnerId === backup.professional?.id}
-                      onRemoved={() => fetchTeamMembers({ patientId })}
-                    />
-                  ) : (
+                  <div
+                    className={cn(
+                      "h-full min-w-0",
+                      backups.length > 0 ? "flex gap-3" : "space-y-3",
+                    )}
+                  >
+                    {backups.length > 0 && (
+                      <div className="min-w-0 flex-1 space-y-3">
+                        {backups.map((backup) => (
+                          <TeamMemberCard
+                            key={backup.id}
+                            member={backup}
+                            isOwner={patientOwnerId === backup.professional?.id}
+                            onRemoved={() => fetchTeamMembers({ patientId })}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => setBackupRole(role)}
-                      className="flex min-h-[72px] w-full items-center justify-center gap-2 rounded-lg border border-dashed text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
+                      className={cn(
+                        "flex items-center justify-center gap-2 rounded-2xl border border-dashed text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary",
+                        backups.length > 0
+                          ? "w-10 shrink-0 self-stretch"
+                          : "h-full min-h-[72px] w-full",
+                      )}
                     >
-                      <ShieldAlert className="h-4 w-4" />
-                      Adicionar profissional backup
+                      <UserPlus className="h-4 w-4 shrink-0" />
+                      {backups.length === 0 && "Adicionar profissional backup"}
                     </button>
-                  )}
+                  </div>
                 </div>
               );
             })}

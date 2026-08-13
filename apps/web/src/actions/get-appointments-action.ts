@@ -2,6 +2,10 @@
 
 import { isStaff } from "@/lib/access-control";
 import { authActionClient } from "@/lib/safe-action";
+import {
+  APPOINTMENT_WITH_PATIENT_SELECT,
+  mapAppointmentsWithPatient,
+} from "@/services/appointment";
 import { z } from "zod";
 
 const schema = z.object({
@@ -14,11 +18,7 @@ export const getAppointmentsAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, user, profile } }) => {
     let query = supabase
       .from("appointments")
-      .select(`
-        *,
-        patient:patients(id, name),
-        professional:users!appointments_professional_id_fkey(id, name, professional_type)
-      `)
+      .select(APPOINTMENT_WITH_PATIENT_SELECT)
       .order("date", { ascending: true })
       .order("time", { ascending: true });
 
@@ -38,5 +38,9 @@ export const getAppointmentsAction = authActionClient
 
     if (error) throw new Error(error.message);
 
-    return { appointments: appointments ?? [] };
+    return {
+      appointments: mapAppointmentsWithPatient(
+        (appointments ?? []) as unknown as Parameters<typeof mapAppointmentsWithPatient>[0],
+      ),
+    };
   });

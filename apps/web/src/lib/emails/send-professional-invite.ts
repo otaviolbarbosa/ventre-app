@@ -42,7 +42,7 @@ export async function sendProfessionalInvite({
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:32px;">
-              <img src="https://ventre.app/logo.png" alt="Ventre" width="140"
+              <img src="https://ventre.app/ventre.png" alt="Ventre" width="140"
                 style="display:block;object-fit:contain;" />
             </td>
           </tr>

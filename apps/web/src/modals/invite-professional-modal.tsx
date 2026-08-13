@@ -1,20 +1,20 @@
 "use client";
 
-import { createInviteAction } from "@/actions/create-invite-action";
-import { inviteProfessionalDirectAction } from "@/actions/invite-professional-direct-action";
-import { searchUsersAction } from "@/actions/search-users-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
-import CustomIcon from "@/components/shared/custom-icon";
+import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
-import type { ProfessionalType } from "@/types";
-import { professionalTypeLabels } from "@/utils/team";
-import type { Tables } from "@ventre/supabase";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Check, Copy, Loader2, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { createTeamMemberInviteAction } from "@/actions/create-invite-action";
+import { inviteProfessionalDirectAction } from "@/actions/invite-professional-direct-action";
+import { searchUsersAction } from "@/actions/search-users-action";
+import CustomIcon from "@/components/shared/custom-icon";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 
 type SearchedUser = {
   id: string;
@@ -47,8 +47,9 @@ export default function InviteProfessionalModal({
   const { executeAsync: executeInviteDirect, isPending: isInviting } = useAction(
     inviteProfessionalDirectAction,
   );
-  const { executeAsync: executeInviteLink, isPending: isLinkPending } =
-    useAction(createInviteAction);
+  const { executeAsync: executeInviteLink, isPending: isLinkPending } = useAction(
+    createTeamMemberInviteAction,
+  );
   const { executeAsync: executeSearch, isPending: isLoading } = useAction(searchUsersAction);
 
   useEffect(() => {

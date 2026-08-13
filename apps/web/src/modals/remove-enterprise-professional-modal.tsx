@@ -1,9 +1,9 @@
 "use client";
 
 import { removeEnterpriseProfessionalAction } from "@/actions/remove-enterprise-professional-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { Button } from "@ventre/ui/button";
 import type { EnterpriseProfessional } from "@/services/professional";
+import { Button } from "@ventre/ui/button";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

@@ -32,80 +32,90 @@ type NotificationPayload = {
   data?: Record<string, string>;
 };
 
-export async function sendNotificationToUser(userId: string, payload: NotificationPayload) {
-  try {
-    const supabaseAdmin = await createServerSupabaseAdmin();
+export type SendNotificationResult = {
+  tokenCount: number;
+  successCount: number;
+  failureCount: number;
+};
 
-    // Check user's notification settings
-    const { data: settings } = await supabaseAdmin
-      .from("notification_settings")
+export async function sendNotificationToUser(
+  userId: string,
+  payload: NotificationPayload,
+): Promise<SendNotificationResult> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  // Check user's notification settings
+  const { data: settings } = await supabaseAdmin
+    .from("notification_settings")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (settings) {
+    const settingKey = payload.type as keyof typeof settings;
+    if (settings[settingKey] === false) return { tokenCount: 0, successCount: 0, failureCount: 0 };
+  }
+
+  // Check billing-specific notification preferences
+  const billingTypes = ["billing_created", "billing_payment_received", "billing_reminder"];
+  if (billingTypes.includes(payload.type)) {
+    const { data: billingPrefs } = await supabaseAdmin
+      .from("billing_notification_preferences")
       .select("*")
       .eq("user_id", userId)
       .single();
 
-    if (settings) {
-      const settingKey = payload.type as keyof typeof settings;
-      if (settings[settingKey] === false) return;
+    if (billingPrefs) {
+      if (payload.type === "billing_reminder" && !billingPrefs.enable_billing_reminders)
+        return { tokenCount: 0, successCount: 0, failureCount: 0 };
+      if (payload.type === "billing_payment_received" && !billingPrefs.enable_payment_confirmations)
+        return { tokenCount: 0, successCount: 0, failureCount: 0 };
     }
+  }
 
-    // Check billing-specific notification preferences
-    const billingTypes = ["billing_created", "billing_payment_received", "billing_reminder"];
-    if (billingTypes.includes(payload.type)) {
-      const { data: billingPrefs } = await supabaseAdmin
-        .from("billing_notification_preferences")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+  // Get active push tokens
+  const { data: subscriptions } = await supabaseAdmin
+    .from("push_subscriptions")
+    .select("fcm_token")
+    .eq("user_id", userId)
+    .eq("is_active", true);
 
-      if (billingPrefs) {
-        if (payload.type === "billing_reminder" && !billingPrefs.enable_billing_reminders) return;
-        if (
-          payload.type === "billing_payment_received" &&
-          !billingPrefs.enable_payment_confirmations
-        )
-          return;
-      }
-    }
+  const tokens = subscriptions?.map((s) => s.fcm_token) ?? [];
 
-    // Get active push tokens
-    const { data: subscriptions } = await supabaseAdmin
-      .from("push_subscriptions")
-      .select("fcm_token")
-      .eq("user_id", userId)
-      .eq("is_active", true);
+  let successCount = 0;
+  let failureCount = 0;
 
-    const tokens = subscriptions?.map((s) => s.fcm_token) ?? [];
-
-    // Send push notification
-    if (tokens.length > 0) {
-      const result = await sendMulticastNotification(tokens, {
-        title: payload.title,
-        body: payload.body,
-        data: { ...payload.data, type: payload.type },
-      });
-
-      // Deactivate invalid tokens
-      if (result.invalidTokens.length > 0) {
-        await supabaseAdmin
-          .from("push_subscriptions")
-          .update({ is_active: false })
-          .in("fcm_token", result.invalidTokens);
-      }
-    }
-
-    // Store in notification history
-    // Cast is safe: new enum values become valid after pnpm db:types post-migration
-    await supabaseAdmin.from("notifications").insert({
-      user_id: userId,
-      type: payload.type as Enums<"notification_type">,
+  // Send push notification
+  if (tokens.length > 0) {
+    const result = await sendMulticastNotification(tokens, {
       title: payload.title,
       body: payload.body,
-      data: payload.data || {},
+      data: { ...payload.data, type: payload.type },
     });
-  } catch {
-    // Fire-and-forget: don't throw
-    console.error("[notifications] Failed to send notification to user:", userId);
+
+    successCount = result.successCount;
+    failureCount = result.failureCount;
+
+    // Deactivate invalid tokens
+    if (result.invalidTokens.length > 0) {
+      await supabaseAdmin
+        .from("push_subscriptions")
+        .update({ is_active: false })
+        .in("fcm_token", result.invalidTokens);
+    }
   }
+
+  // Store in notification history
+  // Cast is safe: new enum values become valid after pnpm db:types post-migration
+  await supabaseAdmin.from("notifications").insert({
+    user_id: userId,
+    type: payload.type as Enums<"notification_type">,
+    title: payload.title,
+    body: payload.body,
+    data: payload.data || {},
+  });
+
+  return { tokenCount: tokens.length, successCount, failureCount };
 }
 
 export async function sendNotificationToTeam(

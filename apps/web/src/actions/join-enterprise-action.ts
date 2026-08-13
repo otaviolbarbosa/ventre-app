@@ -1,8 +1,9 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
-import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -52,6 +53,8 @@ export const joinEnterpriseAction = authActionClient
     if (joinError && joinError.code !== "23505") {
       throw new Error(joinError.message);
     }
+
+    await captureServerEvent(user.id, "join_enterprise", { enterprise_id: enterprise.id });
 
     redirect("/home");
   });

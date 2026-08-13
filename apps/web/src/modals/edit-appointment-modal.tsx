@@ -1,11 +1,5 @@
 "use client";
 
-import { updateAppointmentAction } from "@/actions/update-appointment-action";
-import {
-  type UpdateAppointmentInput,
-  updateAppointmentSchema,
-} from "@/lib/validations/appointment";
-import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
@@ -20,6 +14,12 @@ import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { updateAppointmentAction } from "@/actions/update-appointment-action";
+import {
+  type UpdateAppointmentInput,
+  updateAppointmentSchema,
+} from "@/lib/validations/appointment";
+import type { Appointment, PatientWithGestationalInfo, User } from "@/types";
 
 const DURATION_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
 
@@ -31,7 +31,9 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
 };
 
 type EditAppointmentModalProps = {
-  appointment: AppointmentWithPatient;
+  appointment: Appointment;
+  patient: PatientWithGestationalInfo | null;
+  professional: User;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: VoidFunction;
@@ -39,6 +41,8 @@ type EditAppointmentModalProps = {
 
 export function EditAppointmentModal({
   appointment,
+  patient,
+  professional,
   open,
   onOpenChange,
   onSuccess,
@@ -93,7 +97,7 @@ export function EditAppointmentModal({
             <div className="space-y-0.5">
               <p className="text-muted-foreground text-xs">Gestante</p>
               <p className="font-medium text-sm">
-                {appointment.patient?.name ?? appointment.external_patient_name ?? "—"}
+                {patient?.name ?? appointment.external_patient_name ?? "—"}
               </p>
               {appointment.external_patient_name && (
                 <p className="text-muted-foreground text-xs">Paciente externa</p>
@@ -101,11 +105,11 @@ export function EditAppointmentModal({
             </div>
             <div className="space-y-0.5">
               <p className="text-muted-foreground text-xs">Profissional</p>
-              <p className="font-medium text-sm">{appointment.professional?.name ?? "—"}</p>
-              {appointment.professional?.professional_type && (
+              <p className="font-medium text-sm">{professional?.name ?? "—"}</p>
+              {professional?.professional_type && (
                 <p className="text-muted-foreground text-xs">
-                  {PROFESSIONAL_TYPE_LABELS[appointment.professional.professional_type] ??
-                    appointment.professional.professional_type}
+                  {PROFESSIONAL_TYPE_LABELS[professional.professional_type] ??
+                    professional.professional_type}
                 </p>
               )}
             </div>
@@ -124,6 +128,7 @@ export function EditAppointmentModal({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="exame">Exame</SelectItem>
                     <SelectItem value="consulta">Consulta</SelectItem>
                     <SelectItem value="encontro">Encontro</SelectItem>
                   </SelectContent>

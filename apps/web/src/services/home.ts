@@ -1,9 +1,6 @@
 import { dayjs } from "@/lib/dayjs";
-import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo } from "@/types";
-import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
-import { unstable_cache } from "next/cache";
 
 type Patient = Tables<"patients">;
 type Pregnancy = Tables<"pregnancies">;
@@ -66,15 +63,20 @@ export function buildDppByMonth(
   const currentMonth = today.month(); // 0-indexed
   const currentYear = today.year();
 
-  // Count patients per month/year
+  // Count patients per month/year. Overdue pregnancies (due_date before the current
+  // month) haven't finished yet by construction — the callers already filter out
+  // has_finished patients — so they roll into the current month's bucket instead of
+  // being dropped.
   const countMap = new Map<string, number>();
   for (const patient of patients) {
     if (!patient.due_date) continue;
     const dueDate = dayjs(patient.due_date);
-    const m = dueDate.month();
-    const y = dueDate.year();
-    // Only count from current month onwards
-    if (y < currentYear || (y === currentYear && m < currentMonth)) continue;
+    let m = dueDate.month();
+    let y = dueDate.year();
+    if (y < currentYear || (y === currentYear && m < currentMonth)) {
+      m = currentMonth;
+      y = currentYear;
+    }
     const key = `${y}-${m}`;
     countMap.set(key, (countMap.get(key) ?? 0) + 1);
   }
@@ -120,90 +122,4 @@ export function buildDppByMonth(
   }
 
   return result;
-}
-
-async function fetchHomeData(userId: string): Promise<HomeData> {
-  const supabase = await createServerSupabaseAdmin();
-  const today = dayjs();
-
-  const { data: teamMembers } = await supabase
-    .from("team_members")
-    .select("patient_id")
-    .eq("professional_id", userId);
-
-  const patientIds = teamMembers?.map((tm) => tm.patient_id) || [];
-
-  if (patientIds.length === 0) {
-    return {
-      dppByMonth: buildDppByMonth([], today),
-      patients: [],
-      upcomingAppointments: [],
-    };
-  }
-
-  const { data: patients } = await supabase
-    .from("patients")
-    .select("*, pregnancies!inner(due_date, dum, has_finished, born_at, delivery_method, observations)")
-    .in("id", patientIds)
-    .eq("pregnancies.has_finished", false)
-    .order("due_date", { referencedTable: "pregnancies", ascending: true });
-
-  const sortedPatients = patients || [];
-
-  const patientsWithInfo: PatientWithGestationalInfo[] = [];
-
-  for (const patient of sortedPatients) {
-    const pregnancy = patient.pregnancies?.[0];
-    const gestationalAge = calculateGestationalAge(pregnancy?.dum ?? null);
-    if (gestationalAge) {
-      const dueDate = dayjs(pregnancy?.due_date);
-      const remainingDays = Math.max(dueDate.diff(today, "day"), 0);
-
-      patientsWithInfo.push({
-        ...patient,
-        due_date: pregnancy?.due_date ?? null,
-        dum: pregnancy?.dum ?? null,
-        has_finished: pregnancy?.has_finished ?? false,
-        born_at: pregnancy?.born_at ?? null,
-        delivery_method: pregnancy?.delivery_method ?? null,
-        observations: pregnancy?.observations ?? null,
-        weeks: gestationalAge.weeks,
-        days: gestationalAge.days,
-        remainingDays,
-        progress: Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100),
-      });
-    }
-  }
-
-  const { data: appointments } = await supabase
-    .from("appointments")
-    .select(
-      `
-      *,
-      patient:patients(id, name, pregnancies(dum))
-    `,
-    )
-    .eq("professional_id", userId)
-    .gte("date", today.format("YYYY-MM-DD"))
-    .eq("status", "agendada")
-    .order("date", { ascending: true })
-    .order("time", { ascending: true })
-    .limit(5);
-
-  const patientsForDpp = (patients || []).map((p) => ({
-    due_date: p.pregnancies?.[0]?.due_date ?? null,
-  }));
-
-  return {
-    dppByMonth: buildDppByMonth(patientsForDpp, today),
-    patients: patientsWithInfo.slice(0, 5),
-    upcomingAppointments: (appointments as HomeAppointment[]) || [],
-  };
-}
-
-export function getCachedHomeData(userId: string): Promise<HomeData> {
-  return unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
-    tags: [`home-data-${userId}`],
-    revalidate: 3600,
-  })();
 }

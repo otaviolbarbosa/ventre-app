@@ -10,7 +10,11 @@ import {
 } from "@/lib/billing/calculations";
 import { ESTADOS_BR } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
+import {
+  type CreatePatientInput,
+  MARITAL_STATUS_OPTIONS,
+  createPatientSchema,
+} from "@/lib/validations/patient";
 import type { CreatePatientInviteInput } from "@/lib/validations/patient-invite";
 import PatientInviteShareModal from "@/modals/patient-invite-share-modal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,7 +70,7 @@ function getBackupProfessionalIds(ids: string[], options: Professional[]): strin
     const prof = options.find((p) => p.id === id);
     const type = prof?.professional_type ?? "__none__";
     seenByType[type] = (seenByType[type] ?? 0) + 1;
-    if (seenByType[type] === 2) result.push(id);
+    if (seenByType[type] >= 2) result.push(id);
   }
   return result;
 }
@@ -81,9 +85,35 @@ function getInitials(name: string | null | undefined): string {
     .slice(0, 2);
 }
 
+type DueDateCalcMethod = "gestational_age" | "dum" | "dpp" | "fiv";
+type FivTransferType = "D0" | "D3" | "D5" | "D6" | "D7";
+
+const FIV_TRANSFER_OPTIONS: { value: FivTransferType; label: string }[] = [
+  { value: "D0", label: "D0 — transferência no dia da coleta" },
+  { value: "D3", label: "D3 — transferência 3 dias após a coleta" },
+  { value: "D5", label: "D5 — transferência 5 dias após a coleta" },
+  { value: "D6", label: "D6 — transferência 6 dias após a coleta" },
+  { value: "D7", label: "D7 — transferência 7 dias após a coleta" },
+];
+
+// Dias somados à data de transferência para chegar na DPP (280 dias de gestação - idade do embrião na transferência)
+const FIV_DPP_OFFSET_DAYS: Record<FivTransferType, number> = {
+  D0: 266,
+  D3: 263,
+  D5: 261,
+  D6: 260,
+  D7: 259,
+};
+
 type StepNumber = 1 | 2 | 3 | 4 | 5;
 
-function StepIndicator({ current, step4Label }: { current: StepNumber; step4Label: string }) {
+function StepIndicator({
+  current,
+  step4Label,
+}: {
+  current: StepNumber;
+  step4Label: string;
+}) {
   const STEPS = [
     { n: 1 as StepNumber, label: "Gestante" },
     { n: 2 as StepNumber, label: "Contato" },
@@ -159,6 +189,13 @@ export default function NewPatientModal({
   initialValues,
 }: NewPatientModalProps) {
   const [step, setStep] = useState<StepNumber>(1);
+  const [dueDateCalcMethod, setDueDateCalcMethod] = useState<DueDateCalcMethod | undefined>(
+    undefined,
+  );
+  const [gestAgeWeeks, setGestAgeWeeks] = useState("");
+  const [gestAgeDays, setGestAgeDays] = useState("");
+  const [fivTransferDate, setFivTransferDate] = useState("");
+  const [fivTransferType, setFivTransferType] = useState<FivTransferType>("D5");
   const [addressVisible, setAddressVisible] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
   const [profAmounts, setProfAmounts] = useState<Record<string, number>>({});
@@ -195,6 +232,11 @@ export default function NewPatientModal({
       setShowBilling(false);
       setProfAmounts({});
       setIsCustomInterval(false);
+      setDueDateCalcMethod(undefined);
+      setGestAgeWeeks("");
+      setGestAgeDays("");
+      setFivTransferDate("");
+      setFivTransferType("D5");
       onSuccess?.();
       setShowModal(false);
     },
@@ -240,6 +282,10 @@ export default function NewPatientModal({
       email: "",
       phone: "",
       partner_name: "",
+      rg: "",
+      cpf: "",
+      marital_status: undefined,
+      occupation: "",
       baby_name: "",
       due_date: "",
       dum: "",
@@ -293,11 +339,17 @@ export default function NewPatientModal({
     ).slice(1);
   }, [isCustomInterval, billingFirstDueDate, billingInstallmentInterval, billingInstallmentCount]);
 
-  const prevResetKeyRef = useRef({ total: billingTotalAmount, count: billingInstallmentCount });
+  const prevResetKeyRef = useRef({
+    total: billingTotalAmount,
+    count: billingInstallmentCount,
+  });
 
   useEffect(() => {
     const { total, count } = prevResetKeyRef.current;
-    prevResetKeyRef.current = { total: billingTotalAmount, count: billingInstallmentCount };
+    prevResetKeyRef.current = {
+      total: billingTotalAmount,
+      count: billingInstallmentCount,
+    };
     if (total !== billingTotalAmount || count !== billingInstallmentCount) {
       setLockedAmounts({});
     }
@@ -404,6 +456,66 @@ export default function NewPatientModal({
     }
   }
 
+  function resetDueDateFields() {
+    form.setValue("dum", "");
+    form.setValue("due_date", "");
+  }
+
+  function handleCalcMethodChange(method: DueDateCalcMethod) {
+    setDueDateCalcMethod(method);
+    setGestAgeWeeks("");
+    setGestAgeDays("");
+    setFivTransferDate("");
+    setFivTransferType("D5");
+    resetDueDateFields();
+  }
+
+  function applyGestAge(weeksStr: string, daysStr: string) {
+    setGestAgeWeeks(weeksStr);
+    setGestAgeDays(daysStr);
+    const weeks = Number(weeksStr);
+    const days = Number(daysStr);
+    if (weeksStr === "" || daysStr === "" || Number.isNaN(weeks) || Number.isNaN(days)) {
+      resetDueDateFields();
+      return;
+    }
+    const dum = dayjs().subtract(weeks * 7 + days, "day");
+    form.setValue("dum", dum.format("YYYY-MM-DD"));
+    form.setValue("due_date", dum.add(280, "day").format("YYYY-MM-DD"));
+  }
+
+  function applyDum(date: Date | null) {
+    if (!date) {
+      resetDueDateFields();
+      return;
+    }
+    const dumStr = date.toISOString().slice(0, 10);
+    form.setValue("dum", dumStr);
+    form.setValue("due_date", dayjs(dumStr).add(280, "day").format("YYYY-MM-DD"));
+  }
+
+  function applyDpp(date: Date | null) {
+    if (!date) {
+      resetDueDateFields();
+      return;
+    }
+    const dppStr = date.toISOString().slice(0, 10);
+    form.setValue("due_date", dppStr);
+    form.setValue("dum", dayjs(dppStr).subtract(280, "day").format("YYYY-MM-DD"));
+  }
+
+  function applyFiv(transferDateStr: string, type: FivTransferType) {
+    setFivTransferDate(transferDateStr);
+    setFivTransferType(type);
+    if (!transferDateStr) {
+      resetDueDateFields();
+      return;
+    }
+    const dpp = dayjs(transferDateStr).add(FIV_DPP_OFFSET_DAYS[type], "day");
+    form.setValue("due_date", dpp.format("YYYY-MM-DD"));
+    form.setValue("dum", dpp.subtract(280, "day").format("YYYY-MM-DD"));
+  }
+
   const STEP_FIELDS: Partial<Record<StepNumber, (keyof CreatePatientInput)[]>> = {
     1: inviteMode ? ["name"] : ["name", "due_date", "dum"],
     2: ["phone"],
@@ -411,6 +523,10 @@ export default function NewPatientModal({
   };
 
   async function goToNext() {
+    if (step === 1 && !dueDateCalcMethod) {
+      toast.error("Selecione o método de cálculo da DUM/DPP");
+      return;
+    }
     const fields = STEP_FIELDS[step];
     if (fields && fields.length > 0) {
       const valid = await form.trigger(fields);
@@ -567,6 +683,11 @@ export default function NewPatientModal({
     setIsCustomInterval(false);
     setIsNavigating(false);
     setInviteMode(false);
+    setDueDateCalcMethod(undefined);
+    setGestAgeWeeks("");
+    setGestAgeDays("");
+    setFivTransferDate("");
+    setFivTransferType("D5");
   }
 
   return (
@@ -647,92 +768,331 @@ export default function NewPatientModal({
                       )}
                     />
 
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="rg"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>RG</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cpf"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF</FormLabel>
+                        <FormControl>
+                          <InputMask
+                            component={Input}
+                            mask="___.___.___-__"
+                            replacement={{ _: /\d/ }}
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="marital_status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado civil</FormLabel>
+                        <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {MARITAL_STATUS_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="occupation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profissão</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="baby_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do bebê</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nome escolhido para o bebê"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-2">
+                  <FormLabel>Calculo da Idade Gestacional *</FormLabel>
+                  <Select
+                    value={dueDateCalcMethod}
+                    onValueChange={(v) => handleCalcMethodChange(v as DueDateCalcMethod)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o método de cálculo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gestational_age">Idade gestacional</SelectItem>
+                      <SelectItem value="dum">Data da última menstruação (DUM)</SelectItem>
+                      <SelectItem value="dpp">Data prevista do parto (DPP)</SelectItem>
+                      <SelectItem value="fiv">FIV/FET (transferência de embrião)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {dueDateCalcMethod === "gestational_age" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormItem>
+                      <FormLabel>Semanas *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={45}
+                          placeholder="Ex: 20"
+                          value={gestAgeWeeks}
+                          onChange={(e) => applyGestAge(e.target.value, gestAgeDays)}
+                        />
+                      </FormControl>
+                    </FormItem>
+                    <FormItem>
+                      <FormLabel>Dias *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={6}
+                          placeholder="Ex: 3"
+                          value={gestAgeDays}
+                          onChange={(e) => applyGestAge(gestAgeWeeks, e.target.value)}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  </div>
+                )}
+
+                {dueDateCalcMethod === "fiv" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormItem>
+                      <FormLabel>Data da transferência *</FormLabel>
+                      <FormControl>
+                        <DatePicker
+                          selected={
+                            fivTransferDate ? new Date(`${fivTransferDate}T00:00:00`) : null
+                          }
+                          onChange={(date) =>
+                            applyFiv(date ? date.toISOString().slice(0, 10) : "", fivTransferType)
+                          }
+                          placeholderText="Selecione a data"
+                        />
+                      </FormControl>
+                    </FormItem>
+                    <FormItem>
+                      <FormLabel>Tipo de transferência *</FormLabel>
+                      <Select
+                        value={fivTransferType}
+                        onValueChange={(v) => applyFiv(fivTransferDate, v as FivTransferType)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {FIV_TRANSFER_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  </div>
+                )}
+
+                {dueDateCalcMethod === "dum" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
-                      name="baby_name"
+                      name="dum"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nome do bebê</FormLabel>
+                          <FormLabel>Última menstruação (DUM) *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Nome escolhido para o bebê"
-                              {...field}
-                              value={field.value ?? ""}
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={applyDum}
+                              placeholderText="Selecione a data"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={form.control}
-                        name="due_date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Data prevista do parto (DPP) *</FormLabel>
-                            <FormControl>
-                              <DatePicker
-                                selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                                onChange={(date) => {
-                                  field.onChange(date ? date.toISOString().slice(0, 10) : "");
-                                  if (date) {
-                                    form.setValue(
-                                      "dum",
-                                      dayjs(date).subtract(280, "day").format("YYYY-MM-DD"),
-                                    );
-                                  } else {
-                                    form.setValue("dum", "");
-                                  }
-                                }}
-                                placeholderText="Selecione a data"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="dum"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Última menstruação (DUM)</FormLabel>
-                            <FormControl>
-                              <DatePicker
-                                selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                                onChange={(date) =>
-                                  field.onChange(date ? date.toISOString().slice(0, 10) : "")
-                                }
-                                placeholderText="Calculado automaticamente"
-                                disabled
-                                className="bg-muted"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
                     <FormField
                       control={form.control}
-                      name="observations"
+                      name="due_date"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Observações</FormLabel>
+                          <FormLabel>Data prevista do parto (DPP)</FormLabel>
                           <FormControl>
-                            <Textarea
-                              placeholder="Informações adicionais sobre a paciente"
-                              rows={3}
-                              {...field}
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={() => undefined}
+                              placeholderText="Calculado automaticamente"
+                              disabled
+                              className="bg-muted"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                  </div>
+                )}
+
+                {dueDateCalcMethod === "dpp" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="due_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data prevista do parto (DPP) *</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={applyDpp}
+                              placeholderText="Selecione a data"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="dum"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Última menstruação (DUM)</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={() => undefined}
+                              placeholderText="Calculado automaticamente"
+                              disabled
+                              className="bg-muted"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {(dueDateCalcMethod === "gestational_age" || dueDateCalcMethod === "fiv") && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="dum"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Última menstruação (DUM)</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={() => undefined}
+                              placeholderText="Calculado automaticamente"
+                              disabled
+                              className="bg-muted"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="due_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data prevista do parto (DPP)</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                              onChange={() => undefined}
+                              placeholderText="Calculado automaticamente"
+                              disabled
+                              className="bg-muted"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="observations"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Informações adicionais sobre a paciente"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                   </>
                 )}
               </div>
@@ -974,7 +1334,6 @@ export default function NewPatientModal({
                               placeholder="Selecione as profissionais"
                               searchPlaceholder="Buscar profissional..."
                               emptyMessage="Nenhuma profissional encontrada"
-                              maxSelectedPerGroup={2}
                               className={cn(
                                 selectedIds.length > 0 && "border-primary/40",
                                 hasError && "border-destructive",
@@ -1208,7 +1567,10 @@ export default function NewPatientModal({
                               <CurrencyInput
                                 value={profAmounts[profId] ?? 0}
                                 onChange={(val) =>
-                                  setProfAmounts((prev) => ({ ...prev, [profId]: val }))
+                                  setProfAmounts((prev) => ({
+                                    ...prev,
+                                    [profId]: val,
+                                  }))
                                 }
                               />
                               <Button
@@ -1239,7 +1601,10 @@ export default function NewPatientModal({
                                     key={profId}
                                     type="button"
                                     onClick={() =>
-                                      setProfAmounts((prev) => ({ ...prev, [profId]: 0 }))
+                                      setProfAmounts((prev) => ({
+                                        ...prev,
+                                        [profId]: 0,
+                                      }))
                                     }
                                     className="flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-muted-foreground text-xs transition-colors hover:border-primary hover:text-primary"
                                   >

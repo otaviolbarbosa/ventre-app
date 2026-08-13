@@ -1,12 +1,12 @@
 "use client";
 
 import { cancelSubscriptionAction } from "@/actions/cancel-subscription-action";
-import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { isStaff } from "@/lib/access-control";
 import type { UserProfile } from "@/lib/server-auth";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@ventre/ui/card";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
 import { Separator } from "@ventre/ui/separator";
 import { Building2, Calendar, CheckCircle2, CreditCard, RefreshCw, User } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -91,7 +91,9 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
       confirmLabel: "Cancelar assinatura",
       cancelLabel: "Manter assinatura",
       variant: "destructive-inverted",
-      onConfirm: async () => { await cancelSubscription({ subscriptionId: subscription.id }); },
+      onConfirm: async () => {
+        await cancelSubscription({ subscriptionId: subscription.id });
+      },
     });
   }
 
@@ -231,10 +233,7 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
               Ao cancelar sua assinatura, ela permanecerá ativa até o fim do período já pago. Após
               essa data, você perderá o acesso aos recursos premium e não será cobrado novamente.
             </p>
-            <Button
-              variant="destructive-outline"
-              onClick={handleConfirmCancelSubscription}
-            >
+            <Button variant="destructive-outline" onClick={handleConfirmCancelSubscription}>
               Cancelar assinatura
             </Button>
           </CardContent>

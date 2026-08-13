@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -39,9 +40,7 @@ export const deleteDocumentAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Documento excluído",
-        description: patient
-          ? `Documento de ${patient.name} excluído`
-          : "Documento excluído",
+        description: patient ? `Documento de ${patient.name} excluído` : "Documento excluído",
         actionType: "patient",
         userId: user.id,
         enterpriseId: profile.enterprise_id,
@@ -49,6 +48,8 @@ export const deleteDocumentAction = authActionClient
         metadata: { document_id: parsedInput.documentId },
       });
     }
+
+    await captureServerEvent(user.id, "delete_document", { document_id: parsedInput.documentId });
 
     return { success: true };
   });

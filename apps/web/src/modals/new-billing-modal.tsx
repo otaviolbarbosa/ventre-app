@@ -286,7 +286,8 @@ export default function NewBillingModal({
                   >
                     <span className={!selectedPatientId ? "text-muted-foreground" : ""}>
                       {selectedPatientId
-                        ? (patients?.find((p) => p.id === selectedPatientId)?.name ?? selectedPatientId)
+                        ? (patients?.find((p) => p.id === selectedPatientId)?.name ??
+                          selectedPatientId)
                         : "Selecione a gestante"}
                     </span>
                     <ChevronDown className="h-4 w-4 opacity-50" />
@@ -306,9 +307,11 @@ export default function NewBillingModal({
                     />
                   </div>
                   <div className="max-h-60 overflow-y-auto p-1">
-                    {(patients?.filter((p) =>
-                      (p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase()),
-                    ) ?? []).length === 0 ? (
+                    {(
+                      patients?.filter((p) =>
+                        (p.name ?? "").toLowerCase().includes(patientSearch.toLowerCase()),
+                      ) ?? []
+                    ).length === 0 ? (
                       <p className="py-6 text-center text-muted-foreground text-sm">
                         Nenhuma gestante encontrada
                       </p>

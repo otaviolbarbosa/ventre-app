@@ -1,10 +1,11 @@
-import heroBG from "@/assets/hero-bg-3.png";
-import { LandingFooter } from "@/components/shared/landing-footer";
-import { LandingHeader } from "@/components/shared/landing-header";
 import { Button } from "@ventre/ui/button";
 import { ArrowRight, Baby, Calendar, CheckCircle2, Heart, Shield, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import heroBG from "@/assets/hero-bg-3.png";
+import { PublicFooter } from "@/components/shared/public-footer";
+import { PublicHeader } from "@/components/shared/public-header";
+import { RotatingHeroWord } from "@/components/shared/rotating-hero-word";
 
 export default async function HomePage() {
   const features = [
@@ -74,7 +75,7 @@ export default async function HomePage() {
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* ── Header ──────────────────────────────────────────── */}
-      <LandingHeader />
+      <PublicHeader />
 
       {/* ── Hero ────────────────────────────────────────────── */}
       <section className="relative flex min-h-screen items-center pt-16">
@@ -92,18 +93,12 @@ export default async function HomePage() {
         {/* Content */}
         <div className="container relative z-10 mx-auto px-6">
           <div className="max-w-2xl space-y-8 py-24">
-            {/* Badge */}
-            {/* <div className="hero-animate hero-animate-1 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/80 px-4 py-2 font-medium text-primary-foreground text-sm">
-              <Heart className="h-3.5 w-3.5 fill-current" />A melhor plataforma para o
-              acompanhamento gestacional
-            </div> */}
-
             {/* Headline */}
             <h1
               className="hero-animate hero-animate-2 font-bold text-foreground leading-[1.08] tracking-tight"
               style={{ fontSize: "clamp(2.6rem, 5.5vw, 4.75rem)" }}
             >
-              Cuidado <span className="text-primary">integrado</span> para gestantes
+              Cuidado <span className="text-primary">integrado</span> para <RotatingHeroWord />
             </h1>
 
             <p className="hero-animate hero-animate-3 max-w-lg text-foreground/60 text-lg leading-relaxed">
@@ -259,7 +254,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────── */}
-      <LandingFooter />
+      <PublicFooter />
     </div>
   );
 }

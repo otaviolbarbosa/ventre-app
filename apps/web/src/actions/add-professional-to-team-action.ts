@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -23,24 +24,26 @@ export const addProfessionalToTeamAction = authActionClient
       .from("pregnancies")
       .select("id")
       .eq("patient_id", patientId)
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("has_finished", false)
       .single();
 
     if (!pregnancy?.id) throw new Error("Paciente não possui gestação registrada");
     const pregnancyId = pregnancy.id;
 
-    const { data: existing } = await supabaseAdmin
-      .from("team_members")
-      .select("id")
-      .eq("patient_id", patientId)
-      .eq("professional_type", professionalType)
-      .eq("is_backup", isBackup)
-      .limit(1);
+    if (!isBackup) {
+      const { data: existing } = await supabaseAdmin
+        .from("team_members")
+        .select("id")
+        .eq("pregnancy_id", pregnancyId)
+        .eq("professional_type", professionalType)
+        .eq("is_backup", false)
+        .limit(1);
 
-    if (existing?.[0]) {
-      const slot = isBackup ? "backup" : "titular";
-      throw new Error(`Já existe um profissional ${slot} para a especialidade ${professionalType}`);
+      if (existing?.[0]) {
+        throw new Error(
+          `Já existe um profissional titular para a especialidade ${professionalType}`,
+        );
+      }
     }
 
     const { error } = await supabaseAdmin.from("team_members").insert({
@@ -81,6 +84,11 @@ export const addProfessionalToTeamAction = authActionClient
         },
       });
     }
+
+    await captureServerEvent(user.id, "add_professional_to_team", {
+      patient_id: patientId,
+      professional_id: professionalId,
+    });
 
     return { success: true };
   });

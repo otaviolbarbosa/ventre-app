@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { otherExamSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
@@ -37,9 +38,7 @@ export const updateOtherExamAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Outro exame atualizado",
-        description: patient
-          ? `Exame de ${patient.name} atualizado`
-          : "Exame atualizado",
+        description: patient ? `Exame de ${patient.name} atualizado` : "Exame atualizado",
         actionType: "exam",
         userId: user.id,
         enterpriseId: profile.enterprise_id,
@@ -47,6 +46,8 @@ export const updateOtherExamAction = authActionClient
         metadata: { exam_id: examId },
       });
     }
+
+    await captureServerEvent(user.id, "update_other_exam", { exam_id: examId });
 
     return { success: true };
   });

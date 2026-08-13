@@ -1,8 +1,9 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
-import { ultrasoundSchema } from "@/lib/validations/prenatal";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
+import { ultrasoundSchema } from "@/lib/validations/prenatal";
 import { z } from "zod";
 
 const schema = z.object({
@@ -40,6 +41,8 @@ export const addUltrasoundAction = authActionClient
         metadata: { pregnancy_id: pregnancyId },
       });
     }
+
+    await captureServerEvent(user.id, "add_ultrasound", { pregnancy_id: pregnancyId });
 
     return { success: true };
   });

@@ -1,5 +1,6 @@
 "use client";
 import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
+import { useScrollDirection } from "@/hooks/use-scroll-direction";
 import { isManager, isPatient, isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import {
@@ -41,6 +42,7 @@ export default function BottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const isScrollingDown = useScrollDirection();
 
   const { profile } = useAuth();
 
@@ -77,7 +79,12 @@ export default function BottomNav() {
 
   const mainNav: MainNavProps = isPatient(profile)
     ? [
-        { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
+        {
+          name: "Início",
+          href: "/home",
+          icon: Home,
+          isActive: pathname.startsWith("/home"),
+        },
         {
           name: "Cartão",
           href: "/cartao-pre-natal",
@@ -184,7 +191,12 @@ export default function BottomNav() {
   const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
 
   return (
-    <div className="fixed bottom-0 z-50 flex w-full justify-center px-2 py-4 md:hidden">
+    <div
+      className={cn(
+        "fixed bottom-0 z-50 flex w-full justify-center px-2 py-4 transition-transform duration-300 ease-out md:hidden",
+        isScrollingDown ? "translate-y-[100px]" : "translate-y-0",
+      )}
+    >
       <div ref={moreRef} className="relative w-full max-w-[420px]">
         <div
           className={cn(

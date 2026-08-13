@@ -14,7 +14,6 @@ import {
   CLINICAL_FIELDS,
   DOPPLER_RESULT_LABELS,
   FETAL_PRESENTATION_LABELS,
-  HEMOGLOBIN_LABELS,
   RISK_GROUPS,
   SURGICAL_FIELDS,
   VACCINE_LABELS,
@@ -1112,11 +1111,7 @@ function LabExamsSection({
                     {dayjs(exam.exam_date).format("DD/MM/YYYY")}
                   </td>
                   <td className="py-2 pr-4">
-                    {exam.result_text ||
-                      exam.result_numeric?.toString() ||
-                      (exam.hemoglobin_electrophoresis
-                        ? HEMOGLOBIN_LABELS[exam.hemoglobin_electrophoresis]
-                        : "-")}
+                    {exam.result_text || exam.result_numeric?.toString() || "-"}
                   </td>
                   <td className="py-2 pr-4 text-muted-foreground">{exam.unit || "-"}</td>
                   <td className="py-2">

@@ -1,7 +1,7 @@
 export { addPatientAction } from "./add-patient-action";
 export { addAppointmentAction } from "./add-appointment-action";
 export { addBillingAction } from "./add-billing-action";
-export { createInviteAction } from "./create-invite-action";
+export { createTeamMemberInviteAction } from "./create-invite-action";
 export { respondInviteAction } from "./respond-invite-action";
 export { leaveTeamAction } from "./leave-team-action";
 export { setProfessionalTypeAction } from "./set-professional-type-action";

@@ -2,10 +2,16 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
-import { createAppointmentSchema } from "@/lib/validations/appointment";
+import {
+  createAppointmentSchema,
+  newAppointmentBookedLabel,
+  newAppointmentLabel,
+} from "@/lib/validations/appointment";
 import { createAppointment } from "@/services/appointment";
 import { syncCreateToGoogleCalendar } from "@/services/google-calendar";
+import { revalidateHomeData } from "@/services/home-cache";
 import type { Patient } from "@/types";
 
 export const addAppointmentAction = authActionClient
@@ -29,7 +35,14 @@ export const addAppointmentAction = authActionClient
       appointmentEnterpriseId = pregnancy?.enterprise_id ?? null;
     }
 
-    const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput, appointmentEnterpriseId);
+    const appointment = await createAppointment(
+      supabaseAdmin,
+      professionalId,
+      parsedInput,
+      appointmentEnterpriseId,
+    );
+
+    revalidateHomeData(professionalId);
 
     let patientName: string | null = parsedInput.external_patient_name ?? null;
     if (!parsedInput.is_external && appointment.patient_id) {
@@ -43,9 +56,8 @@ export const addAppointmentAction = authActionClient
     }
 
     if (appointmentEnterpriseId) {
-      const isConsulta = parsedInput.type === "consulta";
-      const actionName = isConsulta ? "Nova consulta agendada" : "Novo encontro agendado";
-      const typeLabel = isConsulta ? "Consulta pré-natal" : "Encontro preparatório";
+      const actionName = newAppointmentBookedLabel[appointment.type];
+      const typeLabel = newAppointmentLabel[appointment.type];
 
       const description = patientName
         ? `${typeLabel} para ${patientName} em ${appointment.date} às ${appointment.time.slice(0, 5)}`
@@ -71,6 +83,8 @@ export const addAppointmentAction = authActionClient
     ).catch((err) => {
       console.error("[google-calendar] create sync failed", err);
     });
+
+    await captureServerEvent(user.id, "add_appointment", { appointment_id: appointment.id });
 
     return { appointment };
   });

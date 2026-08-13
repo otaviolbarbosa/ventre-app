@@ -86,7 +86,7 @@ function AgendaSkeleton() {
 function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
   return (
     <div className="flex h-full flex-col">
-      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* DPP pills skeleton */}
         <div className="-mx-4 no-scrollbar flex h-14 gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -267,10 +267,16 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: running it once
   useEffect(() => {
-    fetchHomeData({});
+    fetchHomeData();
     fetchPatients({ filter: activeFilter, search: searchQuery });
-    fetchAllPatients();
   }, []);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetch only on first modal open
+  useEffect(() => {
+    if (showNewAppointment && !allPatientsResult.data) {
+      fetchAllPatients();
+    }
+  }, [showNewAppointment]);
 
   const homeData = homeDataResult.data;
   const dppByMonth = homeData?.dppByMonth ?? [];
@@ -326,11 +332,11 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
   }, []);
 
   const refreshHomeData = useCallback(() => {
-    fetchHomeData({});
+    fetchHomeData();
   }, [fetchHomeData]);
 
   const refreshAll = useCallback(() => {
-    fetchHomeData({});
+    fetchHomeData();
     fetchPatients({ filter: activeFilter, search: searchQuery });
   }, [fetchHomeData, fetchPatients, activeFilter, searchQuery]);
 
@@ -343,7 +349,7 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
   if (!hasAnyPatients && homeData) {
     return (
       <div className="flex h-full flex-col">
-        <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+        <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
           <Baby className="h-14 w-14 text-muted-foreground/40" />
           <div>
@@ -369,7 +375,7 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* DPP by Month Cards */}
@@ -444,32 +450,32 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
             </div>
 
             {/* Patient List */}
-            <Card>
-              <CardContent className="p-0">
-                {isLoadingPatients ? (
-                  <>
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                    <PatientCardSkeleton />
-                  </>
-                ) : items.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-12 text-center">
-                    <Baby className="h-10 w-10 text-muted-foreground/50" />
-                    <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
-                  </div>
-                ) : (
-                  <div className="divider-y-1">
-                    {items.map(({ patient, teamMembers }) => (
-                      <Link key={patient.id} href={`/patients/${patient.id}`}>
-                        <PatientCard patient={patient} teamMembers={teamMembers} />
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {isLoadingPatients ? (
+              <>
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+              </>
+            ) : items.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-12 text-center">
+                <Baby className="h-10 w-10 text-muted-foreground/50" />
+                <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {items.map(({ patient, teamMembers }) => (
+                  <Link
+                    key={patient.id}
+                    href={`/patients/${patient.id}`}
+                    className="overflow-hidden rounded-xl border bg-white"
+                  >
+                    <PatientCard patient={patient} teamMembers={teamMembers} />
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right: Upcoming Appointments */}

@@ -1,6 +1,9 @@
 "use server";
 
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
+import { personalDocumentsSchema } from "@/lib/validations/personal-documents";
+import { professionalDocumentsSchema } from "@/lib/validations/professional-documents";
 import { z } from "zod";
 
 const schema = z.object({
@@ -17,6 +20,8 @@ const schema = z.object({
       state: z.string().optional(),
     })
     .optional(),
+  professional_documents: professionalDocumentsSchema.optional(),
+  personal_documents: personalDocumentsSchema.optional(),
 });
 
 export const updateProfileAction = authActionClient
@@ -27,6 +32,8 @@ export const updateProfileAction = authActionClient
       .update({
         name: parsedInput.name.trim(),
         phone: parsedInput.phone?.trim() || null,
+        professional_documents: parsedInput.professional_documents ?? null,
+        personal_documents: parsedInput.personal_documents ?? null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id)
@@ -70,6 +77,8 @@ export const updateProfileAction = authActionClient
         }
       }
     }
+
+    await captureServerEvent(user.id, "update_profile", {});
 
     return { profile };
   });

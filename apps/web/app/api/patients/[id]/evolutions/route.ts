@@ -1,8 +1,8 @@
+import { sendNotificationToTeam } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { createEvolutionSchema } from "@/lib/validations/evolution";
 import { createServerSupabaseClient } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
-import { sendNotificationToTeam } from "@/lib/notifications/send";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {

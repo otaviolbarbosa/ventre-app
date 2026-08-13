@@ -328,6 +328,7 @@ export type Database = {
           is_active: boolean | null
           is_base_contract: boolean
           is_signed: boolean
+          name: string | null
           parties_details: Json | null
           patient_id: string | null
           pregnancy_id: string | null
@@ -352,6 +353,7 @@ export type Database = {
           is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
+          name?: string | null
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
@@ -376,6 +378,7 @@ export type Database = {
           is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
+          name?: string | null
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
@@ -614,65 +617,11 @@ export type Database = {
           },
         ]
       }
-      installments_scheduled_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          installment_id: string
-          scheduled_for: string
-          sent_at: string | null
-          status: Database["public"]["Enums"]["installments_notification_status"]
-          type: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          installment_id: string
-          scheduled_for: string
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["installments_notification_status"]
-          type: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          installment_id?: string
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["installments_notification_status"]
-          type?: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "installments_scheduled_notifications_installment_id_fkey"
-            columns: ["installment_id"]
-            isOneToOne: false
-            referencedRelation: "installments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "installments_scheduled_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lab_exam_results: {
         Row: {
           created_at: string
           exam_date: string
           exam_name: string
-          hemoglobin_electrophoresis:
-            | Database["public"]["Enums"]["hemoglobin_electrophoresis_result"]
-            | null
           id: string
           pregnancy_id: string
           result_numeric: number | null
@@ -683,9 +632,6 @@ export type Database = {
           created_at?: string
           exam_date: string
           exam_name: string
-          hemoglobin_electrophoresis?:
-            | Database["public"]["Enums"]["hemoglobin_electrophoresis_result"]
-            | null
           id?: string
           pregnancy_id: string
           result_numeric?: number | null
@@ -696,9 +642,6 @@ export type Database = {
           created_at?: string
           exam_date?: string
           exam_name?: string
-          hemoglobin_electrophoresis?:
-            | Database["public"]["Enums"]["hemoglobin_electrophoresis_result"]
-            | null
           id?: string
           pregnancy_id?: string
           result_numeric?: number | null
@@ -714,6 +657,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_log: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          created_at: string
+          error_reason: string | null
+          external_message_id: string | null
+          id: string
+          notification_type: string
+          recipient_id: string
+          recipient_type: string
+          reference_id: string | null
+          reference_type: string | null
+          status: Database["public"]["Enums"]["notification_log_status"]
+          updated_at: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          created_at?: string
+          error_reason?: string | null
+          external_message_id?: string | null
+          id?: string
+          notification_type: string
+          recipient_id: string
+          recipient_type: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status: Database["public"]["Enums"]["notification_log_status"]
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          created_at?: string
+          error_reason?: string | null
+          external_message_id?: string | null
+          id?: string
+          notification_type?: string
+          recipient_id?: string
+          recipient_type?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: Database["public"]["Enums"]["notification_log_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      notification_queue_index: {
+        Row: {
+          created_at: string
+          dedup_key: string
+          msg_id: number
+          notification_type: string
+          queue_name: string
+          reference_id: string
+          reference_type: string
+        }
+        Insert: {
+          created_at?: string
+          dedup_key?: string
+          msg_id: number
+          notification_type: string
+          queue_name: string
+          reference_id: string
+          reference_type: string
+        }
+        Update: {
+          created_at?: string
+          dedup_key?: string
+          msg_id?: number
+          notification_type?: string
+          queue_name?: string
+          reference_id?: string
+          reference_type?: string
+        }
+        Relationships: []
       }
       notification_settings: {
         Row: {
@@ -739,6 +757,7 @@ export type Database = {
           updated_at: string
           user_id: string
           vaccine_updated: boolean
+          whatsapp_enabled: boolean
         }
         Insert: {
           appointment_cancelled?: boolean
@@ -763,6 +782,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           vaccine_updated?: boolean
+          whatsapp_enabled?: boolean
         }
         Update: {
           appointment_cancelled?: boolean
@@ -787,6 +807,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           vaccine_updated?: boolean
+          whatsapp_enabled?: boolean
         }
         Relationships: [
           {
@@ -1100,6 +1121,7 @@ export type Database = {
         Row: {
           allergies: string[] | null
           blood_type: Database["public"]["Enums"]["blood_type"] | null
+          cpf: string | null
           created_at: string | null
           created_by: string
           date_of_birth: string | null
@@ -1110,16 +1132,21 @@ export type Database = {
           family_history_twin: boolean | null
           height_cm: number | null
           id: string
+          marital_status: string | null
           name: string
+          occupation: string | null
           partner_name: string | null
           personal_notes: string | null
           phone: string
+          rg: string | null
           updated_at: string | null
           user_id: string | null
+          whatsapp_enabled: boolean
         }
         Insert: {
           allergies?: string[] | null
           blood_type?: Database["public"]["Enums"]["blood_type"] | null
+          cpf?: string | null
           created_at?: string | null
           created_by: string
           date_of_birth?: string | null
@@ -1130,16 +1157,21 @@ export type Database = {
           family_history_twin?: boolean | null
           height_cm?: number | null
           id?: string
+          marital_status?: string | null
           name: string
+          occupation?: string | null
           partner_name?: string | null
           personal_notes?: string | null
           phone: string
+          rg?: string | null
           updated_at?: string | null
           user_id?: string | null
+          whatsapp_enabled?: boolean
         }
         Update: {
           allergies?: string[] | null
           blood_type?: Database["public"]["Enums"]["blood_type"] | null
+          cpf?: string | null
           created_at?: string | null
           created_by?: string
           date_of_birth?: string | null
@@ -1150,12 +1182,16 @@ export type Database = {
           family_history_twin?: boolean | null
           height_cm?: number | null
           id?: string
+          marital_status?: string | null
           name?: string
+          occupation?: string | null
           partner_name?: string | null
           personal_notes?: string | null
           phone?: string
+          rg?: string | null
           updated_at?: string | null
           user_id?: string | null
+          whatsapp_enabled?: boolean
         }
         Relationships: [
           {
@@ -1648,39 +1684,6 @@ export type Database = {
           },
         ]
       }
-      scheduled_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          notification_type: Database["public"]["Enums"]["notification_type"]
-          payload: Json | null
-          processed_at: string | null
-          reference_id: string
-          reference_type: string
-          scheduled_for: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notification_type: Database["public"]["Enums"]["notification_type"]
-          payload?: Json | null
-          processed_at?: string | null
-          reference_id: string
-          reference_type: string
-          scheduled_for: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notification_type?: Database["public"]["Enums"]["notification_type"]
-          payload?: Json | null
-          processed_at?: string | null
-          reference_id?: string
-          reference_type?: string
-          scheduled_for?: string
-        }
-        Relationships: []
-      }
       subscriptions: {
         Row: {
           cancelation_reason: string | null
@@ -2013,7 +2016,9 @@ export type Database = {
           email: string
           id: string
           name: string
+          personal_documents: Json | null
           phone: string | null
+          professional_documents: Json | null
           professional_type:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -2026,7 +2031,9 @@ export type Database = {
           email: string
           id: string
           name: string
+          personal_documents?: Json | null
           phone?: string | null
+          professional_documents?: Json | null
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -2039,7 +2046,9 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          personal_documents?: Json | null
           phone?: string | null
+          professional_documents?: Json | null
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
             | null
@@ -2094,7 +2103,51 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ack_notification: {
+        Args: { p_msg_id: number; p_queue_name: string }
+        Returns: boolean
+      }
       call_send_notification: { Args: { p_payload: Json }; Returns: undefined }
+      cancel_notifications_for_reference: {
+        Args: { p_reference_id: string; p_reference_type: string }
+        Returns: number
+      }
+      dead_letter_notification: {
+        Args: {
+          p_channel: Database["public"]["Enums"]["notification_channel"]
+          p_msg_id: number
+          p_notification_type: string
+          p_queue_name: string
+          p_reason: string
+          p_recipient_id: string
+          p_recipient_type: string
+          p_reference_id: string
+          p_reference_type: string
+        }
+        Returns: undefined
+      }
+      dequeue_notifications: {
+        Args: { p_qty?: number; p_queue_name: string; p_vt?: number }
+        Returns: {
+          enqueued_at: string
+          message: Json
+          msg_id: number
+          read_ct: number
+        }[]
+      }
+      enqueue_notification: {
+        Args: {
+          p_dedup_key?: string
+          p_delay_seconds?: number
+          p_notification_type: string
+          p_queue_name: string
+          p_recipient_id: string
+          p_recipient_type: string
+          p_reference_id: string
+          p_reference_type: string
+        }
+        Returns: number
+      }
       gestational_weeks: { Args: { dum: string }; Returns: number }
       get_filtered_patients: {
         Args: {
@@ -2153,8 +2206,33 @@ export type Database = {
         Args: never
         Returns: undefined
       }
-      process_scheduled_notifications: { Args: never; Returns: undefined }
+      notification_queue_length: {
+        Args: { p_queue_name: string }
+        Returns: number
+      }
+      process_notification_queues: { Args: never; Returns: undefined }
+      requeue_with_backoff: {
+        Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number }
+        Returns: undefined
+      }
+      schedule_appointment_unconfirmed: { Args: never; Returns: undefined }
+      schedule_contract_pending_signature: { Args: never; Returns: undefined }
+      schedule_daily_agenda_summary: { Args: never; Returns: undefined }
+      schedule_dpp_passed_no_birth_record: { Args: never; Returns: undefined }
       schedule_dpp_reminders: { Args: never; Returns: undefined }
+      schedule_installment_overdue_professional: {
+        Args: never
+        Returns: undefined
+      }
+      schedule_installment_reminders: { Args: never; Returns: undefined }
+      schedule_installment_under_review_stalled: {
+        Args: never
+        Returns: undefined
+      }
+      schedule_monthly_billing_report: { Args: never; Returns: undefined }
+      schedule_prenatal_followup_gap: { Args: never; Returns: undefined }
+      schedule_subscription_billing_issue: { Args: never; Returns: undefined }
+      schedule_team_invite_pending: { Args: never; Returns: undefined }
     }
     Enums: {
       amniotic_fluid_index:
@@ -2163,37 +2241,26 @@ export type Database = {
         | "normal"
         | "polyhydramnios"
       appointment_status: "agendada" | "realizada" | "cancelada"
-      appointment_type: "consulta" | "encontro"
+      appointment_type: "consulta" | "encontro" | "exame"
       billing_fee_type: "fixed" | "percentage"
       billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       delivery_method: "cesarean" | "vaginal"
       doppler_result: "normal" | "abnormal" | "not_performed"
       fetal_presentation: "cephalic" | "pelvic" | "transverse"
-      hemoglobin_electrophoresis_result:
-        | "AA"
-        | "AS"
-        | "AC"
-        | "SS"
-        | "SC"
-        | "other_heterozygous"
-        | "other_homozygous"
       installment_status:
         | "pendente"
         | "pago"
         | "atrasado"
         | "cancelado"
         | "em_analise"
-      installments_notification_status:
-        | "pending"
+      notification_channel: "push" | "whatsapp"
+      notification_log_status:
         | "sent"
-        | "cancelled"
+        | "delivered"
+        | "read"
         | "failed"
-      installments_notification_type:
-        | "due_in_7_days"
-        | "due_in_3_days"
-        | "due_today"
-        | "overdue"
+        | "dead_letter"
       notification_type:
         | "appointment_created"
         | "appointment_updated"
@@ -2376,22 +2443,13 @@ export const Constants = {
         "polyhydramnios",
       ],
       appointment_status: ["agendada", "realizada", "cancelada"],
-      appointment_type: ["consulta", "encontro"],
+      appointment_type: ["consulta", "encontro", "exame"],
       billing_fee_type: ["fixed", "percentage"],
       billing_status: ["pendente", "pago", "atrasado", "cancelado"],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       delivery_method: ["cesarean", "vaginal"],
       doppler_result: ["normal", "abnormal", "not_performed"],
       fetal_presentation: ["cephalic", "pelvic", "transverse"],
-      hemoglobin_electrophoresis_result: [
-        "AA",
-        "AS",
-        "AC",
-        "SS",
-        "SC",
-        "other_heterozygous",
-        "other_homozygous",
-      ],
       installment_status: [
         "pendente",
         "pago",
@@ -2399,17 +2457,13 @@ export const Constants = {
         "cancelado",
         "em_analise",
       ],
-      installments_notification_status: [
-        "pending",
+      notification_channel: ["push", "whatsapp"],
+      notification_log_status: [
         "sent",
-        "cancelled",
+        "delivered",
+        "read",
         "failed",
-      ],
-      installments_notification_type: [
-        "due_in_7_days",
-        "due_in_3_days",
-        "due_today",
-        "overdue",
+        "dead_letter",
       ],
       notification_type: [
         "appointment_created",

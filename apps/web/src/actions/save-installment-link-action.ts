@@ -1,6 +1,8 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -29,14 +31,24 @@ export const saveInstallmentLinkAction = authActionClient
 
     if (error) throw new Error(error.message);
 
-    if (profile.enterprise_id) {
-      const { data: billing } = await supabaseAdmin
-        .from("billings")
-        .select("patient_id, patient:patients(name)")
-        .eq("id", parsedInput.billingId)
-        .single();
-      const patient = billing?.patient as { name: string } | null;
+    const { data: billing } = await supabaseAdmin
+      .from("billings")
+      .select("patient_id, patient:patients(id, name)")
+      .eq("id", parsedInput.billingId)
+      .single();
+    const patient = billing?.patient as { id: string; name: string } | null;
 
+    if (patient && parsedInput.paymentLink) {
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patient.id },
+        "installment_payment_link",
+        { patientName: patient.name, paymentLink: parsedInput.paymentLink },
+      ).catch((err) => {
+        console.error("[whatsapp] installment_payment_link send failed", err);
+      });
+    }
+
+    if (profile.enterprise_id) {
       insertActivityLog({
         supabaseAdmin,
         actionName: "Link de pagamento salvo",
@@ -50,6 +62,11 @@ export const saveInstallmentLinkAction = authActionClient
         metadata: { billing_id: parsedInput.billingId, installment_id: parsedInput.installmentId },
       });
     }
+
+    await captureServerEvent(user.id, "save_installment_link", {
+      billing_id: parsedInput.billingId,
+      installment_id: parsedInput.installmentId,
+    });
 
     return { success: true };
   });

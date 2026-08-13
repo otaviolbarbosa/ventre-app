@@ -2,12 +2,12 @@
 
 import { addBackupProfessionalAction } from "@/actions/add-backup-professional-action";
 import { searchUsersAction } from "@/actions/search-users-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
-import type { ProfessionalType } from "@/types";
-import { professionalTypeLabels } from "@/utils/team";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Loader2, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";

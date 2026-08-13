@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { leaveTeam } from "@/services/team";
 import { z } from "zod";
@@ -34,6 +35,8 @@ export const leaveTeamAction = authActionClient
         metadata: { patient_id: parsedInput.patientId },
       });
     }
+
+    await captureServerEvent(user.id, "leave_team", { patient_id: parsedInput.patientId });
 
     return { success: true };
   });

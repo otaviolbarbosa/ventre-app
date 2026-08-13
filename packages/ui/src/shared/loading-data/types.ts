@@ -1,3 +1,3 @@
 export type LoadingDataProps = {
-  display: boolean
-}
+  display: boolean;
+};

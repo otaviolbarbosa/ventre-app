@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createBillingSchema } from "@/lib/validations/billing";
 import { createBilling } from "@/services/billing";
@@ -23,7 +24,13 @@ export const addBillingAction = authActionClient
       billingEnterpriseId = pregnancy?.enterprise_id ?? null;
     }
 
-    const billing = await createBilling(supabase, supabaseAdmin, user.id, parsedInput, billingEnterpriseId);
+    const billing = await createBilling(
+      supabase,
+      supabaseAdmin,
+      user.id,
+      parsedInput,
+      billingEnterpriseId,
+    );
 
     if (billingEnterpriseId) {
       const { data: patient } = await supabase
@@ -35,9 +42,7 @@ export const addBillingAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Nova cobrança criada",
-        description: patient
-          ? `Nova cobrança criada para ${patient.name}`
-          : "Nova cobrança criada",
+        description: patient ? `Nova cobrança criada para ${patient.name}` : "Nova cobrança criada",
         actionType: "billing",
         userId: user.id,
         enterpriseId: billingEnterpriseId,
@@ -45,6 +50,8 @@ export const addBillingAction = authActionClient
         metadata: { billing_id: billing.id },
       });
     }
+
+    await captureServerEvent(user.id, "add_billing", { billing_id: billing.id });
 
     return { billing };
   });

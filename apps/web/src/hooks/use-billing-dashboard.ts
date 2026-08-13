@@ -1,11 +1,7 @@
 "use client";
 
 import type { FilterKey } from "@/components/billing/dashboard-metrics";
-import {
-  FILTER_LABELS,
-  buildBillingMetrics,
-  groupBillingsByFilter,
-} from "@/lib/billing/dashboard";
+import { buildBillingMetrics, groupBillingsByStatusSections } from "@/lib/billing/dashboard";
 import { dayjs } from "@/lib/dayjs";
 import type { BillingWithInstallments, DashboardMetrics } from "@/services/billing";
 import { useCallback, useMemo, useState } from "react";
@@ -29,22 +25,20 @@ export function useBillingDashboard({
     setActiveFilter((prev) => (prev === filter ? null : filter));
   }, []);
 
-  const filteredBillings = useMemo(
-    () => groupBillingsByFilter(billings, activeFilter),
-    [billings, activeFilter],
+  const statusSections = useMemo(
+    () => groupBillingsByStatusSections(billings, activeMonth, activeFilter),
+    [billings, activeMonth, activeFilter],
   );
 
   const billingMetrics = useMemo(() => (metrics ? buildBillingMetrics(metrics) : []), [metrics]);
 
   const activeMonthLabel = `${capitalize(dayjs(activeMonth).format("MMMM"))} de ${dayjs(activeMonth).format("YYYY")}`;
-  const sectionTitle = activeFilter ? FILTER_LABELS[activeFilter] : "Cobranças Recentes";
 
   return {
     activeFilter,
     handleFilterClick,
-    filteredBillings,
+    statusSections,
     billingMetrics,
     activeMonthLabel,
-    sectionTitle,
   };
 }

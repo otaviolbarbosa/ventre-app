@@ -1,10 +1,14 @@
-import { z } from "zod";
 import type { Database } from "@ventre/supabase/types";
+import { z } from "zod";
 
 type AppointmentType = Database["public"]["Enums"]["appointment_type"];
 type AppointmentStatus = Database["public"]["Enums"]["appointment_status"];
 
-const appointmentTypes = ["consulta", "encontro"] as const satisfies readonly AppointmentType[];
+const appointmentTypes = [
+  "exame",
+  "consulta",
+  "encontro",
+] as const satisfies readonly AppointmentType[];
 const appointmentStatuses = [
   "agendada",
   "realizada",
@@ -40,7 +44,10 @@ export const createAppointmentSchema = z
         });
       }
     } else {
-      if (!data.patient_id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patient_id)) {
+      if (
+        !data.patient_id ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.patient_id)
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Selecione uma paciente",
@@ -70,3 +77,21 @@ export const updateAppointmentSchema = z.object({
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type UpdateAppointmentInput = z.infer<typeof updateAppointmentSchema>;
+
+export const appointmentLabel: Record<AppointmentType, string> = {
+  exame: "Exame",
+  consulta: "Consulta",
+  encontro: "Encontro",
+};
+
+export const newAppointmentLabel: Record<AppointmentType, string> = {
+  exame: "Exame pré-natal",
+  consulta: "Consulta pré-natal",
+  encontro: "Encontro preparatório",
+};
+
+export const newAppointmentBookedLabel: Record<AppointmentType, string> = {
+  exame: "Novo exame agendado",
+  consulta: "Nova consulta agendada",
+  encontro: "Novo encontro agendado",
+};

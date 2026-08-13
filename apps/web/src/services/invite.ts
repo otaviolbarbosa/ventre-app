@@ -1,7 +1,7 @@
-import type { Invite } from "@/types";
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import type { Database, Tables, TablesInsert } from "@ventre/supabase/types";
 import dayjs from "dayjs";
+import type { Invite } from "@/types";
 
 type ProfessionalType = Database["public"]["Enums"]["professional_type"];
 
@@ -93,7 +93,7 @@ export async function getPendingInviteById(inviteId: string): Promise<GetInviteB
   return { data: invite as Invite };
 }
 
-export async function createInviteForPatient(
+export async function createInviteForPatientTeamMember(
   supabase: SupabaseClient,
   userId: string,
   patientId: string,
@@ -104,6 +104,7 @@ export async function createInviteForPatient(
     .eq("patient_id", patientId)
     .eq("invited_by", userId)
     .eq("status", "pendente")
+    .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
     .limit(1);
 

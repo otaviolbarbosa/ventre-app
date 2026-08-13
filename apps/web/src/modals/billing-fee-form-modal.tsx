@@ -1,8 +1,8 @@
 "use client";
 
-import { CurrencyInput } from "@/components/billing/currency-input";
 import { createBillingFeeAction } from "@/actions/create-billing-fee-action";
 import { updateBillingFeeAction } from "@/actions/update-billing-fee-action";
+import { CurrencyInput } from "@/components/billing/currency-input";
 import {
   type CreateBillingFeeInput,
   createBillingFeeSchema,
@@ -57,8 +57,10 @@ export default function BillingFeeFormModal({
 
   const feeType = form.watch("fee_type");
 
-  const { executeAsync: executeCreate, isExecuting: isCreating } = useAction(createBillingFeeAction);
-  const { executeAsync: executeUpdate, isExecuting: isUpdating } = useAction(updateBillingFeeAction);
+  const { executeAsync: executeCreate, isExecuting: isCreating } =
+    useAction(createBillingFeeAction);
+  const { executeAsync: executeUpdate, isExecuting: isUpdating } =
+    useAction(updateBillingFeeAction);
 
   const isSubmitting = isCreating || isUpdating;
 

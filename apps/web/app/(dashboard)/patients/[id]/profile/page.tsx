@@ -11,11 +11,12 @@ import PatientInfo from "@/components/shared/patient-info";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
 import InviteExistingPatientModal from "@/modals/invite-existing-patient-modal";
+import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { CheckCircle2, HeartHandshake, SearchX, Trash2 } from "lucide-react";
+import { CalendarPlus, CheckCircle2, HeartHandshake, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,6 +27,7 @@ export default function PatientProfilePage() {
   const router = useRouter();
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showInvitePatientModal, setShowInvitePatientModal] = useState(false);
+  const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const { confirm } = useConfirmModal();
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
@@ -88,7 +90,14 @@ export default function PatientProfilePage() {
           </div>
         )}
 
-        <Accordion type="multiple" className="w-full">
+        <div className="flex justify-end">
+          <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
+            <CalendarPlus className="mr-2 h-4 w-4" />
+            Novo Agendamento
+          </Button>
+        </div>
+
+        <Accordion type="multiple" className="w-full" defaultValue={["informacoes"]}>
           <AccordionItem value="informacoes">
             <AccordionTrigger className="font-poppins font-semibold text-base">
               Informações da Gestante
@@ -105,7 +114,7 @@ export default function PatientProfilePage() {
 
           <AccordionItem value="documentos">
             <AccordionTrigger className="font-poppins font-semibold text-base">
-              Documentos
+              Arquivos
             </AccordionTrigger>
             <AccordionContent>
               <PatientDocuments patientId={patient.id} />
@@ -189,6 +198,12 @@ export default function PatientProfilePage() {
         patient={patient}
         isOpen={showInvitePatientModal}
         setIsOpen={setShowInvitePatientModal}
+      />
+      <NewAppointmentModal
+        patientId={patientId}
+        patients={[]}
+        showModal={showNewAppointmentModal}
+        setShowModal={setShowNewAppointmentModal}
       />
     </>
   );

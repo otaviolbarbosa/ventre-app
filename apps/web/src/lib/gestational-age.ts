@@ -1,3 +1,5 @@
+import type { PatientWithGestationalInfo } from "@/types";
+import type { Tables } from "@ventre/supabase/types";
 import { dayjs } from "@/lib/dayjs";
 
 interface GestationalAge {
@@ -62,3 +64,29 @@ export const calculateRemainingDays = (dpp: Date | string, referenceDate?: strin
 
   return remainingDays;
 };
+
+type PregnancyInfo = Pick<
+  Tables<"pregnancies">,
+  "due_date" | "dum" | "has_finished" | "born_at" | "delivery_method" | "observations"
+>;
+
+export function buildPatientWithGestationalInfo(
+  patient: Tables<"patients">,
+  pregnancy: PregnancyInfo | null | undefined,
+): PatientWithGestationalInfo {
+  const gestationalAge = calculateGestationalAge(pregnancy?.dum ?? null);
+
+  return {
+    ...patient,
+    due_date: pregnancy?.due_date ?? null,
+    dum: pregnancy?.dum ?? null,
+    has_finished: pregnancy?.has_finished ?? false,
+    born_at: pregnancy?.born_at ?? null,
+    delivery_method: pregnancy?.delivery_method ?? null,
+    observations: pregnancy?.observations ?? null,
+    weeks: gestationalAge?.weeks ?? 0,
+    days: gestationalAge?.days ?? 0,
+    remainingDays: calculateRemainingDays(pregnancy?.due_date ?? ""),
+    progress: calculateGestationalProgress(pregnancy?.dum ?? ""),
+  };
+}

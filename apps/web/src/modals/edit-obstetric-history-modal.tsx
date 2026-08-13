@@ -1,7 +1,6 @@
 "use client";
 
 import { upsertObstetricHistoryAction } from "@/actions/upsert-obstetric-history-action";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { CLINICAL_FIELDS, SURGICAL_FIELDS } from "@/lib/prenatal-constants";
 import { type ObstetricHistoryInput, obstetricHistorySchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +10,7 @@ import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Separator } from "@ventre/ui/separator";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 type PregnancyCounts = Pick<
   Tables<"pregnancies">,
   "gestations_count" | "deliveries_count" | "cesareans_count" | "abortions_count"

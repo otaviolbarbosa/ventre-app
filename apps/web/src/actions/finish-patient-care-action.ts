@@ -1,8 +1,10 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 
 const schema = z.object({
@@ -37,13 +39,26 @@ export const finishPatientCareAction = authActionClient
     }
 
     revalidatePath("/patients");
+    updateTag(`home-patients-${user.id}`);
+    updateTag(`home-data-${user.id}`);
+
+    const { data: patient } = await supabase
+      .from("patients")
+      .select("id, name")
+      .eq("id", parsedInput.patientId)
+      .single();
+
+    if (patient) {
+      sendWhatsAppToUser({ recipientType: "patient", recipientId: patient.id }, "care_finished", {
+        patientName: patient.name,
+      }).catch((err) => {
+        console.error("[whatsapp] care_finished send failed", err);
+      });
+    }
 
     if (profile.enterprise_id) {
-      const { data: patient } = await supabase
-        .from("patients")
-        .select("name")
-        .eq("id", parsedInput.patientId)
-        .single();
+      updateTag(`enterprise-patients-${profile.enterprise_id}`);
+
       const deliveryLabel =
         parsedInput.deliveryMethod === "cesarean" ? "parto cesariana" : "parto vaginal";
       insertActivityLog({
@@ -59,6 +74,10 @@ export const finishPatientCareAction = authActionClient
         metadata: { delivery_method: parsedInput.deliveryMethod ?? null },
       });
     }
+
+    await captureServerEvent(user.id, "finish_patient_care", {
+      patient_id: parsedInput.patientId,
+    });
 
     return { success: true };
   });

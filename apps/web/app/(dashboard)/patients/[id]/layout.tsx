@@ -13,7 +13,11 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-export default function PatientLayout({ children }: { children: React.ReactNode }) {
+export default function PatientLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();

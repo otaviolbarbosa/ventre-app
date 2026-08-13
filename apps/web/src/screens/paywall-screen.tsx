@@ -1,6 +1,9 @@
 "use client";
 
 import { createStripeCheckoutSessionAction } from "@/actions/create-stripe-checkout-session-action";
+import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import { supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import {
@@ -11,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@ventre/ui/dialog";
-import { useAuth } from "@/hooks/use-auth";
-import { cn } from "@/lib/utils";
-import { supabase } from "@ventre/supabase";
 import { Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";

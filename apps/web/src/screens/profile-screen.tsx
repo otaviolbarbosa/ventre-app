@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
+import { isStaff } from "@/lib/access-control";
 import { EditProfileModal } from "@/modals/edit-profile-modal";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
@@ -20,8 +21,8 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 type Profile = Tables<"users">;
 
@@ -83,6 +84,7 @@ function getInitials(name: string | null): string {
 
 export default function ProfileScreen({ profile, address }: ProfileScreenProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signOut } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
@@ -90,6 +92,14 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profileName, setProfileName] = useState(profile.name || "");
   const [profilePhone, setProfilePhone] = useState(profile.phone || "");
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "edit-profile") return;
+    setIsEditModalOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("action");
+    router.replace(url.pathname + (url.search || ""));
+  }, [searchParams, router]);
 
   const handleLogout = async () => {
     await signOut();
@@ -191,6 +201,9 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
         name={profileName}
         phone={profilePhone}
         address={address}
+        professionalType={profile.professional_type as ProfessionalType | null}
+        professionalDocuments={profile.professional_documents}
+        personalDocuments={profile.personal_documents}
         onSuccess={(name, phone) => {
           setProfileName(name);
           setProfilePhone(phone);
@@ -207,11 +220,13 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
             label="Configurações"
             href="/profile/settings"
           />
-          <MenuItem
-            icon={<FileText className="h-5 w-5" />}
-            label="Meu Contrato Pessoal"
-            href="/profile/settings/contract"
-          />
+          {!isStaff(profile) && (
+            <MenuItem
+              icon={<FileText className="h-5 w-5" />}
+              label="Modelos de Contrato"
+              href="/profile/settings/contract"
+            />
+          )}
           <MenuItem
             icon={<CreditCard className="h-5 w-5" />}
             label="Minha Assinatura"
@@ -219,8 +234,8 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
           />
           <MenuItem
             icon={<Bell className="h-5 w-5" />}
-            label="Minhas Notificações"
-            href="/profile/notifications"
+            label="Notificações"
+            href="/notifications"
           />
         </div>
 

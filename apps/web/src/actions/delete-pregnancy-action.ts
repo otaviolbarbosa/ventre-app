@@ -2,8 +2,9 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 
 const schema = z.object({
@@ -40,11 +41,11 @@ export const deletePregnancyAction = authActionClient
     if (error) throw new Error(error.message);
 
     revalidatePath("/patients");
-    revalidateTag(`home-patients-${user.id}`, { expire: 300 });
-    revalidateTag(`home-data-${user.id}`, { expire: 300 });
+    updateTag(`home-patients-${user.id}`);
+    updateTag(`home-data-${user.id}`);
 
     if (profile.enterprise_id) {
-      revalidateTag(`enterprise-patients-${profile.enterprise_id}`, { expire: 300 });
+      updateTag(`enterprise-patients-${profile.enterprise_id}`);
     }
     insertActivityLog({
       supabaseAdmin,
@@ -56,6 +57,11 @@ export const deletePregnancyAction = authActionClient
       userId: user.id,
       enterpriseId: profile.enterprise_id,
       metadata: { patient_id: parsedInput.patientId, pregnancy_id: pregnancy?.id },
+    });
+
+    await captureServerEvent(user.id, "delete_pregnancy", {
+      patient_id: parsedInput.patientId,
+      pregnancy_id: pregnancy?.id,
     });
 
     return { success: true };

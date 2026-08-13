@@ -1,7 +1,13 @@
-import { ContractPdfDocument, type ContractPdfData } from "@/components/shared/contract-pdf-document";
+import {
+  type ContractPdfData,
+  ContractPdfDocument,
+} from "@/components/shared/contract-pdf-document";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { type DocumentProps, renderToBuffer } from "@react-pdf/renderer";
-import type { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import type {
+  createServerSupabaseAdmin,
+  createServerSupabaseClient,
+} from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
 import React from "react";
 

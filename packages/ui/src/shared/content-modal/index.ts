@@ -1,1 +1,1 @@
-export * from './content-modal'
+export * from "./content-modal";

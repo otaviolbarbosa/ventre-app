@@ -2,10 +2,13 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createPatientSchema } from "@/lib/validations/patient";
-import { createPatientWithTeamAndBilling } from "@/services/patient-onboarding";
-import { revalidateTag } from "next/cache";
+import { createBilling } from "@/services/billing";
+import { createPatient } from "@/services/patient";
+import { updateTag } from "next/cache";
 
 export const addPatientAction = authActionClient
   .inputSchema(createPatientSchema)
@@ -36,19 +39,42 @@ export const addPatientAction = authActionClient
       enterpriseId = parsedInput.enterprise_id ?? null;
     }
 
-    const { patient } = await createPatientWithTeamAndBilling(
-      supabase,
-      supabaseAdmin,
-      user.id,
-      parsedInput,
-      enterpriseId,
-    );
+    // const { patient } = await createPatientWithTeamAndBilling(
+    //   supabase,
+    //   supabaseAdmin,
+    //   user.id,
+    //   parsedInput,
+    //   enterpriseId,
+    // );
+    const patient = await createPatient(supabaseAdmin, user.id, {
+      ...parsedInput,
+      enterprise_id: enterpriseId,
+    });
 
-    revalidateTag(`home-patients-${user.id}`, { expire: 300 });
-    revalidateTag(`home-data-${user.id}`, { expire: 300 });
+    sendWhatsAppToUser({ recipientType: "patient", recipientId: patient.id }, "patient_welcome", {
+      patientName: patient.name,
+    }).catch((err) => {
+      console.error("[whatsapp] patient_welcome send failed", err);
+    });
+
+    if (parsedInput.billing) {
+      await createBilling(
+        supabase,
+        supabaseAdmin,
+        user.id,
+        {
+          ...parsedInput.billing,
+          patient_id: patient.id,
+        },
+        enterpriseId,
+      );
+    }
+
+    updateTag(`home-patients-${user.id}`);
+    updateTag(`home-data-${user.id}`);
 
     if (enterpriseId) {
-      revalidateTag(`enterprise-patients-${enterpriseId}`, { expire: 300 });
+      updateTag(`enterprise-patients-${enterpriseId}`);
 
       insertActivityLog({
         supabaseAdmin,
@@ -61,6 +87,8 @@ export const addPatientAction = authActionClient
         metadata: { patient_id: patient.id },
       });
     }
+
+    await captureServerEvent(user.id, "add_patient", { patient_id: patient.id });
 
     return { patient };
   });

@@ -15,6 +15,7 @@ import {
   ListOrdered,
   Underline,
 } from "lucide-react";
+import { useEffect } from "react";
 import { cn } from "../../utils/utils";
 
 export interface RichEditorProps {
@@ -26,7 +27,7 @@ export interface RichEditorProps {
 }
 
 const FONT_SIZES = ["8px", "10px", "11px", "12px", "14px", "16px", "18px", "20px", "24px"];
-// const FONT_FAMILIES = ["Inter", "Arial", "Times New Roman", "Georgia", "Courier New"];
+const FONT_FAMILIES = ["Inter", "Arial", "Times New Roman", "Georgia", "Courier New"];
 
 export function RichEditor({
   content,
@@ -57,6 +58,12 @@ export function RichEditor({
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
   });
 
+  useEffect(() => {
+    if (!editor) return;
+    if (content === editor.getHTML()) return;
+    editor.commands.setContent(content);
+  }, [editor, content]);
+
   if (!editor) return null;
 
   const toolbarBtn = (active: boolean) =>
@@ -69,7 +76,7 @@ export function RichEditor({
   return (
     <>
       <div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
-        {/* <select
+        <select
           disabled={disabled}
           className="h-8 rounded-md border border-input bg-background px-1 text-xs disabled:opacity-50"
           onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
@@ -81,7 +88,7 @@ export function RichEditor({
               {f}
             </option>
           ))}
-        </select> */}
+        </select>
 
         <select
           disabled={disabled}

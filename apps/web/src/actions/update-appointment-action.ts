@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { updateAppointmentSchema } from "@/lib/validations/appointment";
 import { syncUpdateToGoogleCalendar } from "@/services/google-calendar";
@@ -52,4 +53,6 @@ export const updateAppointmentAction = authActionClient
         metadata: { appointment_id: id },
       });
     }
+
+    await captureServerEvent(user.id, "update_appointment", { appointment_id: id });
   });

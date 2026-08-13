@@ -123,10 +123,6 @@ export const labExamSchema = z.object({
   result_text: z.string().optional(),
   result_numeric: z.coerce.number().optional().nullable(),
   unit: z.string().optional(),
-  hemoglobin_electrophoresis: z
-    .enum(["AA", "AS", "AC", "SS", "SC", "other_heterozygous", "other_homozygous"])
-    .optional()
-    .nullable(),
 });
 export type LabExamInput = z.infer<typeof labExamSchema>;
 

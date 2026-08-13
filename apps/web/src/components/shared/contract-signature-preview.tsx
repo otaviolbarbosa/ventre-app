@@ -22,7 +22,7 @@ export function ContractSignaturePreview({
       <div className="mt-8 flex justify-between gap-8">
         <div className="flex flex-1 flex-col items-center">
           <div className="relative h-[79px] w-[220px]">
-            <img
+            {/* <img
               src="/images/digital-signature-stamp.png"
               alt=""
               className="h-full w-full object-contain"
@@ -36,7 +36,7 @@ export function ContractSignaturePreview({
                 Código de verificação: [código]
               </p>
               <p className="text-[6px] text-gray-700 leading-tight">[link de verificação]</p>
-            </div>
+            </div> */}
           </div>
           <div className="mt-2 w-full border-black border-t" />
           <p className="mt-1 text-sm">{contratadaName ?? na}</p>

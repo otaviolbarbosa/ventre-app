@@ -14,8 +14,8 @@ const settingsSections = [
     icon: Percent,
   },
   {
-    title: "Contrato Padrão",
-    description: "Configure as cláusulas do contrato base da organização",
+    title: "Modelos de Contrato",
+    description: "Configure as cláusulas dos modelos contrato da organização",
     href: "/settings/contract",
     icon: FileText,
   },

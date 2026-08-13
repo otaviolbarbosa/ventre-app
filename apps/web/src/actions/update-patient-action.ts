@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { updatePatientSchema } from "@/lib/validations/patient";
 import { z } from "zod";
@@ -27,10 +28,7 @@ export const updatePatientAction = authActionClient
     if (address !== undefined) {
       const { error: addressError } = await supabase
         .from("addresses")
-        .upsert(
-          { ...address, patient_id: parsedInput.patientId },
-          { onConflict: "patient_id" },
-        );
+        .upsert({ ...address, patient_id: parsedInput.patientId }, { onConflict: "patient_id" });
 
       if (addressError) throw new Error(addressError.message);
     }
@@ -73,6 +71,8 @@ export const updatePatientAction = authActionClient
         metadata: { patient_id: parsedInput.patientId },
       });
     }
+
+    await captureServerEvent(user.id, "update_patient", { patient_id: parsedInput.patientId });
 
     return { patient };
   });

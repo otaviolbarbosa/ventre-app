@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
 import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
+import type { User } from "@/types";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
 import {
@@ -149,7 +150,7 @@ export function AppointmentCalendarView({
         {actions}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-2 sm:max-w-[360px]">
         {weekDays.map((day) => {
           const isSelected = day.key === selectedDate;
           const hasAppointments = Boolean(appointmentsByDate[day.key]?.length);
@@ -216,7 +217,7 @@ export function AppointmentCalendarView({
         >
           <Button onClick={onAddAppointment}>
             <CalendarPlus />
-            <span className="ml-1">Adicionar Agendamento</span>
+            <span className="ml-1">Novo Agendamento</span>
           </Button>
         </EmptyState>
       ) : (
@@ -284,7 +285,9 @@ export function AppointmentCalendarView({
                         <CardContent className="flex h-full flex-col justify-center p-3">
                           <p className="font-medium text-sm">
                             {start.format("HH:mm")} - {endTime} •{" "}
-                            {appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
+                            {appointment.patient?.name ??
+                              appointment.external_patient_name ??
+                              "Paciente externa"}
                           </p>
                           <p className="text-muted-foreground text-xs">
                             {locationLabel ? `${locationLabel} • ` : ""}
@@ -320,6 +323,8 @@ export function AppointmentCalendarView({
 
       <AppointmentDataModal
         appointment={selectedAppointment}
+        patient={selectedAppointment?.patient ?? null}
+        professional={selectedAppointment?.professional as User}
         open={selectedAppointment !== null}
         onOpenChange={(open) => !open && setSelectedAppointment(null)}
         onCancel={onUpdateAppointments}

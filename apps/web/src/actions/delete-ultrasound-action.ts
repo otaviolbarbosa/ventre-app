@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
@@ -35,9 +36,7 @@ export const deleteUltrasoundAction = authActionClient
       insertActivityLog({
         supabaseAdmin,
         actionName: "Ultrassom excluído",
-        description: patient
-          ? `Ultrassom de ${patient.name} excluído`
-          : "Ultrassom excluído",
+        description: patient ? `Ultrassom de ${patient.name} excluído` : "Ultrassom excluído",
         actionType: "exam",
         userId: user.id,
         enterpriseId: profile.enterprise_id,
@@ -45,6 +44,8 @@ export const deleteUltrasoundAction = authActionClient
         metadata: { ultrasound_id: ultrasoundId },
       });
     }
+
+    await captureServerEvent(user.id, "delete_ultrasound", { ultrasound_id: ultrasoundId });
 
     return { success: true };
   });
