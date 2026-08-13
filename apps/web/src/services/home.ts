@@ -1,9 +1,6 @@
 import { dayjs } from "@/lib/dayjs";
-import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo } from "@/types";
-import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
-import { unstable_cache } from "next/cache";
 
 type Patient = Tables<"patients">;
 type Pregnancy = Tables<"pregnancies">;
@@ -125,109 +122,4 @@ export function buildDppByMonth(
   }
 
   return result;
-}
-
-async function fetchHomeData(userId: string): Promise<HomeData> {
-  const supabase = await createServerSupabaseAdmin();
-  const today = dayjs();
-
-  const { data: teamMembers } = await supabase
-    .from("team_members")
-    .select("patient_id")
-    .eq("professional_id", userId);
-
-  const patientIds = teamMembers?.map((tm) => tm.patient_id) || [];
-
-  if (patientIds.length === 0) {
-    return {
-      dppByMonth: buildDppByMonth([], today),
-      patients: [],
-      upcomingAppointments: [],
-    };
-  }
-
-  const { data: patients } = await supabase
-    .from("patients")
-    .select(
-      "*, pregnancies!inner(due_date, dum, has_finished, born_at, delivery_method, observations)",
-    )
-    .in("id", patientIds)
-    .eq("pregnancies.has_finished", false)
-    .order("due_date", { referencedTable: "pregnancies", ascending: true });
-
-  const sortedPatients = patients || [];
-
-  const patientsWithInfo: PatientWithGestationalInfo[] = [];
-
-  for (const patient of sortedPatients) {
-    const pregnancy = patient.pregnancies?.[0];
-    const gestationalAge = calculateGestationalAge(pregnancy?.dum ?? null);
-    if (gestationalAge) {
-      const dueDate = dayjs(pregnancy?.due_date);
-      const remainingDays = Math.max(dueDate.diff(today, "day"), 0);
-
-      patientsWithInfo.push({
-        ...patient,
-        due_date: pregnancy?.due_date ?? null,
-        dum: pregnancy?.dum ?? null,
-        has_finished: pregnancy?.has_finished ?? false,
-        born_at: pregnancy?.born_at ?? null,
-        delivery_method: pregnancy?.delivery_method ?? null,
-        observations: pregnancy?.observations ?? null,
-        weeks: gestationalAge.weeks,
-        days: gestationalAge.days,
-        remainingDays,
-        progress: Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100),
-      });
-    }
-  }
-
-  const { data: appointments } = await supabase
-    .from("appointments")
-    .select(
-      `
-      *,
-      patient:patients(id, name, pregnancies(dum))
-    `,
-    )
-    .eq("professional_id", userId)
-    .gte("date", today.format("YYYY-MM-DD"))
-    .eq("status", "agendada")
-    .order("date", { ascending: true })
-    .order("time", { ascending: true })
-    .limit(5);
-
-  const patientsForDpp = (patients || []).map((p) => ({
-    due_date: p.pregnancies?.[0]?.due_date ?? null,
-  }));
-
-  return {
-    dppByMonth: buildDppByMonth(patientsForDpp, today),
-    patients: patientsWithInfo.slice(0, 5),
-    upcomingAppointments: (appointments as HomeAppointment[]) || [],
-  };
-}
-
-// unstable_cache must be a stable function reference created at module level.
-// Inline creation (inside getCachedHomeData) creates a new cache namespace on every
-// call, causing consistent cache misses. We memoize one cache function per userId so
-// the reference is stable and per-user tags remain valid for targeted revalidation.
-type CachedHomeDataFn = () => Promise<HomeData>;
-const userHomeDataCacheFns = new Map<string, CachedHomeDataFn>();
-
-function getOrCreateHomeDataCacheFn(userId: string): CachedHomeDataFn {
-  if (!userHomeDataCacheFns.has(userId)) {
-    userHomeDataCacheFns.set(
-      userId,
-      unstable_cache(() => fetchHomeData(userId), ["home-data", userId], {
-        tags: [`home-data-${userId}`],
-        revalidate: 3600,
-      }),
-    );
-  }
-  return userHomeDataCacheFns.get(userId) as CachedHomeDataFn;
-}
-
-export function getCachedHomeData(userId: string): Promise<HomeData> {
-  return getOrCreateHomeDataCacheFn(userId)();
 }

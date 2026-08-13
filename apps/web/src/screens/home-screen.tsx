@@ -267,7 +267,7 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: running it once
   useEffect(() => {
-    fetchHomeData({});
+    fetchHomeData();
     fetchPatients({ filter: activeFilter, search: searchQuery });
   }, []);
 
@@ -332,11 +332,11 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
   }, []);
 
   const refreshHomeData = useCallback(() => {
-    fetchHomeData({});
+    fetchHomeData();
   }, [fetchHomeData]);
 
   const refreshAll = useCallback(() => {
-    fetchHomeData({});
+    fetchHomeData();
     fetchPatients({ filter: activeFilter, search: searchQuery });
   }, [fetchHomeData, fetchPatients, activeFilter, searchQuery]);
 

@@ -617,57 +617,6 @@ export type Database = {
           },
         ]
       }
-      installments_scheduled_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          installment_id: string
-          scheduled_for: string
-          sent_at: string | null
-          status: Database["public"]["Enums"]["installments_notification_status"]
-          type: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          installment_id: string
-          scheduled_for: string
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["installments_notification_status"]
-          type: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          installment_id?: string
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["installments_notification_status"]
-          type?: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "installments_scheduled_notifications_installment_id_fkey"
-            columns: ["installment_id"]
-            isOneToOne: false
-            referencedRelation: "installments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "installments_scheduled_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       lab_exam_results: {
         Row: {
           created_at: string
@@ -1735,39 +1684,6 @@ export type Database = {
           },
         ]
       }
-      scheduled_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          notification_type: Database["public"]["Enums"]["notification_type"]
-          payload: Json | null
-          processed_at: string | null
-          reference_id: string
-          reference_type: string
-          scheduled_for: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notification_type: Database["public"]["Enums"]["notification_type"]
-          payload?: Json | null
-          processed_at?: string | null
-          reference_id: string
-          reference_type: string
-          scheduled_for: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notification_type?: Database["public"]["Enums"]["notification_type"]
-          payload?: Json | null
-          processed_at?: string | null
-          reference_id?: string
-          reference_type?: string
-          scheduled_for?: string
-        }
-        Relationships: []
-      }
       subscriptions: {
         Row: {
           cancelation_reason: string | null
@@ -2295,7 +2211,6 @@ export type Database = {
         Returns: number
       }
       process_notification_queues: { Args: never; Returns: undefined }
-      process_scheduled_notifications: { Args: never; Returns: undefined }
       requeue_with_backoff: {
         Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number }
         Returns: undefined
@@ -2339,16 +2254,6 @@ export type Database = {
         | "atrasado"
         | "cancelado"
         | "em_analise"
-      installments_notification_status:
-        | "pending"
-        | "sent"
-        | "cancelled"
-        | "failed"
-      installments_notification_type:
-        | "due_in_7_days"
-        | "due_in_3_days"
-        | "due_today"
-        | "overdue"
       notification_channel: "push" | "whatsapp"
       notification_log_status:
         | "sent"
@@ -2551,18 +2456,6 @@ export const Constants = {
         "atrasado",
         "cancelado",
         "em_analise",
-      ],
-      installments_notification_status: [
-        "pending",
-        "sent",
-        "cancelled",
-        "failed",
-      ],
-      installments_notification_type: [
-        "due_in_7_days",
-        "due_in_3_days",
-        "due_today",
-        "overdue",
       ],
       notification_channel: ["push", "whatsapp"],
       notification_log_status: [
