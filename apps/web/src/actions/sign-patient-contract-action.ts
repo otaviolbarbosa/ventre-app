@@ -155,6 +155,23 @@ export const signPatientContractAction = authActionClient
         throw new Error("Erro ao assinar contrato. Tente novamente.");
       }
 
+      const { error: signatureInsertError } = await supabase.from("contract_signatures").insert({
+        contract_id: contractId,
+        signer_role: "professional",
+        signer_id: user.id,
+        signed_at: signedAt,
+        signed_ip: signedIp,
+        signed_user_agent: signedUserAgent,
+        verification_code: verificationCode,
+      });
+
+      if (signatureInsertError) {
+        console.error(
+          "[signPatientContractAction] failed to record contract_signatures row",
+          signatureInsertError,
+        );
+      }
+
       revalidatePath(`/patients/${patientId}/profile`);
 
       sendWhatsAppToUser({ recipientType: "patient", recipientId: patientId }, "contract_signed", {
