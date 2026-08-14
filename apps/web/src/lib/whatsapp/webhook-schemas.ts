@@ -21,7 +21,9 @@ const buttonMessageSchema = z.object({
 // este schema aceita qualquer objeto com "type" e ignora o que não for "button" na extração.
 const inboundMessageSchema = z.union([
   buttonMessageSchema,
-  z.object({ id: z.string(), from: z.string(), timestamp: z.string(), type: z.string() }).passthrough(),
+  z
+    .object({ id: z.string(), from: z.string(), timestamp: z.string(), type: z.string() })
+    .passthrough(),
 ]);
 
 const changeValueSchema = z.object({
@@ -86,7 +88,10 @@ export function extractButtonReplies(payload: WhatsAppWebhookPayload): WhatsAppB
     for (const change of entry.changes) {
       for (const message of change.value.messages ?? []) {
         if (!isButtonMessage(message) || !message.context) continue;
-        replies.push({ contextMessageId: message.context.id, buttonPayload: message.button.payload });
+        replies.push({
+          contextMessageId: message.context.id,
+          buttonPayload: message.button.payload,
+        });
       }
     }
   }

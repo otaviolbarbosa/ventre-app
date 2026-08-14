@@ -39,6 +39,13 @@ export const addPatientAction = authActionClient
       enterpriseId = parsedInput.enterprise_id ?? null;
     }
 
+    // const { patient } = await createPatientWithTeamAndBilling(
+    //   supabase,
+    //   supabaseAdmin,
+    //   user.id,
+    //   parsedInput,
+    //   enterpriseId,
+    // );
     const patient = await createPatient(supabaseAdmin, user.id, {
       ...parsedInput,
       enterprise_id: enterpriseId,

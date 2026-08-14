@@ -15,10 +15,10 @@ export function formatDate(dateStr: string | null | undefined): string {
   });
 }
 
-export function formatCurrency(value: number | null | undefined): string {
-  if (value == null) return "—";
+export function formatCurrency(amountInCents: number | null | undefined): string {
+  if (amountInCents == null) return "—";
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
-  }).format(value);
+  }).format(amountInCents / 100);
 }

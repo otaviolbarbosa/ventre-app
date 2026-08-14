@@ -1,18 +1,20 @@
 "use client";
 import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import { isManager, isStaff } from "@/lib/access-control";
+import { isManager, isPatient, isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 import {
   BriefcaseMedicalIcon,
   Calendar,
   CircleDollarSign,
   Ellipsis,
+  Heart,
   Home,
   type LucideProps,
   Mail,
   Settings,
   Users,
+  Wrench,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -75,7 +77,7 @@ export default function BottomNav() {
 
   const isProfileActive = pathname.startsWith("/profile");
 
-  const mainNav: MainNavProps = isStaff(profile)
+  const mainNav: MainNavProps = isPatient(profile)
     ? [
         {
           name: "Início",
@@ -84,81 +86,107 @@ export default function BottomNav() {
           isActive: pathname.startsWith("/home"),
         },
         {
-          name: "Profissionais",
-          href: "/users",
-          icon: BriefcaseMedicalIcon,
-          isActive: pathname.startsWith("/users"),
-        },
-
-        {
-          name: "Gestantes",
-          href: "/patients",
-          icon: Users,
-          // icon: (props: React.SVGProps<SVGSVGElement>) => <CustomIcon icon="pregnant" {...props} />,
-          isActive: pathname.startsWith("/patients"),
+          name: "Cartão",
+          href: "/cartao-pre-natal",
+          icon: Heart,
+          isActive: pathname.startsWith("/cartao-pre-natal"),
         },
         {
           name: "Agenda",
-          href: "/appointments",
+          href: "/agenda",
           icon: Calendar,
-          isActive: pathname.startsWith("/appointments"),
+          isActive: pathname.startsWith("/agenda"),
+        },
+        {
+          name: "Ferramentas",
+          href: "/ferramentas",
+          icon: Wrench,
+          isActive: pathname.startsWith("/ferramentas"),
         },
       ]
-    : [
-        {
-          name: "Início",
-          href: "/home",
-          icon: Home,
-          isActive: pathname.startsWith("/home"),
-        },
-        {
-          name: "Gestantes",
-          href: "/patients",
-          icon: Users,
-          isActive: pathname.startsWith("/patients"),
-        },
-        {
-          name: "Agenda",
-          href: "/appointments",
-          icon: Calendar,
-          isActive: pathname.startsWith("/appointments"),
-        },
-        {
-          name: "Convites",
-          href: "/invites",
-          icon: Mail,
-          isActive: pathname.startsWith("/invites"),
-          hasNewContent: hasPendingInvites,
-        },
-      ];
+    : isStaff(profile)
+      ? [
+          { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
+          {
+            name: "Profissionais",
+            href: "/users",
+            icon: BriefcaseMedicalIcon,
+            isActive: pathname.startsWith("/users"),
+          },
 
-  const overflowNav = isStaff(profile)
+          {
+            name: "Gestantes",
+            href: "/patients",
+            icon: Users,
+            // icon: (props: React.SVGProps<SVGSVGElement>) => <CustomIcon icon="pregnant" {...props} />,
+            isActive: pathname.startsWith("/patients"),
+          },
+          {
+            name: "Agenda",
+            href: "/appointments",
+            icon: Calendar,
+            isActive: pathname.startsWith("/appointments"),
+          },
+        ]
+      : [
+          { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
+          {
+            name: "Gestantes",
+            href: "/patients",
+            icon: Users,
+            isActive: pathname.startsWith("/patients"),
+          },
+          {
+            name: "Agenda",
+            href: "/appointments",
+            icon: Calendar,
+            isActive: pathname.startsWith("/appointments"),
+          },
+          {
+            name: "Convites",
+            href: "/invites",
+            icon: Mail,
+            isActive: pathname.startsWith("/invites"),
+            hasNewContent: hasPendingInvites,
+          },
+        ];
+
+  const overflowNav = isPatient(profile)
     ? [
         {
           name: "Financeiro",
-          href: "/billing",
+          href: "/financeiro",
           icon: CircleDollarSign,
-          isActive: pathname.startsWith("/billing"),
+          isActive: pathname.startsWith("/financeiro"),
         },
-        ...(isManager(profile)
-          ? [
-              {
-                name: "Configurações",
-                href: "/settings",
-                icon: Settings,
-                isActive: pathname.startsWith("/settings"),
-              },
-            ]
-          : []),
       ]
-    : [
-        {
-          name: "Financeiro",
-          href: "/billing",
-          icon: CircleDollarSign,
-          isActive: pathname.startsWith("/billing"),
-        },
-      ];
+    : isStaff(profile)
+      ? [
+          {
+            name: "Financeiro",
+            href: "/billing",
+            icon: CircleDollarSign,
+            isActive: pathname.startsWith("/billing"),
+          },
+          ...(isManager(profile)
+            ? [
+                {
+                  name: "Configurações",
+                  href: "/settings",
+                  icon: Settings,
+                  isActive: pathname.startsWith("/settings"),
+                },
+              ]
+            : []),
+        ]
+      : [
+          {
+            name: "Financeiro",
+            href: "/billing",
+            icon: CircleDollarSign,
+            isActive: pathname.startsWith("/billing"),
+          },
+        ];
 
   const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
 

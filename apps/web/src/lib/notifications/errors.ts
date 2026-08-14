@@ -48,3 +48,13 @@ export function classifyWhatsAppError(error: {
   }
   return "retryable";
 }
+
+// sendPatientInvite (Resend) só expõe uma mensagem genérica hoje, sem código estruturado —
+// tudo é tratado como retryable até MAX_ATTEMPTS, quando cai em dead-letter pelo mesmo
+// caminho usado por push/whatsapp.
+export function classifyEmailError(_error: {
+  code?: string;
+  message?: string;
+}): NotificationErrorClassification {
+  return "retryable";
+}

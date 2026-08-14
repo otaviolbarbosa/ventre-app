@@ -25,7 +25,10 @@ export type WhatsAppNotificationType =
   | "installment_overdue_professional"
   | "appointment_last_minute_cancel"
   | "team_invite_pending"
-  | "subscription_billing_issue";
+  | "subscription_billing_issue"
+  // Fase 3 — patient_invite_links (auto cadastro / vínculo de gestante existente)
+  | "patient_self_registration_invite"
+  | "patient_link_existing_invite";
 
 type WhatsAppTemplateParams = {
   patientName?: string;
@@ -40,6 +43,7 @@ type WhatsAppTemplateParams = {
   appointmentCount?: number;
   amount?: string;
   month?: string;
+  inviteLink?: string;
 };
 
 type WhatsAppTemplate = {
@@ -157,6 +161,14 @@ export function getWhatsAppTemplate(
     subscription_billing_issue: () => ({
       name: "subscription_billing_issue",
       parameters: [params.professionalName ?? ""],
+    }),
+    patient_self_registration_invite: () => ({
+      name: "patient_self_registration_invite",
+      parameters: [params.patientName ?? "", params.inviteLink ?? ""],
+    }),
+    patient_link_existing_invite: () => ({
+      name: "patient_link_existing_invite",
+      parameters: [params.patientName ?? "", params.inviteLink ?? ""],
     }),
   };
 

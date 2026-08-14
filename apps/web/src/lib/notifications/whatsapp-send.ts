@@ -5,7 +5,8 @@ import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type WhatsAppRecipient =
   | { recipientType: "patient"; recipientId: string }
-  | { recipientType: "user"; recipientId: string };
+  | { recipientType: "user"; recipientId: string }
+  | { recipientType: "invite"; recipientId: string };
 
 type WhatsAppTemplateParams = Parameters<typeof getWhatsAppTemplate>[1];
 type SupabaseAdmin = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
@@ -135,6 +136,24 @@ export async function resolveRecipientPhone(
     if (error) throw new Error(`Falha ao buscar telefone da paciente: ${error.message}`);
 
     return { phone: data?.phone ?? null, whatsappEnabled: data?.whatsapp_enabled ?? true };
+  }
+
+  if (recipient.recipientType === "invite") {
+    // Convites de auto cadastro ainda não têm patients/users associado (ver
+    // patient_invite_links) — telefone/e-mail ficam na própria linha do convite, sem
+    // conceito de opt-out (a paciente ainda não criou conta nem configurou preferências).
+    const { data, error } = await supabaseAdmin
+      .from("patient_invite_links")
+      .select("phone, used_at, expires_at")
+      .eq("id", recipient.recipientId)
+      .maybeSingle();
+
+    if (error) throw new Error(`Falha ao buscar telefone do convite: ${error.message}`);
+    if (!data || data.used_at || (data.expires_at && new Date(data.expires_at) < new Date())) {
+      return { phone: null, whatsappEnabled: true };
+    }
+
+    return { phone: data.phone ?? null, whatsappEnabled: true };
   }
 
   const { data, error } = await supabaseAdmin
