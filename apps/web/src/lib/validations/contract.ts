@@ -63,3 +63,12 @@ export const signPatientContractSchema = savePatientContractSchema.extend({
 });
 
 export type SignPatientContractInput = z.infer<typeof signPatientContractSchema>;
+
+export const signContractAsPatientSchema = z.object({
+  patientId: z.string().uuid(),
+  consent: z.literal(true, {
+    errorMap: () => ({ message: "É necessário aceitar os termos para assinar" }),
+  }),
+});
+
+export type SignContractAsPatientInput = z.infer<typeof signContractAsPatientSchema>;

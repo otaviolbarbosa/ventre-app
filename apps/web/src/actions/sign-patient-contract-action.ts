@@ -1,6 +1,8 @@
 "use server";
 
 import { createHash } from "node:crypto";
+import { isStaff } from "@/lib/access-control";
+import { hasUnfilledFields } from "@/lib/contract-header-text";
 import { buildPatientContractParties } from "@/lib/contract-parties";
 import {
   buildContractPdfFileName,
@@ -43,6 +45,25 @@ export const signPatientContractAction = authActionClient
       );
 
       if (!patient || !parties_details) throw new Error("Paciente não encontrada");
+
+      if (profile.enterprise_id) {
+        if (!isStaff(profile)) {
+          throw new Error("Apenas gestores ou secretárias podem assinar pelo lado CONTRATADA.");
+        }
+      } else {
+        const { data: patientRow } = await supabase
+          .from("patients")
+          .select("created_by")
+          .eq("id", patientId)
+          .single();
+        if (patientRow?.created_by !== user.id) {
+          throw new Error("Apenas a profissional responsável pode assinar pelo lado CONTRATADA.");
+        }
+      }
+
+      if (hasUnfilledFields(parties_details)) {
+        throw new Error("Preencha todos os dados obrigatórios antes de assinar o contrato.");
+      }
 
       let contractId: string;
       if (existing?.id) {

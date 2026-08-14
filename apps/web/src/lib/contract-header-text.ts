@@ -1,9 +1,10 @@
-import type { ContractHeaderData, ContratadaAddress } from "@/services/base-contract";
 import type { PersonalDocumentsInput } from "@/lib/validations/personal-documents";
+import type { ContractHeaderData, ContratadaAddress } from "@/services/base-contract";
 import type { Tables } from "@ventre/supabase/types";
 import { dayjs } from "./dayjs";
 
-const na = "[não informado]";
+export const NAO_INFORMADO = "[não informado]";
+const na = NAO_INFORMADO;
 
 type PatientRow = Pick<
   Tables<"patients">,
@@ -57,6 +58,14 @@ export type ContractHeaderBlocks = {
   contratadaBlock: string;
   teamMembersBlock: string | null;
 };
+
+export function hasUnfilledFields(blocks: ContractHeaderBlocks): boolean {
+  return (
+    blocks.contratanteBlock.includes(NAO_INFORMADO) ||
+    blocks.contratadaBlock.includes(NAO_INFORMADO) ||
+    (blocks.teamMembersBlock?.includes(NAO_INFORMADO) ?? false)
+  );
+}
 
 export function buildContractHeaderBlocks(
   patient: PatientRow,
