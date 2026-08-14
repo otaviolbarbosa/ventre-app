@@ -36,7 +36,9 @@ export const completePatientRegistrationPostOAuthAction = authActionClient
 
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from("patient_invite_links")
-      .select("id, invite_type, name, email, phone, patient_id, enterprise_id, metadata, expires_at, used_at")
+      .select(
+        "id, invite_type, name, email, phone, patient_id, enterprise_id, metadata, expires_at, used_at",
+      )
       .eq("id", parsedInput.inviteId)
       .single();
 

@@ -64,7 +64,10 @@ export async function updateNotificationLogStatusByExternalId(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[notification-log] failed to read current status by external_message_id:", fetchError);
+    console.error(
+      "[notification-log] failed to read current status by external_message_id:",
+      fetchError,
+    );
     return;
   }
   if (!current) return;

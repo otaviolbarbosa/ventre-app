@@ -6,13 +6,7 @@ import type { BillingWithInstallments } from "@/services/patient-self";
 import type { Database } from "@ventre/supabase/types";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ventre/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";

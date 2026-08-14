@@ -1,6 +1,13 @@
-import { classifyEmailError, classifyPushError, classifyWhatsAppError } from "@/lib/notifications/errors";
+import {
+  classifyEmailError,
+  classifyPushError,
+  classifyWhatsAppError,
+} from "@/lib/notifications/errors";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
-import { EMAIL_QUEUE_HANDLERS, type EmailNotificationType } from "@/lib/notifications/email-queue-handlers";
+import {
+  EMAIL_QUEUE_HANDLERS,
+  type EmailNotificationType,
+} from "@/lib/notifications/email-queue-handlers";
 import {
   ackNotification,
   deadLetterNotification,
@@ -230,7 +237,10 @@ async function insertWhatsAppQueueLog(
   });
 
   if (error) {
-    console.error("[process-notification-queues] failed to write whatsapp notification_log row:", error);
+    console.error(
+      "[process-notification-queues] failed to write whatsapp notification_log row:",
+      error,
+    );
   }
 }
 
@@ -252,7 +262,10 @@ async function insertEmailQueueLog(
   });
 
   if (error) {
-    console.error("[process-notification-queues] failed to write email notification_log row:", error);
+    console.error(
+      "[process-notification-queues] failed to write email notification_log row:",
+      error,
+    );
   }
 }
 
@@ -438,7 +451,11 @@ export async function GET(request: Request) {
             reason,
           });
         } else {
-          await requeueWithBackoff("whatsapp_notifications", notification.msgId, notification.readCt);
+          await requeueWithBackoff(
+            "whatsapp_notifications",
+            notification.msgId,
+            notification.readCt,
+          );
         }
       } catch (cleanupErr) {
         console.error(

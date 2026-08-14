@@ -47,8 +47,7 @@ export default function AppointmentList({
       {appointments.map((appointment) => {
         const isPast = dayjs(`${appointment.date}T${appointment.time}`).isBefore(dayjs());
         const isConfirmed = !!appointment.confirmed_by_patient_at;
-        const isExecutingThis =
-          status === "executing" && input?.appointmentId === appointment.id;
+        const isExecutingThis = status === "executing" && input?.appointmentId === appointment.id;
 
         return (
           <div key={appointment.id} className="rounded-2xl bg-white p-4 shadow-sm">

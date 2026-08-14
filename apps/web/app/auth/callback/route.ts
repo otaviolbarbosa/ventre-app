@@ -65,10 +65,7 @@ export async function GET(request: NextRequest) {
       if (intent === "patient_invite" && piid) {
         try {
           const admin = await createServerSupabaseAdmin();
-          await admin
-            .from("users")
-            .update({ user_type: "patient" })
-            .eq("id", data.session.user.id);
+          await admin.from("users").update({ user_type: "patient" }).eq("id", data.session.user.id);
         } catch (patientErr) {
           console.error("[auth/callback] failed to set patient user_type", patientErr);
         }

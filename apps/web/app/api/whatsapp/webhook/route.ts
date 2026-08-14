@@ -1,7 +1,14 @@
-import { updateNotificationLogStatusByExternalId, findNotificationLogByExternalId } from "@/lib/notifications/notification-log";
+import {
+  updateNotificationLogStatusByExternalId,
+  findNotificationLogByExternalId,
+} from "@/lib/notifications/notification-log";
 import { WHATSAPP_INBOUND_BUTTON_HANDLERS } from "@/lib/notifications/whatsapp-inbound-handlers";
 import { verifyWhatsAppSignature } from "@/lib/whatsapp/webhook-signature";
-import { extractButtonReplies, extractStatusUpdates, whatsappWebhookPayloadSchema } from "@/lib/whatsapp/webhook-schemas";
+import {
+  extractButtonReplies,
+  extractStatusUpdates,
+  whatsappWebhookPayloadSchema,
+} from "@/lib/whatsapp/webhook-schemas";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -44,7 +51,10 @@ export async function POST(request: Request) {
     if (!parseResult.success) {
       // Assinatura já validada (é a Meta de verdade), mas o formato não bateu com o schema —
       // loga e responde 200 mesmo assim, igual a qualquer outra anomalia de negócio abaixo.
-      console.error("[whatsapp-webhook] payload failed schema validation:", parseResult.error.message);
+      console.error(
+        "[whatsapp-webhook] payload failed schema validation:",
+        parseResult.error.message,
+      );
       return NextResponse.json({ received: true });
     }
 
@@ -62,7 +72,10 @@ export async function POST(request: Request) {
     }
 
     for (const buttonReply of extractButtonReplies(payload)) {
-      const logEntry = await findNotificationLogByExternalId(supabaseAdmin, buttonReply.contextMessageId);
+      const logEntry = await findNotificationLogByExternalId(
+        supabaseAdmin,
+        buttonReply.contextMessageId,
+      );
       if (!logEntry) {
         console.error(
           `[whatsapp-webhook] button reply "${buttonReply.buttonPayload}" references unknown message ${buttonReply.contextMessageId}`,
@@ -72,7 +85,9 @@ export async function POST(request: Request) {
 
       const handler = WHATSAPP_INBOUND_BUTTON_HANDLERS[buttonReply.buttonPayload];
       if (!handler) {
-        console.error(`[whatsapp-webhook] no handler registered for button payload "${buttonReply.buttonPayload}"`);
+        console.error(
+          `[whatsapp-webhook] no handler registered for button payload "${buttonReply.buttonPayload}"`,
+        );
         continue;
       }
 

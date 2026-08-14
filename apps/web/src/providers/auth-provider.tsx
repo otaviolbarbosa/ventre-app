@@ -127,9 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async (redirectTo?: string, intent?: { name: string; piid: string }) => {
-    const intentParams = intent
-      ? `&intent=${intent.name}&piid=${intent.piid}`
-      : "";
+    const intentParams = intent ? `&intent=${intent.name}&piid=${intent.piid}` : "";
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

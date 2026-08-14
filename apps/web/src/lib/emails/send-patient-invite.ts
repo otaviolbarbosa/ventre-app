@@ -1,4 +1,4 @@
-import { resend } from "@/lib/resend";
+import { getResendClient } from "@/lib/resend";
 
 type SendPatientInviteParams = {
   to: string;
@@ -13,7 +13,7 @@ export async function sendPatientInvite({
   enterpriseName,
   inviteLink,
 }: SendPatientInviteParams) {
-  const { error } = await resend.emails.send({
+  const { error } = await getResendClient().emails.send({
     from: "Ventre <naoresponda@ventre.app>",
     to,
     subject: enterpriseName

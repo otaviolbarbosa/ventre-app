@@ -152,10 +152,7 @@ export default function PatientRegisterCompleteScreen({
         <div className="rounded-2xl bg-white p-8 shadow-sm">
           {isType1 ? (
             <Form {...type1Form}>
-              <form
-                onSubmit={type1Form.handleSubmit(handleSubmitType1)}
-                className="space-y-4"
-              >
+              <form onSubmit={type1Form.handleSubmit(handleSubmitType1)} className="space-y-4">
                 <FormField
                   control={type1Form.control}
                   name="phone"
@@ -369,10 +366,7 @@ export default function PatientRegisterCompleteScreen({
             </Form>
           ) : (
             <Form {...type2Form}>
-              <form
-                onSubmit={type2Form.handleSubmit(handleSubmitType2)}
-                className="space-y-5"
-              >
+              <form onSubmit={type2Form.handleSubmit(handleSubmitType2)} className="space-y-5">
                 <FormField
                   control={type2Form.control}
                   name="phone"

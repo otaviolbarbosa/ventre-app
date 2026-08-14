@@ -1,7 +1,10 @@
 import type { CreatePatientInput } from "@/lib/validations/patient";
 import { createBilling } from "@/services/billing";
 import { createPatient } from "@/services/patient";
-import type { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
+import type {
+  createServerSupabaseAdmin,
+  createServerSupabaseClient,
+} from "@ventre/supabase/server";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;

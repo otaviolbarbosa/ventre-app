@@ -9,7 +9,7 @@ import {
   linkExistingPatientRegistrationSchema,
   patientSelfRegistrationSchema,
 } from "@/lib/validations/patient-invite";
-import { useAuth } from "@/providers/auth-provider";
+// import { useAuth } from "@/providers/auth-provider";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { supabase } from "@ventre/supabase";
@@ -130,7 +130,7 @@ export default function PatientRegisterScreen({
   linkedPatient: LinkedPatient | null;
 }) {
   const router = useRouter();
-  const { signInWithGoogle } = useAuth();
+  // const { signInWithGoogle } = useAuth();
   const isType1 = invite.invite_type === "new_patient";
 
   const [step, setStep] = useState<Step>(1);
@@ -209,13 +209,13 @@ export default function PatientRegisterScreen({
     setAvatarPreviewUrl(URL.createObjectURL(file));
   }
 
-  async function handleGoogleSignup() {
-    const { error } = await signInWithGoogle("/patient-registration/complete", {
-      name: "patient_invite",
-      piid: invite.id,
-    });
-    if (error) toast.error("Erro ao conectar com o Google");
-  }
+  // async function handleGoogleSignup() {
+  //   const { error } = await signInWithGoogle("/patient-registration/complete", {
+  //     name: "patient_invite",
+  //     piid: invite.id,
+  //   });
+  //   if (error) toast.error("Erro ao conectar com o Google");
+  // }
 
   async function handleFinish() {
     if (!dataValues) return;

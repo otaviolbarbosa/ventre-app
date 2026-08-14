@@ -53,18 +53,19 @@ export function InstallmentList({
   const [linkValue, setLinkValue] = useState("");
 
   const { executeAsync: saveLink, isPending: saving } = useAction(saveInstallmentLinkAction);
-  const { execute: confirmPayment, status: confirmStatus, input: confirmInput } = useAction(
-    confirmInstallmentPaymentAction,
-    {
-      onSuccess: () => {
-        toast.success("Status do pagamento atualizado!");
-        onUpdate();
-      },
-      onError: ({ error }) => {
-        toast.error(error.serverError ?? "Erro ao atualizar pagamento");
-      },
+  const {
+    execute: confirmPayment,
+    status: confirmStatus,
+    input: confirmInput,
+  } = useAction(confirmInstallmentPaymentAction, {
+    onSuccess: () => {
+      toast.success("Status do pagamento atualizado!");
+      onUpdate();
     },
-  );
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao atualizar pagamento");
+    },
+  });
 
   const handleEditLink = (installment: Installment) => {
     setEditingId(installment.id);
@@ -213,39 +214,39 @@ export function InstallmentList({
                   {installment.status !== "pago" &&
                     installment.status !== "cancelado" &&
                     installment.status !== "em_analise" && (
-                    <div className="flex w-full justify-between">
-                      {installment.payment_link && editingId !== installment.id && (
-                        <Button variant="ghost" size="sm" asChild>
-                          <a
-                            href={installment.payment_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                      <div className="flex w-full justify-between">
+                        {installment.payment_link && editingId !== installment.id && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a
+                              href={installment.payment_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="mr-1 h-4 w-4" />
+                              Link
+                            </a>
+                          </Button>
+                        )}
+                        {!installment.payment_link ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleEditLink(installment)}
                           >
-                            <ExternalLink className="mr-1 h-4 w-4" />
-                            Link
-                          </a>
-                        </Button>
-                      )}
-                      {!installment.payment_link ? (
+                            <LinkIcon className="mr-1 h-4 w-4" />
+                            Adicionar link
+                          </Button>
+                        ) : null}
                         <Button
                           size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditLink(installment)}
+                          variant="outline"
+                          onClick={() => onRecordPayment(installment)}
                         >
-                          <LinkIcon className="mr-1 h-4 w-4" />
-                          Adicionar link
+                          <CheckCircle className="mr-1 h-4 w-4" />
+                          Registrar Pagamento
                         </Button>
-                      ) : null}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onRecordPayment(installment)}
-                      >
-                        <CheckCircle className="mr-1 h-4 w-4" />
-                        Registrar Pagamento
-                      </Button>
-                    </div>
-                  )}
+                      </div>
+                    )}
                 </div>
               </div>
               {professionals && installment.splitted_installment && (

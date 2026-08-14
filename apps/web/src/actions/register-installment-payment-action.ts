@@ -27,7 +27,10 @@ export const registerInstallmentPaymentAction = authActionClient
       throw new Error("Parcela não encontrada.");
     }
 
-    const billing = installment.billings as { patient_id: string; patients: { user_id: string | null } | null } | null;
+    const billing = installment.billings as {
+      patient_id: string;
+      patients: { user_id: string | null } | null;
+    } | null;
     const ownerUserId = billing?.patients?.user_id;
 
     if (!ownerUserId || ownerUserId !== user.id) {

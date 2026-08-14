@@ -16,7 +16,11 @@ async function getMyPatientId(): Promise<{ patientId: string | null; error?: str
     return { patientId: null, error: "Usuário não encontrado" };
   }
 
-  const { data } = await supabase.from("patients").select("id").eq("user_id", user.id).maybeSingle();
+  const { data } = await supabase
+    .from("patients")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   if (!data) {
     return { patientId: null, error: "Nenhuma ficha de paciente vinculada a esta conta" };
