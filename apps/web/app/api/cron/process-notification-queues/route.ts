@@ -1,5 +1,6 @@
-import { classifyPushError, classifyWhatsAppError } from "@/lib/notifications/errors";
+import { classifyEmailError, classifyPushError, classifyWhatsAppError } from "@/lib/notifications/errors";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { EMAIL_QUEUE_HANDLERS, type EmailNotificationType } from "@/lib/notifications/email-queue-handlers";
 import {
   ackNotification,
   deadLetterNotification,
@@ -12,6 +13,7 @@ import { WHATSAPP_QUEUE_HANDLERS } from "@/lib/notifications/whatsapp-queue-hand
 import { sendWhatsAppTemplateFromQueue } from "@/lib/notifications/whatsapp-queue-send";
 import { WhatsAppApiError } from "@/lib/whatsapp/client";
 import type { WhatsAppNotificationType } from "@/lib/whatsapp/templates";
+import { sendPatientInvite } from "@/lib/emails/send-patient-invite";
 import { dayjs } from "@/lib/dayjs";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
@@ -232,6 +234,28 @@ async function insertWhatsAppQueueLog(
   }
 }
 
+async function insertEmailQueueLog(
+  supabaseAdmin: Awaited<ReturnType<typeof createServerSupabaseAdmin>>,
+  notification: DequeuedNotification,
+  status: "sent" | "failed",
+  errorReason: string | null,
+) {
+  const { error } = await supabaseAdmin.from("notification_log").insert({
+    channel: "email",
+    notification_type: notification.notificationType,
+    reference_type: notification.referenceType,
+    reference_id: notification.referenceId,
+    recipient_type: notification.recipientType,
+    recipient_id: notification.recipientId,
+    status,
+    error_reason: errorReason,
+  });
+
+  if (error) {
+    console.error("[process-notification-queues] failed to write email notification_log row:", error);
+  }
+}
+
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
@@ -426,9 +450,89 @@ export async function GET(request: Request) {
     }
   }
 
+  let emailSent = 0;
+  let emailSkipped = 0;
+  let emailFailed = 0;
+
+  const emailMessages = await dequeueNotifications("email_notifications", 20, 60);
+
+  for (const notification of emailMessages) {
+    try {
+      const handler = EMAIL_QUEUE_HANDLERS[notification.notificationType as EmailNotificationType];
+
+      if (!handler) {
+        await ackNotification("email_notifications", notification.msgId);
+        emailSkipped++;
+        continue;
+      }
+
+      const resolved = await handler(supabaseAdmin, notification);
+
+      if (resolved.action === "skip") {
+        await insertEmailQueueLog(
+          supabaseAdmin,
+          notification,
+          "failed",
+          "skipped: condition no longer valid",
+        );
+        await ackNotification("email_notifications", notification.msgId);
+        emailSkipped++;
+        continue;
+      }
+
+      if (DRY_RUN) {
+        await insertEmailQueueLog(supabaseAdmin, notification, "sent", "dry_run (send skipped)");
+        await ackNotification("email_notifications", notification.msgId);
+        emailSent++;
+        continue;
+      }
+
+      await sendPatientInvite({
+        to: resolved.to,
+        name: resolved.params.name,
+        enterpriseName: resolved.params.enterpriseName,
+        inviteLink: resolved.params.inviteLink,
+      });
+
+      await insertEmailQueueLog(supabaseAdmin, notification, "sent", null);
+      await ackNotification("email_notifications", notification.msgId);
+      emailSent++;
+    } catch (err) {
+      const classification = classifyEmailError({
+        message: err instanceof Error ? err.message : String(err),
+      });
+      const reason = err instanceof Error ? err.message : "unknown error";
+
+      try {
+        if (classification === "permanent" || notification.readCt >= MAX_ATTEMPTS) {
+          await deadLetterNotification({
+            queueName: "email_notifications",
+            msgId: notification.msgId,
+            channel: "email",
+            notificationType: notification.notificationType,
+            referenceType: notification.referenceType,
+            referenceId: notification.referenceId,
+            recipientType: notification.recipientType,
+            recipientId: notification.recipientId,
+            reason,
+          });
+        } else {
+          await requeueWithBackoff("email_notifications", notification.msgId, notification.readCt);
+        }
+      } catch (cleanupErr) {
+        console.error(
+          `[process-notification-queues] failed to dead-letter/requeue email msgId=${notification.msgId}:`,
+          cleanupErr,
+        );
+      }
+      emailFailed++;
+    }
+  }
+
   return NextResponse.json({
     push: { sent: pushSent, skipped: pushSkipped, failed: pushFailed },
     whatsapp: { sent: whatsappSent, skipped: whatsappSkipped, failed: whatsappFailed },
+    email: { sent: emailSent, skipped: emailSkipped, failed: emailFailed },
     dryRun: DRY_RUN,
   });
 }

@@ -96,6 +96,7 @@ export async function proxy(request: NextRequest) {
     }
 
     const isOnboardingComplete =
+      profile?.user_type === "patient" ||
       (profile?.user_type === "professional" && profile?.professional_type !== null) ||
       (isStaff && hasEnterprise);
 

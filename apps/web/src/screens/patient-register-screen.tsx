@@ -2,7 +2,6 @@
 
 import { completePatientRegistrationAction } from "@/actions/complete-patient-registration-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
-import CustomIcon from "@/components/shared/custom-icon";
 import { ESTADOS_BR } from "@/lib/constants";
 import {
   type LinkExistingPatientRegistrationInput,
@@ -267,7 +266,10 @@ export default function PatientRegisterScreen({
         await fetch("/api/profile/avatar", { method: "POST", body: formData });
       }
 
-      router.push("/home");
+      // Hard navigation: router.push('/home') → server redirect('/onboarding') race
+      // where getServerAuth() doesn't see the fresh session yet. Full reload avoids this
+      // (same fix already applied in app/(auth)/login/page.tsx).
+      window.location.href = "/home";
     } catch {
       toast.error("Erro inesperado. Tente novamente.");
     } finally {
@@ -343,7 +345,7 @@ export default function PatientRegisterScreen({
                 </form>
               </Form>
 
-              <div className="flex items-center gap-3">
+              {/* <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-border" />
                 <span className="text-muted-foreground text-xs">OU</span>
                 <div className="h-px flex-1 bg-border" />
@@ -357,7 +359,7 @@ export default function PatientRegisterScreen({
               >
                 <CustomIcon icon="google" className="mr-2 h-4 w-4" />
                 Continuar com Google
-              </Button>
+              </Button> */}
             </div>
           )}
 
@@ -758,11 +760,7 @@ export default function PatientRegisterScreen({
                     {(() => {
                       const address = (dataValues as PatientSelfRegistrationInput).address;
                       if (!address) return null;
-                      const addressLine = [
-                        address.street,
-                        address.number,
-                        address.complement,
-                      ]
+                      const addressLine = [address.street, address.number, address.complement]
                         .filter(Boolean)
                         .join(", ");
                       const cityLine = [

@@ -2254,7 +2254,7 @@ export type Database = {
         | "atrasado"
         | "cancelado"
         | "em_analise"
-      notification_channel: "push" | "whatsapp"
+      notification_channel: "push" | "whatsapp" | "email"
       notification_log_status:
         | "sent"
         | "delivered"
@@ -2457,7 +2457,7 @@ export const Constants = {
         "cancelado",
         "em_analise",
       ],
-      notification_channel: ["push", "whatsapp"],
+      notification_channel: ["push", "whatsapp", "email"],
       notification_log_status: [
         "sent",
         "delivered",

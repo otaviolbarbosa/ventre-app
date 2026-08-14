@@ -4,7 +4,10 @@ import { normalizePhoneToE164 } from "@/lib/whatsapp/phone";
 import { getWhatsAppTemplate, type WhatsAppNotificationType } from "@/lib/whatsapp/templates";
 import type { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
-export type WhatsAppQueueRecipient = { recipientType: "patient" | "user"; recipientId: string };
+export type WhatsAppQueueRecipient = {
+  recipientType: "patient" | "user" | "invite";
+  recipientId: string;
+};
 
 export type WhatsAppQueueSendResult =
   | { outcome: "sent"; externalMessageId: string }

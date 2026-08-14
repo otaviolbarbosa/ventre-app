@@ -466,6 +466,37 @@ async function handleSubscriptionBillingIssue(
   };
 }
 
+async function handlePatientInviteLink(
+  supabaseAdmin: SupabaseAdmin,
+  notification: DequeuedNotification,
+): Promise<WhatsAppQueueHandlerResult> {
+  const { data: invite, error } = await supabaseAdmin
+    .from("patient_invite_links")
+    .select("id, name, phone, used_at, expires_at")
+    .eq("id", notification.referenceId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`Falha ao buscar convite ${notification.referenceId}: ${error.message}`);
+  }
+  if (
+    !invite ||
+    !invite.phone ||
+    invite.used_at ||
+    (invite.expires_at && dayjs(invite.expires_at).isBefore(dayjs()))
+  ) {
+    return { action: "skip" };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const inviteLink = `${appUrl}/patient-registration?piid=${invite.id}`;
+
+  return {
+    action: "send",
+    recipient: recipientOf(notification),
+    templateParams: { patientName: invite.name ?? "Gestante", inviteLink },
+  };
+}
+
 export const WHATSAPP_QUEUE_HANDLERS: Partial<Record<WhatsAppNotificationType, WhatsAppQueueHandler>> = {
   appointment_reminder: handleAppointmentReminder,
   appointment_unconfirmed: handleAppointmentUnconfirmed,
@@ -482,4 +513,6 @@ export const WHATSAPP_QUEUE_HANDLERS: Partial<Record<WhatsAppNotificationType, W
   appointment_last_minute_cancel: handleAppointmentLastMinuteCancel,
   team_invite_pending: handleTeamInvitePending,
   subscription_billing_issue: handleSubscriptionBillingIssue,
+  patient_self_registration_invite: handlePatientInviteLink,
+  patient_link_existing_invite: handlePatientInviteLink,
 };

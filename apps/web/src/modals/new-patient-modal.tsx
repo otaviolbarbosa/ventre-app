@@ -203,7 +203,7 @@ export default function NewPatientModal({
   const [lockedAmounts, setLockedAmounts] = useState<Record<number, number>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [inviteMode, setInviteMode] = useState(false);
+  const [isInviteMode, setIsInviteMode] = useState(false);
   const [createdInvite, setCreatedInvite] = useState<{ id: string; name: string } | null>(null);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
@@ -252,7 +252,7 @@ export default function NewPatientModal({
       setCreatedInvite({ id: data.invite.id, name: data.invite.name ?? "Gestante" });
       form.reset();
       setStep(1);
-      setInviteMode(false);
+      setIsInviteMode(false);
       setAddressVisible(false);
       setShowBilling(false);
       setProfAmounts({});
@@ -303,6 +303,45 @@ export default function NewPatientModal({
       enterprise_id: null,
     },
   });
+
+  function handleInviteModeChange(checked: boolean) {
+    setIsInviteMode(checked);
+    if (!checked) return;
+
+    const { name, email, phone, enterprise_id, billing } = form.getValues();
+    form.reset({
+      name,
+      email,
+      phone,
+      enterprise_id,
+      billing,
+      partner_name: "",
+      rg: "",
+      cpf: "",
+      marital_status: undefined,
+      occupation: "",
+      baby_name: "",
+      due_date: "",
+      dum: "",
+      address: {
+        street: "",
+        neighborhood: "",
+        complement: "",
+        number: "",
+        city: "",
+        state: "",
+        zipcode: "",
+      },
+      observations: "",
+      professional_ids: defaultProfessionalIds,
+    });
+    setDueDateCalcMethod(undefined);
+    setGestAgeWeeks("");
+    setGestAgeDays("");
+    setFivTransferDate("");
+    setFivTransferType("D5");
+    setAddressVisible(false);
+  }
 
   const selectedProfessionalIds = form.watch("professional_ids") ?? [];
   const isSplitBilling = showProfessionalSelector && selectedProfessionalIds.length > 1;
@@ -517,13 +556,13 @@ export default function NewPatientModal({
   }
 
   const STEP_FIELDS: Partial<Record<StepNumber, (keyof CreatePatientInput)[]>> = {
-    1: inviteMode ? ["name"] : ["name", "due_date", "dum"],
+    1: isInviteMode ? ["name"] : ["name", "due_date", "dum"],
     2: ["phone"],
     4: showProfessionalSelector ? ["professional_ids"] : [],
   };
 
   async function goToNext() {
-    if (step === 1 && !dueDateCalcMethod) {
+    if (step === 1 && !dueDateCalcMethod && !isInviteMode) {
       toast.error("Selecione o método de cálculo da DUM/DPP");
       return;
     }
@@ -535,7 +574,7 @@ export default function NewPatientModal({
     setIsNavigating(true);
     setStep((prev) => {
       let next = Math.min(prev + 1, 5) as StepNumber;
-      if (inviteMode && next === 3) next = 4;
+      if (isInviteMode && next === 3) next = 4;
       return next;
     });
     setTimeout(() => setIsNavigating(false), 400);
@@ -544,7 +583,7 @@ export default function NewPatientModal({
   function goToPrev() {
     setStep((prev) => {
       let next = Math.max(prev - 1, 1) as StepNumber;
-      if (inviteMode && next === 3) next = 2;
+      if (isInviteMode && next === 3) next = 2;
       return next;
     });
   }
@@ -682,7 +721,7 @@ export default function NewPatientModal({
     setSubmitAttempted(false);
     setIsCustomInterval(false);
     setIsNavigating(false);
-    setInviteMode(false);
+    setIsInviteMode(false);
     setDueDateCalcMethod(undefined);
     setGestAgeWeeks("");
     setGestAgeDays("");
@@ -701,977 +740,244 @@ export default function NewPatientModal({
         title="Nova Gestante"
         description=""
       >
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && step < 5) e.preventDefault();
-          }}
-          className="space-y-6"
-        >
-          <StepIndicator current={step} step4Label={step4Label} />
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && step < 5) e.preventDefault();
+            }}
+            className="space-y-6"
+          >
+            <StepIndicator current={step} step4Label={step4Label} />
 
-          <div className="min-h-[400px]">
-            {/* ── Step 1: Dados da Gestante ── */}
-            {step === 1 && (
-              <div className="space-y-4">
-                <label
-                  htmlFor="invite-mode-checkbox"
-                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed p-4 transition-colors hover:border-primary"
-                >
-                  <Checkbox
-                    id="invite-mode-checkbox"
-                    checked={inviteMode}
-                    onCheckedChange={(checked) => setInviteMode(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <span className="text-sm">
-                    <span className="font-medium">Solicitar auto cadastro</span>
-                    <span className="block text-muted-foreground text-xs">
-                      A gestante preencherá seus próprios dados de gestação e endereço ao criar a
-                      conta.
-                    </span>
-                  </span>
-                </label>
-
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome completo *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Nome da paciente" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {!inviteMode && (
-                  <>
-                    <FormField
-                      control={form.control}
-                      name="partner_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do parceiro</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Nome do parceiro"
-                              {...field}
-                              value={field.value ?? ""}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="rg"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>RG</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="cpf"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CPF</FormLabel>
-                        <FormControl>
-                          <InputMask
-                            component={Input}
-                            mask="___.___.___-__"
-                            replacement={{ _: /\d/ }}
-                            {...field}
-                            value={field.value ?? ""}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="marital_status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado civil</FormLabel>
-                        <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {MARITAL_STATUS_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="occupation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Profissão</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ""} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="baby_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do bebê</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Nome escolhido para o bebê"
-                          {...field}
-                          value={field.value ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="space-y-2">
-                  <FormLabel>Calculo da Idade Gestacional *</FormLabel>
-                  <Select
-                    value={dueDateCalcMethod}
-                    onValueChange={(v) => handleCalcMethodChange(v as DueDateCalcMethod)}
+            <div className="min-h-[400px]">
+              {/* ── Step 1: Dados da Gestante ── */}
+              {step === 1 && (
+                <div className="space-y-4">
+                  <label
+                    htmlFor="invite-mode-checkbox"
+                    className="flex cursor-pointer items-start gap-3 rounded-xl border border-dashed p-4 transition-colors hover:border-primary"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o método de cálculo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="gestational_age">Idade gestacional</SelectItem>
-                      <SelectItem value="dum">Data da última menstruação (DUM)</SelectItem>
-                      <SelectItem value="dpp">Data prevista do parto (DPP)</SelectItem>
-                      <SelectItem value="fiv">FIV/FET (transferência de embrião)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {dueDateCalcMethod === "gestational_age" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormItem>
-                      <FormLabel>Semanas *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={45}
-                          placeholder="Ex: 20"
-                          value={gestAgeWeeks}
-                          onChange={(e) => applyGestAge(e.target.value, gestAgeDays)}
-                        />
-                      </FormControl>
-                    </FormItem>
-                    <FormItem>
-                      <FormLabel>Dias *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={6}
-                          placeholder="Ex: 3"
-                          value={gestAgeDays}
-                          onChange={(e) => applyGestAge(gestAgeWeeks, e.target.value)}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  </div>
-                )}
-
-                {dueDateCalcMethod === "fiv" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormItem>
-                      <FormLabel>Data da transferência *</FormLabel>
-                      <FormControl>
-                        <DatePicker
-                          selected={
-                            fivTransferDate ? new Date(`${fivTransferDate}T00:00:00`) : null
-                          }
-                          onChange={(date) =>
-                            applyFiv(date ? date.toISOString().slice(0, 10) : "", fivTransferType)
-                          }
-                          placeholderText="Selecione a data"
-                        />
-                      </FormControl>
-                    </FormItem>
-                    <FormItem>
-                      <FormLabel>Tipo de transferência *</FormLabel>
-                      <Select
-                        value={fivTransferType}
-                        onValueChange={(v) => applyFiv(fivTransferDate, v as FivTransferType)}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {FIV_TRANSFER_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  </div>
-                )}
-
-                {dueDateCalcMethod === "dum" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="dum"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Última menstruação (DUM) *</FormLabel>
-                          <FormControl>
-                            <DatePicker
-                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                              onChange={applyDum}
-                              placeholderText="Selecione a data"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <Checkbox
+                      id="invite-mode-checkbox"
+                      checked={isInviteMode}
+                      onCheckedChange={(checked) => handleInviteModeChange(checked === true)}
+                      className="mt-0.5"
                     />
-                    <FormField
-                      control={form.control}
-                      name="due_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data prevista do parto (DPP)</FormLabel>
-                          <FormControl>
-                            <DatePicker
-                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                              onChange={() => undefined}
-                              placeholderText="Calculado automaticamente"
-                              disabled
-                              className="bg-muted"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
+                    <span className="text-sm">
+                      <span className="font-medium">Solicitar auto cadastro</span>
+                      <span className="block text-muted-foreground text-xs">
+                        A gestante preencherá seus próprios dados de gestação e endereço ao criar a
+                        conta.
+                      </span>
+                    </span>
+                  </label>
 
-                {dueDateCalcMethod === "dpp" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="due_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data prevista do parto (DPP) *</FormLabel>
-                          <FormControl>
-                            <DatePicker
-                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                              onChange={applyDpp}
-                              placeholderText="Selecione a data"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dum"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Última menstruação (DUM)</FormLabel>
-                          <FormControl>
-                            <DatePicker
-                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                              onChange={() => undefined}
-                              placeholderText="Calculado automaticamente"
-                              disabled
-                              className="bg-muted"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-
-                {(dueDateCalcMethod === "gestational_age" || dueDateCalcMethod === "fiv") && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="dum"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Última menstruação (DUM)</FormLabel>
-                          <FormControl>
-                            <DatePicker
-                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                              onChange={() => undefined}
-                              placeholderText="Calculado automaticamente"
-                              disabled
-                              className="bg-muted"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="due_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Data prevista do parto (DPP)</FormLabel>
-                          <FormControl>
-                            <DatePicker
-                              selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                              onChange={() => undefined}
-                              placeholderText="Calculado automaticamente"
-                              disabled
-                              className="bg-muted"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-
-                <FormField
-                  control={form.control}
-                  name="observations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Informações adicionais sobre a paciente"
-                          rows={3}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* ── Step 2: Contato ── */}
-            {step === 2 && (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="email@exemplo.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone *</FormLabel>
-                      <FormControl>
-                        <InputMask
-                          component={Input}
-                          placeholder="(99) 99999-9999"
-                          mask="(__) _____-____"
-                          replacement={{ _: /\d/ }}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {/* ── Step 3: Endereço ── */}
-            {step === 3 && (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="address.zipcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <InputMask
-                            component={Input}
-                            mask="_____-___"
-                            replacement={{ _: /\d/ }}
-                            placeholder="00000-000"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              const digits = e.target.value.replace(/\D/g, "");
-                              if (digits.length === 8) {
-                                lookupCep({ cep: digits });
-                              }
-                              if (digits.length < 8) {
-                                setAddressVisible(false);
-                              }
-                            }}
-                          />
-                          {isFetchingCep && (
-                            <div className="absolute inset-y-0 right-3 flex items-center">
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-4 sm:grid-cols-4">
                   <FormField
                     control={form.control}
-                    name="address.city"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-3">
-                        <FormLabel>Cidade</FormLabel>
-                        <FormControl>
-                          <Input placeholder="São Paulo" disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="address.state"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Estado</FormLabel>
-                        <Select
-                          value={field.value ?? undefined}
-                          onValueChange={field.onChange}
-                          disabled={!addressVisible}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {ESTADOS_BR.map((estado) => (
-                              <SelectItem key={estado.sigla} value={estado.sigla}>
-                                {estado.sigla}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-4">
-                  <FormField
-                    control={form.control}
-                    name="address.street"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-3">
-                        <FormLabel>Rua</FormLabel>
+                        <FormLabel>Nome completo *</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Rua das Flores"
-                            disabled={!addressVisible}
-                            {...field}
-                          />
+                          <Input placeholder="Nome da paciente" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="address.number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número</FormLabel>
-                        <FormControl>
-                          <Input placeholder="123" disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="address.complement"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Complemento</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Apto 45" disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="address.neighborhood"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bairro</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Centro" disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ── Step 4: Equipe / Empresa ── */}
-            {step === 4 && (
-              <div className="space-y-4">
-                {showProfessionalSelector ? (
-                  <FormField
-                    control={form.control}
-                    name="professional_ids"
-                    render={({ field, fieldState }) => {
-                      const selectedIds: string[] = field.value ?? [];
-                      const hasError = !!fieldState.error && selectedIds.length === 0;
-                      const selectedProfessionals = selectedIds
-                        .map((id) => professionalsOptions.find((p) => p.id === id))
-                        .filter(Boolean) as Professional[];
-                      const backupIds = getBackupProfessionalIds(selectedIds, professionalsOptions);
-
-                      function removeProfessional(id: string) {
-                        field.onChange((field.value ?? []).filter((x) => x !== id));
-                      }
-
-                      function makeResponsible(id: string) {
-                        const current = field.value ?? [];
-                        if (current[0] === id) return;
-                        field.onChange([id, ...current.filter((x) => x !== id)]);
-                      }
-
-                      return (
-                        <FormItem>
-                          <FormLabel>Profissionais responsáveis</FormLabel>
-
-                          <FormControl>
-                            <SearchableDropdown
-                              multiple
-                              options={professionalsOptions.map((prof) => ({
-                                value: prof.id,
-                                label: prof.professional_type
-                                  ? `${prof.name ?? "—"} — ${
-                                      PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
-                                      prof.professional_type
-                                    }`
-                                  : (prof.name ?? "—"),
-                                group: prof.professional_type
-                                  ? PROFESSIONAL_TYPE_PLURAL_LABELS[prof.professional_type]
-                                  : undefined,
-                              }))}
-                              value={selectedIds}
-                              onChange={(next) => field.onChange(next)}
-                              placeholder="Selecione as profissionais"
-                              searchPlaceholder="Buscar profissional..."
-                              emptyMessage="Nenhuma profissional encontrada"
-                              className={cn(
-                                selectedIds.length > 0 && "border-primary/40",
-                                hasError && "border-destructive",
-                              )}
-                            />
-                          </FormControl>
-
-                          {selectedProfessionals.length > 0 && (
-                            <div className="flex flex-col gap-2 pt-1">
-                              {selectedProfessionals.map((prof, index) => {
-                                const isResponsible = index === 0;
-                                const isBackup = backupIds.includes(prof.id);
-                                return (
-                                  <div
-                                    key={prof.id}
-                                    className={cn(
-                                      "flex items-center gap-1 rounded-xl border transition-colors",
-                                      isResponsible
-                                        ? "border-primary/30 bg-primary/5"
-                                        : "border-border bg-muted/30 hover:border-primary/30 hover:bg-primary/5",
-                                    )}
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => makeResponsible(prof.id)}
-                                      disabled={isResponsible}
-                                      className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left disabled:cursor-default"
-                                    >
-                                      <Avatar className="h-9 w-9 shrink-0 shadow-sm">
-                                        <AvatarImage
-                                          src={prof.avatar_url ?? undefined}
-                                          alt={prof.name ?? ""}
-                                          className="rounded-full object-cover"
-                                        />
-                                        <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                                          {getInitials(prof.name)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <p className="truncate font-medium text-sm">
-                                            {prof.name ?? "—"}
-                                          </p>
-                                          {isResponsible ? (
-                                            <Badge
-                                              variant="outline"
-                                              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 py-0 text-primary text-xs"
-                                            >
-                                              <Shield className="mr-1 h-3 w-3" />
-                                              Responsável
-                                            </Badge>
-                                          ) : (
-                                            <span className="shrink-0 text-muted-foreground text-xs">
-                                              Clique para tornar responsável
-                                            </span>
-                                          )}
-                                          {isBackup && (
-                                            <Badge
-                                              variant="outline"
-                                              className="shrink-0 border-muted-foreground/30 bg-muted px-1.5 py-0 text-muted-foreground text-xs"
-                                            >
-                                              Backup
-                                            </Badge>
-                                          )}
-                                        </div>
-                                        <p className="text-muted-foreground text-xs">
-                                          {prof.professional_type
-                                            ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
-                                              prof.professional_type)
-                                            : "Profissional"}
-                                        </p>
-                                      </div>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeProfessional(prof.id)}
-                                      className="mr-2 rounded-full p-1 hover:bg-muted"
-                                    >
-                                      <X className="h-4 w-4 text-muted-foreground" />
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                ) : showEnterpriseSelector ? (
-                  <FormField
-                    control={form.control}
-                    name="enterprise_id"
-                    render={({ field }) => {
-                      const enterpriseOptions = [
-                        {
-                          id: null as string | null,
-                          name: "Atendimento Autônomo",
-                          description: "Sem vínculo com empresa",
-                        },
-                        ...(enterprises ?? []).map((e) => ({
-                          id: e.id as string | null,
-                          name: e.name,
-                          description: null,
-                        })),
-                      ];
-                      return (
-                        <FormItem>
-                          <FormLabel>Vincular ao atendimento</FormLabel>
-                          <div className="flex flex-col gap-2 pt-1">
-                            {enterpriseOptions.map((opt) => {
-                              const isSelected = field.value === opt.id;
-                              return (
-                                <button
-                                  key={opt.id ?? "autonomous"}
-                                  type="button"
-                                  onClick={() => field.onChange(opt.id)}
-                                  className={cn(
-                                    "flex items-center gap-3 rounded-xl border p-4 text-left transition-colors",
-                                    isSelected
-                                      ? "border-primary/40 bg-primary/5"
-                                      : "border-border hover:border-primary/30 hover:bg-muted/40",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                                      isSelected ? "bg-primary/20" : "bg-muted",
-                                    )}
-                                  >
-                                    {opt.id === null ? (
-                                      <Users
-                                        className={cn(
-                                          "h-4 w-4",
-                                          isSelected ? "text-primary" : "text-muted-foreground",
-                                        )}
-                                      />
-                                    ) : (
-                                      <Shield
-                                        className={cn(
-                                          "h-4 w-4",
-                                          isSelected ? "text-primary" : "text-muted-foreground",
-                                        )}
-                                      />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p
-                                      className={cn(
-                                        "font-medium text-sm",
-                                        isSelected && "text-primary",
-                                      )}
-                                    >
-                                      {opt.name}
-                                    </p>
-                                    {opt.description && (
-                                      <p className="text-muted-foreground text-xs">
-                                        {opt.description}
-                                      </p>
-                                    )}
-                                  </div>
-                                  {isSelected && (
-                                    <Check className="h-4 w-4 shrink-0 text-primary" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                ) : null}
-              </div>
-            )}
-
-            {/* ── Step 5: Cobrança ── */}
-            {step === 5 && (
-              <div className="space-y-4">
-                <button
-                  type="button"
-                  onClick={() => toggleBilling(!showBilling)}
-                  className="flex w-full items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
-                >
-                  <span className="font-medium">
-                    {showBilling
-                      ? "− Remover dados de pagamento"
-                      : "+ Adicionar dados de pagamento"}
-                  </span>
-                </button>
-
-                {showBilling && (
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="billing.description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descrição *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: Acompanhamento pré-natal" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {isSplitBilling ? (
-                      <div className="space-y-2">
-                        <FormLabel>Profissionais e Valores *</FormLabel>
-                        {Object.keys(profAmounts).map((profId) => {
-                          const prof = professionalsOptions.find((p) => p.id === profId);
-                          return (
-                            <div key={profId} className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8 shrink-0">
-                                <AvatarImage
-                                  src={prof?.avatar_url ?? undefined}
-                                  alt={prof?.name ?? ""}
-                                  className="rounded-full object-cover"
-                                />
-                                <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                                  {getInitials(prof?.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="min-w-0 flex-1 truncate text-sm">
-                                {prof?.name ?? profId}
-                              </span>
-                              <CurrencyInput
-                                value={profAmounts[profId] ?? 0}
-                                onChange={(val) =>
-                                  setProfAmounts((prev) => ({
-                                    ...prev,
-                                    [profId]: val,
-                                  }))
-                                }
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() =>
-                                  setProfAmounts((prev) => {
-                                    const next = { ...prev };
-                                    delete next[profId];
-                                    return next;
-                                  })
-                                }
-                              >
-                                <X className="h-4 w-4 text-muted-foreground" />
-                              </Button>
-                            </div>
-                          );
-                        })}
-                        {selectedProfessionalIds.some((id) => !(id in profAmounts)) && (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {selectedProfessionalIds
-                              .filter((id) => !(id in profAmounts))
-                              .map((profId) => {
-                                const prof = professionalsOptions.find((p) => p.id === profId);
-                                return (
-                                  <button
-                                    key={profId}
-                                    type="button"
-                                    onClick={() =>
-                                      setProfAmounts((prev) => ({
-                                        ...prev,
-                                        [profId]: 0,
-                                      }))
-                                    }
-                                    className="flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-muted-foreground text-xs transition-colors hover:border-primary hover:text-primary"
-                                  >
-                                    + {prof?.name ?? profId}
-                                  </button>
-                                );
-                              })}
-                          </div>
-                        )}
-                        {splitBillingTotal > 0 && (
-                          <p className="text-right text-muted-foreground text-xs">
-                            Total: {formatCurrency(splitBillingTotal)}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
+                  {!isInviteMode && (
+                    <>
                       <FormField
                         control={form.control}
-                        name="billing.total_amount"
+                        name="partner_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Valor Total *</FormLabel>
+                            <FormLabel>Nome do parceiro</FormLabel>
                             <FormControl>
-                              <CurrencyInput value={field.value ?? 0} onChange={field.onChange} />
+                              <Input
+                                placeholder="Nome do parceiro"
+                                {...field}
+                                value={field.value ?? ""}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    )}
 
-                    <FormField
-                      control={form.control}
-                      name="billing.payment_method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Método de Pagamento *</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o método" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pix">PIX</SelectItem>
-                              <SelectItem value="credito">Cartão de Crédito</SelectItem>
-                              <SelectItem value="debito">Cartão de Débito</SelectItem>
-                              <SelectItem value="boleto">Boleto</SelectItem>
-                              <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                              <SelectItem value="outro">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="rg"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>RG</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                    <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="cpf"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>CPF</FormLabel>
+                              <FormControl>
+                                <InputMask
+                                  component={Input}
+                                  mask="___.___.___-__"
+                                  replacement={{ _: /\d/ }}
+                                  {...field}
+                                  value={field.value ?? ""}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="marital_status"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Estado civil</FormLabel>
+                              <Select
+                                value={field.value ?? undefined}
+                                onValueChange={field.onChange}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {MARITAL_STATUS_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="occupation"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Profissão</FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ""} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
                       <FormField
                         control={form.control}
-                        name="billing.installment_count"
+                        name="baby_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Parcelas *</FormLabel>
+                            <FormLabel>Nome do bebê</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Nome escolhido para o bebê"
+                                {...field}
+                                value={field.value ?? ""}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="space-y-2">
+                        <FormLabel>Calculo da Idade Gestacional *</FormLabel>
+                        <Select
+                          value={dueDateCalcMethod}
+                          onValueChange={(v) => handleCalcMethodChange(v as DueDateCalcMethod)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o método de cálculo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gestational_age">Idade gestacional</SelectItem>
+                            <SelectItem value="dum">Data da última menstruação (DUM)</SelectItem>
+                            <SelectItem value="dpp">Data prevista do parto (DPP)</SelectItem>
+                            <SelectItem value="fiv">FIV/FET (transferência de embrião)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {dueDateCalcMethod === "gestational_age" && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <FormItem>
+                            <FormLabel>Semanas *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={45}
+                                placeholder="Ex: 20"
+                                value={gestAgeWeeks}
+                                onChange={(e) => applyGestAge(e.target.value, gestAgeDays)}
+                              />
+                            </FormControl>
+                          </FormItem>
+                          <FormItem>
+                            <FormLabel>Dias *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min={0}
+                                max={6}
+                                placeholder="Ex: 3"
+                                value={gestAgeDays}
+                                onChange={(e) => applyGestAge(gestAgeWeeks, e.target.value)}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        </div>
+                      )}
+
+                      {dueDateCalcMethod === "fiv" && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <FormItem>
+                            <FormLabel>Data da transferência *</FormLabel>
+                            <FormControl>
+                              <DatePicker
+                                selected={
+                                  fivTransferDate ? new Date(`${fivTransferDate}T00:00:00`) : null
+                                }
+                                onChange={(date) =>
+                                  applyFiv(
+                                    date ? date.toISOString().slice(0, 10) : "",
+                                    fivTransferType,
+                                  )
+                                }
+                                placeholderText="Selecione a data"
+                              />
+                            </FormControl>
+                          </FormItem>
+                          <FormItem>
+                            <FormLabel>Tipo de transferência *</FormLabel>
                             <Select
-                              value={String(field.value ?? 1)}
-                              onValueChange={(v) => field.onChange(Number(v))}
+                              value={fivTransferType}
+                              onValueChange={(v) => applyFiv(fivTransferDate, v as FivTransferType)}
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -1679,11 +985,736 @@ export default function NewPatientModal({
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                                  <SelectItem key={n} value={String(n)}>
-                                    {n}x
+                                {FIV_TRANSFER_OPTIONS.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
                                   </SelectItem>
                                 ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        </div>
+                      )}
+
+                      {dueDateCalcMethod === "dum" && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="dum"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Última menstruação (DUM) *</FormLabel>
+                                <FormControl>
+                                  <DatePicker
+                                    selected={
+                                      field.value ? new Date(`${field.value}T00:00:00`) : null
+                                    }
+                                    onChange={applyDum}
+                                    placeholderText="Selecione a data"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="due_date"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Data prevista do parto (DPP)</FormLabel>
+                                <FormControl>
+                                  <DatePicker
+                                    selected={
+                                      field.value ? new Date(`${field.value}T00:00:00`) : null
+                                    }
+                                    onChange={() => undefined}
+                                    placeholderText="Calculado automaticamente"
+                                    disabled
+                                    className="bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      {dueDateCalcMethod === "dpp" && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="due_date"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Data prevista do parto (DPP) *</FormLabel>
+                                <FormControl>
+                                  <DatePicker
+                                    selected={
+                                      field.value ? new Date(`${field.value}T00:00:00`) : null
+                                    }
+                                    onChange={applyDpp}
+                                    placeholderText="Selecione a data"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="dum"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Última menstruação (DUM)</FormLabel>
+                                <FormControl>
+                                  <DatePicker
+                                    selected={
+                                      field.value ? new Date(`${field.value}T00:00:00`) : null
+                                    }
+                                    onChange={() => undefined}
+                                    placeholderText="Calculado automaticamente"
+                                    disabled
+                                    className="bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      {(dueDateCalcMethod === "gestational_age" || dueDateCalcMethod === "fiv") && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="dum"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Última menstruação (DUM)</FormLabel>
+                                <FormControl>
+                                  <DatePicker
+                                    selected={
+                                      field.value ? new Date(`${field.value}T00:00:00`) : null
+                                    }
+                                    onChange={() => undefined}
+                                    placeholderText="Calculado automaticamente"
+                                    disabled
+                                    className="bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="due_date"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Data prevista do parto (DPP)</FormLabel>
+                                <FormControl>
+                                  <DatePicker
+                                    selected={
+                                      field.value ? new Date(`${field.value}T00:00:00`) : null
+                                    }
+                                    onChange={() => undefined}
+                                    placeholderText="Calculado automaticamente"
+                                    disabled
+                                    className="bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      <FormField
+                        control={form.control}
+                        name="observations"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Observações</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Informações adicionais sobre a paciente"
+                                rows={3}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ── Step 2: Contato ── */}
+              {step === 2 && (
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="email@exemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone *</FormLabel>
+                        <FormControl>
+                          <InputMask
+                            component={Input}
+                            placeholder="(99) 99999-9999"
+                            mask="(__) _____-____"
+                            replacement={{ _: /\d/ }}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* ── Step 3: Endereço ── */}
+              {step === 3 && (
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="address.zipcode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <InputMask
+                              component={Input}
+                              mask="_____-___"
+                              replacement={{ _: /\d/ }}
+                              placeholder="00000-000"
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e);
+                                const digits = e.target.value.replace(/\D/g, "");
+                                if (digits.length === 8) {
+                                  lookupCep({ cep: digits });
+                                }
+                                if (digits.length < 8) {
+                                  setAddressVisible(false);
+                                }
+                              }}
+                            />
+                            {isFetchingCep && (
+                              <div className="absolute inset-y-0 right-3 flex items-center">
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-4">
+                    <FormField
+                      control={form.control}
+                      name="address.street"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-3">
+                          <FormLabel>Rua</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Rua das Flores"
+                              disabled={!addressVisible}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address.number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número</FormLabel>
+                          <FormControl>
+                            <Input placeholder="123" disabled={!addressVisible} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="address.complement"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Complemento</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Apto 45" disabled={!addressVisible} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address.neighborhood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bairro</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Centro" disabled={!addressVisible} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-4">
+                    <FormField
+                      control={form.control}
+                      name="address.city"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-3">
+                          <FormLabel>Cidade</FormLabel>
+                          <FormControl>
+                            <Input placeholder="São Paulo" disabled={!addressVisible} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="address.state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado</FormLabel>
+                          <Select
+                            value={field.value ?? undefined}
+                            onValueChange={field.onChange}
+                            disabled={!addressVisible}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {ESTADOS_BR.map((estado) => (
+                                <SelectItem key={estado.sigla} value={estado.sigla}>
+                                  {estado.sigla}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ── Step 4: Equipe / Empresa ── */}
+              {step === 4 && (
+                <div className="space-y-4">
+                  {showProfessionalSelector ? (
+                    <FormField
+                      control={form.control}
+                      name="professional_ids"
+                      render={({ field, fieldState }) => {
+                        const selectedIds: string[] = field.value ?? [];
+                        const hasError = !!fieldState.error && selectedIds.length === 0;
+                        const selectedProfessionals = selectedIds
+                          .map((id) => professionalsOptions.find((p) => p.id === id))
+                          .filter(Boolean) as Professional[];
+                        const backupIds = getBackupProfessionalIds(
+                          selectedIds,
+                          professionalsOptions,
+                        );
+
+                        function removeProfessional(id: string) {
+                          field.onChange((field.value ?? []).filter((x) => x !== id));
+                        }
+
+                        function makeResponsible(id: string) {
+                          const current = field.value ?? [];
+                          if (current[0] === id) return;
+                          field.onChange([id, ...current.filter((x) => x !== id)]);
+                        }
+
+                        return (
+                          <FormItem>
+                            <FormLabel>Profissionais responsáveis</FormLabel>
+
+                            <FormControl>
+                              <SearchableDropdown
+                                multiple
+                                options={professionalsOptions.map((prof) => ({
+                                  value: prof.id,
+                                  label: prof.professional_type
+                                    ? `${prof.name ?? "—"} — ${
+                                        PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
+                                        prof.professional_type
+                                      }`
+                                    : (prof.name ?? "—"),
+                                  group: prof.professional_type
+                                    ? PROFESSIONAL_TYPE_PLURAL_LABELS[prof.professional_type]
+                                    : undefined,
+                                }))}
+                                value={selectedIds}
+                                onChange={(next) => field.onChange(next)}
+                                placeholder="Selecione as profissionais"
+                                searchPlaceholder="Buscar profissional..."
+                                emptyMessage="Nenhuma profissional encontrada"
+                                className={cn(
+                                  selectedIds.length > 0 && "border-primary/40",
+                                  hasError && "border-destructive",
+                                )}
+                              />
+                            </FormControl>
+
+                            {selectedProfessionals.length > 0 && (
+                              <div className="flex flex-col gap-2 pt-1">
+                                {selectedProfessionals.map((prof, index) => {
+                                  const isResponsible = index === 0;
+                                  const isBackup = backupIds.includes(prof.id);
+                                  return (
+                                    <div
+                                      key={prof.id}
+                                      className={cn(
+                                        "flex items-center gap-1 rounded-xl border transition-colors",
+                                        isResponsible
+                                          ? "border-primary/30 bg-primary/5"
+                                          : "border-border bg-muted/30 hover:border-primary/30 hover:bg-primary/5",
+                                      )}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={() => makeResponsible(prof.id)}
+                                        disabled={isResponsible}
+                                        className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left disabled:cursor-default"
+                                      >
+                                        <Avatar className="h-9 w-9 shrink-0 shadow-sm">
+                                          <AvatarImage
+                                            src={prof.avatar_url ?? undefined}
+                                            alt={prof.name ?? ""}
+                                            className="rounded-full object-cover"
+                                          />
+                                          <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                                            {getInitials(prof.name)}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <p className="truncate font-medium text-sm">
+                                              {prof.name ?? "—"}
+                                            </p>
+                                            {isResponsible ? (
+                                              <Badge
+                                                variant="outline"
+                                                className="shrink-0 border-primary/40 bg-primary/10 px-1.5 py-0 text-primary text-xs"
+                                              >
+                                                <Shield className="mr-1 h-3 w-3" />
+                                                Responsável
+                                              </Badge>
+                                            ) : (
+                                              <span className="shrink-0 text-muted-foreground text-xs">
+                                                Clique para tornar responsável
+                                              </span>
+                                            )}
+                                            {isBackup && (
+                                              <Badge
+                                                variant="outline"
+                                                className="shrink-0 border-muted-foreground/30 bg-muted px-1.5 py-0 text-muted-foreground text-xs"
+                                              >
+                                                Backup
+                                              </Badge>
+                                            )}
+                                          </div>
+                                          <p className="text-muted-foreground text-xs">
+                                            {prof.professional_type
+                                              ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
+                                                prof.professional_type)
+                                              : "Profissional"}
+                                          </p>
+                                        </div>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeProfessional(prof.id)}
+                                        className="mr-2 rounded-full p-1 hover:bg-muted"
+                                      >
+                                        <X className="h-4 w-4 text-muted-foreground" />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ) : showEnterpriseSelector ? (
+                    <FormField
+                      control={form.control}
+                      name="enterprise_id"
+                      render={({ field }) => {
+                        const enterpriseOptions = [
+                          {
+                            id: null as string | null,
+                            name: "Atendimento Autônomo",
+                            description: "Sem vínculo com empresa",
+                          },
+                          ...(enterprises ?? []).map((e) => ({
+                            id: e.id as string | null,
+                            name: e.name,
+                            description: null,
+                          })),
+                        ];
+                        return (
+                          <FormItem>
+                            <FormLabel>Vincular ao atendimento</FormLabel>
+                            <div className="flex flex-col gap-2 pt-1">
+                              {enterpriseOptions.map((opt) => {
+                                const isSelected = field.value === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id ?? "autonomous"}
+                                    type="button"
+                                    onClick={() => field.onChange(opt.id)}
+                                    className={cn(
+                                      "flex items-center gap-3 rounded-xl border p-4 text-left transition-colors",
+                                      isSelected
+                                        ? "border-primary/40 bg-primary/5"
+                                        : "border-border hover:border-primary/30 hover:bg-muted/40",
+                                    )}
+                                  >
+                                    <div
+                                      className={cn(
+                                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+                                        isSelected ? "bg-primary/20" : "bg-muted",
+                                      )}
+                                    >
+                                      {opt.id === null ? (
+                                        <Users
+                                          className={cn(
+                                            "h-4 w-4",
+                                            isSelected ? "text-primary" : "text-muted-foreground",
+                                          )}
+                                        />
+                                      ) : (
+                                        <Shield
+                                          className={cn(
+                                            "h-4 w-4",
+                                            isSelected ? "text-primary" : "text-muted-foreground",
+                                          )}
+                                        />
+                                      )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p
+                                        className={cn(
+                                          "font-medium text-sm",
+                                          isSelected && "text-primary",
+                                        )}
+                                      >
+                                        {opt.name}
+                                      </p>
+                                      {opt.description && (
+                                        <p className="text-muted-foreground text-xs">
+                                          {opt.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                    {isSelected && (
+                                      <Check className="h-4 w-4 shrink-0 text-primary" />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              {/* ── Step 5: Cobrança ── */}
+              {step === 5 && (
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => toggleBilling(!showBilling)}
+                    className="flex w-full items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
+                  >
+                    <span className="font-medium">
+                      {showBilling
+                        ? "− Remover dados de pagamento"
+                        : "+ Adicionar dados de pagamento"}
+                    </span>
+                  </button>
+
+                  {showBilling && (
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="billing.description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Descrição *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ex: Acompanhamento pré-natal" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      {isSplitBilling ? (
+                        <div className="space-y-2">
+                          <FormLabel>Profissionais e Valores *</FormLabel>
+                          {Object.keys(profAmounts).map((profId) => {
+                            const prof = professionalsOptions.find((p) => p.id === profId);
+                            return (
+                              <div key={profId} className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8 shrink-0">
+                                  <AvatarImage
+                                    src={prof?.avatar_url ?? undefined}
+                                    alt={prof?.name ?? ""}
+                                    className="rounded-full object-cover"
+                                  />
+                                  <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                                    {getInitials(prof?.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="min-w-0 flex-1 truncate text-sm">
+                                  {prof?.name ?? profId}
+                                </span>
+                                <CurrencyInput
+                                  value={profAmounts[profId] ?? 0}
+                                  onChange={(val) =>
+                                    setProfAmounts((prev) => ({
+                                      ...prev,
+                                      [profId]: val,
+                                    }))
+                                  }
+                                />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  onClick={() =>
+                                    setProfAmounts((prev) => {
+                                      const next = { ...prev };
+                                      delete next[profId];
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  <X className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                          {selectedProfessionalIds.some((id) => !(id in profAmounts)) && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {selectedProfessionalIds
+                                .filter((id) => !(id in profAmounts))
+                                .map((profId) => {
+                                  const prof = professionalsOptions.find((p) => p.id === profId);
+                                  return (
+                                    <button
+                                      key={profId}
+                                      type="button"
+                                      onClick={() =>
+                                        setProfAmounts((prev) => ({
+                                          ...prev,
+                                          [profId]: 0,
+                                        }))
+                                      }
+                                      className="flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-muted-foreground text-xs transition-colors hover:border-primary hover:text-primary"
+                                    >
+                                      + {prof?.name ?? profId}
+                                    </button>
+                                  );
+                                })}
+                            </div>
+                          )}
+                          {splitBillingTotal > 0 && (
+                            <p className="text-right text-muted-foreground text-xs">
+                              Total: {formatCurrency(splitBillingTotal)}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <FormField
+                          control={form.control}
+                          name="billing.total_amount"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Valor Total *</FormLabel>
+                              <FormControl>
+                                <CurrencyInput value={field.value ?? 0} onChange={field.onChange} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+
+                      <FormField
+                        control={form.control}
+                        name="billing.payment_method"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Método de Pagamento *</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o método" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="pix">PIX</SelectItem>
+                                <SelectItem value="credito">Cartão de Crédito</SelectItem>
+                                <SelectItem value="debito">Cartão de Débito</SelectItem>
+                                <SelectItem value="boleto">Boleto</SelectItem>
+                                <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                <SelectItem value="outro">Outro</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1691,157 +1722,84 @@ export default function NewPatientModal({
                         )}
                       />
 
-                      <FormItem>
-                        <FormLabel>Intervalo *</FormLabel>
-                        <Select
-                          value={
-                            isCustomInterval ? "custom" : String(billingInstallmentInterval ?? "")
-                          }
-                          onValueChange={handleBillingIntervalChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">Mensal</SelectItem>
-                            <SelectItem value="2">Bimestral</SelectItem>
-                            <SelectItem value="3">Trimestral</SelectItem>
-                            <SelectItem value="4">Quadrimestral</SelectItem>
-                            <SelectItem value="custom">Personalizado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    </div>
-
-                    {!isCustomInterval && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <FormLabel>Datas de vencimento</FormLabel>
-                          {Object.keys(lockedAmounts).length > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setLockedAmounts({})}
-                              className="h-6 gap-1 px-2 text-muted-foreground text-xs"
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                              Reiniciar parcelas
-                            </Button>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="billing.installment_count"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Parcelas *</FormLabel>
+                              <Select
+                                value={String(field.value ?? 1)}
+                                onValueChange={(v) => field.onChange(Number(v))}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                                    <SelectItem key={n} value={String(n)}>
+                                      {n}x
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </div>
-                        <div className="space-y-2">
-                          <div className="flex items-start gap-3">
-                            <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
-                              Parcela 1
-                            </span>
-                            <FormField
-                              control={form.control}
-                              name="billing.first_due_date"
-                              render={({ field }) => (
-                                <FormItem className="flex-1">
-                                  <FormControl>
-                                    <DatePicker
-                                      selected={
-                                        field.value ? new Date(`${field.value}T00:00:00`) : null
-                                      }
-                                      onChange={(date) =>
-                                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
-                                      }
-                                      placeholderText="Selecione a data"
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <div className="w-28 shrink-0">
-                              <CurrencyInput
-                                value={installmentAmounts[0] ?? 0}
-                                onChange={(val) => handleInstallmentAmountChange(0, val)}
-                              />
-                              {showInstallmentAmountError(0) && (
-                                <p className="mt-0.5 text-destructive text-xs">Campo obrigatório</p>
-                              )}
-                            </div>
-                          </div>
+                        />
 
-                          {previewDates.map((date, i) => (
-                            <div
-                              key={date || `preview-${i + 2}`}
-                              className="flex items-start gap-3"
-                            >
-                              <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
-                                Parcela {i + 2}
-                              </span>
-                              <div className="relative flex-1">
-                                <DatePicker
-                                  selected={date ? new Date(`${date}T00:00:00`) : null}
-                                  onChange={() => undefined}
-                                  disabled
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => switchToCustom()}
-                                  className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
-                                  title="Editar datas manualmente"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                              <div className="w-28 shrink-0">
-                                <CurrencyInput
-                                  value={installmentAmounts[i + 1] ?? 0}
-                                  onChange={(val) => handleInstallmentAmountChange(i + 1, val)}
-                                />
-                                {showInstallmentAmountError(i + 1) && (
-                                  <p className="mt-0.5 text-destructive text-xs">
-                                    Campo obrigatório
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {hasAmountMismatch && (
-                          <p className="text-destructive text-xs">
-                            A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde
-                            ao valor total ({formatCurrency(billingTotalAmount)}).
-                          </p>
-                        )}
+                        <FormItem>
+                          <FormLabel>Intervalo *</FormLabel>
+                          <Select
+                            value={
+                              isCustomInterval ? "custom" : String(billingInstallmentInterval ?? "")
+                            }
+                            onValueChange={handleBillingIntervalChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="1">Mensal</SelectItem>
+                              <SelectItem value="2">Bimestral</SelectItem>
+                              <SelectItem value="3">Trimestral</SelectItem>
+                              <SelectItem value="4">Quadrimestral</SelectItem>
+                              <SelectItem value="custom">Personalizado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
                       </div>
-                    )}
 
-                    {isCustomInterval && (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <FormLabel>Datas de vencimento</FormLabel>
-                          {Object.keys(lockedAmounts).length > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setLockedAmounts({})}
-                              className="h-6 gap-1 px-2 text-muted-foreground text-xs"
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                              Reiniciar parcelas
-                            </Button>
-                          )}
-                        </div>
+                      {!isCustomInterval && (
                         <div className="space-y-2">
-                          {Array.from({ length: billingInstallmentCount }, (_, i) => (
-                            <div key={`custom-date-${i + 1}`} className="flex items-start gap-3">
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Datas de vencimento</FormLabel>
+                            {Object.keys(lockedAmounts).length > 0 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setLockedAmounts({})}
+                                className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Reiniciar parcelas
+                              </Button>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-3">
                               <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
-                                Parcela {i + 1}
+                                Parcela 1
                               </span>
                               <FormField
                                 control={form.control}
-                                name={
-                                  `billing.installments_dates.${i}` as "billing.installments_dates"
-                                }
+                                name="billing.first_due_date"
                                 render={({ field }) => (
                                   <FormItem className="flex-1">
                                     <FormControl>
@@ -1863,102 +1821,208 @@ export default function NewPatientModal({
                               />
                               <div className="w-28 shrink-0">
                                 <CurrencyInput
-                                  value={installmentAmounts[i] ?? 0}
-                                  onChange={(val) => handleInstallmentAmountChange(i, val)}
+                                  value={installmentAmounts[0] ?? 0}
+                                  onChange={(val) => handleInstallmentAmountChange(0, val)}
                                 />
-                                {showInstallmentAmountError(i) && (
+                                {showInstallmentAmountError(0) && (
                                   <p className="mt-0.5 text-destructive text-xs">
                                     Campo obrigatório
                                   </p>
                                 )}
                               </div>
                             </div>
-                          ))}
+
+                            {previewDates.map((date, i) => (
+                              <div
+                                key={date || `preview-${i + 2}`}
+                                className="flex items-start gap-3"
+                              >
+                                <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
+                                  Parcela {i + 2}
+                                </span>
+                                <div className="relative flex-1">
+                                  <DatePicker
+                                    selected={date ? new Date(`${date}T00:00:00`) : null}
+                                    onChange={() => undefined}
+                                    disabled
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => switchToCustom()}
+                                    className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
+                                    title="Editar datas manualmente"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                <div className="w-28 shrink-0">
+                                  <CurrencyInput
+                                    value={installmentAmounts[i + 1] ?? 0}
+                                    onChange={(val) => handleInstallmentAmountChange(i + 1, val)}
+                                  />
+                                  {showInstallmentAmountError(i + 1) && (
+                                    <p className="mt-0.5 text-destructive text-xs">
+                                      Campo obrigatório
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {hasAmountMismatch && (
+                            <p className="text-destructive text-xs">
+                              A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde
+                              ao valor total ({formatCurrency(billingTotalAmount)}).
+                            </p>
+                          )}
                         </div>
-                        {hasAmountMismatch && (
-                          <p className="text-destructive text-xs">
-                            A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde
-                            ao valor total ({formatCurrency(billingTotalAmount)}).
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    <FormField
-                      control={form.control}
-                      name="billing.notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Observações da cobrança</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Notas sobre a cobrança" rows={2} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
                       )}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          {/* ── Navigation ── */}
-          <div className="flex gap-2 pt-2">
-            {step > 1 ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={goToPrev}
-                disabled={isSubmitting}
-              >
-                Voltar
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={() => setShowModal(false)}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-            )}
+                      {isCustomInterval && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Datas de vencimento</FormLabel>
+                            {Object.keys(lockedAmounts).length > 0 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setLockedAmounts({})}
+                                className="h-6 gap-1 px-2 text-muted-foreground text-xs"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Reiniciar parcelas
+                              </Button>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            {Array.from({ length: billingInstallmentCount }, (_, i) => (
+                              <div key={`custom-date-${i + 1}`} className="flex items-start gap-3">
+                                <span className="w-20 shrink-0 pt-2 text-muted-foreground text-xs">
+                                  Parcela {i + 1}
+                                </span>
+                                <FormField
+                                  control={form.control}
+                                  name={
+                                    `billing.installments_dates.${i}` as "billing.installments_dates"
+                                  }
+                                  render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                      <FormControl>
+                                        <DatePicker
+                                          selected={
+                                            field.value ? new Date(`${field.value}T00:00:00`) : null
+                                          }
+                                          onChange={(date) =>
+                                            field.onChange(
+                                              date ? date.toISOString().slice(0, 10) : "",
+                                            )
+                                          }
+                                          placeholderText="Selecione a data"
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <div className="w-28 shrink-0">
+                                  <CurrencyInput
+                                    value={installmentAmounts[i] ?? 0}
+                                    onChange={(val) => handleInstallmentAmountChange(i, val)}
+                                  />
+                                  {showInstallmentAmountError(i) && (
+                                    <p className="mt-0.5 text-destructive text-xs">
+                                      Campo obrigatório
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {hasAmountMismatch && (
+                            <p className="text-destructive text-xs">
+                              A soma das parcelas ({formatCurrency(installmentSum)}) não corresponde
+                              ao valor total ({formatCurrency(billingTotalAmount)}).
+                            </p>
+                          )}
+                        </div>
+                      )}
 
-            {step < 5 ? (
-              <Button
-                type="button"
-                className="gradient-primary flex-1"
-                onClick={goToNext}
-                disabled={isSubmitting}
-              >
-                Próximo
-              </Button>
-            ) : inviteMode ? (
-              <Button
-                type="button"
-                className="gradient-primary flex-1"
-                onClick={handleInviteSubmit}
-                disabled={isSubmitting || isNavigating}
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enviar Convite
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                className="gradient-primary flex-1"
-                disabled={isSubmitting || isNavigating}
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Cadastrar Paciente
-              </Button>
-            )}
-          </div>
-        </form>
-      </Form>
+                      <FormField
+                        control={form.control}
+                        name="billing.notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Observações da cobrança</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Notas sobre a cobrança" rows={2} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Navigation ── */}
+            <div className="flex gap-2 pt-2">
+              {step > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={goToPrev}
+                  disabled={isSubmitting}
+                >
+                  Voltar
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowModal(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+              )}
+
+              {step < 5 ? (
+                <Button
+                  type="button"
+                  className="gradient-primary flex-1"
+                  onClick={goToNext}
+                  disabled={isSubmitting}
+                >
+                  Próximo
+                </Button>
+              ) : isInviteMode ? (
+                <Button
+                  type="button"
+                  className="gradient-primary flex-1"
+                  onClick={handleInviteSubmit}
+                  disabled={isSubmitting || isNavigating}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Enviar Convite
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="gradient-primary flex-1"
+                  disabled={isSubmitting || isNavigating}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Cadastrar Paciente
+                </Button>
+              )}
+            </div>
+          </form>
+        </Form>
       </ContentModal>
 
       {createdInvite && (
