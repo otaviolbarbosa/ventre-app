@@ -2,7 +2,11 @@ import { isStaff } from "@/lib/access-control";
 import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
 import { HomeScreen, PatientHomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
-import { getMyPregnancy } from "@/services/patient-self";
+import {
+  getMyContractChangeRequests,
+  getMyContracts,
+  getMyPregnancy,
+} from "@/services/patient-self";
 import type { Tables } from "@ventre/supabase";
 import { redirect } from "next/navigation";
 
@@ -12,11 +16,17 @@ export default async function Home() {
   const { profile } = await getServerAuth();
 
   if (profile?.user_type === "patient") {
-    const { patient, pregnancy, error } = await getMyPregnancy();
+    const [{ patient, pregnancy, error }, { contracts }, { changeRequests }] = await Promise.all([
+      getMyPregnancy(),
+      getMyContracts(),
+      getMyContractChangeRequests(),
+    ]);
     return (
       <PatientHomeScreen
         name={profile?.name ?? patient?.name}
         pregnancy={pregnancy}
+        contracts={contracts}
+        changeRequests={changeRequests}
         error={error}
       />
     );

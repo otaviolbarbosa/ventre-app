@@ -3,6 +3,7 @@ import {
   ContractPdfDocument,
 } from "@/components/shared/contract-pdf-document";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
+import { sanitizeClausesHtml } from "@/lib/contract-html";
 import { type DocumentProps, renderToBuffer } from "@react-pdf/renderer";
 import type {
   createServerSupabaseAdmin,
@@ -12,13 +13,12 @@ import type { Tables } from "@ventre/supabase/types";
 import React from "react";
 
 // Server-only module: imports @react-pdf/renderer. Never import from client components.
+// For sanitizeClausesHtml in client code, import from "@/lib/contract-html" instead.
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdmin = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
-export function sanitizeClausesHtml(html: string): string {
-  return html.replace(/font-family\s*:[^;}"']+[;}"']/g, "");
-}
+export { sanitizeClausesHtml };
 
 export async function renderContractPdfBuffer({
   headerBlocks,

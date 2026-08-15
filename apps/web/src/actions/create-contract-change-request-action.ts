@@ -54,6 +54,8 @@ export const createContractChangeRequestAction = authActionClient
     }
 
     revalidatePath(`/patients/${patientId}/profile`);
+    revalidatePath("/home");
+    revalidatePath(`/contrato/${existing.id}`);
 
     if (patientRow.created_by) {
       sendWhatsAppToUser(

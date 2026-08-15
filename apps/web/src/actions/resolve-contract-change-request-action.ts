@@ -50,6 +50,7 @@ export const resolveContractChangeRequestAction = authActionClient
       if (error) throw new Error("Erro ao resolver solicitação. Tente novamente.");
 
       revalidatePath(`/patients/${patientId}/profile`);
+      revalidatePath("/home");
 
       await captureServerEvent(user.id, "resolve_contract_change_request", {
         patient_id: patientId,

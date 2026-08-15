@@ -68,6 +68,8 @@ export const signContractAsPatientAction = authActionClient
     }
 
     revalidatePath(`/patients/${patientId}/profile`);
+    revalidatePath("/home");
+    revalidatePath(`/contrato/${existing.id}`);
 
     await captureServerEvent(user.id, "sign_contract_as_patient", {
       patient_id: patientId,

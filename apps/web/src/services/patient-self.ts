@@ -114,3 +114,84 @@ export async function getMyBillingSummary(): Promise<{
 
   return { billings: (data as BillingWithInstallments[]) ?? [] };
 }
+
+export type Contract = Tables<"contracts">;
+
+export async function getMyContracts(): Promise<{
+  contracts: Contract[];
+  error?: string;
+}> {
+  const { supabase } = await getServerAuth();
+  const { patientId, error } = await getMyPatientId();
+
+  if (!patientId) {
+    return { contracts: [], error };
+  }
+
+  const { data } = await supabase
+    .from("contracts")
+    .select("*")
+    .eq("patient_id", patientId)
+    .eq("is_base_contract", false)
+    .order("created_at", { ascending: false });
+
+  return { contracts: data ?? [] };
+}
+
+export async function getMyContractById(contractId: string): Promise<{
+  contract: Contract | null;
+  changeRequests: Tables<"contract_change_requests">[];
+  error?: string;
+}> {
+  const { supabase } = await getServerAuth();
+  const { patientId, error } = await getMyPatientId();
+
+  if (!patientId) {
+    return { contract: null, changeRequests: [], error };
+  }
+
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("*")
+    .eq("id", contractId)
+    .eq("patient_id", patientId)
+    .eq("is_base_contract", false)
+    .maybeSingle();
+
+  if (!contract) {
+    return { contract: null, changeRequests: [], error: "Contrato não encontrado" };
+  }
+
+  const { data: changeRequests } = await supabase
+    .from("contract_change_requests")
+    .select("*")
+    .eq("contract_id", contractId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  return { contract, changeRequests: changeRequests ?? [] };
+}
+
+export type ContractChangeRequestWithContract = Tables<"contract_change_requests"> & {
+  contract: Pick<Contract, "id" | "title"> | null;
+};
+
+export async function getMyContractChangeRequests(): Promise<{
+  changeRequests: ContractChangeRequestWithContract[];
+  error?: string;
+}> {
+  const { supabase } = await getServerAuth();
+  const { patientId, error } = await getMyPatientId();
+
+  if (!patientId) {
+    return { changeRequests: [], error };
+  }
+
+  const { data } = await supabase
+    .from("contract_change_requests")
+    .select("*, contract:contracts(id, title)")
+    .eq("patient_id", patientId)
+    .order("created_at", { ascending: false });
+
+  return { changeRequests: (data as ContractChangeRequestWithContract[]) ?? [] };
+}

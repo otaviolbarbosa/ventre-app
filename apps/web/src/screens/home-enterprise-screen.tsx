@@ -76,7 +76,7 @@ function QuickActionCard({ icon: Icon, label, ...rest }: QuickActionProps) {
 function HomeEnterpriseScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
   return (
     <div className="flex h-full flex-col">
-      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
       <div className="flex flex-1 flex-col gap-6 px-4 pt-4 pb-28 sm:pb-4 md:px-6">
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -291,7 +291,7 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
 
   return (
     <div className="flex h-full flex-col">
-      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
 
       <div className="flex flex-1 flex-col gap-6 px-4 pt-4 pb-28 sm:pb-4 md:px-6">
         {/* Quick Actions */}
