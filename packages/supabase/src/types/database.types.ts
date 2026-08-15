@@ -2402,6 +2402,9 @@ export type Database = {
         | "other_exam_added"
         | "ultrasound_added"
         | "vaccine_updated"
+        | "contract_ready_for_signature"
+        | "contract_change_requested"
+        | "contract_fully_signed"
       payment_method:
         | "credito"
         | "debito"
@@ -2606,6 +2609,9 @@ export const Constants = {
         "other_exam_added",
         "ultrasound_added",
         "vaccine_updated",
+        "contract_ready_for_signature",
+        "contract_change_requested",
+        "contract_fully_signed",
       ],
       payment_method: [
         "credito",

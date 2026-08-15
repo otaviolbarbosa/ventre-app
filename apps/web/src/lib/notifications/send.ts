@@ -23,7 +23,10 @@ export type NotificationType =
   | "lab_exam_added"
   | "other_exam_added"
   | "ultrasound_added"
-  | "vaccine_updated";
+  | "vaccine_updated"
+  | "contract_ready_for_signature"
+  | "contract_change_requested"
+  | "contract_fully_signed";
 
 type NotificationPayload = {
   type: NotificationType;

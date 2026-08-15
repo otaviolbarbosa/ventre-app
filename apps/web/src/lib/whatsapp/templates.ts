@@ -7,6 +7,9 @@ export type WhatsAppNotificationType =
   | "care_finished"
   | "installment_payment_link"
   | "contract_signed"
+  | "contract_ready_for_signature"
+  | "contract_change_requested"
+  | "contract_fully_signed"
   | "billing_status_updated"
   | "vaccine_record_updated"
   // Fase 3 — trigger/cron-based (paciente)
@@ -88,6 +91,18 @@ export function getWhatsAppTemplate(
     contract_signed: () => ({
       name: "contract_signed",
       parameters: [params.patientName ?? ""],
+    }),
+    contract_ready_for_signature: () => ({
+      name: "contract_ready_for_signature",
+      parameters: [params.patientName ?? ""],
+    }),
+    contract_change_requested: () => ({
+      name: "contract_change_requested",
+      parameters: [params.professionalName ?? "", params.patientName ?? ""],
+    }),
+    contract_fully_signed: () => ({
+      name: "contract_fully_signed",
+      parameters: [params.professionalName ?? "", params.patientName ?? ""],
     }),
     billing_status_updated: () => ({
       name: "billing_status_updated",

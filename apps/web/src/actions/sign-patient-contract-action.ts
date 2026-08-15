@@ -11,6 +11,7 @@ import {
   uploadContractPdf,
 } from "@/lib/contract-pdf";
 import { buildSignatureLocalityLine } from "@/lib/contract-signature-text";
+import { enqueueNotification } from "@/lib/notifications/queue";
 import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
@@ -195,10 +196,24 @@ export const signPatientContractAction = authActionClient
 
       revalidatePath(`/patients/${patientId}/profile`);
 
-      sendWhatsAppToUser({ recipientType: "patient", recipientId: patientId }, "contract_signed", {
-        patientName: patient.name,
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patientId },
+        "contract_ready_for_signature",
+        { patientName: patient.name },
+        { referenceType: "contract", referenceId: contractId },
+      ).catch((err) => {
+        console.error("[whatsapp] contract_ready_for_signature send failed", err);
+      });
+
+      enqueueNotification({
+        queueName: "push_notifications",
+        notificationType: "contract_ready_for_signature",
+        referenceType: "contract",
+        referenceId: contractId,
+        recipientType: "patient",
+        recipientId: patientId,
       }).catch((err) => {
-        console.error("[whatsapp] contract_signed send failed", err);
+        console.error("[push] contract_ready_for_signature enqueue failed", err);
       });
 
       await captureServerEvent(user.id, "sign_patient_contract", {

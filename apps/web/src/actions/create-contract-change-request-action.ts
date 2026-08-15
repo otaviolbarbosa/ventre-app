@@ -1,5 +1,7 @@
 "use server";
 
+import { enqueueNotification } from "@/lib/notifications/queue";
+import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createContractChangeRequestSchema } from "@/lib/validations/contract-change-request";
@@ -14,7 +16,7 @@ export const createContractChangeRequestAction = authActionClient
 
     const { data: patientRow } = await supabase
       .from("patients")
-      .select("id, user_id")
+      .select("id, user_id, name, created_by")
       .eq("id", patientId)
       .single();
 
@@ -52,6 +54,28 @@ export const createContractChangeRequestAction = authActionClient
     }
 
     revalidatePath(`/patients/${patientId}/profile`);
+
+    if (patientRow.created_by) {
+      sendWhatsAppToUser(
+        { recipientType: "user", recipientId: patientRow.created_by },
+        "contract_change_requested",
+        { patientName: patientRow.name ?? "" },
+        { referenceType: "contract", referenceId: existing.id },
+      ).catch((err) => {
+        console.error("[whatsapp] contract_change_requested send failed", err);
+      });
+
+      enqueueNotification({
+        queueName: "push_notifications",
+        notificationType: "contract_change_requested",
+        referenceType: "contract",
+        referenceId: existing.id,
+        recipientType: "user",
+        recipientId: patientRow.created_by,
+      }).catch((err) => {
+        console.error("[push] contract_change_requested enqueue failed", err);
+      });
+    }
 
     await captureServerEvent(user.id, "create_contract_change_request", {
       patient_id: patientId,
