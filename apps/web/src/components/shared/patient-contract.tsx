@@ -1,5 +1,17 @@
 "use client";
 
+import { createBaseContractFromPatientAction } from "@/actions/create-base-contract-from-patient-action";
+import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
+import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { getPatientContractAction } from "@/actions/get-patient-contract-action";
+import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
+import { revokeContractAction } from "@/actions/revoke-contract-action";
+import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
+import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
+import { ESTADOS_BR } from "@/lib/constants";
+import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
+import { cn } from "@/lib/utils";
+import { patientContractFormSchema } from "@/lib/validations/contract";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
@@ -13,17 +25,6 @@ import { Download, Eye, Plus, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { createBaseContractFromPatientAction } from "@/actions/create-base-contract-from-patient-action";
-import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
-import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
-import { getPatientContractAction } from "@/actions/get-patient-contract-action";
-import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
-import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
-import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
-import { ESTADOS_BR } from "@/lib/constants";
-import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
-import { cn } from "@/lib/utils";
-import { patientContractFormSchema } from "@/lib/validations/contract";
 import { ContractSelector } from "./contract-selector";
 
 type Mode = "loading" | "select" | "editing" | "readonly";
@@ -72,6 +73,8 @@ export default function PatientContract({
   const [mode, setMode] = useState<Mode>("loading");
   const [contractId, setContractId] = useState<string>("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isRevokeConfirmOpen, setIsRevokeConfirmOpen] = useState(false);
+  const [fullySignedAt, setFullySignedAt] = useState<string | null>(null);
   const [title, setTitle] = useState("CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
   const [clausesHtml, setClausesHtml] = useState("");
   const [city, setCity] = useState("");
@@ -132,6 +135,7 @@ export default function PatientContract({
                 }
               : null,
           );
+          setFullySignedAt(data.contract.fully_signed_at ?? null);
           setContractExists(true);
           setMode("readonly");
         } else {
@@ -187,6 +191,20 @@ export default function PatientContract({
       onError: ({ error }) => toast.error(error.serverError ?? "Erro ao excluir contrato"),
     },
   );
+
+  const { execute: revokeContract, isExecuting: isRevoking } = useAction(revokeContractAction, {
+    onSuccess: () => {
+      toast.success("Contrato revogado. Redija o novo contrato abaixo.");
+      setContractId("");
+      setContractExists(false);
+      setSavedParties(null);
+      setSignatureInfo(null);
+      setFullySignedAt(null);
+      setIsRevokeConfirmOpen(false);
+      setMode("select");
+    },
+    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao revogar contrato"),
+  });
 
   const { executeAsync: createBaseFromPatientAsync, isExecuting: isCreatingTemplate } = useAction(
     createBaseContractFromPatientAction,
@@ -401,6 +419,11 @@ export default function PatientContract({
               Excluir contrato
             </Button>
             <div className="flex gap-2">
+              {fullySignedAt && (
+                <Button variant="outline" onClick={() => setIsRevokeConfirmOpen(true)}>
+                  Revogar e redigir novo contrato
+                </Button>
+              )}
               {!signatureInfo && (
                 <Button
                   variant="outline"
@@ -443,6 +466,33 @@ export default function PatientContract({
               }}
             >
               {isDeactivating ? "Excluindo..." : "Confirmar exclusão"}
+            </Button>
+          </div>
+        </ContentModal>
+
+        <ContentModal
+          open={isRevokeConfirmOpen}
+          onOpenChange={setIsRevokeConfirmOpen}
+          title="Revogar contrato"
+          description="O contrato atual será marcado como revogado (permanece consultável para auditoria) e você poderá redigir um novo contrato do zero."
+          contentClassName="sm:max-w-[420px]"
+        >
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="ghost"
+              disabled={isRevoking}
+              onClick={() => setIsRevokeConfirmOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isRevoking}
+              onClick={() => {
+                if (contractId) revokeContract({ contractId, patientId });
+              }}
+            >
+              {isRevoking ? "Revogando..." : "Confirmar revogação"}
             </Button>
           </div>
         </ContentModal>

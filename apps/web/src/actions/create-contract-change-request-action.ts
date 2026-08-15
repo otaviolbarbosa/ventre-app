@@ -26,18 +26,13 @@ export const createContractChangeRequestAction = authActionClient
 
     const { data: existing } = await supabase
       .from("contracts")
-      .select("id, fully_signed_at")
+      .select("id")
       .eq("patient_id", patientId)
       .eq("is_base_contract", false)
       .eq("is_active", true)
       .maybeSingle();
 
     if (!existing) throw new Error("Nenhum contrato encontrado.");
-    if (existing.fully_signed_at) {
-      throw new Error(
-        "Este contrato já foi assinado por ambas as partes. Solicite uma revisão pelos canais de revogação.",
-      );
-    }
 
     const { error } = await supabase.from("contract_change_requests").insert({
       contract_id: existing.id,

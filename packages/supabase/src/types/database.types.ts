@@ -449,6 +449,8 @@ export type Database = {
           parties_details: Json | null
           patient_id: string | null
           pregnancy_id: string | null
+          revoked_at: string | null
+          revoked_by: string | null
           signed_at: string | null
           signed_by: string | null
           signed_document_id: string | null
@@ -475,6 +477,8 @@ export type Database = {
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           signed_at?: string | null
           signed_by?: string | null
           signed_document_id?: string | null
@@ -501,6 +505,8 @@ export type Database = {
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           signed_at?: string | null
           signed_by?: string | null
           signed_document_id?: string | null
@@ -532,6 +538,13 @@ export type Database = {
             columns: ["pregnancy_id"]
             isOneToOne: false
             referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
