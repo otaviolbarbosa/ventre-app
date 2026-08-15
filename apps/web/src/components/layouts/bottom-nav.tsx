@@ -14,7 +14,6 @@ import {
   Mail,
   Settings,
   Users,
-  Wrench,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -97,12 +96,12 @@ export default function BottomNav() {
           icon: Calendar,
           isActive: pathname.startsWith("/agenda"),
         },
-        {
-          name: "Ferramentas",
-          href: "/ferramentas",
-          icon: Wrench,
-          isActive: pathname.startsWith("/ferramentas"),
-        },
+        // {
+        //   name: "Ferramentas",
+        //   href: "/ferramentas",
+        //   icon: Wrench,
+        //   isActive: pathname.startsWith("/ferramentas"),
+        // },
       ]
     : isStaff(profile)
       ? [
