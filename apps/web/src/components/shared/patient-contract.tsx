@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Skeleton } from "@ventre/ui/skeleton";
+import DOMPurify from "isomorphic-dompurify";
 import { Download, Eye, Plus, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
@@ -16,6 +17,7 @@ import { createBaseContractFromPatientAction } from "@/actions/create-base-contr
 import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
 import { getPatientContractAction } from "@/actions/get-patient-contract-action";
+import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { ESTADOS_BR } from "@/lib/constants";
@@ -41,6 +43,24 @@ type SignatureInfo = {
   signedDocumentId: string | null;
   signedByName: string | null;
 };
+
+type ChangeRequest = {
+  id: string;
+  message_html: string;
+  status: string;
+  created_at: string;
+  resolved_at: string | null;
+  requested_by: string;
+};
+
+const SANITIZE_CONFIG = {
+  ALLOWED_TAGS: ["p", "strong", "em", "ul", "ol", "li", "br", "a"],
+  ALLOWED_ATTR: ["href", "target", "rel"],
+};
+
+function sanitizeMessageHtml(html: string) {
+  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
+}
 
 export default function PatientContract({
   patientId,
@@ -75,6 +95,7 @@ export default function PatientContract({
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
+  const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<"title" | "city" | "state" | "clausesHtml", string>>
   >({});
@@ -116,8 +137,20 @@ export default function PatientContract({
         } else {
           setMode("select");
         }
+        setChangeRequests(data?.changeRequests ?? []);
       },
       onError: () => setMode("select"),
+    },
+  );
+
+  const { execute: resolveChangeRequest, isExecuting: isResolvingChangeRequest } = useAction(
+    resolveContractChangeRequestAction,
+    {
+      onSuccess: () => {
+        toast.success("Solicitação marcada como resolvida");
+        fetchContract({ patientId });
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao resolver solicitação"),
     },
   );
 
@@ -319,6 +352,40 @@ export default function PatientContract({
               </span>
             </div>
           )} */}
+          {changeRequests.length > 0 && (
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Solicitações de alteração</p>
+              {changeRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="space-y-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm"
+                >
+                  <div
+                    className="prose-sm"
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify with a tight allowlist above
+                    dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(request.message_html) }}
+                  />
+                  {request.status === "resolved" ? (
+                    <p className="text-muted-foreground text-xs">
+                      Resolvida em{" "}
+                      {request.resolved_at
+                        ? new Date(request.resolved_at).toLocaleDateString("pt-BR")
+                        : ""}
+                    </p>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isResolvingChangeRequest}
+                      onClick={() => resolveChangeRequest({ requestId: request.id, patientId })}
+                    >
+                      Marcar como resolvida
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
           <ContractDocument
             headerBlocks={savedParties ?? headerBlocks}
             title={title}
