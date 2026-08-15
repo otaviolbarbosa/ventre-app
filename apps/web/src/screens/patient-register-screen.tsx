@@ -131,7 +131,7 @@ export default function PatientRegisterScreen({
 }) {
   const router = useRouter();
   // const { signInWithGoogle } = useAuth();
-  const isType1 = invite.invite_type === "new_patient";
+  const isNewPatient = invite.invite_type === "new_patient";
 
   const [step, setStep] = useState<Step>(1);
   const [password, setPassword] = useState("");
@@ -221,7 +221,7 @@ export default function PatientRegisterScreen({
     if (!dataValues) return;
     setIsFinishing(true);
     try {
-      const isSelfReg = isType1;
+      const isSelfReg = isNewPatient;
       const selfRegValues = isSelfReg ? (dataValues as PatientSelfRegistrationInput) : null;
       const linkValues = !isSelfReg ? (dataValues as LinkExistingPatientRegistrationInput) : null;
 
@@ -250,6 +250,26 @@ export default function PatientRegisterScreen({
         return;
       }
 
+      // Upload the avatar via the account's inviteId (not the browser session): email
+      // confirmation may be required, in which case signInWithPassword below fails and
+      // there is no session yet to authenticate a normal /api/profile/avatar upload with.
+      if (avatarFile) {
+        const formData = new FormData();
+        formData.append("file", avatarFile);
+        formData.append("inviteId", invite.id);
+        const avatarRes = await fetch("/api/patient-registration/avatar", {
+          method: "POST",
+          body: formData,
+        });
+        if (!avatarRes.ok) {
+          const avatarData = await avatarRes.json().catch(() => null);
+          toast.error(
+            avatarData?.error ??
+              "Não foi possível salvar a foto de perfil. Tente novamente depois em seu perfil.",
+          );
+        }
+      }
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: result.data.email,
         password,
@@ -258,12 +278,6 @@ export default function PatientRegisterScreen({
       if (signInError) {
         router.push(`/patient-registration/complete?piid=${invite.id}`);
         return;
-      }
-
-      if (avatarFile) {
-        const formData = new FormData();
-        formData.append("file", avatarFile);
-        await fetch("/api/profile/avatar", { method: "POST", body: formData });
       }
 
       // Hard navigation: router.push('/home') → server redirect('/onboarding') race
@@ -277,7 +291,7 @@ export default function PatientRegisterScreen({
     }
   }
 
-  const displayName = isType1
+  const displayName = isNewPatient
     ? selfRegForm.watch("name") || invite.name || ""
     : linkForm.watch("name") || linkedPatient?.name || invite.name || "";
 
@@ -364,7 +378,7 @@ export default function PatientRegisterScreen({
           )}
 
           {/* ── Step 2: Dados ── */}
-          {step === 2 && isType1 && (
+          {step === 2 && isNewPatient && (
             <Form {...selfRegForm}>
               <form
                 onSubmit={selfRegForm.handleSubmit((values) => {
@@ -631,7 +645,7 @@ export default function PatientRegisterScreen({
             </Form>
           )}
 
-          {step === 2 && !isType1 && (
+          {step === 2 && !isNewPatient && (
             <Form {...linkForm}>
               <form
                 onSubmit={linkForm.handleSubmit((values) => {
@@ -743,7 +757,7 @@ export default function PatientRegisterScreen({
               </div>
 
               <div className="space-y-3 rounded-xl bg-muted/30 p-4 text-sm">
-                {isType1 ? (
+                {isNewPatient ? (
                   <>
                     <DataRow
                       label="Nome"
