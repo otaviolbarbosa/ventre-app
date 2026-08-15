@@ -27,18 +27,20 @@ export const signPatientContractAction = authActionClient
   .inputSchema(signPatientContractSchema)
   .action(
     async ({
-      parsedInput: { patientId, pregnancyId, title, clauses_html, city, state },
+      parsedInput: { patientId, pregnancyId, title, clauses_html, city, state, consent },
       ctx: { supabase, supabaseAdmin, user, profile },
     }) => {
       const { data: existing } = await supabase
         .from("contracts")
-        .select("id, is_signed")
+        .select("id, is_signed, fully_signed_at")
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
         .eq("is_active", true)
         .maybeSingle();
 
-      if (existing?.is_signed) throw new Error("Este contrato já foi assinado");
+      if (existing?.fully_signed_at) {
+        throw new Error("Este contrato já foi assinado por ambas as partes.");
+      }
 
       const { patient, parties_details, contratadaName } = await buildPatientContractParties(
         { supabase, supabaseAdmin, profile },
@@ -67,7 +69,61 @@ export const signPatientContractAction = authActionClient
       }
 
       let contractId: string;
-      if (existing?.id) {
+      if (existing?.id && existing.is_signed) {
+        // Editing a contract that already has a professional signature collected
+        // (but not yet fully_signed_at): contract_signatures rows are immutable and
+        // tied to this contract_id, so the only way to invalidate the collected
+        // signature is to revoke this row and draft a brand-new one — same
+        // revoke-and-recreate pattern as revoke-contract-action.ts.
+        const { error: revokeError } = await supabase
+          .from("contracts")
+          .update({
+            is_active: false,
+            revoked_at: new Date().toISOString(),
+            revoked_by: user.id,
+          })
+          .eq("id", existing.id)
+          .is("revoked_at", null);
+        if (revokeError) {
+          throw new Error("Erro ao invalidar assinatura anterior. Tente novamente.");
+        }
+
+        const { error: resolveError } = await supabaseAdmin
+          .from("contract_change_requests")
+          .update({
+            status: "resolved",
+            resolved_at: new Date().toISOString(),
+            resolved_by: user.id,
+          })
+          .eq("contract_id", existing.id)
+          .eq("status", "pending");
+        if (resolveError) {
+          console.error(
+            "[signPatientContractAction] failed to resolve pending change requests",
+            resolveError,
+          );
+        }
+
+        const { data: inserted, error } = await supabase
+          .from("contracts")
+          .insert({
+            is_base_contract: false,
+            is_active: true,
+            title,
+            clauses_html,
+            parties_details,
+            city: city ?? null,
+            state: state ?? null,
+            patient_id: patientId,
+            pregnancy_id: pregnancyId ?? null,
+            enterprise_id: profile.enterprise_id ?? null,
+            user_id: profile.enterprise_id ? null : user.id,
+          })
+          .select("id")
+          .single();
+        if (error || !inserted) throw new Error(error?.message ?? "Erro ao salvar contrato");
+        contractId = inserted.id;
+      } else if (existing?.id) {
         const { error } = await supabase
           .from("contracts")
           .update({
@@ -100,6 +156,22 @@ export const signPatientContractAction = authActionClient
           .single();
         if (error || !inserted) throw new Error(error?.message ?? "Erro ao salvar contrato");
         contractId = inserted.id;
+      }
+
+      if (!consent) {
+        // Professional chose not to sign right now — save the draft and stop here.
+        // No PDF/hash/verification_code/contract_signatures are generated, since the
+        // patient can only sign once the professional has (sign-contract-as-patient-action.ts).
+        revalidatePath(`/patients/${patientId}/profile`);
+        revalidatePath("/home");
+
+        await captureServerEvent(user.id, "sign_patient_contract", {
+          patient_id: patientId,
+          contract_id: contractId,
+          signed: false,
+        });
+
+        return { success: true };
       }
 
       const signedAt = new Date().toISOString();
@@ -195,6 +267,7 @@ export const signPatientContractAction = authActionClient
       }
 
       revalidatePath(`/patients/${patientId}/profile`);
+      revalidatePath("/home");
 
       sendWhatsAppToUser(
         { recipientType: "patient", recipientId: patientId },
@@ -219,6 +292,7 @@ export const signPatientContractAction = authActionClient
       await captureServerEvent(user.id, "sign_patient_contract", {
         patient_id: patientId,
         contract_id: contractId,
+        signed: true,
       });
 
       return { success: true };

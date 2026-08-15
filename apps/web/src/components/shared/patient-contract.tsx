@@ -6,6 +6,7 @@ import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-ur
 import { getPatientContractAction } from "@/actions/get-patient-contract-action";
 import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
 import { revokeContractAction } from "@/actions/revoke-contract-action";
+import { revokeContractSignaturesAction } from "@/actions/revoke-contract-signatures-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
 import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { ESTADOS_BR } from "@/lib/constants";
@@ -17,6 +18,7 @@ import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ConfirmModal } from "@ventre/ui/shared/confirm-modal";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Skeleton } from "@ventre/ui/skeleton";
@@ -74,6 +76,8 @@ export default function PatientContract({
   const [contractId, setContractId] = useState<string>("");
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isRevokeConfirmOpen, setIsRevokeConfirmOpen] = useState(false);
+  const [isSignConfirmOpen, setIsSignConfirmOpen] = useState(false);
+  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
   const [fullySignedAt, setFullySignedAt] = useState<string | null>(null);
   const [title, setTitle] = useState("CONTRATO DE PRESTAÇÃO DE SERVIÇOS");
   const [clausesHtml, setClausesHtml] = useState("");
@@ -97,6 +101,7 @@ export default function PatientContract({
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [signDigitally, setSignDigitally] = useState(true);
   const [signatureInfo, setSignatureInfo] = useState<SignatureInfo | null>(null);
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
   const [fieldErrors, setFieldErrors] = useState<
@@ -162,11 +167,16 @@ export default function PatientContract({
     signPatientContractAction,
     {
       onSuccess: () => {
-        toast.success("Contrato criado com sucesso");
+        toast.success(
+          signDigitally
+            ? "Contrato criado e assinado com sucesso"
+            : "Contrato salvo. Você pode assinar em outro momento.",
+        );
         setContractExists(true);
         setIsGenerateModalOpen(false);
         setSaveAsTemplate(false);
         setTemplateName("");
+        setSignDigitally(true);
         // Reload to pick up the persisted parties_details, contract id and signature
         fetchContract({ patientId });
       },
@@ -205,6 +215,32 @@ export default function PatientContract({
     },
     onError: ({ error }) => toast.error(error.serverError ?? "Erro ao revogar contrato"),
   });
+
+  const { execute: addSignature, isExecuting: isAddingSignature } = useAction(
+    signPatientContractAction,
+    {
+      onSuccess: () => {
+        toast.success("Assinatura adicionada ao contrato");
+        setIsSignConfirmOpen(false);
+        fetchContract({ patientId });
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao assinar contrato"),
+    },
+  );
+
+  const { execute: revokeSignaturesAndEdit, isExecuting: isRevokingSignatures } = useAction(
+    revokeContractSignaturesAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data?.contractId) setContractId(data.contractId);
+        setSignatureInfo(null);
+        setIsEditConfirmOpen(false);
+        setFieldErrors({});
+        setMode("editing");
+      },
+      onError: ({ error }) => toast.error(error.serverError ?? "Erro ao revogar assinatura"),
+    },
+  );
 
   const { executeAsync: createBaseFromPatientAsync, isExecuting: isCreatingTemplate } = useAction(
     createBaseContractFromPatientAction,
@@ -260,7 +296,7 @@ export default function PatientContract({
       clauses_html: clausesHtml,
       city,
       state,
-      consent: true,
+      consent: signDigitally,
     });
   };
 
@@ -424,10 +460,14 @@ export default function PatientContract({
                   Revogar e redigir novo contrato
                 </Button>
               )}
-              {!signatureInfo && (
+              {!fullySignedAt && (
                 <Button
                   variant="outline"
                   onClick={() => {
+                    if (signatureInfo) {
+                      setIsEditConfirmOpen(true);
+                      return;
+                    }
                     setFieldErrors({});
                     setMode("editing");
                   }}
@@ -439,6 +479,11 @@ export default function PatientContract({
                 <Download className="size-4" />
                 {isExporting ? "Gerando PDF..." : "Baixar contrato"}
               </Button>
+              {!signatureInfo && !fullySignedAt && (
+                <Button className="gradient-primary" onClick={() => setIsSignConfirmOpen(true)}>
+                  Assinar digitalmente
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -496,6 +541,39 @@ export default function PatientContract({
             </Button>
           </div>
         </ContentModal>
+
+        <ConfirmModal
+          open={isSignConfirmOpen}
+          onOpenChange={setIsSignConfirmOpen}
+          title="Assinar contrato digitalmente"
+          description="Sua assinatura digital será adicionada a este contrato, com trilha de auditoria (data, hora, endereço IP). Você confirma que deseja assinar agora?"
+          confirmLabel={isAddingSignature ? "Assinando..." : "Confirmar assinatura"}
+          loading={isAddingSignature}
+          onConfirm={() => {
+            addSignature({
+              patientId,
+              pregnancyId: pregnancyId ?? null,
+              title,
+              clauses_html: clausesHtml,
+              city,
+              state,
+              consent: true,
+            });
+          }}
+        />
+
+        <ConfirmModal
+          open={isEditConfirmOpen}
+          onOpenChange={setIsEditConfirmOpen}
+          title="Editar contrato assinado"
+          description="Este contrato já possui assinatura da profissional. Ao editar agora, todas as assinaturas coletadas serão revogadas e as partes precisarão assinar novamente. Deseja continuar?"
+          confirmLabel={isRevokingSignatures ? "Revogando..." : "Continuar e editar"}
+          variant="destructive"
+          loading={isRevokingSignatures}
+          onConfirm={() => {
+            if (contractId) revokeSignaturesAndEdit({ contractId, patientId });
+          }}
+        />
       </>
     );
   }
@@ -622,6 +700,7 @@ export default function PatientContract({
           if (!open) {
             setSaveAsTemplate(false);
             setTemplateName("");
+            setSignDigitally(true);
           }
         }}
         title="Gerar contrato"
@@ -630,6 +709,23 @@ export default function PatientContract({
         contentClassName="sm:max-w-[480px]"
       >
         <div className="space-y-4 pt-2">
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="sign-digitally"
+              checked={signDigitally}
+              onCheckedChange={(checked) => setSignDigitally(checked === true)}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="sign-digitally" className="font-normal text-sm leading-snug">
+                Assinar contrato digitalmente
+              </Label>
+              <p className="text-muted-foreground text-xs leading-snug">
+                Sua assinatura já irá constar no documento. Caso não deseje assinar neste momento,
+                você pode fazer isso em outro momento.
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-start gap-2">
             <Checkbox
               id="save-as-template"
@@ -676,9 +772,13 @@ export default function PatientContract({
               ? isGenerating
                 ? "Salvando e gerando..."
                 : "Salvar e Gerar"
-              : isGenerating
-                ? "Gerando..."
-                : "Gerar contrato"}
+              : signDigitally
+                ? isGenerating
+                  ? "Gerando e assinando..."
+                  : "Gerar e assinar"
+                : isGenerating
+                  ? "Gerando..."
+                  : "Gerar contrato"}
           </Button>
         </div>
       </ContentModal>
@@ -730,7 +830,11 @@ function ContractDocument({
   const isEditing = !!children;
 
   return (
-    <div className={cn(!isEditing && "flex overflow-x-auto rounded-md bg-muted/30 py-4")}>
+    <div
+      className={cn(
+        !isEditing && "flex justify-center overflow-x-auto rounded-md bg-muted/30 py-4",
+      )}
+    >
       <div className={cn(!isEditing && "w-[794px] shrink-0 rounded-md bg-white shadow-md")}>
         <div
           className={cn(
