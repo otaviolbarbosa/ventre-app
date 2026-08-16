@@ -4,11 +4,11 @@ import { createBaseContractFromPatientAction } from "@/actions/create-base-contr
 import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
 import { getPatientContractAction } from "@/actions/get-patient-contract-action";
+import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action";
 import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
 import { revokeContractAction } from "@/actions/revoke-contract-action";
 import { revokeContractSignaturesAction } from "@/actions/revoke-contract-signatures-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
-import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { ESTADOS_BR } from "@/lib/constants";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { cn } from "@/lib/utils";
@@ -23,11 +23,17 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Skeleton } from "@ventre/ui/skeleton";
 import DOMPurify from "isomorphic-dompurify";
-import { Download, Eye, Plus, Trash2 } from "lucide-react";
+import { Download, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ContractSelector } from "./contract-selector";
+
+const PdfViewer = dynamic(() => import("@/components/shared/pdf-viewer").then((m) => m.PdfViewer), {
+  ssr: false,
+  loading: () => <p className="text-muted-foreground text-sm">Carregando visualizador...</p>,
+});
 
 type Mode = "loading" | "select" | "editing" | "readonly";
 
@@ -43,7 +49,7 @@ type BaseTemplate = {
 type SignatureInfo = {
   signedAt: string | null;
   verificationCode: string | null;
-  signedDocumentId: string | null;
+  finalizedDocumentId: string | null;
   signedByName: string | null;
 };
 
@@ -95,9 +101,18 @@ export default function PatientContract({
     null,
   );
   const [savedParties, setSavedParties] = useState<ContractHeaderBlocks | null>(null);
+  // The initial PDF now always exists once the contract itself is generated — even
+  // before/without a signature — so this is tracked independent of `signatureInfo`
+  // (which stays scoped to actual signing metadata).
+  const [originalDocumentId, setOriginalDocumentId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [contractExists, setContractExists] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewPdfBase64, setPreviewPdfBase64] = useState<string | null>(null);
+  const [readonlyPdfSource, setReadonlyPdfSource] = useState<
+    { url: string } | { base64: string } | null
+  >(null);
+  const [isLoadingReadonlyPdf, setIsLoadingReadonlyPdf] = useState(false);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
@@ -130,12 +145,13 @@ export default function PatientContract({
           setCity(data.contract.city ?? "");
           setState(data.contract.state ?? "");
           if (data.savedParties) setSavedParties(data.savedParties);
+          setOriginalDocumentId(data.contract.original_document_id);
           setSignatureInfo(
             data.contract.is_signed
               ? {
                   signedAt: data.contract.signed_at,
                   verificationCode: data.contract.verification_code,
-                  signedDocumentId: data.contract.signed_document_id,
+                  finalizedDocumentId: data.contract.finalized_document_id,
                   signedByName: data.signedByName ?? null,
                 }
               : null,
@@ -144,6 +160,7 @@ export default function PatientContract({
           setContractExists(true);
           setMode("readonly");
         } else {
+          setOriginalDocumentId(null);
           setMode("select");
         }
         setChangeRequests(data?.changeRequests ?? []);
@@ -186,6 +203,9 @@ export default function PatientContract({
 
   const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
 
+  const { executeAsync: previewContractPdfAsync, isExecuting: isLoadingPreviewPdf } =
+    useAction(previewContractPdfAction);
+
   const { execute: deactivateContract, isExecuting: isDeactivating } = useAction(
     deactivatePatientContractAction,
     {
@@ -194,6 +214,7 @@ export default function PatientContract({
         setContractId("");
         setContractExists(false);
         setSavedParties(null);
+        setOriginalDocumentId(null);
         setSignatureInfo(null);
         setIsDeleteConfirmOpen(false);
         setMode("select");
@@ -208,6 +229,7 @@ export default function PatientContract({
       setContractId("");
       setContractExists(false);
       setSavedParties(null);
+      setOriginalDocumentId(null);
       setSignatureInfo(null);
       setFullySignedAt(null);
       setIsRevokeConfirmOpen(false);
@@ -233,6 +255,7 @@ export default function PatientContract({
     {
       onSuccess: ({ data }) => {
         if (data?.contractId) setContractId(data.contractId);
+        setOriginalDocumentId(null);
         setSignatureInfo(null);
         setIsEditConfirmOpen(false);
         setFieldErrors({});
@@ -300,22 +323,37 @@ export default function PatientContract({
     });
   };
 
+  const downloadStoredDocument = async (documentId: string) => {
+    const res = await getDownloadUrl({ documentId });
+    if (res?.data?.url) {
+      window.open(res.data.url, "_blank");
+    } else {
+      toast.error(res?.serverError ?? "Erro ao baixar contrato assinado");
+    }
+  };
+
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
-      // Signed contract: reuse the immutable signed PDF — never re-render
-      if (signatureInfo?.signedDocumentId) {
-        const res = await getDownloadUrl({
-          documentId: signatureInfo.signedDocumentId,
-        });
-        if (res?.data?.url) {
-          window.open(res.data.url, "_blank");
-        } else {
-          toast.error(res?.serverError ?? "Erro ao baixar contrato assinado");
+      // Fully signed: always download the finalized document (both parties' stamps +
+      // authentication certificate) — never the professional-only original.
+      if (fullySignedAt) {
+        if (!signatureInfo?.finalizedDocumentId) {
+          toast.error("Documento final ainda não está disponível.");
+          return;
         }
+        await downloadStoredDocument(signatureInfo.finalizedDocumentId);
         return;
       }
 
+      // Not (yet) fully signed: reuse the stored original PDF — generated whenever
+      // the contract itself was generated, signed or not — never re-render.
+      if (originalDocumentId) {
+        await downloadStoredDocument(originalDocumentId);
+        return;
+      }
+
+      // Fallback for contracts generated before original_document_id always existed.
       const res = await fetch(`/api/patients/${patientId}/contract/pdf`, {
         method: "POST",
       });
@@ -331,10 +369,99 @@ export default function PatientContract({
     }
   };
 
+  const handleOpenPreview = async () => {
+    if (!headerBlocks) return;
+    const res = await previewContractPdfAsync({
+      headerBlocks,
+      title,
+      clausesHtml,
+      signaturePreview: {
+        city: city || null,
+        state: state || null,
+        contratanteName: patientName,
+        contratadaName,
+      },
+    });
+    if (res?.data?.pdfBase64) {
+      setPreviewPdfBase64(res.data.pdfBase64);
+      setIsPreviewOpen(true);
+    } else {
+      toast.error(res?.serverError ?? "Erro ao gerar pré-visualização do contrato");
+    }
+  };
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchContract
   useEffect(() => {
     fetchContract({ patientId });
   }, [patientId]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-fetch when entering readonly or the signed document changes
+  useEffect(() => {
+    if (mode !== "readonly") return;
+    let cancelled = false;
+
+    async function loadReadonlyPdf() {
+      setIsLoadingReadonlyPdf(true);
+      try {
+        // Fully signed: always show the finalized document (both parties' stamps +
+        // authentication certificate) — never the professional-only original.
+        if (fullySignedAt) {
+          if (!signatureInfo?.finalizedDocumentId) {
+            toast.error("Documento final ainda não está disponível.");
+            return;
+          }
+          const res = await getDownloadUrl({ documentId: signatureInfo.finalizedDocumentId });
+          if (cancelled) return;
+          if (res?.data?.url) {
+            setReadonlyPdfSource({ url: res.data.url });
+          } else {
+            toast.error(res?.serverError ?? "Erro ao carregar contrato assinado");
+          }
+          return;
+        }
+
+        // Not (yet) fully signed: reuse the stored original PDF — generated whenever
+        // the contract itself was generated, signed or not — never re-render.
+        if (originalDocumentId) {
+          const res = await getDownloadUrl({ documentId: originalDocumentId });
+          if (cancelled) return;
+          if (res?.data?.url) {
+            setReadonlyPdfSource({ url: res.data.url });
+          } else {
+            toast.error(res?.serverError ?? "Erro ao carregar contrato assinado");
+          }
+          return;
+        }
+
+        const parties = savedParties ?? headerBlocks;
+        if (!parties) return;
+        const res = await previewContractPdfAsync({
+          headerBlocks: parties,
+          title,
+          clausesHtml,
+          signaturePreview: {
+            city: city || null,
+            state: state || null,
+            contratanteName: patientName,
+            contratadaName,
+          },
+        });
+        if (cancelled) return;
+        if (res?.data?.pdfBase64) {
+          setReadonlyPdfSource({ base64: res.data.pdfBase64 });
+        } else {
+          toast.error(res?.serverError ?? "Erro ao gerar pré-visualização do contrato");
+        }
+      } finally {
+        if (!cancelled) setIsLoadingReadonlyPdf(false);
+      }
+    }
+
+    loadReadonlyPdf();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, fullySignedAt, originalDocumentId, signatureInfo?.finalizedDocumentId]);
 
   const handleSelectBaseTemplate = (id: string) => {
     const enterpriseMatch = enterpriseOptions.find((o) => o.id === id);
@@ -440,11 +567,15 @@ export default function PatientContract({
               ))}
             </div>
           )}
-          <ContractDocument
-            headerBlocks={savedParties ?? headerBlocks}
-            title={title}
-            clausesHtml={clausesHtml}
-          />
+          {readonlyPdfSource ? (
+            <div className="max-h-[400px] overflow-auto">
+              <PdfViewer source={readonlyPdfSource} />
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {isLoadingReadonlyPdf ? "Carregando PDF..." : "Não foi possível carregar o PDF."}
+            </p>
+          )}
           <div className="flex justify-between gap-2">
             <Button
               variant="ghost"
@@ -492,7 +623,7 @@ export default function PatientContract({
           open={isDeleteConfirmOpen}
           onOpenChange={setIsDeleteConfirmOpen}
           title="Excluir contrato"
-          description="O contrato não será apagado permanentemente. Você poderá gerar um novo contrato para esta gestante a qualquer momento."
+          description="O contrato não será apagado permanentemente, porém perderá a validade como instrumento legal. Você poderá gerar um novo contrato para esta gestante a qualquer momento."
           contentClassName="sm:max-w-[420px]"
         >
           <div className="flex justify-end gap-2 pt-2">
@@ -640,7 +771,7 @@ export default function PatientContract({
             {fieldErrors.state && <p className="text-destructive text-sm">{fieldErrors.state}</p>}
           </div>
         </div>
-        <ContractDocument headerBlocks={headerBlocks} clausesHtml={null}>
+        <ContractDocument headerBlocks={headerBlocks}>
           <RichEditor
             content={clausesHtml}
             onChange={(html) => {
@@ -664,18 +795,22 @@ export default function PatientContract({
           </Button>
           <Button
             variant="outline"
-            disabled={isSigning}
-            onClick={() => setIsPreviewOpen(true)}
+            disabled={isSigning || isLoadingPreviewPdf}
+            onClick={handleOpenPreview}
             className="hidden sm:flex"
           >
-            <Eye className="size-4" />
-            Preview
+            {isLoadingPreviewPdf ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+            {isLoadingPreviewPdf ? "Gerando pré-visualização..." : "Pré-visualizar"}
           </Button>
           <Button
             variant="outline"
             size="icon"
-            disabled={isSigning}
-            onClick={() => setIsPreviewOpen(true)}
+            disabled={isSigning || isLoadingPreviewPdf}
+            onClick={handleOpenPreview}
             className="block flex justify-center sm:hidden"
           >
             <Eye className="size-4" />
@@ -704,7 +839,7 @@ export default function PatientContract({
           }
         }}
         title="Gerar contrato"
-        description="Caso deseje criar um modelo de contrato reutilizável a partir deste documento, marque a opção abaixo e atribua um nome para este novo modelo de contrao"
+        description="Caso deseje criar um modelo de contrato reutilizável a partir deste documento, marque a opção abaixo e atribua um nome para este novo modelo de contrato"
         // description="A assinatura será validada e registrada com segurança, garantindo a autenticidade do contrato. Após assinado, o conteúdo não poderá mais ser alterado."
         contentClassName="sm:max-w-[480px]"
       >
@@ -713,6 +848,7 @@ export default function PatientContract({
             <Checkbox
               id="sign-digitally"
               checked={signDigitally}
+              className="mt-1"
               onCheckedChange={(checked) => setSignDigitally(checked === true)}
             />
             <div className="space-y-1">
@@ -725,11 +861,11 @@ export default function PatientContract({
               </p>
             </div>
           </div>
-
           <div className="flex items-start gap-2">
             <Checkbox
               id="save-as-template"
               checked={saveAsTemplate}
+              className="mt-1"
               onCheckedChange={(checked) => setSaveAsTemplate(checked === true)}
             />
             <div className="space-y-1">
@@ -742,7 +878,7 @@ export default function PatientContract({
             </div>
           </div>
 
-          {
+          {saveAsTemplate && (
             <div className="space-y-2">
               <Label htmlFor="template-name">Nome do modelo</Label>
               <Input
@@ -753,7 +889,7 @@ export default function PatientContract({
                 placeholder="Nome do modelo"
               />
             </div>
-          }
+          )}
         </div>
         <div className="flex justify-end gap-2 pt-4">
           <Button
@@ -785,23 +921,19 @@ export default function PatientContract({
 
       <ContentModal
         open={isPreviewOpen}
-        onOpenChange={setIsPreviewOpen}
-        title="Preview do Contrato"
-        description="Visualização com cabeçalho auto-gerado e cláusulas atuais"
+        onOpenChange={(open) => {
+          setIsPreviewOpen(open);
+          if (!open) setPreviewPdfBase64(null);
+        }}
+        title="Pré-visualização do Contrato"
+        description="Contrato com cabeçalho auto-gerado e cláusulas atuais"
         contentClassName="sm:max-w-[900px]"
       >
-        <ContractDocument
-          headerBlocks={headerBlocks}
-          title={title}
-          clausesHtml={clausesHtml}
-          isPreview
-          signaturePreview={{
-            city: city || null,
-            state: state || null,
-            contratanteName: patientName,
-            contratadaName,
-          }}
-        />
+        {previewPdfBase64 ? (
+          <PdfViewer source={{ base64: previewPdfBase64 }} />
+        ) : (
+          <p className="text-muted-foreground text-sm">Carregando...</p>
+        )}
       </ContentModal>
     </>
   );
@@ -809,106 +941,51 @@ export default function PatientContract({
 
 function ContractDocument({
   headerBlocks,
-  title,
-  clausesHtml,
-  isPreview,
-  signaturePreview,
   children,
 }: {
   headerBlocks: ContractHeaderBlocks | null;
-  title?: string;
-  clausesHtml: string | null;
-  isPreview?: boolean;
-  signaturePreview?: {
-    city: string | null;
-    state: string | null;
-    contratanteName: string | null;
-    contratadaName: string | null;
-  };
-  children?: React.ReactNode;
+  children: React.ReactNode;
 }) {
-  const isEditing = !!children;
-
   return (
-    <div
-      className={cn(
-        !isEditing && "flex justify-center overflow-x-auto rounded-md bg-muted/30 py-4",
+    <div className="relative px-0 py-0 text-black text-sm">
+      {headerBlocks ? (
+        <>
+          <div className="mb-4 border-gray-200 border-b pb-4">
+            <p className="font-semibold">CONTRATANTE:</p>
+            <p className="mt-1 leading-relaxed">{headerBlocks.contratanteBlock}</p>
+          </div>
+
+          <div className="mb-4 border-gray-200 border-b pb-4">
+            <p className="font-semibold">CONTRATADA:</p>
+            <p className="mt-1 leading-relaxed">{headerBlocks.contratadaBlock}</p>
+          </div>
+
+          {headerBlocks.teamMembersBlock && (
+            <div className="mb-4 border-gray-200 border-b pb-4">
+              <p className="font-semibold">EQUIPE DE CUIDADO:</p>
+              <p className="mt-1 whitespace-pre-wrap leading-relaxed">
+                {headerBlocks.teamMembersBlock}
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          <div className="mb-4 border-gray-200 border-b pb-4">
+            <p className="font-semibold">CONTRATANTE:</p>
+            <Skeleton className="mt-2 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-3/4" />
+          </div>
+
+          <div className="mb-4 border-gray-200 border-b pb-4">
+            <p className="font-semibold">CONTRATADA:</p>
+            <Skeleton className="mt-2 h-4 w-full" />
+            <Skeleton className="mt-2 h-4 w-3/4" />
+          </div>
+        </>
       )}
-    >
-      <div className={cn(!isEditing && "w-[794px] shrink-0 rounded-md bg-white shadow-md")}>
-        <div
-          className={cn(
-            "relative text-black text-sm",
-            isEditing
-              ? "px-0 py-0"
-              : isPreview
-                ? "px-16 py-12"
-                : "max-h-[400px] overflow-auto px-16 py-12",
-          )}
-        >
-          {headerBlocks ? (
-            <>
-              {title && (
-                <div className="mb-4 border-gray-200 pb-4 text-lg">
-                  <p className="font-semibold">{title}</p>
-                </div>
-              )}
 
-              <div className="mb-4 border-gray-200 border-b pb-4">
-                <p className="font-semibold">CONTRATANTE:</p>
-                <p className="mt-1 leading-relaxed">{headerBlocks.contratanteBlock}</p>
-              </div>
-
-              <div className="mb-4 border-gray-200 border-b pb-4">
-                <p className="font-semibold">CONTRATADA:</p>
-                <p className="mt-1 leading-relaxed">{headerBlocks.contratadaBlock}</p>
-              </div>
-
-              {headerBlocks.teamMembersBlock && (
-                <div className="mb-4 border-gray-200 border-b pb-4">
-                  <p className="font-semibold">EQUIPE DE CUIDADO:</p>
-                  <p className="mt-1 whitespace-pre-wrap leading-relaxed">
-                    {headerBlocks.teamMembersBlock}
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <div className="mb-4 border-gray-200 border-b pb-4">
-                <p className="font-semibold">CONTRATANTE:</p>
-                <Skeleton className="mt-2 h-4 w-full" />
-                <Skeleton className="mt-2 h-4 w-3/4" />
-              </div>
-
-              <div className="mb-4 border-gray-200 border-b pb-4">
-                <p className="font-semibold">CONTRATADA:</p>
-                <Skeleton className="mt-2 h-4 w-full" />
-                <Skeleton className="mt-2 h-4 w-3/4" />
-              </div>
-            </>
-          )}
-
-          {children ?? (
-            <div
-              className="[&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h1]:mb-2 [&_h1]:font-bold [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-xl [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: controlled HTML from our own rich editor
-              dangerouslySetInnerHTML={{
-                __html: clausesHtml || "<p><em>Nenhuma cláusula adicionada ainda.</em></p>",
-              }}
-            />
-          )}
-
-          {signaturePreview && (
-            <ContractSignaturePreview
-              city={signaturePreview.city}
-              state={signaturePreview.state}
-              contratanteName={signaturePreview.contratanteName}
-              contratadaName={signaturePreview.contratadaName}
-            />
-          )}
-        </div>
-      </div>
+      {children}
     </div>
   );
 }

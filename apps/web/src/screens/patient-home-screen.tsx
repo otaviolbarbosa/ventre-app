@@ -1,17 +1,19 @@
 import { Header } from "@/components/layouts/header";
+import { ContractErrorToast } from "@/components/patient-area/contract-error-toast";
 import ContractList from "@/components/patient-area/contract-list";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
-import type { Contract, ContractChangeRequestWithContract } from "@/services/patient-self";
+import type { ContractChangeRequestWithContract, ContractListItem } from "@/services/patient-self";
 import type { Tables } from "@ventre/supabase";
 import Link from "next/link";
 
 type PatientHomeScreenProps = {
   name: string | null | undefined;
   pregnancy: Tables<"pregnancies"> | null;
-  contracts: Contract[];
+  contracts: ContractListItem[];
   changeRequests: ContractChangeRequestWithContract[];
   error: string | null | undefined;
+  contractError?: boolean;
 };
 
 export default function PatientHomeScreen({
@@ -20,11 +22,13 @@ export default function PatientHomeScreen({
   contracts,
   changeRequests,
   error,
+  contractError,
 }: PatientHomeScreenProps) {
   const gestationalWeek = calculateGestationalAge(pregnancy?.dum);
 
   return (
     <div>
+      <ContractErrorToast show={!!contractError} />
       <Header title={name ? `Olá ${name}!` : "Olá Gestante!"} />
 
       <div className="space-y-6 px-4">
@@ -56,13 +60,6 @@ export default function PatientHomeScreen({
           </div>
         )}
 
-        {(contracts.length > 0 || changeRequests.length > 0) && (
-          <div>
-            <p className="mb-2 text-muted-foreground text-xs uppercase tracking-wide">Contratos</p>
-            <ContractList contracts={contracts} changeRequests={changeRequests} />
-          </div>
-        )}
-
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Link
             href="/cartao-pre-natal"
@@ -83,6 +80,13 @@ export default function PatientHomeScreen({
             <p className="font-medium text-sm">Financeiro</p>
           </Link>
         </div>
+
+        {(contracts.length > 0 || changeRequests.length > 0) && (
+          <div>
+            <p className="mb-2 text-muted-foreground text-xs uppercase tracking-wide">Contratos</p>
+            <ContractList contracts={contracts} changeRequests={changeRequests} />
+          </div>
+        )}
       </div>
     </div>
   );

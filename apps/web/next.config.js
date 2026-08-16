@@ -13,7 +13,11 @@ const nextConfig = {
   // dynamically built path, so Next's file tracing can't discover them on its own —
   // without this they're missing from the Vercel serverless bundle (ENOENT in prod).
   outputFileTracingIncludes: {
-    "/**": ["./public/fonts/**", "./public/images/digital-signature-stamp.png"],
+    "/**": [
+      "./public/fonts/**",
+      "./public/images/digital-signature-stamp.png",
+      "./src/assets/ventre.png",
+    ],
   },
   images: {
     remotePatterns: [

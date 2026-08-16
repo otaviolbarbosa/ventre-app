@@ -41,13 +41,15 @@ export async function POST(_request: Request, { params }: Params) {
       );
     }
 
-    // Signed contract: always return the stored signed PDF — never re-render,
-    // so the downloaded file always matches content_hash
-    if (contract.is_signed && contract.signed_document_id) {
+    // Signed contract: always return the stored signed PDF — never re-render, so the
+    // downloaded file always matches content_hash. Prefer the finalized document (both
+    // parties signed, includes the authentication certificate) once it exists.
+    const signedDocumentId = contract.finalized_document_id ?? contract.original_document_id;
+    if (contract.is_signed && signedDocumentId) {
       const { data: signedDoc, error: signedDocError } = await supabase
         .from("patient_documents")
         .select("*")
-        .eq("id", contract.signed_document_id)
+        .eq("id", signedDocumentId)
         .single();
 
       if (signedDocError || !signedDoc) {

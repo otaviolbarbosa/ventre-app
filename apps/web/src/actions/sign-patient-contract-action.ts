@@ -2,6 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { isStaff } from "@/lib/access-control";
+import { generateFinalizedContractPdf } from "@/lib/contract-finalization";
 import { hasUnfilledFields } from "@/lib/contract-header-text";
 import { buildPatientContractParties } from "@/lib/contract-parties";
 import {
@@ -17,7 +18,6 @@ import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { signPatientContractSchema } from "@/lib/validations/contract";
 import { generateVerificationCode } from "@/lib/verification-code";
-import { buildVerificationUrl } from "@/lib/verification-url";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
@@ -32,7 +32,7 @@ export const signPatientContractAction = authActionClient
     }) => {
       const { data: existing } = await supabase
         .from("contracts")
-        .select("id, is_signed, fully_signed_at")
+        .select("id, is_signed, fully_signed_at, title, clauses_html, city, state")
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
         .eq("is_active", true)
@@ -40,6 +40,29 @@ export const signPatientContractAction = authActionClient
 
       if (existing?.fully_signed_at) {
         throw new Error("Este contrato já foi assinado por ambas as partes.");
+      }
+
+      // The patient may have already signed even though the professional hasn't
+      // (either party can sign in either order). Submitting unchanged content while
+      // a signature already exists means the caller is just adding a signature (e.g.
+      // "Assinar digitalmente" resubmits the stored title/clauses/city/state as-is)
+      // — safe to update in place. Submitting DIFFERENT content is an actual edit,
+      // which must revoke-and-recreate instead of mutating content someone already
+      // signed out from under them.
+      let hasAnySignature = false;
+      let contentChanged = false;
+      if (existing?.id) {
+        const { data: signatureRows } = await supabase
+          .from("contract_signatures")
+          .select("id")
+          .eq("contract_id", existing.id)
+          .limit(1);
+        hasAnySignature = !!signatureRows?.length;
+        contentChanged =
+          existing.title !== title ||
+          existing.clauses_html !== clauses_html ||
+          (existing.city ?? null) !== (city ?? null) ||
+          (existing.state ?? null) !== (state ?? null);
       }
 
       const { patient, parties_details, contratadaName } = await buildPatientContractParties(
@@ -69,11 +92,11 @@ export const signPatientContractAction = authActionClient
       }
 
       let contractId: string;
-      if (existing?.id && existing.is_signed) {
-        // Editing a contract that already has a professional signature collected
-        // (but not yet fully_signed_at): contract_signatures rows are immutable and
-        // tied to this contract_id, so the only way to invalidate the collected
-        // signature is to revoke this row and draft a brand-new one — same
+      if (existing?.id && hasAnySignature && contentChanged) {
+        // Editing a contract that already has at least one signature collected (by
+        // either party, but not yet fully_signed_at): contract_signatures rows are
+        // immutable and tied to this contract_id, so the only way to invalidate the
+        // collected signature is to revoke this row and draft a brand-new one — same
         // revoke-and-recreate pattern as revoke-contract-action.ts.
         const { error: revokeError } = await supabase
           .from("contracts")
@@ -159,9 +182,44 @@ export const signPatientContractAction = authActionClient
       }
 
       if (!consent) {
-        // Professional chose not to sign right now — save the draft and stop here.
-        // No PDF/hash/verification_code/contract_signatures are generated, since the
-        // patient can only sign once the professional has (sign-contract-as-patient-action.ts).
+        // Professional chose not to sign right now — still generate the initial
+        // (unsigned, mutable) PDF so the contract always has an original_document_id
+        // to preview/download from. No hash/verification_code/contract_signatures are
+        // generated, since those only make sense once actually signed — the patient
+        // can only sign once the professional has (sign-contract-as-patient-action.ts).
+        const draftBuffer = await renderContractPdfBuffer({
+          headerBlocks: parties_details,
+          title,
+          clausesHtml: sanitizeClausesHtml(clauses_html),
+          signature: {
+            localityLine: buildSignatureLocalityLine(city ?? null, state ?? null, new Date()),
+            contratanteName: patient.name,
+            contratadaName: contratadaName ?? "Profissional",
+          },
+        });
+
+        const { document: draftDocument } = await uploadContractPdf({
+          supabase,
+          supabaseAdmin,
+          patientId,
+          userId: user.id,
+          fileName: buildContractPdfFileName(patient.name),
+          buffer: draftBuffer,
+          isImmutable: false,
+        });
+
+        const { error: draftLinkError } = await supabase
+          .from("contracts")
+          .update({ original_document_id: draftDocument.id })
+          .eq("id", contractId);
+
+        if (draftLinkError) {
+          console.error(
+            "[signPatientContractAction] failed to link draft original_document_id",
+            draftLinkError,
+          );
+        }
+
         revalidatePath(`/patients/${patientId}/profile`);
         revalidatePath("/home");
 
@@ -194,10 +252,6 @@ export const signPatientContractAction = authActionClient
         title,
         clausesHtml: sanitizeClausesHtml(clauses_html),
         signature: {
-          signedByName: profile.name ?? "Profissional",
-          signedAtLabel: new Date(signedAt).toLocaleString("pt-BR"),
-          verificationCode,
-          verificationUrl: buildVerificationUrl(verificationCode),
           localityLine: buildSignatureLocalityLine(city ?? null, state ?? null, new Date(signedAt)),
           contratanteName: patient.name,
           contratadaName: contratadaName ?? "Profissional",
@@ -233,7 +287,7 @@ export const signPatientContractAction = authActionClient
           signed_user_agent: signedUserAgent,
           content_hash: contentHash,
           verification_code: verificationCode,
-          signed_document_id: document.id,
+          original_document_id: document.id,
         })
         .eq("id", contractId);
 
@@ -264,6 +318,40 @@ export const signPatientContractAction = authActionClient
           "[signPatientContractAction] failed to record contract_signatures row",
           signatureInsertError,
         );
+      }
+
+      // May or may not be the completing signature — the patient could have already
+      // signed before the professional (either order is allowed).
+      // generateFinalizedContractPdf itself checks whether both parties have now
+      // signed and no-ops (throws, caught here) otherwise. Best-effort: the
+      // professional's signature is already recorded and immutable regardless.
+      try {
+        await generateFinalizedContractPdf({
+          contract: {
+            id: contractId,
+            verification_code: verificationCode,
+            parties_details,
+            title,
+            clauses_html,
+            city: city ?? null,
+            state: state ?? null,
+            enterprise_id: profile.enterprise_id ?? null,
+            signed_at: signedAt,
+            signed_by: user.id,
+            content_hash: contentHash,
+            original_document_id: document.id,
+          },
+          patient: {
+            id: patientId,
+            name: patient.name,
+            email: patient.email,
+            cpf: patient.cpf,
+          },
+          supabaseAdmin,
+          uploaderId: user.id,
+        });
+      } catch (err) {
+        console.error("[signPatientContractAction] finalized PDF generation failed", err);
       }
 
       revalidatePath(`/patients/${patientId}/profile`);

@@ -117,8 +117,13 @@ export async function getMyBillingSummary(): Promise<{
 
 export type Contract = Tables<"contracts">;
 
+// contract.is_signed already tracks the professional's signature regardless of
+// signing order — but the patient's own status has no such flag on `contracts`
+// (either party can sign first), so it's derived from contract_signatures here.
+export type ContractListItem = Contract & { patientSigned: boolean };
+
 export async function getMyContracts(): Promise<{
-  contracts: Contract[];
+  contracts: ContractListItem[];
   error?: string;
 }> {
   const { supabase } = await getServerAuth();
@@ -133,9 +138,29 @@ export async function getMyContracts(): Promise<{
     .select("*")
     .eq("patient_id", patientId)
     .eq("is_base_contract", false)
+    .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  return { contracts: data ?? [] };
+  const contracts = data ?? [];
+  if (contracts.length === 0) return { contracts: [] };
+
+  const { data: patientSignatures } = await supabase
+    .from("contract_signatures")
+    .select("contract_id")
+    .eq("signer_role", "patient")
+    .in(
+      "contract_id",
+      contracts.map((c) => c.id),
+    );
+
+  const patientSignedContractIds = new Set((patientSignatures ?? []).map((s) => s.contract_id));
+
+  return {
+    contracts: contracts.map((contract) => ({
+      ...contract,
+      patientSigned: patientSignedContractIds.has(contract.id),
+    })),
+  };
 }
 
 export async function getMyContractById(contractId: string): Promise<{
@@ -156,6 +181,7 @@ export async function getMyContractById(contractId: string): Promise<{
     .eq("id", contractId)
     .eq("patient_id", patientId)
     .eq("is_base_contract", false)
+    .eq("is_active", true)
     .maybeSingle();
 
   if (!contract) {

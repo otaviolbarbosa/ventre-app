@@ -440,12 +440,15 @@ export type Database = {
           content_hash: string | null
           created_at: string
           enterprise_id: string | null
+          finalized_content_hash: string | null
+          finalized_document_id: string | null
           fully_signed_at: string | null
           id: string
           is_active: boolean | null
           is_base_contract: boolean
           is_signed: boolean
           name: string | null
+          original_document_id: string | null
           parties_details: Json | null
           patient_id: string | null
           pregnancy_id: string | null
@@ -453,7 +456,6 @@ export type Database = {
           revoked_by: string | null
           signed_at: string | null
           signed_by: string | null
-          signed_document_id: string | null
           signed_ip: string | null
           signed_user_agent: string | null
           state: string | null
@@ -468,12 +470,15 @@ export type Database = {
           content_hash?: string | null
           created_at?: string
           enterprise_id?: string | null
+          finalized_content_hash?: string | null
+          finalized_document_id?: string | null
           fully_signed_at?: string | null
           id?: string
           is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
           name?: string | null
+          original_document_id?: string | null
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
@@ -481,7 +486,6 @@ export type Database = {
           revoked_by?: string | null
           signed_at?: string | null
           signed_by?: string | null
-          signed_document_id?: string | null
           signed_ip?: string | null
           signed_user_agent?: string | null
           state?: string | null
@@ -496,12 +500,15 @@ export type Database = {
           content_hash?: string | null
           created_at?: string
           enterprise_id?: string | null
+          finalized_content_hash?: string | null
+          finalized_document_id?: string | null
           fully_signed_at?: string | null
           id?: string
           is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
           name?: string | null
+          original_document_id?: string | null
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
@@ -509,7 +516,6 @@ export type Database = {
           revoked_by?: string | null
           signed_at?: string | null
           signed_by?: string | null
-          signed_document_id?: string | null
           signed_ip?: string | null
           signed_user_agent?: string | null
           state?: string | null
@@ -524,6 +530,13 @@ export type Database = {
             columns: ["enterprise_id"]
             isOneToOne: false
             referencedRelation: "enterprises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_finalized_document_id_fkey"
+            columns: ["finalized_document_id"]
+            isOneToOne: false
+            referencedRelation: "patient_documents"
             referencedColumns: ["id"]
           },
           {
@@ -556,7 +569,7 @@ export type Database = {
           },
           {
             foreignKeyName: "contracts_signed_document_id_fkey"
-            columns: ["signed_document_id"]
+            columns: ["original_document_id"]
             isOneToOne: false
             referencedRelation: "patient_documents"
             referencedColumns: ["id"]

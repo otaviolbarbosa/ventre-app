@@ -207,7 +207,7 @@ existe e é reaproveitável; o ponto de maior esforço é a remodelagem do dado 
 | 4 | Notificações | Push + WhatsApp para contrato pronto, alteração solicitada, assinatura completa | complete | - | 2, 3 | [patient-contract-signature-phase-4-notifications.plan.md](../plans/completed/patient-contract-signature-phase-4-notifications.plan.md) |
 | 5 | Home da gestante — pendências e assinados | Seção de contratos pendentes/assinados em `patient-home-screen.tsx` | complete | with 4 | 2 | [patient-contract-signature-phase-5-patient-home.plan.md](../plans/completed/patient-contract-signature-phase-5-patient-home.plan.md) |
 | 6 | Revogação e recriação pós-assinatura completa | Fluxo de revogar contrato vigente e redigir novo quando há pedido de mudança após ambas as partes já terem assinado | complete | - | 2, 3 | [patient-contract-signature-phase-6-revocation.plan.md](../plans/completed/patient-contract-signature-phase-6-revocation.plan.md) |
-| 7 | Preview com pdf.js | Renderização real do PDF (draft e final) em `contract-signature-preview.tsx`, `contract-settings-screen.tsx`, `personal-contract-settings-screen.tsx` | in-progress | with 4, 5, 6 | 1 | [patient-contract-signature-phase-7-pdf-preview.plan.md](../plans/patient-contract-signature-phase-7-pdf-preview.plan.md) |
+| 7 | Preview com pdf.js | Renderização real do PDF (draft e final) em `contract-signature-preview.tsx`, `contract-settings-screen.tsx`, `personal-contract-settings-screen.tsx` | complete | with 4, 5, 6 | 1 | [patient-contract-signature-phase-7-pdf-preview.plan.md](../plans/completed/patient-contract-signature-phase-7-pdf-preview.plan.md) |
 
 ### Phase Details
 

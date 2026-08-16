@@ -1,13 +1,13 @@
 "use client";
 
+import { createContractChangeRequestAction } from "@/actions/create-contract-change-request-action";
+import { cn } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createContractChangeRequestAction } from "@/actions/create-contract-change-request-action";
-import { cn } from "@/lib/utils";
 
 export function RequestContractChangeDialog({
   patientId,
@@ -43,7 +43,7 @@ export function RequestContractChangeDialog({
 
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
+      <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setOpen(true)}>
         {triggerLabel}
       </Button>
       <ContentModal

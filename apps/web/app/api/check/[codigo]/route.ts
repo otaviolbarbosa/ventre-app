@@ -31,15 +31,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ cod
     const supabaseAdmin = await createServerSupabaseAdmin();
     const { data: contract } = await supabaseAdmin
       .from("contracts")
-      .select("is_signed, signed_at, signed_by, content_hash")
+      .select("is_signed, signed_at, signed_by, content_hash, finalized_content_hash")
       .eq("verification_code", codigo)
       .maybeSingle();
 
-    if (!contract?.is_signed || !contract.content_hash) {
+    if (!contract?.is_signed || (!contract.content_hash && !contract.finalized_content_hash)) {
       return NextResponse.json({ valid: false });
     }
 
-    if (computedHash !== contract.content_hash) {
+    // Accept either hash: the original (professional-only signed) PDF or the
+    // finalized ("_Finalizado") PDF — whichever the user actually downloaded and is
+    // now uploading to verify.
+    const isValid =
+      computedHash === contract.content_hash || computedHash === contract.finalized_content_hash;
+    if (!isValid) {
       return NextResponse.json({ valid: false });
     }
 

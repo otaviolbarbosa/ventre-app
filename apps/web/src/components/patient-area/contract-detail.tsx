@@ -1,9 +1,10 @@
 "use client";
 
+import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action";
 import { signContractAsPatientAction } from "@/actions/sign-contract-as-patient-action";
 import { RequestContractChangeDialog } from "@/components/shared/request-contract-change-dialog";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
-import { sanitizeClausesHtml } from "@/lib/contract-html";
 import { sanitizeMessageHtml } from "@/lib/contract-message-html";
 import { dayjs } from "@/lib/dayjs";
 import type { Contract } from "@/services/patient-self";
@@ -11,11 +12,19 @@ import type { Tables } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { Check, Clock, Loader2 } from "lucide-react";
+import { Check, Clock, Download, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+const PdfViewer = dynamic(() => import("@/components/shared/pdf-viewer").then((m) => m.PdfViewer), {
+  ssr: false,
+  loading: () => <p className="text-muted-foreground text-sm">Carregando visualizador...</p>,
+});
+
+type PdfSource = { url: string } | { base64: string };
 
 export default function ContractDetail({
   contract,
@@ -28,9 +37,11 @@ export default function ContractDetail({
   const [selectedRequest, setSelectedRequest] = useState<Tables<"contract_change_requests"> | null>(
     null,
   );
+  const [pdfSource, setPdfSource] = useState<PdfSource | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const isFullySigned = !!contract.fully_signed_at;
   const hasPendingChangeRequest = changeRequests.length > 0;
-  const headerBlocks = contract.parties_details as unknown as ContractHeaderBlocks | null;
 
   const { execute, isExecuting } = useAction(signContractAsPatientAction, {
     onSuccess: () => {
@@ -42,10 +53,90 @@ export default function ContractDetail({
     },
   });
 
+  const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
+  const { executeAsync: previewContractPdfAsync } = useAction(previewContractPdfAction);
+
+  const handleDownload = async () => {
+    if (!contract.finalized_document_id) return;
+    setIsDownloading(true);
+    try {
+      const res = await getDownloadUrl({ documentId: contract.finalized_document_id });
+      if (res?.data?.url) {
+        window.open(res.data.url, "_blank");
+      } else {
+        toast.error(res?.serverError ?? "Erro ao baixar contrato");
+      }
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only re-fetch when the contract itself changes
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPdf() {
+      setPdfError(null);
+
+      // Fully signed: always show the finalized document (both parties' stamps +
+      // authentication certificate) — never the professional-only original.
+      if (isFullySigned) {
+        if (!contract.finalized_document_id) {
+          setPdfError("Documento final ainda não está disponível.");
+          return;
+        }
+        const res = await getDownloadUrl({ documentId: contract.finalized_document_id });
+        if (cancelled) return;
+        if (res?.data?.url) {
+          setPdfSource({ url: res.data.url });
+        } else {
+          setPdfError(res?.serverError ?? "Erro ao carregar contrato");
+        }
+        return;
+      }
+
+      // Not (yet) fully signed: reuse the stored original PDF — generated whenever
+      // the contract itself was generated, signed or not — never re-render.
+      if (contract.original_document_id) {
+        const res = await getDownloadUrl({ documentId: contract.original_document_id });
+        if (cancelled) return;
+        if (res?.data?.url) {
+          setPdfSource({ url: res.data.url });
+        } else {
+          setPdfError(res?.serverError ?? "Erro ao carregar contrato");
+        }
+        return;
+      }
+
+      const headerBlocks = contract.parties_details as unknown as ContractHeaderBlocks | null;
+      if (!headerBlocks) return;
+      const res = await previewContractPdfAsync({
+        headerBlocks,
+        title: contract.title,
+        clausesHtml: contract.clauses_html,
+      });
+      if (cancelled) return;
+      if (res?.data?.pdfBase64) {
+        setPdfSource({ base64: res.data.pdfBase64 });
+      } else {
+        setPdfError(res?.serverError ?? "Erro ao gerar pré-visualização do contrato");
+      }
+    }
+
+    loadPdf();
+    return () => {
+      cancelled = true;
+    };
+    // router.refresh() after signing re-fetches the contract server-side and passes
+    // down fresh props, but contract.id itself never changes — so the PDF to display
+    // (original vs finalized vs live preview) is re-evaluated whenever any of the
+    // fields that decision depends on changes, not just when the contract itself does.
+  }, [contract.id, isFullySigned, contract.finalized_document_id, contract.original_document_id]);
+
   return (
-    <div className="space-y-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       {isFullySigned && (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
+        <div className="flex shrink-0 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
           <Check className="size-4 shrink-0" />
           <span>
             Assinado por ambas as partes em{" "}
@@ -56,7 +147,7 @@ export default function ContractDetail({
       )}
 
       {hasPendingChangeRequest && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap gap-2">
           {changeRequests.map((request) => (
             <Badge
               key={request.id}
@@ -71,49 +162,44 @@ export default function ContractDetail({
         </div>
       )}
 
-      <div className="rounded-2xl bg-white p-6 shadow-sm">
-        {headerBlocks && (
-          <>
-            <div className="mb-4 border-gray-200 border-b pb-4 text-sm">
-              <p className="font-semibold">CONTRATANTE:</p>
-              <p className="mt-1 leading-relaxed">{headerBlocks.contratanteBlock}</p>
-            </div>
-
-            <div className="mb-4 border-gray-200 border-b pb-4 text-sm">
-              <p className="font-semibold">CONTRATADA:</p>
-              <p className="mt-1 leading-relaxed">{headerBlocks.contratadaBlock}</p>
-            </div>
-
-            {headerBlocks.teamMembersBlock && (
-              <div className="mb-4 border-gray-200 border-b pb-4 text-sm">
-                <p className="font-semibold">EQUIPE DE CUIDADO:</p>
-                <p className="mt-1 whitespace-pre-wrap leading-relaxed">
-                  {headerBlocks.teamMembersBlock}
-                </p>
-              </div>
-            )}
-          </>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {pdfSource ? (
+          <PdfViewer source={pdfSource} />
+        ) : (
+          <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
+            {pdfError ?? "Carregando documento..."}
+          </div>
         )}
-
-        <div
-          className="[&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h1]:mb-2 [&_h1]:font-bold [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-xl [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizado via sanitizeClausesHtml
-          dangerouslySetInnerHTML={{ __html: sanitizeClausesHtml(contract.clauses_html) }}
-        />
       </div>
 
-      {!isFullySigned && contract.is_signed && !hasPendingChangeRequest && (
-        <div className="flex flex-col gap-2 sm:flex-row">
+      {isFullySigned && (
+        <div className="flex shrink-0 flex-row justify-end gap-2">
+          <Button
+            variant="outline"
+            disabled={isDownloading || !contract.finalized_document_id}
+            onClick={handleDownload}
+          >
+            {isDownloading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {isDownloading ? "Baixando..." : "Baixar contrato"}
+          </Button>
+        </div>
+      )}
+
+      {!isFullySigned && !hasPendingChangeRequest && (
+        <div className="flex shrink-0 flex-row justify-end gap-2">
+          <RequestContractChangeDialog patientId={contract.patient_id as string} />
           <Button
             disabled={isExecuting}
-            onClick={() =>
-              execute({ patientId: contract.patient_id as string, consent: true })
-            }
+            className="flex-1 sm:flex-none"
+            onClick={() => execute({ patientId: contract.patient_id as string, consent: true })}
           >
             {isExecuting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Assinar contrato
           </Button>
-          <RequestContractChangeDialog patientId={contract.patient_id as string} />
         </div>
       )}
 
