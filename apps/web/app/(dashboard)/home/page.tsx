@@ -2,22 +2,39 @@ import { isStaff } from "@/lib/access-control";
 import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
 import { HomeScreen, PatientHomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
-import { getMyPregnancy } from "@/services/patient-self";
+import {
+  getMyContractChangeRequests,
+  getMyContracts,
+  getMyPregnancy,
+} from "@/services/patient-self";
 import type { Tables } from "@ventre/supabase";
 import { redirect } from "next/navigation";
 
 type Profile = Tables<"users">;
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ contractError?: string }>;
+}) {
   const { profile } = await getServerAuth();
 
   if (profile?.user_type === "patient") {
-    const { patient, pregnancy, error } = await getMyPregnancy();
+    const [{ patient, pregnancy, error }, { contracts }, { changeRequests }, { contractError }] =
+      await Promise.all([
+        getMyPregnancy(),
+        getMyContracts(),
+        getMyContractChangeRequests(),
+        searchParams,
+      ]);
     return (
       <PatientHomeScreen
         name={profile?.name ?? patient?.name}
         pregnancy={pregnancy}
+        contracts={contracts}
+        changeRequests={changeRequests}
         error={error}
+        contractError={contractError === "1"}
       />
     );
   }

@@ -1,25 +1,12 @@
 import path from "node:path";
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
-import { Document, Font, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import { PDF_FONT_FAMILY } from "@/lib/contract-pdf-fonts";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import Html from "react-pdf-html";
-
-Font.register({
-  family: "Inter",
-  fonts: [
-    {
-      src: path.join(process.cwd(), "public/fonts/Inter-Regular.ttf"),
-      fontWeight: "normal",
-    },
-    {
-      src: path.join(process.cwd(), "public/fonts/Inter-Bold.ttf"),
-      fontWeight: "bold",
-    },
-  ],
-});
 
 const styles = StyleSheet.create({
   page: {
-    fontFamily: "Inter",
+    fontFamily: PDF_FONT_FAMILY,
     fontSize: 11,
     paddingTop: 48,
     paddingBottom: 48,
@@ -84,6 +71,7 @@ const styles = StyleSheet.create({
     right: 10,
     justifyContent: "center",
   },
+  stampTitle: { fontSize: 8, fontWeight: 500, textAlign: "left", lineHeight: 1.3 },
   stampText: { fontSize: 6, textAlign: "left", lineHeight: 1.3 },
   signatureLine: {
     width: "100%",
@@ -113,19 +101,44 @@ function stripListItemParagraphs(html: string): string {
     .replace(/(?:<\/p>\s*<p>\s*){2,}/gi, "</p><p>");
 }
 
+// Populated only on the finalized ("_Finalizado") document, once both parties have
+// signed — the professional-only "original" document keeps the blank stamp slot it
+// has always had (contratanteStamp/contratadaStamp omitted).
+export type SignatureStamp = {
+  signedByName: string;
+  signedAtLabel: string;
+  signatureId: string;
+};
+
 export type ContractPdfData = ContractHeaderBlocks & {
   title: string;
   clausesHtml: string;
   signature?: {
-    signedByName: string;
-    signedAtLabel: string;
-    verificationCode: string;
-    verificationUrl: string;
     localityLine: string;
     contratanteName: string;
     contratadaName: string;
+    contratanteStamp?: SignatureStamp | null;
+    contratadaStamp?: SignatureStamp | null;
   };
 };
+
+function SignatureStampView({ stamp }: { stamp: SignatureStamp }) {
+  return (
+    <View style={styles.stampSlot}>
+      <View style={styles.stampWrapper}>
+        <Image
+          src={path.join(process.cwd(), "public/images/digital-signature-stamp.png")}
+          style={styles.stampImage}
+        />
+        <View style={styles.stampTextOverlay}>
+          <Text style={styles.stampTitle}>{stamp.signedByName}</Text>
+          <Text style={styles.stampText}>Em {stamp.signedAtLabel}</Text>
+          <Text style={styles.stampText}>ID assinatura: {stamp.signatureId}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 export function ContractPdfDocument({ data }: { data: ContractPdfData }) {
   return (
@@ -153,7 +166,7 @@ export function ContractPdfDocument({ data }: { data: ContractPdfData }) {
         )}
 
         <View style={styles.section}>
-          <Html style={{ fontSize: 11, fontFamily: "Inter" }}>
+          <Html style={{ fontSize: 11, fontFamily: PDF_FONT_FAMILY }}>
             {stripListItemParagraphs(data.clausesHtml || "<p></p>")}
           </Html>
         </View>
@@ -164,32 +177,22 @@ export function ContractPdfDocument({ data }: { data: ContractPdfData }) {
 
             <View style={styles.signatureRow}>
               <View style={styles.signatureColumn}>
-                <View style={styles.stampSlot} />
-                {/* <View style={styles.stampSlot}>
-                  <View style={styles.stampWrapper}>
-                    <Image
-                      src={path.join(process.cwd(), "public/images/digital-signature-stamp.png")}
-                      style={styles.stampImage}
-                    />
-                    <View style={styles.stampTextOverlay}>
-                      <Text style={styles.stampText}>
-                        Assinado eletronicamente por {data.signature.signedByName}
-                      </Text>
-                      <Text style={styles.stampText}>{data.signature.signedAtLabel}</Text>
-                      <Text style={styles.stampText}>
-                        Código de verificação: {data.signature.verificationCode}
-                      </Text>
-                      <Text style={styles.stampText}>{data.signature.verificationUrl}</Text>
-                    </View>
-                  </View>
-                </View> */}
+                {data.signature.contratadaStamp ? (
+                  <SignatureStampView stamp={data.signature.contratadaStamp} />
+                ) : (
+                  <View style={styles.stampSlot} />
+                )}
                 <View style={styles.signatureLine} />
                 <Text style={styles.signatureName}>{data.signature.contratadaName}</Text>
                 <Text style={styles.signatureLabel}>CONTRATADA</Text>
               </View>
 
               <View style={styles.signatureColumn}>
-                <View style={styles.stampSlot} />
+                {data.signature.contratanteStamp ? (
+                  <SignatureStampView stamp={data.signature.contratanteStamp} />
+                ) : (
+                  <View style={styles.stampSlot} />
+                )}
                 <View style={styles.signatureLine} />
                 <Text style={styles.signatureName}>{data.signature.contratanteName}</Text>
                 <Text style={styles.signatureLabel}>CONTRATANTE</Text>

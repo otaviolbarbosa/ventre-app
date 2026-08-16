@@ -184,6 +184,62 @@ async function resolvePushRecipientAndTemplate(
     };
   }
 
+  if (notification.notificationType === "contract_ready_for_signature") {
+    const { data: patient, error: patientError } = await supabaseAdmin
+      .from("patients")
+      .select("id, name, user_id")
+      .eq("id", notification.recipientId)
+      .maybeSingle();
+
+    if (patientError) {
+      throw new Error(`Falha ao buscar gestante ${notification.recipientId}: ${patientError.message}`);
+    }
+
+    if (!patient?.user_id) return null;
+
+    const template = getNotificationTemplate("contract_ready_for_signature", {});
+
+    return {
+      type: "contract_ready_for_signature",
+      userId: patient.user_id,
+      title: template.title,
+      body: template.body,
+      url: `/patients/${patient.id}/profile`,
+    };
+  }
+
+  if (
+    notification.notificationType === "contract_change_requested" ||
+    notification.notificationType === "contract_fully_signed"
+  ) {
+    const { data: contract, error: contractError } = await supabaseAdmin
+      .from("contracts")
+      .select("patient_id, patient:patients!contracts_patient_id_fkey(name)")
+      .eq("id", notification.referenceId)
+      .maybeSingle();
+
+    if (contractError) {
+      throw new Error(
+        `Falha ao buscar contrato ${notification.referenceId}: ${contractError.message}`,
+      );
+    }
+
+    if (!contract) return null;
+
+    const patient = contract.patient as unknown as { name: string } | null;
+    const template = getNotificationTemplate(notification.notificationType, {
+      patientName: patient?.name ?? "",
+    });
+
+    return {
+      type: notification.notificationType,
+      userId: notification.recipientId,
+      title: template.title,
+      body: template.body,
+      url: `/patients/${contract.patient_id}/profile`,
+    };
+  }
+
   return null;
 }
 

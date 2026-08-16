@@ -79,14 +79,14 @@ export function BillingGroupCard({
                 <span className="truncate text-muted-foreground text-xs">
                   {installment.paid_at ? (
                     <>
-                      Pago em: <br />
+                      Pago em:{" "}
                       <span className="font-medium text-foreground text-sm">
                         {dayjs(installment.paid_at).format("DD/MM/YY")}
                       </span>
                     </>
                   ) : (
                     <>
-                      Venc.: <br />
+                      Venc.:{" "}
                       <span className="font-medium text-foreground text-sm">
                         {dayjs(installment.due_date).format("DD/MM/YY")}
                       </span>

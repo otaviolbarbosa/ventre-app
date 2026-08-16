@@ -20,6 +20,9 @@
 /public/sw.js
 /public/sw.js.map
 
+# pdf.js worker (copied from node_modules at dev/build time)
+/public/pdf.worker.min.mjs
+
 # misc
 .DS_Store
 *.pem

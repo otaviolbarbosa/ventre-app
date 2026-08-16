@@ -114,3 +114,110 @@ export async function getMyBillingSummary(): Promise<{
 
   return { billings: (data as BillingWithInstallments[]) ?? [] };
 }
+
+export type Contract = Tables<"contracts">;
+
+// contract.is_signed already tracks the professional's signature regardless of
+// signing order — but the patient's own status has no such flag on `contracts`
+// (either party can sign first), so it's derived from contract_signatures here.
+export type ContractListItem = Contract & { patientSigned: boolean };
+
+export async function getMyContracts(): Promise<{
+  contracts: ContractListItem[];
+  error?: string;
+}> {
+  const { supabase } = await getServerAuth();
+  const { patientId, error } = await getMyPatientId();
+
+  if (!patientId) {
+    return { contracts: [], error };
+  }
+
+  const { data } = await supabase
+    .from("contracts")
+    .select("*")
+    .eq("patient_id", patientId)
+    .eq("is_base_contract", false)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  const contracts = data ?? [];
+  if (contracts.length === 0) return { contracts: [] };
+
+  const { data: patientSignatures } = await supabase
+    .from("contract_signatures")
+    .select("contract_id")
+    .eq("signer_role", "patient")
+    .in(
+      "contract_id",
+      contracts.map((c) => c.id),
+    );
+
+  const patientSignedContractIds = new Set((patientSignatures ?? []).map((s) => s.contract_id));
+
+  return {
+    contracts: contracts.map((contract) => ({
+      ...contract,
+      patientSigned: patientSignedContractIds.has(contract.id),
+    })),
+  };
+}
+
+export async function getMyContractById(contractId: string): Promise<{
+  contract: Contract | null;
+  changeRequests: Tables<"contract_change_requests">[];
+  error?: string;
+}> {
+  const { supabase } = await getServerAuth();
+  const { patientId, error } = await getMyPatientId();
+
+  if (!patientId) {
+    return { contract: null, changeRequests: [], error };
+  }
+
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("*")
+    .eq("id", contractId)
+    .eq("patient_id", patientId)
+    .eq("is_base_contract", false)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!contract) {
+    return { contract: null, changeRequests: [], error: "Contrato não encontrado" };
+  }
+
+  const { data: changeRequests } = await supabase
+    .from("contract_change_requests")
+    .select("*")
+    .eq("contract_id", contractId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  return { contract, changeRequests: changeRequests ?? [] };
+}
+
+export type ContractChangeRequestWithContract = Tables<"contract_change_requests"> & {
+  contract: Pick<Contract, "id" | "title"> | null;
+};
+
+export async function getMyContractChangeRequests(): Promise<{
+  changeRequests: ContractChangeRequestWithContract[];
+  error?: string;
+}> {
+  const { supabase } = await getServerAuth();
+  const { patientId, error } = await getMyPatientId();
+
+  if (!patientId) {
+    return { changeRequests: [], error };
+  }
+
+  const { data } = await supabase
+    .from("contract_change_requests")
+    .select("*, contract:contracts(id, title)")
+    .eq("patient_id", patientId)
+    .order("created_at", { ascending: false });
+
+  return { changeRequests: (data as ContractChangeRequestWithContract[]) ?? [] };
+}

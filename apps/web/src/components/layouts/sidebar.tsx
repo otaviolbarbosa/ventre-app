@@ -20,7 +20,6 @@ import {
   PanelLeft,
   Settings,
   Users,
-  Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -52,7 +51,7 @@ const navigationPatient = [
   { name: "Cartão pré-natal", href: "/cartao-pre-natal", icon: Heart },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Financeiro", href: "/financeiro", icon: CircleDollarSign },
-  { name: "Ferramentas", href: "/ferramentas", icon: Wrench },
+  // { name: "Ferramentas", href: "/ferramentas", icon: Wrench },
 ];
 
 export function Sidebar() {
