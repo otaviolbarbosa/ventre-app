@@ -73,8 +73,22 @@ export const signPatientContractAction = authActionClient
       if (!patient || !parties_details) throw new Error("Paciente não encontrada");
 
       if (profile.enterprise_id) {
-        if (!isStaff(profile)) {
-          throw new Error("Apenas gestores ou secretárias podem assinar pelo lado CONTRATADA.");
+        const isManagerOrSecretary = isStaff(profile);
+        let isTeamMember = false;
+        if (!isManagerOrSecretary) {
+          let teamQuery = supabase
+            .from("team_members")
+            .select("id")
+            .eq("patient_id", patientId)
+            .eq("professional_id", user.id);
+          if (pregnancyId) teamQuery = teamQuery.eq("pregnancy_id", pregnancyId);
+          const { data: teamRow } = await teamQuery.maybeSingle();
+          isTeamMember = !!teamRow;
+        }
+        if (!isManagerOrSecretary && !isTeamMember) {
+          throw new Error(
+            "Apenas gestores, secretárias ou membros da equipe de cuidado podem assinar pelo lado CONTRATADA.",
+          );
         }
       } else {
         const { data: patientRow } = await supabase

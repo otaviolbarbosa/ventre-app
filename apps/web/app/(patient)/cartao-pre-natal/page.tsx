@@ -1,3 +1,4 @@
+import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import PrenatalCard from "@/components/shared/prenatal-card";
 import { getMyPregnancy } from "@/services/patient-self";
@@ -17,9 +18,11 @@ export default async function PatientPrenatalCardPage() {
   }
 
   return (
-    <div className="space-y-4 px-4 py-6">
-      <h1 className="font-bold text-2xl text-[#433831]">Cartão pré-natal</h1>
-      <PrenatalCard patientId={patient.id} pregnancyId={pregnancy?.id} isEditable={false} />
+    <div>
+      <Header title="Cartão pré-natal" />
+      <div className="space-y-4 px-4">
+        <PrenatalCard patientId={patient.id} pregnancyId={pregnancy?.id} isEditable={false} />
+      </div>
     </div>
   );
 }

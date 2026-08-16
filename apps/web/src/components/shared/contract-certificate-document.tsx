@@ -109,11 +109,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     marginTop: 2,
   },
-  legalNotice: {
-    marginTop: 8,
-    paddingTop: 12,
-    borderTop: "1 solid #e5e7eb",
-  },
   link: {
     color: "#2563eb",
   },
@@ -165,20 +160,45 @@ export function ContractCertificateDocument({ data }: { data: ContractCertificat
 
         <View style={styles.section}>
           <Text style={styles.bodyText}>
-            Este certificado integra o documento {data.documentName} e comprova sua autenticidade,
-            validade e integridade, nos termos da MP 2.200-2/2001 e da legislação aplicável às
-            assinaturas eletrônicas no Brasil.
+            Este certificado integra o documento{" "}
+            <Text style={styles.signerName}>{data.documentName}</Text> e comprova sua autenticidade,
+            validade e integridade, nos termos da{" "}
+            <Link
+              src="https://www.planalto.gov.br/ccivil_03/mpv/antigas_2001/2200-2.htm"
+              style={styles.signerName}
+            >
+              Medida Provisória nº 2.200-2/2001
+            </Link>
+            , da{" "}
+            <Link
+              src="https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14063.htm"
+              style={styles.signerName}
+            >
+              Lei nº 14.063/2020
+            </Link>{" "}
+            e dos{" "}
+            <Link
+              src="https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm"
+              style={styles.signerName}
+            >
+              artigos 104, 107 e 219 do Código Civil
+            </Link>
+            , que regem a validade jurídica dos negócios jurídicos celebrados por meio eletrônico no
+            Brasil.
           </Text>
         </View>
         <View style={styles.section}>
           <Text style={styles.h1}>Códigos de Identificação</Text>
           <BulletItem>
-            Código de verificação do documento: {data.documentVerificationCode}
+            Código de verificação do documento:{" "}
+            <Text style={styles.signerName}>{data.documentVerificationCode}</Text>
           </BulletItem>
-          <BulletItem>Identificador do documento: {data.documentId}</BulletItem>
+          <BulletItem>
+            Identificador do documento: <Text style={styles.signerName}>{data.documentId}</Text>
+          </BulletItem>
           <BulletItem>
             Hash do documento original (código que garante que o conteúdo não foi alterado):{" "}
-            {data.originalHash}
+            <Text style={styles.signerName}>{data.originalHash}</Text>
           </BulletItem>
         </View>
 
@@ -215,7 +235,7 @@ export function ContractCertificateDocument({ data }: { data: ContractCertificat
           ))}
         </View>
 
-        <View style={[styles.legalNotice, styles.section]}>
+        <View style={styles.section}>
           <Text style={styles.h1}>Verificação</Text>
           <Text style={styles.bodyText}>
             Para validar a autenticidade deste documento, acesse:{" "}
@@ -226,7 +246,7 @@ export function ContractCertificateDocument({ data }: { data: ContractCertificat
           </Text>
         </View>
 
-        <View style={styles.section}>
+        <View>
           <Text style={{ fontWeight: "bold", marginBottom: 4 }}>
             Este certificado é parte integrante e indissociável do documento {data.documentId}.
           </Text>
