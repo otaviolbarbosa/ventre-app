@@ -28,7 +28,7 @@ export default function RegistrationCompleteNotice({ email }: { email: string | 
                 para poder fazer login.
               </>
             ) : (
-              "Confirme seu e-mail para poder fazer login."
+              "Enviamos um e-mail de confirmação para você. Confirme seu e-mail para poder fazer login."
             )}
           </p>
           <Link

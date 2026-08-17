@@ -7,10 +7,11 @@ import { RequestContractChangeDialog } from "@/components/shared/request-contrac
 import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
 import { sanitizeMessageHtml } from "@/lib/contract-message-html";
 import { dayjs } from "@/lib/dayjs";
-import type { Contract } from "@/services/patient-self";
+import type { ContractListItem } from "@/services/patient-self";
 import type { Tables } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
+import { ConfirmModal } from "@ventre/ui/shared/confirm-modal";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Check, Clock, Download, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -30,7 +31,7 @@ export default function ContractDetail({
   contract,
   changeRequests,
 }: {
-  contract: Contract;
+  contract: ContractListItem;
   changeRequests: Tables<"contract_change_requests">[];
 }) {
   const router = useRouter();
@@ -40,12 +41,15 @@ export default function ContractDetail({
   const [pdfSource, setPdfSource] = useState<PdfSource | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSignConfirmOpen, setIsSignConfirmOpen] = useState(false);
   const isFullySigned = !!contract.fully_signed_at;
+  const isPartiallySigned = !isFullySigned && (contract.is_signed || contract.patientSigned);
   const hasPendingChangeRequest = changeRequests.length > 0;
 
   const { execute, isExecuting } = useAction(signContractAsPatientAction, {
     onSuccess: () => {
       toast.success("Contrato assinado com sucesso.");
+      setIsSignConfirmOpen(false);
       router.refresh();
     },
     onError: ({ error }) => {
@@ -146,6 +150,17 @@ export default function ContractDetail({
         </div>
       )}
 
+      {isPartiallySigned && (
+        <div className="flex shrink-0 items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
+          <Clock className="size-4 shrink-0" />
+          <span>
+            {contract.patientSigned
+              ? "Você já assinou este contrato. Aguardando assinatura da profissional para finalizar."
+              : "A profissional já assinou este contrato. Assine para finalizar."}
+          </span>
+        </div>
+      )}
+
       {hasPendingChangeRequest && (
         <div className="flex shrink-0 flex-wrap gap-2">
           {changeRequests.map((request) => (
@@ -189,19 +204,28 @@ export default function ContractDetail({
         </div>
       )}
 
-      {!isFullySigned && !hasPendingChangeRequest && (
+      {!isFullySigned && !hasPendingChangeRequest && !contract.patientSigned && (
         <div className="flex shrink-0 flex-row justify-end gap-2">
           <RequestContractChangeDialog patientId={contract.patient_id as string} />
           <Button
             disabled={isExecuting}
             className="flex-1 sm:flex-none"
-            onClick={() => execute({ patientId: contract.patient_id as string, consent: true })}
+            onClick={() => setIsSignConfirmOpen(true)}
           >
-            {isExecuting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Assinar contrato
           </Button>
         </div>
       )}
+
+      <ConfirmModal
+        open={isSignConfirmOpen}
+        onOpenChange={setIsSignConfirmOpen}
+        title="Assinar contrato digitalmente"
+        description="Ao assinar este documento, você concorda com o seu teor de forma integral e reconhece sua autenticidade e validade jurídica, conforme a Lei nº 14.063/2020 e o art. 10, §2º da MP 2.200-2/2001. Sua assinatura será registrada com data, hora e endereço IP, compondo uma trilha de auditoria que garante a integridade do documento. Após a assinatura, o conteúdo não poderá mais ser alterado. Deseja confirmar a assinatura?"
+        confirmLabel={isExecuting ? "Assinando..." : "Confirmar assinatura"}
+        loading={isExecuting}
+        onConfirm={() => execute({ patientId: contract.patient_id as string, consent: true })}
+      />
 
       <ContentModal
         open={selectedRequest !== null}

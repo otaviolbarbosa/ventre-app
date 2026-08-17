@@ -1,6 +1,12 @@
 "use server";
 
-import { type ContractHeaderBlocks, buildContractHeaderBlocks } from "@/lib/contract-header-text";
+import {
+  type ContractHeaderBlocks,
+  type ContractParty,
+  buildContractHeaderBlocks,
+  isPatientDataComplete,
+  isPersonDataComplete,
+} from "@/lib/contract-header-text";
 import { authActionClient } from "@/lib/safe-action";
 import { getPatientContractSchema } from "@/lib/validations/contract";
 import {
@@ -167,8 +173,23 @@ export const getPatientContractAction = authActionClient
       let headerBlocks = null;
       let personalHeaderBlocks = null;
       let contratadaName: string | null = null;
+      let headerIncompleteParties: ContractParty[] = [];
+      let personalHeaderIncompleteParties: ContractParty[] = [];
 
       if (patient) {
+        const patientParty: ContractParty | null = isPatientDataComplete(patient, pregnancy)
+          ? null
+          : { type: "patient", id: patientId, name: patient.name ?? "Gestante", isCurrentUser: false };
+
+        const incompleteTeamMembers: ContractParty[] = teamMembers
+          .filter((m) => !isPersonDataComplete(m))
+          .map((m) => ({
+            type: "team_member",
+            id: m.id,
+            name: m.name ?? "Integrante da equipe",
+            isCurrentUser: m.id === user.id,
+          }));
+
         if (pregnancy?.enterprise_id) {
           const { data: enterprise } = await supabaseAdmin
             .from("enterprises")
@@ -184,6 +205,11 @@ export const getPatientContractAction = authActionClient
             teamMembers,
           });
           contratadaName = enterprise?.legal_name ?? enterprise?.name ?? null;
+
+          headerIncompleteParties = [
+            ...(patientParty ? [patientParty] : []),
+            ...incompleteTeamMembers,
+          ];
         } else {
           const [{ data: professionalAddress }, { data: professionalUser }] = await Promise.all([
             supabaseAdmin
@@ -202,20 +228,34 @@ export const getPatientContractAction = authActionClient
             professionalUser?.personal_documents ?? {},
           );
 
+          const professionalFields = {
+            name: profile.name,
+            email: profile.email,
+            phone: profile.phone ?? null,
+            professional_type: profile.professional_type ?? null,
+            personal_documents: personalDocumentsResult.success ? personalDocumentsResult.data : null,
+            address: professionalAddress ?? null,
+          };
+
           headerBlocks = buildContractHeaderBlocks(patient, pregnancy, {
             type: "autonomous",
-            user: {
-              name: profile.name,
-              email: profile.email,
-              phone: profile.phone ?? null,
-              professional_type: profile.professional_type ?? null,
-              personal_documents: personalDocumentsResult.success
-                ? personalDocumentsResult.data
-                : null,
-              address: professionalAddress ?? null,
-            },
+            user: professionalFields,
           });
           contratadaName = profile.name ?? null;
+
+          headerIncompleteParties = [
+            ...(patientParty ? [patientParty] : []),
+            ...(isPersonDataComplete(professionalFields)
+              ? []
+              : [
+                  {
+                    type: "professional" as const,
+                    id: user.id,
+                    name: profile.name ?? "Você",
+                    isCurrentUser: true,
+                  },
+                ]),
+          ];
         }
 
         // Personal header: team members listed as individual CONTRATADAS (no enterprise data)
@@ -223,6 +263,11 @@ export const getPatientContractAction = authActionClient
           type: "team-personal",
           teamMembers,
         });
+
+        personalHeaderIncompleteParties = [
+          ...(patientParty ? [patientParty] : []),
+          ...incompleteTeamMembers,
+        ];
       }
 
       // Cast the Json column to ContractHeaderBlocks — shape is guaranteed by buildPatientContractParties
@@ -237,6 +282,8 @@ export const getPatientContractAction = authActionClient
         baseTitle,
         headerBlocks,
         personalHeaderBlocks,
+        headerIncompleteParties,
+        personalHeaderIncompleteParties,
         patientName: patient?.name ?? null,
         contratadaName,
         enterpriseBase: enterpriseBase
