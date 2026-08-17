@@ -164,7 +164,7 @@ export async function getMyContracts(): Promise<{
 }
 
 export async function getMyContractById(contractId: string): Promise<{
-  contract: Contract | null;
+  contract: ContractListItem | null;
   changeRequests: Tables<"contract_change_requests">[];
   error?: string;
 }> {
@@ -195,7 +195,17 @@ export async function getMyContractById(contractId: string): Promise<{
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
-  return { contract, changeRequests: changeRequests ?? [] };
+  const { data: patientSignature } = await supabase
+    .from("contract_signatures")
+    .select("id")
+    .eq("contract_id", contractId)
+    .eq("signer_role", "patient")
+    .maybeSingle();
+
+  return {
+    contract: { ...contract, patientSigned: !!patientSignature },
+    changeRequests: changeRequests ?? [],
+  };
 }
 
 export type ContractChangeRequestWithContract = Tables<"contract_change_requests"> & {

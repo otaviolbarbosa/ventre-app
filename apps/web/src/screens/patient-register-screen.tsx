@@ -46,8 +46,9 @@ type LinkedPatient = {
 
 type Step = 1 | 2 | 3;
 
-const passwordSchema = z
+const step1Schema = z
   .object({
+    email: z.string().email("Digite um e-mail válido"),
     password: z.string().min(8, "Senha deve ter ao menos 8 caracteres"),
     confirmPassword: z.string(),
   })
@@ -56,7 +57,7 @@ const passwordSchema = z
     path: ["confirmPassword"],
   });
 
-type PasswordValues = z.infer<typeof passwordSchema>;
+type Step1Values = z.infer<typeof step1Schema>;
 
 function getInitials(name: string) {
   return name
@@ -69,7 +70,7 @@ function getInitials(name: string) {
 
 function StepIndicator({ current }: { current: Step }) {
   const steps = [
-    { n: 1, label: "Senha" },
+    { n: 1, label: "Email e senha" },
     { n: 2, label: "Seus dados" },
     { n: 3, label: "Confirmação" },
   ];
@@ -144,9 +145,13 @@ export default function PatientRegisterScreen({
   const [isFinishing, setIsFinishing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const passwordForm = useForm<PasswordValues>({
-    resolver: zodResolver(passwordSchema),
-    defaultValues: { password: "", confirmPassword: "" },
+  const step1Form = useForm<Step1Values>({
+    resolver: zodResolver(step1Schema),
+    defaultValues: {
+      email: invite.email ?? linkedPatient?.email ?? "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   const selfRegForm = useForm<PatientSelfRegistrationInput>({
@@ -314,21 +319,36 @@ export default function PatientRegisterScreen({
         <div className="rounded-2xl bg-white p-8 shadow-sm">
           <StepIndicator current={step} />
 
-          {/* ── Step 1: Password ── */}
+          {/* ── Step 1: Email e senha ── */}
           {step === 1 && (
             <div className="space-y-4">
-              <Form {...passwordForm}>
+              <Form {...step1Form}>
                 <form
-                  onSubmit={passwordForm.handleSubmit((values) => {
+                  onSubmit={step1Form.handleSubmit((values) => {
                     setPassword(values.password);
+                    selfRegForm.setValue("email", values.email);
                     selfRegForm.setValue("password", values.password);
+                    linkForm.setValue("email", values.email);
                     linkForm.setValue("password", values.password);
                     setStep(2);
                   })}
                   className="space-y-4"
                 >
                   <FormField
-                    control={passwordForm.control}
+                    control={step1Form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-mail</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="seu@email.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={step1Form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
@@ -341,7 +361,7 @@ export default function PatientRegisterScreen({
                     )}
                   />
                   <FormField
-                    control={passwordForm.control}
+                    control={step1Form.control}
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
@@ -688,20 +708,6 @@ export default function PatientRegisterScreen({
                       <FormLabel>Nome completo *</FormLabel>
                       <FormControl>
                         <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={linkForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail *</FormLabel>
-                      <FormControl>
-                        <Input type="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
