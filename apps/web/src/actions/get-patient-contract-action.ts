@@ -41,6 +41,23 @@ export const getPatientContractAction = authActionClient
       const contract = contractResult.data ?? null;
       const patient = patientResult.data;
 
+      let changeRequests: {
+        id: string;
+        message_html: string;
+        status: string;
+        created_at: string;
+        resolved_at: string | null;
+        requested_by: string;
+      }[] = [];
+      if (contract) {
+        const { data: changeRequestRows } = await supabase
+          .from("contract_change_requests")
+          .select("id, message_html, status, created_at, resolved_at, requested_by")
+          .eq("contract_id", contract.id)
+          .order("created_at", { ascending: false });
+        changeRequests = changeRequestRows ?? [];
+      }
+
       let signedByName: string | null = null;
       if (contract?.is_signed && contract.signed_by) {
         const { data: signer } = await supabase
@@ -213,6 +230,7 @@ export const getPatientContractAction = authActionClient
 
       return {
         contract,
+        changeRequests,
         signedByName,
         savedParties,
         baseContractHtml,

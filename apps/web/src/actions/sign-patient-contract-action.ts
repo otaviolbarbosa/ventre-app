@@ -1,6 +1,9 @@
 "use server";
 
 import { createHash } from "node:crypto";
+import { isStaff } from "@/lib/access-control";
+import { generateFinalizedContractPdf } from "@/lib/contract-finalization";
+import { hasUnfilledFields } from "@/lib/contract-header-text";
 import { buildPatientContractParties } from "@/lib/contract-parties";
 import {
   buildContractPdfFileName,
@@ -9,12 +12,12 @@ import {
   uploadContractPdf,
 } from "@/lib/contract-pdf";
 import { buildSignatureLocalityLine } from "@/lib/contract-signature-text";
+import { enqueueNotification } from "@/lib/notifications/queue";
 import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { signPatientContractSchema } from "@/lib/validations/contract";
 import { generateVerificationCode } from "@/lib/verification-code";
-import { buildVerificationUrl } from "@/lib/verification-url";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
@@ -24,18 +27,43 @@ export const signPatientContractAction = authActionClient
   .inputSchema(signPatientContractSchema)
   .action(
     async ({
-      parsedInput: { patientId, pregnancyId, title, clauses_html, city, state },
+      parsedInput: { patientId, pregnancyId, title, clauses_html, city, state, consent },
       ctx: { supabase, supabaseAdmin, user, profile },
     }) => {
       const { data: existing } = await supabase
         .from("contracts")
-        .select("id, is_signed")
+        .select("id, is_signed, fully_signed_at, title, clauses_html, city, state")
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
         .eq("is_active", true)
         .maybeSingle();
 
-      if (existing?.is_signed) throw new Error("Este contrato já foi assinado");
+      if (existing?.fully_signed_at) {
+        throw new Error("Este contrato já foi assinado por ambas as partes.");
+      }
+
+      // The patient may have already signed even though the professional hasn't
+      // (either party can sign in either order). Submitting unchanged content while
+      // a signature already exists means the caller is just adding a signature (e.g.
+      // "Assinar digitalmente" resubmits the stored title/clauses/city/state as-is)
+      // — safe to update in place. Submitting DIFFERENT content is an actual edit,
+      // which must revoke-and-recreate instead of mutating content someone already
+      // signed out from under them.
+      let hasAnySignature = false;
+      let contentChanged = false;
+      if (existing?.id) {
+        const { data: signatureRows } = await supabase
+          .from("contract_signatures")
+          .select("id")
+          .eq("contract_id", existing.id)
+          .limit(1);
+        hasAnySignature = !!signatureRows?.length;
+        contentChanged =
+          existing.title !== title ||
+          existing.clauses_html !== clauses_html ||
+          (existing.city ?? null) !== (city ?? null) ||
+          (existing.state ?? null) !== (state ?? null);
+      }
 
       const { patient, parties_details, contratadaName } = await buildPatientContractParties(
         { supabase, supabaseAdmin, profile },
@@ -44,8 +72,95 @@ export const signPatientContractAction = authActionClient
 
       if (!patient || !parties_details) throw new Error("Paciente não encontrada");
 
+      if (profile.enterprise_id) {
+        const isManagerOrSecretary = isStaff(profile);
+        let isTeamMember = false;
+        if (!isManagerOrSecretary) {
+          let teamQuery = supabase
+            .from("team_members")
+            .select("id")
+            .eq("patient_id", patientId)
+            .eq("professional_id", user.id);
+          if (pregnancyId) teamQuery = teamQuery.eq("pregnancy_id", pregnancyId);
+          const { data: teamRow } = await teamQuery.maybeSingle();
+          isTeamMember = !!teamRow;
+        }
+        if (!isManagerOrSecretary && !isTeamMember) {
+          throw new Error(
+            "Apenas gestores, secretárias ou membros da equipe de cuidado podem assinar pelo lado CONTRATADA.",
+          );
+        }
+      } else {
+        const { data: patientRow } = await supabase
+          .from("patients")
+          .select("created_by")
+          .eq("id", patientId)
+          .single();
+        if (patientRow?.created_by !== user.id) {
+          throw new Error("Apenas a profissional responsável pode assinar pelo lado CONTRATADA.");
+        }
+      }
+
+      if (hasUnfilledFields(parties_details)) {
+        throw new Error("Preencha todos os dados obrigatórios antes de assinar o contrato.");
+      }
+
       let contractId: string;
-      if (existing?.id) {
+      if (existing?.id && hasAnySignature && contentChanged) {
+        // Editing a contract that already has at least one signature collected (by
+        // either party, but not yet fully_signed_at): contract_signatures rows are
+        // immutable and tied to this contract_id, so the only way to invalidate the
+        // collected signature is to revoke this row and draft a brand-new one — same
+        // revoke-and-recreate pattern as revoke-contract-action.ts.
+        const { error: revokeError } = await supabase
+          .from("contracts")
+          .update({
+            is_active: false,
+            revoked_at: new Date().toISOString(),
+            revoked_by: user.id,
+          })
+          .eq("id", existing.id)
+          .is("revoked_at", null);
+        if (revokeError) {
+          throw new Error("Erro ao invalidar assinatura anterior. Tente novamente.");
+        }
+
+        const { error: resolveError } = await supabaseAdmin
+          .from("contract_change_requests")
+          .update({
+            status: "resolved",
+            resolved_at: new Date().toISOString(),
+            resolved_by: user.id,
+          })
+          .eq("contract_id", existing.id)
+          .eq("status", "pending");
+        if (resolveError) {
+          console.error(
+            "[signPatientContractAction] failed to resolve pending change requests",
+            resolveError,
+          );
+        }
+
+        const { data: inserted, error } = await supabase
+          .from("contracts")
+          .insert({
+            is_base_contract: false,
+            is_active: true,
+            title,
+            clauses_html,
+            parties_details,
+            city: city ?? null,
+            state: state ?? null,
+            patient_id: patientId,
+            pregnancy_id: pregnancyId ?? null,
+            enterprise_id: profile.enterprise_id ?? null,
+            user_id: profile.enterprise_id ? null : user.id,
+          })
+          .select("id")
+          .single();
+        if (error || !inserted) throw new Error(error?.message ?? "Erro ao salvar contrato");
+        contractId = inserted.id;
+      } else if (existing?.id) {
         const { error } = await supabase
           .from("contracts")
           .update({
@@ -80,6 +195,57 @@ export const signPatientContractAction = authActionClient
         contractId = inserted.id;
       }
 
+      if (!consent) {
+        // Professional chose not to sign right now — still generate the initial
+        // (unsigned, mutable) PDF so the contract always has an original_document_id
+        // to preview/download from. No hash/verification_code/contract_signatures are
+        // generated, since those only make sense once actually signed — the patient
+        // can only sign once the professional has (sign-contract-as-patient-action.ts).
+        const draftBuffer = await renderContractPdfBuffer({
+          headerBlocks: parties_details,
+          title,
+          clausesHtml: sanitizeClausesHtml(clauses_html),
+          signature: {
+            localityLine: buildSignatureLocalityLine(city ?? null, state ?? null, new Date()),
+            contratanteName: patient.name,
+            contratadaName: contratadaName ?? "Profissional",
+          },
+        });
+
+        const { document: draftDocument } = await uploadContractPdf({
+          supabase,
+          supabaseAdmin,
+          patientId,
+          userId: user.id,
+          fileName: buildContractPdfFileName(patient.name),
+          buffer: draftBuffer,
+          isImmutable: false,
+        });
+
+        const { error: draftLinkError } = await supabase
+          .from("contracts")
+          .update({ original_document_id: draftDocument.id })
+          .eq("id", contractId);
+
+        if (draftLinkError) {
+          console.error(
+            "[signPatientContractAction] failed to link draft original_document_id",
+            draftLinkError,
+          );
+        }
+
+        revalidatePath(`/patients/${patientId}/profile`);
+        revalidatePath("/home");
+
+        await captureServerEvent(user.id, "sign_patient_contract", {
+          patient_id: patientId,
+          contract_id: contractId,
+          signed: false,
+        });
+
+        return { success: true };
+      }
+
       const signedAt = new Date().toISOString();
 
       let verificationCode: string | null = null;
@@ -100,10 +266,6 @@ export const signPatientContractAction = authActionClient
         title,
         clausesHtml: sanitizeClausesHtml(clauses_html),
         signature: {
-          signedByName: profile.name ?? "Profissional",
-          signedAtLabel: new Date(signedAt).toLocaleString("pt-BR"),
-          verificationCode,
-          verificationUrl: buildVerificationUrl(verificationCode),
           localityLine: buildSignatureLocalityLine(city ?? null, state ?? null, new Date(signedAt)),
           contratanteName: patient.name,
           contratadaName: contratadaName ?? "Profissional",
@@ -139,7 +301,7 @@ export const signPatientContractAction = authActionClient
           signed_user_agent: signedUserAgent,
           content_hash: contentHash,
           verification_code: verificationCode,
-          signed_document_id: document.id,
+          original_document_id: document.id,
         })
         .eq("id", contractId);
 
@@ -155,17 +317,84 @@ export const signPatientContractAction = authActionClient
         throw new Error("Erro ao assinar contrato. Tente novamente.");
       }
 
-      revalidatePath(`/patients/${patientId}/profile`);
+      const { error: signatureInsertError } = await supabase.from("contract_signatures").insert({
+        contract_id: contractId,
+        signer_role: "professional",
+        signer_id: user.id,
+        signed_at: signedAt,
+        signed_ip: signedIp,
+        signed_user_agent: signedUserAgent,
+        verification_code: verificationCode,
+      });
 
-      sendWhatsAppToUser({ recipientType: "patient", recipientId: patientId }, "contract_signed", {
-        patientName: patient.name,
+      if (signatureInsertError) {
+        console.error(
+          "[signPatientContractAction] failed to record contract_signatures row",
+          signatureInsertError,
+        );
+      }
+
+      // May or may not be the completing signature — the patient could have already
+      // signed before the professional (either order is allowed).
+      // generateFinalizedContractPdf itself checks whether both parties have now
+      // signed and no-ops (throws, caught here) otherwise. Best-effort: the
+      // professional's signature is already recorded and immutable regardless.
+      try {
+        await generateFinalizedContractPdf({
+          contract: {
+            id: contractId,
+            verification_code: verificationCode,
+            parties_details,
+            title,
+            clauses_html,
+            city: city ?? null,
+            state: state ?? null,
+            enterprise_id: profile.enterprise_id ?? null,
+            signed_at: signedAt,
+            signed_by: user.id,
+            content_hash: contentHash,
+            original_document_id: document.id,
+          },
+          patient: {
+            id: patientId,
+            name: patient.name,
+            email: patient.email,
+            cpf: patient.cpf,
+          },
+          supabaseAdmin,
+          uploaderId: user.id,
+        });
+      } catch (err) {
+        console.error("[signPatientContractAction] finalized PDF generation failed", err);
+      }
+
+      revalidatePath(`/patients/${patientId}/profile`);
+      revalidatePath("/home");
+
+      sendWhatsAppToUser(
+        { recipientType: "patient", recipientId: patientId },
+        "contract_ready_for_signature",
+        { patientName: patient.name },
+        { referenceType: "contract", referenceId: contractId },
+      ).catch((err) => {
+        console.error("[whatsapp] contract_ready_for_signature send failed", err);
+      });
+
+      enqueueNotification({
+        queueName: "push_notifications",
+        notificationType: "contract_ready_for_signature",
+        referenceType: "contract",
+        referenceId: contractId,
+        recipientType: "patient",
+        recipientId: patientId,
       }).catch((err) => {
-        console.error("[whatsapp] contract_signed send failed", err);
+        console.error("[push] contract_ready_for_signature enqueue failed", err);
       });
 
       await captureServerEvent(user.id, "sign_patient_contract", {
         patient_id: patientId,
         contract_id: contractId,
+        signed: true,
       });
 
       return { success: true };

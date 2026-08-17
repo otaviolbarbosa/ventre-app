@@ -1,11 +1,12 @@
 "use client";
 
+import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action";
 import { saveBaseContractAction } from "@/actions/save-base-contract-action";
 import { Header } from "@/components/layouts/header";
-import { ContractSignaturePreview } from "@/components/shared/contract-signature-preview";
 import { SaveContractChoiceModal } from "@/components/shared/save-contract-choice-modal";
 import { SaveNewTemplateModal } from "@/components/shared/save-new-template-modal";
 import { ESTADOS_BR } from "@/lib/constants";
+import { NAO_INFORMADO, buildContractHeaderBlocks } from "@/lib/contract-header-text";
 import type { ContractHeaderData } from "@/services/base-contract";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
@@ -13,11 +14,30 @@ import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
-import { Eraser, Eye, Save } from "lucide-react";
+import { Eraser, Eye, LoaderCircle, Save } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const PdfViewer = dynamic(() => import("@/components/shared/pdf-viewer").then((m) => m.PdfViewer), {
+  ssr: false,
+  loading: () => <p className="text-muted-foreground text-sm">Carregando visualizador...</p>,
+});
+
+// "name"/"phone" are NOT NULL columns on patients, so we fill them with the same
+// placeholder text used for the nullable fields instead of leaving them blank.
+const PLACEHOLDER_PATIENT = {
+  name: NAO_INFORMADO,
+  email: null,
+  phone: NAO_INFORMADO,
+  date_of_birth: null,
+  rg: null,
+  cpf: null,
+  marital_status: null,
+  occupation: null,
+} as const;
 
 const DEFAULT_TITLE = "CONTRATO DE PRESTAÇÃO DE SERVIÇOS";
 
@@ -37,11 +57,43 @@ export default function ContractSettingsScreen({
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [previewPdfBase64, setPreviewPdfBase64] = useState<string | null>(null);
   const [showSaveChoiceModal, setShowSaveChoiceModal] = useState(false);
   const [showSaveNewModal, setShowSaveNewModal] = useState(false);
   const pendingActionRef = useRef<"edit" | "create" | null>(null);
 
   const hasContracts = useMemo(() => contracts.length > 0, [contracts]);
+
+  const { executeAsync: previewContractPdfAsync, isExecuting: isLoadingPreviewPdf } =
+    useAction(previewContractPdfAction);
+
+  const contratadaName =
+    headerData.type === "enterprise" && headerData.enterprise
+      ? (headerData.enterprise.legal_name ?? headerData.enterprise.name)
+      : headerData.type === "autonomous"
+        ? headerData.user.name
+        : null;
+
+  async function handleOpenPreview() {
+    const headerBlocks = buildContractHeaderBlocks(PLACEHOLDER_PATIENT, null, headerData);
+    const res = await previewContractPdfAsync({
+      headerBlocks,
+      title,
+      clausesHtml,
+      signaturePreview: {
+        city: city || null,
+        state: state || null,
+        contratanteName: "[Nome da gestante]",
+        contratadaName,
+      },
+    });
+    if (res?.data?.pdfBase64) {
+      setPreviewPdfBase64(res.data.pdfBase64);
+      setShowPreview(true);
+    } else {
+      toast.error(res?.serverError ?? "Erro ao gerar pré-visualização do contrato");
+    }
+  }
 
   function handleNewContract() {
     setSelectedId("");
@@ -88,16 +140,28 @@ export default function ContractSettingsScreen({
         back="/settings"
       />
       <div className="flex flex-1 flex-col overflow-hidden p-4 pt-0 md:p-6 md:pt-0">
-        <div className="mb-4 flex shrink-0 justify-end">
-          <Button variant="outline" className="hidden sm:flex" onClick={() => setShowPreview(true)}>
-            <Eye className="size-4" />
-            <span className="ml-1 hidden sm:inline">Preview</span>
+        <div className="mb-4 flex shrink-0 justify-end gap-2">
+          <Button
+            variant="outline"
+            className="hidden sm:flex"
+            disabled={isLoadingPreviewPdf}
+            onClick={handleOpenPreview}
+          >
+            {isLoadingPreviewPdf ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+            <span className="ml-1 hidden sm:inline">
+              {isLoadingPreviewPdf ? "Gerando pré-visualização..." : "Pré-visualizar"}
+            </span>
           </Button>
           <Button
             size="icon"
             variant="outline"
             className="flex justify-center sm:hidden"
-            onClick={() => setShowPreview(true)}
+            disabled={isLoadingPreviewPdf}
+            onClick={handleOpenPreview}
           >
             <Eye className="size-4" />
           </Button>
@@ -208,18 +272,19 @@ export default function ContractSettingsScreen({
 
       <ContentModal
         open={showPreview}
-        onOpenChange={setShowPreview}
-        title="Preview do Contrato"
-        description="Visualização com cabeçalho auto-gerado e cláusulas atuais"
+        onOpenChange={(open) => {
+          setShowPreview(open);
+          if (!open) setPreviewPdfBase64(null);
+        }}
+        title="Pré-visualização do Contrato"
+        description="Contrato com cabeçalho auto-gerado e cláusulas atuais"
         contentClassName="sm:max-w-[900px]"
       >
-        <ContractPreview
-          headerData={headerData}
-          title={title}
-          clausesHtml={clausesHtml}
-          city={city}
-          state={state}
-        />
+        {previewPdfBase64 ? (
+          <PdfViewer source={{ base64: previewPdfBase64 }} />
+        ) : (
+          <p className="text-muted-foreground text-sm">Carregando...</p>
+        )}
       </ContentModal>
 
       <SaveContractChoiceModal
@@ -259,105 +324,6 @@ export default function ContractSettingsScreen({
           });
         }}
       />
-    </div>
-  );
-}
-
-function ContractPreview({
-  headerData,
-  title,
-  clausesHtml,
-  city,
-  state,
-}: {
-  headerData: ContractHeaderData;
-  title: string;
-  clausesHtml: string;
-  city: string;
-  state: string;
-}) {
-  const na = "[não informado]";
-
-  const contratadaName =
-    headerData.type === "enterprise" && headerData.enterprise
-      ? (headerData.enterprise.legal_name ?? headerData.enterprise.name)
-      : headerData.type === "autonomous"
-        ? headerData.user.name
-        : null;
-
-  const contratadaBlock =
-    headerData.type === "enterprise" && headerData.enterprise
-      ? [
-          `${headerData.enterprise.legal_name ?? headerData.enterprise.name ?? na}, pessoa jurídica de direito privado,`,
-          `inscrita no CNPJ sob nº ${headerData.enterprise.cnpj ?? na},`,
-          `com sede à ${[headerData.enterprise.street, headerData.enterprise.number, headerData.enterprise.neighborhood, headerData.enterprise.city, headerData.enterprise.state].filter(Boolean).join(", ") || na},`,
-          "doravante denominada simplesmente EQUIPE CONTRATADA.",
-        ].join(" ")
-      : headerData.type === "autonomous"
-        ? [
-            `${headerData.user.name ?? na}, ${headerData.user.professional_type ?? na},`,
-            `CPF: ${headerData.user.personal_documents?.cpf ?? na}, RG: ${
-              headerData.user.personal_documents?.rg ?? na
-            }${
-              headerData.user.personal_documents?.rg_issuing_body
-                ? ` (${headerData.user.personal_documents.rg_issuing_body})`
-                : ""
-            },`,
-            `${headerData.user.email ?? na}, telefone: ${headerData.user.phone ?? na},`,
-            `residente e domiciliado(a) à ${
-              [
-                headerData.user.address?.street,
-                headerData.user.address?.number,
-                headerData.user.address?.neighborhood,
-                headerData.user.address?.city,
-                headerData.user.address?.state,
-              ]
-                .filter(Boolean)
-                .join(", ") || na
-            },`,
-            "doravante denominada simplesmente EQUIPE CONTRATADA.",
-          ].join(" ")
-        : na;
-
-  return (
-    <div className="flex overflow-x-auto bg-muted/30 py-4">
-      <div className="w-[794px] shrink-0 bg-white px-10 py-14 text-black text-sm shadow-md">
-        <div>
-          <div className="mb-6 pb-4">
-            <p className="font-semibold text-lg">{title}</p>
-          </div>
-
-          <div className="mb-6 rounded-sm border border-gray-300 border-dashed bg-gray-50 p-4 text-gray-400 italic">
-            <p className="font-medium text-gray-700 not-italic">CONTRATANTE:</p>
-            <p>[dados da gestante — preenchidos automaticamente ao gerar contrato por paciente]</p>
-          </div>
-
-          <div className="mb-4 border-gray-200 border-b pb-4">
-            <p className="font-semibold">CONTRATADA:</p>
-            <p className="mt-1 whitespace-pre-wrap">{contratadaBlock}</p>
-          </div>
-
-          <div className="mb-6 rounded-sm border border-gray-300 border-dashed bg-gray-50 p-4 text-gray-400 italic">
-            <p className="font-medium text-gray-700 not-italic">EQUIPE CONTRATADA:</p>
-            <p>[membros da equipe — preenchidos automaticamente ao gerar contrato por paciente]</p>
-          </div>
-
-          <div
-            className="[&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_em]:italic [&_h1]:mb-2 [&_h1]:font-bold [&_h1]:text-2xl [&_h2]:mb-2 [&_h2]:font-semibold [&_h2]:text-xl [&_h3]:mb-1 [&_h3]:font-semibold [&_h3]:text-lg [&_li]:ml-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-6"
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: keep it for now
-            dangerouslySetInnerHTML={{
-              __html: clausesHtml || "<p><em>Nenhuma cláusula adicionada ainda.</em></p>",
-            }}
-          />
-
-          <ContractSignaturePreview
-            city={city || null}
-            state={state || null}
-            contratanteName="[Nome da gestante]"
-            contratadaName={contratadaName}
-          />
-        </div>
-      </div>
     </div>
   );
 }

@@ -260,7 +260,7 @@ type StatusConfig = {
 const statusConfigs: Record<BillingStatus | InstallmentStatus, StatusConfig> = {
   pendente: { label: "A Receber", variant: "warning" },
   pago: { label: "Pago", variant: "success" },
-  atrasado: { label: "Atrasado", variant: "destructive" },
+  atrasado: { label: "Vencida", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },
   em_analise: { label: "Em Análise", variant: "default" },
 };

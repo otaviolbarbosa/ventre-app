@@ -135,6 +135,18 @@ export function getNotificationTemplate(
       title: "Vacina atualizada",
       body: `Vacina de ${params.patientName} atualizada.`,
     }),
+    contract_ready_for_signature: () => ({
+      title: "Contrato pronto para assinatura",
+      body: "Seu contrato de acompanhamento está pronto para você assinar.",
+    }),
+    contract_change_requested: () => ({
+      title: "Alteração solicitada no contrato",
+      body: `${params.patientName} solicitou uma alteração no contrato.`,
+    }),
+    contract_fully_signed: () => ({
+      title: "Contrato assinado por ambas as partes",
+      body: `O contrato de ${params.patientName} foi assinado por você e pela gestante.`,
+    }),
   };
 
   return templates[type]();

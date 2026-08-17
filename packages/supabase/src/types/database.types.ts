@@ -317,6 +317,122 @@ export type Database = {
           },
         ]
       }
+      contract_change_requests: {
+        Row: {
+          contract_id: string
+          created_at: string
+          id: string
+          message_html: string
+          patient_id: string
+          requested_by: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          id?: string
+          message_html: string
+          patient_id: string
+          requested_by: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          id?: string
+          message_html?: string
+          patient_id?: string
+          requested_by?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_change_requests_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_change_requests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_change_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_change_requests_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_signatures: {
+        Row: {
+          contract_id: string
+          created_at: string
+          id: string
+          signed_at: string
+          signed_ip: string | null
+          signed_user_agent: string | null
+          signer_id: string
+          signer_role: string
+          verification_code: string | null
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          id?: string
+          signed_at?: string
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          signer_id: string
+          signer_role: string
+          verification_code?: string | null
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          id?: string
+          signed_at?: string
+          signed_ip?: string | null
+          signed_user_agent?: string | null
+          signer_id?: string
+          signer_role?: string
+          verification_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signatures_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_signatures_signer_id_fkey"
+            columns: ["signer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           city: string | null
@@ -324,17 +440,22 @@ export type Database = {
           content_hash: string | null
           created_at: string
           enterprise_id: string | null
+          finalized_content_hash: string | null
+          finalized_document_id: string | null
+          fully_signed_at: string | null
           id: string
           is_active: boolean | null
           is_base_contract: boolean
           is_signed: boolean
           name: string | null
+          original_document_id: string | null
           parties_details: Json | null
           patient_id: string | null
           pregnancy_id: string | null
+          revoked_at: string | null
+          revoked_by: string | null
           signed_at: string | null
           signed_by: string | null
-          signed_document_id: string | null
           signed_ip: string | null
           signed_user_agent: string | null
           state: string | null
@@ -349,17 +470,22 @@ export type Database = {
           content_hash?: string | null
           created_at?: string
           enterprise_id?: string | null
+          finalized_content_hash?: string | null
+          finalized_document_id?: string | null
+          fully_signed_at?: string | null
           id?: string
           is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
           name?: string | null
+          original_document_id?: string | null
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           signed_at?: string | null
           signed_by?: string | null
-          signed_document_id?: string | null
           signed_ip?: string | null
           signed_user_agent?: string | null
           state?: string | null
@@ -374,17 +500,22 @@ export type Database = {
           content_hash?: string | null
           created_at?: string
           enterprise_id?: string | null
+          finalized_content_hash?: string | null
+          finalized_document_id?: string | null
+          fully_signed_at?: string | null
           id?: string
           is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
           name?: string | null
+          original_document_id?: string | null
           parties_details?: Json | null
           patient_id?: string | null
           pregnancy_id?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
           signed_at?: string | null
           signed_by?: string | null
-          signed_document_id?: string | null
           signed_ip?: string | null
           signed_user_agent?: string | null
           state?: string | null
@@ -402,6 +533,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contracts_finalized_document_id_fkey"
+            columns: ["finalized_document_id"]
+            isOneToOne: false
+            referencedRelation: "patient_documents"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contracts_patient_id_fkey"
             columns: ["patient_id"]
             isOneToOne: false
@@ -416,6 +554,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contracts_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contracts_signed_by_fkey"
             columns: ["signed_by"]
             isOneToOne: false
@@ -424,7 +569,7 @@ export type Database = {
           },
           {
             foreignKeyName: "contracts_signed_document_id_fkey"
-            columns: ["signed_document_id"]
+            columns: ["original_document_id"]
             isOneToOne: false
             referencedRelation: "patient_documents"
             referencedColumns: ["id"]
@@ -613,57 +758,6 @@ export type Database = {
             columns: ["billing_id"]
             isOneToOne: false
             referencedRelation: "billings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      installments_scheduled_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          installment_id: string
-          scheduled_for: string
-          sent_at: string | null
-          status: Database["public"]["Enums"]["installments_notification_status"]
-          type: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          installment_id: string
-          scheduled_for: string
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["installments_notification_status"]
-          type: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          installment_id?: string
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["installments_notification_status"]
-          type?: Database["public"]["Enums"]["installments_notification_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "installments_scheduled_notifications_installment_id_fkey"
-            columns: ["installment_id"]
-            isOneToOne: false
-            referencedRelation: "installments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "installments_scheduled_notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1735,39 +1829,6 @@ export type Database = {
           },
         ]
       }
-      scheduled_notifications: {
-        Row: {
-          created_at: string
-          id: string
-          notification_type: Database["public"]["Enums"]["notification_type"]
-          payload: Json | null
-          processed_at: string | null
-          reference_id: string
-          reference_type: string
-          scheduled_for: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          notification_type: Database["public"]["Enums"]["notification_type"]
-          payload?: Json | null
-          processed_at?: string | null
-          reference_id: string
-          reference_type: string
-          scheduled_for: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          notification_type?: Database["public"]["Enums"]["notification_type"]
-          payload?: Json | null
-          processed_at?: string | null
-          reference_id?: string
-          reference_type?: string
-          scheduled_for?: string
-        }
-        Relationships: []
-      }
       subscriptions: {
         Row: {
           cancelation_reason: string | null
@@ -2295,7 +2356,6 @@ export type Database = {
         Returns: number
       }
       process_notification_queues: { Args: never; Returns: undefined }
-      process_scheduled_notifications: { Args: never; Returns: undefined }
       requeue_with_backoff: {
         Args: { p_msg_id: number; p_queue_name: string; p_read_ct: number }
         Returns: undefined
@@ -2339,17 +2399,7 @@ export type Database = {
         | "atrasado"
         | "cancelado"
         | "em_analise"
-      installments_notification_status:
-        | "pending"
-        | "sent"
-        | "cancelled"
-        | "failed"
-      installments_notification_type:
-        | "due_in_7_days"
-        | "due_in_3_days"
-        | "due_today"
-        | "overdue"
-      notification_channel: "push" | "whatsapp"
+      notification_channel: "push" | "whatsapp" | "email"
       notification_log_status:
         | "sent"
         | "delivered"
@@ -2378,6 +2428,9 @@ export type Database = {
         | "other_exam_added"
         | "ultrasound_added"
         | "vaccine_updated"
+        | "contract_ready_for_signature"
+        | "contract_change_requested"
+        | "contract_fully_signed"
       payment_method:
         | "credito"
         | "debito"
@@ -2552,19 +2605,7 @@ export const Constants = {
         "cancelado",
         "em_analise",
       ],
-      installments_notification_status: [
-        "pending",
-        "sent",
-        "cancelled",
-        "failed",
-      ],
-      installments_notification_type: [
-        "due_in_7_days",
-        "due_in_3_days",
-        "due_today",
-        "overdue",
-      ],
-      notification_channel: ["push", "whatsapp"],
+      notification_channel: ["push", "whatsapp", "email"],
       notification_log_status: [
         "sent",
         "delivered",
@@ -2594,6 +2635,9 @@ export const Constants = {
         "other_exam_added",
         "ultrasound_added",
         "vaccine_updated",
+        "contract_ready_for_signature",
+        "contract_change_requested",
+        "contract_fully_signed",
       ],
       payment_method: [
         "credito",

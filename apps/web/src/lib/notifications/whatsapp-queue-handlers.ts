@@ -30,14 +30,19 @@ async function handleAppointmentReminder(
     .select("date, time, status, patient:patients!appointments_patient_id_fkey(name)")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
   if (!appointment || appointment.status !== "agendada") return { action: "skip" };
 
   const patient = appointment.patient as unknown as { name: string } | null;
   return {
     action: "send",
     recipient: recipientOf(notification),
-    templateParams: { patientName: patient?.name ?? "", date: appointment.date, time: appointment.time },
+    templateParams: {
+      patientName: patient?.name ?? "",
+      date: appointment.date,
+      time: appointment.time,
+    },
   };
 }
 
@@ -47,10 +52,13 @@ async function handleAppointmentUnconfirmed(
 ): Promise<WhatsAppQueueHandlerResult> {
   const { data: appointment, error } = await supabaseAdmin
     .from("appointments")
-    .select("date, time, status, confirmed_by_patient_at, patient:patients!appointments_patient_id_fkey(name)")
+    .select(
+      "date, time, status, confirmed_by_patient_at, patient:patients!appointments_patient_id_fkey(name)",
+    )
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
   if (!appointment || appointment.status !== "agendada" || appointment.confirmed_by_patient_at) {
     return { action: "skip" };
   }
@@ -59,7 +67,11 @@ async function handleAppointmentUnconfirmed(
   return {
     action: "send",
     recipient: recipientOf(notification),
-    templateParams: { patientName: patient?.name ?? "", date: appointment.date, time: appointment.time },
+    templateParams: {
+      patientName: patient?.name ?? "",
+      date: appointment.date,
+      time: appointment.time,
+    },
   };
 }
 
@@ -72,12 +84,14 @@ async function handleInstallmentPaymentReminder(
     .select("due_date, status, billing:billings(patient:patients(name))")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar parcela ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar parcela ${notification.referenceId}: ${error.message}`);
   if (!installment || (installment.status !== "pendente" && installment.status !== "atrasado")) {
     return { action: "skip" };
   }
 
-  const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)?.patient;
+  const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)
+    ?.patient;
   const status = installment.status === "atrasado" ? "vencida" : "vencendo";
   return {
     action: "send",
@@ -95,10 +109,12 @@ async function handleInstallmentUnderReviewStalled(
     .select("status, billing:billings(patient:patients(name))")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar parcela ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar parcela ${notification.referenceId}: ${error.message}`);
   if (!installment || installment.status !== "em_analise") return { action: "skip" };
 
-  const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)?.patient;
+  const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)
+    ?.patient;
   return {
     action: "send",
     recipient: recipientOf(notification),
@@ -115,7 +131,8 @@ async function handleDppApproaching(
     .select("name")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
   if (!patient) return { action: "skip" };
 
   const { data: pregnancy, error: pregnancyError } = await supabaseAdmin
@@ -127,7 +144,9 @@ async function handleDppApproaching(
     .limit(1)
     .maybeSingle();
   if (pregnancyError) {
-    throw new Error(`Falha ao buscar gestação de ${notification.referenceId}: ${pregnancyError.message}`);
+    throw new Error(
+      `Falha ao buscar gestação de ${notification.referenceId}: ${pregnancyError.message}`,
+    );
   }
   if (!pregnancy?.due_date) return { action: "skip" };
 
@@ -148,7 +167,8 @@ async function handleDppPassedNoBirthRecord(
     .select("name")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
   if (!patient) return { action: "skip" };
 
   const { data: pregnancy, error: pregnancyError } = await supabaseAdmin
@@ -160,9 +180,15 @@ async function handleDppPassedNoBirthRecord(
     .limit(1)
     .maybeSingle();
   if (pregnancyError) {
-    throw new Error(`Falha ao buscar gestação de ${notification.referenceId}: ${pregnancyError.message}`);
+    throw new Error(
+      `Falha ao buscar gestação de ${notification.referenceId}: ${pregnancyError.message}`,
+    );
   }
-  if (!pregnancy?.due_date || pregnancy.born_at || !dayjs(pregnancy.due_date).isBefore(dayjs(), "day")) {
+  if (
+    !pregnancy?.due_date ||
+    pregnancy.born_at ||
+    !dayjs(pregnancy.due_date).isBefore(dayjs(), "day")
+  ) {
     return { action: "skip" };
   }
 
@@ -182,7 +208,8 @@ async function handlePrenatalFollowupGap(
     .select("name")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar gestante ${notification.referenceId}: ${error.message}`);
   if (!patient) return { action: "skip" };
 
   const { data: lastVisit, error: lastVisitError } = await supabaseAdmin
@@ -194,7 +221,9 @@ async function handlePrenatalFollowupGap(
     .limit(1)
     .maybeSingle();
   if (lastVisitError) {
-    throw new Error(`Falha ao buscar última consulta de ${notification.referenceId}: ${lastVisitError.message}`);
+    throw new Error(
+      `Falha ao buscar última consulta de ${notification.referenceId}: ${lastVisitError.message}`,
+    );
   }
   if (!lastVisit) return { action: "skip" };
 
@@ -205,7 +234,9 @@ async function handlePrenatalFollowupGap(
     .eq("status", "agendada")
     .gte("date", dayjs().format("YYYY-MM-DD"));
   if (upcomingCountError) {
-    throw new Error(`Falha ao buscar consultas futuras de ${notification.referenceId}: ${upcomingCountError.message}`);
+    throw new Error(
+      `Falha ao buscar consultas futuras de ${notification.referenceId}: ${upcomingCountError.message}`,
+    );
   }
   if ((upcomingCount ?? 0) > 0) return { action: "skip" };
 
@@ -228,7 +259,8 @@ async function handleContractPendingSignature(
     .select("is_signed, is_active, patient:patients(name)")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar contrato ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar contrato ${notification.referenceId}: ${error.message}`);
   if (!contract || contract.is_signed || !contract.is_active) return { action: "skip" };
 
   const patient = contract.patient as unknown as { name: string } | null;
@@ -248,7 +280,8 @@ async function handleDailyAgendaSummary(
     .select("name")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar profissional ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar profissional ${notification.referenceId}: ${error.message}`);
   if (!professional) return { action: "skip" };
 
   const { count, error: countError } = await supabaseAdmin
@@ -258,7 +291,9 @@ async function handleDailyAgendaSummary(
     .eq("status", "agendada")
     .eq("date", dayjs().format("YYYY-MM-DD"));
   if (countError) {
-    throw new Error(`Falha ao buscar agenda do profissional ${notification.referenceId}: ${countError.message}`);
+    throw new Error(
+      `Falha ao buscar agenda do profissional ${notification.referenceId}: ${countError.message}`,
+    );
   }
   if (!count) return { action: "skip" };
 
@@ -278,7 +313,8 @@ async function handlePaymentReceived(
     .select("paid_amount, installment:installments(billing:billings(patient:patients(name)))")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar pagamento ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar pagamento ${notification.referenceId}: ${error.message}`);
   if (!payment) return { action: "skip" };
 
   const patient = (
@@ -294,7 +330,9 @@ async function handlePaymentReceived(
     .eq("id", notification.recipientId)
     .maybeSingle();
   if (professionalError) {
-    throw new Error(`Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`);
+    throw new Error(
+      `Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`,
+    );
   }
 
   return {
@@ -317,7 +355,8 @@ async function handleMonthlyBillingReport(
     .select("name")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar profissional ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar profissional ${notification.referenceId}: ${error.message}`);
   if (!professional) return { action: "skip" };
 
   const monthStart = dayjs().subtract(1, "month").startOf("month");
@@ -330,7 +369,9 @@ async function handleMonthlyBillingReport(
     .gte("created_at", monthStart.toISOString())
     .lte("created_at", monthEnd.toISOString());
   if (billingsError) {
-    throw new Error(`Falha ao buscar faturamento do profissional ${notification.referenceId}: ${billingsError.message}`);
+    throw new Error(
+      `Falha ao buscar faturamento do profissional ${notification.referenceId}: ${billingsError.message}`,
+    );
   }
 
   const total = (billings ?? []).reduce((sum, b) => sum + (b.paid_amount ?? 0), 0);
@@ -356,23 +397,30 @@ async function handleInstallmentOverdueProfessional(
     .select("status, billing:billings(patient:patients(name))")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar parcela ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar parcela ${notification.referenceId}: ${error.message}`);
   if (!installment || installment.status !== "atrasado") return { action: "skip" };
 
-  const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)?.patient;
+  const patient = (installment.billing as unknown as { patient: { name: string } | null } | null)
+    ?.patient;
   const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
     .select("name")
     .eq("id", notification.recipientId)
     .maybeSingle();
   if (professionalError) {
-    throw new Error(`Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`);
+    throw new Error(
+      `Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`,
+    );
   }
 
   return {
     action: "send",
     recipient: recipientOf(notification),
-    templateParams: { professionalName: professional?.name ?? "", patientName: patient?.name ?? "" },
+    templateParams: {
+      professionalName: professional?.name ?? "",
+      patientName: patient?.name ?? "",
+    },
   };
 }
 
@@ -385,7 +433,8 @@ async function handleAppointmentLastMinuteCancel(
     .select("date, time, status, patient:patients!appointments_patient_id_fkey(name)")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
+  if (error)
+    throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
   if (!appointment || appointment.status !== "cancelada") return { action: "skip" };
 
   const patient = appointment.patient as unknown as { name: string } | null;
@@ -395,7 +444,9 @@ async function handleAppointmentLastMinuteCancel(
     .eq("id", notification.recipientId)
     .maybeSingle();
   if (professionalError) {
-    throw new Error(`Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`);
+    throw new Error(
+      `Falha ao buscar profissional ${notification.recipientId}: ${professionalError.message}`,
+    );
   }
 
   return {
@@ -419,8 +470,10 @@ async function handleTeamInvitePending(
     .select("status, invited_professional_id")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar convite ${notification.referenceId}: ${error.message}`);
-  if (!invite || invite.status !== "pending" || !invite.invited_professional_id) return { action: "skip" };
+  if (error)
+    throw new Error(`Falha ao buscar convite ${notification.referenceId}: ${error.message}`);
+  if (!invite || invite.status !== "pending" || !invite.invited_professional_id)
+    return { action: "skip" };
 
   const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
@@ -428,7 +481,9 @@ async function handleTeamInvitePending(
     .eq("id", invite.invited_professional_id)
     .maybeSingle();
   if (professionalError) {
-    throw new Error(`Falha ao buscar profissional ${invite.invited_professional_id}: ${professionalError.message}`);
+    throw new Error(
+      `Falha ao buscar profissional ${invite.invited_professional_id}: ${professionalError.message}`,
+    );
   }
 
   return {
@@ -447,8 +502,10 @@ async function handleSubscriptionBillingIssue(
     .select("status, user_id")
     .eq("id", notification.referenceId)
     .maybeSingle();
-  if (error) throw new Error(`Falha ao buscar assinatura ${notification.referenceId}: ${error.message}`);
-  if (!subscription || !subscription.user_id || subscription.status !== "failed") return { action: "skip" };
+  if (error)
+    throw new Error(`Falha ao buscar assinatura ${notification.referenceId}: ${error.message}`);
+  if (!subscription || !subscription.user_id || subscription.status !== "failed")
+    return { action: "skip" };
 
   const { data: professional, error: professionalError } = await supabaseAdmin
     .from("users")
@@ -456,7 +513,9 @@ async function handleSubscriptionBillingIssue(
     .eq("id", subscription.user_id)
     .maybeSingle();
   if (professionalError) {
-    throw new Error(`Falha ao buscar profissional ${subscription.user_id}: ${professionalError.message}`);
+    throw new Error(
+      `Falha ao buscar profissional ${subscription.user_id}: ${professionalError.message}`,
+    );
   }
 
   return {
@@ -466,7 +525,40 @@ async function handleSubscriptionBillingIssue(
   };
 }
 
-export const WHATSAPP_QUEUE_HANDLERS: Partial<Record<WhatsAppNotificationType, WhatsAppQueueHandler>> = {
+async function handlePatientInviteLink(
+  supabaseAdmin: SupabaseAdmin,
+  notification: DequeuedNotification,
+): Promise<WhatsAppQueueHandlerResult> {
+  const { data: invite, error } = await supabaseAdmin
+    .from("patient_invite_links")
+    .select("id, name, phone, used_at, expires_at")
+    .eq("id", notification.referenceId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`Falha ao buscar convite ${notification.referenceId}: ${error.message}`);
+  }
+  if (
+    !invite ||
+    !invite.phone ||
+    invite.used_at ||
+    (invite.expires_at && dayjs(invite.expires_at).isBefore(dayjs()))
+  ) {
+    return { action: "skip" };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const inviteLink = `${appUrl}/patient-registration?piid=${invite.id}`;
+
+  return {
+    action: "send",
+    recipient: recipientOf(notification),
+    templateParams: { patientName: invite.name ?? "Gestante", inviteLink },
+  };
+}
+
+export const WHATSAPP_QUEUE_HANDLERS: Partial<
+  Record<WhatsAppNotificationType, WhatsAppQueueHandler>
+> = {
   appointment_reminder: handleAppointmentReminder,
   appointment_unconfirmed: handleAppointmentUnconfirmed,
   installment_payment_reminder: handleInstallmentPaymentReminder,
@@ -482,4 +574,6 @@ export const WHATSAPP_QUEUE_HANDLERS: Partial<Record<WhatsAppNotificationType, W
   appointment_last_minute_cancel: handleAppointmentLastMinuteCancel,
   team_invite_pending: handleTeamInvitePending,
   subscription_billing_issue: handleSubscriptionBillingIssue,
+  patient_self_registration_invite: handlePatientInviteLink,
+  patient_link_existing_invite: handlePatientInviteLink,
 };

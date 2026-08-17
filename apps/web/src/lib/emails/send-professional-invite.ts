@@ -1,4 +1,4 @@
-import { resend } from "@/lib/resend";
+import { getResendClient } from "@/lib/resend";
 import { professionalTypeLabels } from "@/utils/team";
 
 type SendProfessionalInviteParams = {
@@ -18,7 +18,7 @@ export async function sendProfessionalInvite({
 }: SendProfessionalInviteParams) {
   const typeLabel = professionalTypeLabels[professional_type] ?? professional_type;
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResendClient().emails.send({
     from: "Ventre <naoresponda@ventre.app>",
     to,
     subject: `${enterpriseName} te convidou para o Ventre`,

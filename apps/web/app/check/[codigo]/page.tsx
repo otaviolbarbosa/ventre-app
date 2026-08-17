@@ -172,11 +172,7 @@ export default function CheckContractPage({
               <div className="h-px w-16 rounded-full bg-border" />
 
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Assinado eletronicamente por{" "}
-                <span className="font-semibold text-primary">
-                  {result?.signedByName ?? "Profissional"}
-                </span>{" "}
-                em{" "}
+                Assinado eletronicamente em{" "}
                 {result?.signedAt
                   ? new Date(result.signedAt).toLocaleString("pt-BR")
                   : "data desconhecida"}

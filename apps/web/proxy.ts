@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest) {
     "/policies",
     "/check/",
     "/auth/callback",
-    "/register/patient",
+    "/patient-registration",
     "/api/stripe/webhook",
     "/api/check/",
     "/api/cron/",
@@ -96,6 +96,7 @@ export async function proxy(request: NextRequest) {
     }
 
     const isOnboardingComplete =
+      profile?.user_type === "patient" ||
       (profile?.user_type === "professional" && profile?.professional_type !== null) ||
       (isStaff && hasEnterprise);
 
@@ -124,6 +125,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|sw\\.js|firebase-messaging-sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|sw\\.js|firebase-messaging-sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mjs)$).*)",
   ],
 };

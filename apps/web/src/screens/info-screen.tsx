@@ -8,7 +8,9 @@ export default function InfoScreen() {
     <div className="flex flex-col gap-4 px-4 py-6">
       <div className="flex flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center">
         <h2 className="font-semibold text-lg">{APP_NAME}</h2>
-        <p className="text-muted-foreground text-sm">Gestão de Saúde para Profissionais de Saúde e Gestantes</p>
+        <p className="text-muted-foreground text-sm">
+          Gestão de Saúde para Profissionais de Saúde e Gestantes
+        </p>
       </div>
 
       <div className="rounded-xl border bg-card p-4">

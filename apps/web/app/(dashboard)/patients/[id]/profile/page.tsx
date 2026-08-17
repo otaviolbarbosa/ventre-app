@@ -10,12 +10,13 @@ import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
+import InviteExistingPatientModal from "@/modals/invite-existing-patient-modal";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { CalendarPlus, CheckCircle2, SearchX, Trash2 } from "lucide-react";
+import { CalendarPlus, CheckCircle2, HeartHandshake, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,6 +26,7 @@ export default function PatientProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showInvitePatientModal, setShowInvitePatientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const { confirm } = useConfirmModal();
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
@@ -75,6 +77,19 @@ export default function PatientProfilePage() {
   return (
     <>
       <div className="space-y-6">
+        {!patient.user_id && (
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => setShowInvitePatientModal(true)}
+            >
+              <HeartHandshake className="mr-2 h-4 w-4" />
+              Convidar Gestante
+            </Button>
+          </div>
+        )}
+
         <div className="flex justify-end">
           <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
             <CalendarPlus className="mr-2 h-4 w-4" />
@@ -179,6 +194,11 @@ export default function PatientProfilePage() {
         onSuccess={() => fetchPatient({ patientId })}
       />
 
+      <InviteExistingPatientModal
+        patient={patient}
+        isOpen={showInvitePatientModal}
+        setIsOpen={setShowInvitePatientModal}
+      />
       <NewAppointmentModal
         patientId={patientId}
         patients={[]}

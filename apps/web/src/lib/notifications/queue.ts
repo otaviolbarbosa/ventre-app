@@ -1,6 +1,6 @@
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
-export type QueueName = "push_notifications" | "whatsapp_notifications";
+export type QueueName = "push_notifications" | "whatsapp_notifications" | "email_notifications";
 
 export type DequeuedNotification = {
   msgId: number;
@@ -9,7 +9,7 @@ export type DequeuedNotification = {
   notificationType: string;
   referenceType: string;
   referenceId: string;
-  recipientType: "user" | "patient";
+  recipientType: "user" | "patient" | "invite";
   recipientId: string;
 };
 
@@ -18,7 +18,7 @@ export async function enqueueNotification(params: {
   notificationType: string;
   referenceType: string;
   referenceId: string;
-  recipientType: "user" | "patient";
+  recipientType: "user" | "patient" | "invite";
   recipientId: string;
   delaySeconds?: number;
   dedupKey?: string;
@@ -58,7 +58,7 @@ export async function dequeueNotifications(
       notification_type: string;
       reference_type: string;
       reference_id: string;
-      recipient_type: "user" | "patient";
+      recipient_type: "user" | "patient" | "invite";
       recipient_id: string;
     };
     return {
@@ -112,11 +112,11 @@ export async function getQueueLength(queueName: QueueName): Promise<number> {
 export async function deadLetterNotification(params: {
   queueName: QueueName;
   msgId: number;
-  channel: "push" | "whatsapp";
+  channel: "push" | "whatsapp" | "email";
   notificationType: string;
   referenceType: string;
   referenceId: string;
-  recipientType: "user" | "patient";
+  recipientType: "user" | "patient" | "invite";
   recipientId: string;
   reason: string;
 }): Promise<void> {
