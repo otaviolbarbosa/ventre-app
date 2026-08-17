@@ -53,13 +53,14 @@ export function Header({ title, back, subtitle, noBg = false }: HeaderProps) {
     >
       {!noBg && (
         <div
-          className="-z-10 pointer-events-none absolute inset-0 opacity-[0.02]"
+          className="-z-10 pointer-events-none absolute inset-0 opacity-[0.05]"
           style={{
             backgroundImage: `url(${bgFingerprint.src})`,
             backgroundRepeat: "repeat",
-            backgroundSize: "1600px",
-            backgroundPositionX: "-355px",
-            backgroundPositionY: "-100px",
+            backgroundSize: "1200px",
+            backgroundPositionX: "-335px",
+            backgroundPositionY: "-210px",
+            filter: "blur(4px)",
           }}
         />
       )}
