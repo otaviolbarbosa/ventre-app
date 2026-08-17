@@ -77,24 +77,26 @@ export default function PatientProfilePage() {
   return (
     <>
       <div className="space-y-6">
-        {!patient.user_id && (
+        <div className="flex justify-end gap-2">
+          {!patient.user_id && (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setShowInvitePatientModal(true)}
+              >
+                <HeartHandshake className="mr-2 h-4 w-4" />
+                Convidar Gestante
+              </Button>
+            </div>
+          )}
+
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => setShowInvitePatientModal(true)}
-            >
-              <HeartHandshake className="mr-2 h-4 w-4" />
-              Convidar Gestante
+            <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
+              <CalendarPlus className="mr-2 h-4 w-4" />
+              Novo Agendamento
             </Button>
           </div>
-        )}
-
-        <div className="flex justify-end">
-          <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
-            <CalendarPlus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
         </div>
 
         <Accordion type="multiple" className="w-full" defaultValue={["informacoes"]}>

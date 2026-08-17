@@ -6,7 +6,7 @@ import { dayjs } from "./dayjs";
 export const NAO_INFORMADO = "[não informado]";
 const na = NAO_INFORMADO;
 
-type PatientRow = Pick<
+export type PatientRow = Pick<
   Tables<"patients">,
   "name" | "email" | "phone" | "date_of_birth" | "rg" | "cpf" | "marital_status" | "occupation"
 >;
@@ -20,7 +20,7 @@ const MARITAL_STATUS_LABELS: Record<string, string> = {
 };
 type PregnancyRow = Pick<Tables<"pregnancies">, "due_date"> | null;
 
-type TeamMember = {
+export type TeamMember = {
   id: string;
   name: string | null;
   professional_type: string | null;
@@ -31,6 +31,55 @@ type TeamMember = {
 };
 
 type PersonalHeaderData = { type: "team-personal"; teamMembers: TeamMember[] };
+
+export type ContractPartyType = "patient" | "professional" | "team_member";
+
+export type ContractParty = {
+  type: ContractPartyType;
+  id: string;
+  name: string;
+  isCurrentUser: boolean;
+};
+
+function isFilled(value: string | null | undefined): boolean {
+  return !!value && value.trim().length > 0;
+}
+
+export function isPatientDataComplete(patient: PatientRow, pregnancy: PregnancyRow): boolean {
+  return (
+    isFilled(patient.name) &&
+    isFilled(patient.cpf) &&
+    isFilled(patient.rg) &&
+    isFilled(patient.marital_status) &&
+    isFilled(patient.occupation) &&
+    isFilled(patient.email) &&
+    isFilled(patient.phone) &&
+    !!pregnancy?.due_date
+  );
+}
+
+type PersonDataFields = {
+  name: string | null;
+  professional_type: string | null;
+  email: string | null;
+  phone: string | null;
+  personal_documents: PersonalDocumentsInput | null;
+  address: ContratadaAddress | null;
+};
+
+export function isPersonDataComplete(person: PersonDataFields): boolean {
+  return (
+    isFilled(person.name) &&
+    isFilled(person.professional_type) &&
+    isFilled(person.personal_documents?.cpf) &&
+    isFilled(person.personal_documents?.rg) &&
+    isFilled(person.email) &&
+    isFilled(person.phone) &&
+    isFilled(person.address?.street) &&
+    isFilled(person.address?.city) &&
+    isFilled(person.address?.state)
+  );
+}
 
 function formatTeamMemberBlock(m: TeamMember): string {
   return [

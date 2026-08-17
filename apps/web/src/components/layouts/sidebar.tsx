@@ -65,6 +65,8 @@ export function Sidebar() {
   }, []);
 
   const navigation = useMemo(() => {
+    if (!profile) return [];
+
     if (isPatient(profile)) return navigationPatient;
     if (isManager(profile)) return navigationManager;
     if (isStaff(profile)) return navigationStaff;

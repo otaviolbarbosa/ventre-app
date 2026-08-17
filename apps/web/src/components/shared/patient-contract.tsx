@@ -3,16 +3,23 @@
 import { createBaseContractFromPatientAction } from "@/actions/create-base-contract-from-patient-action";
 import { deactivatePatientContractAction } from "@/actions/deactivate-patient-contract-action";
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { getMyAddressAction } from "@/actions/get-my-address-action";
+import { getPatientAction } from "@/actions/get-patient-action";
 import { getPatientContractAction } from "@/actions/get-patient-contract-action";
 import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action";
 import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
 import { revokeContractAction } from "@/actions/revoke-contract-action";
 import { revokeContractSignaturesAction } from "@/actions/revoke-contract-signatures-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
+import { useAuth } from "@/hooks/use-auth";
 import { ESTADOS_BR } from "@/lib/constants";
-import type { ContractHeaderBlocks } from "@/lib/contract-header-text";
+import type { ContractHeaderBlocks, ContractParty } from "@/lib/contract-header-text";
 import { cn } from "@/lib/utils";
 import { patientContractFormSchema } from "@/lib/validations/contract";
+import { EditPatientModal } from "@/modals/edit-patient-modal";
+import { EditProfileModal } from "@/modals/edit-profile-modal";
+import type { PatientAddress, ProfessionalType } from "@/types";
+import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
@@ -23,10 +30,10 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Skeleton } from "@ventre/ui/skeleton";
 import DOMPurify from "isomorphic-dompurify";
-import { Download, Eye, LoaderCircle, Plus, Trash2 } from "lucide-react";
+import { Download, Eye, LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ContractSelector } from "./contract-selector";
 
@@ -62,6 +69,29 @@ type ChangeRequest = {
   requested_by: string;
 };
 
+type PatientForEdit = Tables<"patients"> & {
+  due_date?: string | null;
+  dum?: string | null;
+  observations?: string | null;
+  address?: PatientAddress | null;
+};
+
+type ProfileAddress = {
+  zipcode?: string | null;
+  street?: string | null;
+  number?: string | null;
+  complement?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  state?: string | null;
+};
+
+const PARTY_TYPE_LABELS: Record<ContractParty["type"], string> = {
+  patient: "Gestante",
+  professional: "Profissional",
+  team_member: "Integrante da equipe",
+};
+
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: ["p", "strong", "em", "ul", "ol", "li", "br", "a"],
   ALLOWED_ATTR: ["href", "target", "rel"],
@@ -93,7 +123,9 @@ export default function PatientContract({
   const [contratadaName, setContratadaName] = useState<string | null>(null);
   const [enterpriseOptions, setEnterpriseOptions] = useState<BaseTemplate[]>([]);
   const [personalOptions, setPersonalOptions] = useState<BaseTemplate[]>([]);
-  const [headerBlocks, setHeaderBlocks] = useState<ContractHeaderBlocks | null>(null);
+  const [activeHeaderVariant, setActiveHeaderVariant] = useState<"enterprise" | "personal" | null>(
+    null,
+  );
   const [enterpriseHeaderBlocks, setEnterpriseHeaderBlocks] = useState<ContractHeaderBlocks | null>(
     null,
   );
@@ -122,52 +154,98 @@ export default function PatientContract({
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<"title" | "city" | "state" | "clausesHtml", string>>
   >({});
+  const [headerIncompleteParties, setHeaderIncompleteParties] = useState<ContractParty[]>([]);
+  const [personalIncompleteParties, setPersonalIncompleteParties] = useState<ContractParty[]>([]);
+  const [isIncompleteDataModalOpen, setIsIncompleteDataModalOpen] = useState(false);
+  const [editPatientData, setEditPatientData] = useState<PatientForEdit | null>(null);
+  const [isEditPatientModalOpen, setIsEditPatientModalOpen] = useState(false);
+  const [isFetchingPatientForEdit, setIsFetchingPatientForEdit] = useState(false);
+  const [editProfileAddress, setEditProfileAddress] = useState<ProfileAddress | null>(null);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [isFetchingAddressForEdit, setIsFetchingAddressForEdit] = useState(false);
+  const clausesContainerRef = useRef<HTMLDivElement>(null);
+  const { profile } = useAuth();
+
+  const headerBlocks =
+    activeHeaderVariant === "enterprise"
+      ? enterpriseHeaderBlocks
+      : activeHeaderVariant === "personal"
+        ? personalHeaderBlocks
+        : null;
+
+  const activeIncompleteParties =
+    activeHeaderVariant === "enterprise"
+      ? headerIncompleteParties
+      : activeHeaderVariant === "personal"
+        ? personalIncompleteParties
+        : [];
+
+  const scrollToFirstError = (errors: typeof fieldErrors) => {
+    const fieldElementIds: Record<"title" | "city" | "state", string> = {
+      title: "contract-title",
+      city: "contract-city",
+      state: "contract-state",
+    };
+    const order: Array<keyof typeof fieldErrors> = ["title", "city", "state", "clausesHtml"];
+    const firstErrorField = order.find((field) => errors[field]);
+    if (!firstErrorField) return;
+
+    if (firstErrorField === "clausesHtml") {
+      clausesContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    const element = document.getElementById(fieldElementIds[firstErrorField]);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    element?.focus();
+  };
 
   const { execute: fetchContract, isExecuting: isLoadingFetchContract } = useAction(
     getPatientContractAction,
     {
-      onSuccess: ({ data }) => {
-        if (data?.headerBlocks) {
-          setHeaderBlocks(data.headerBlocks);
-          setEnterpriseHeaderBlocks(data.headerBlocks);
-        }
-        if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
-        setPatientName(data?.patientName ?? null);
-        setContratadaName(data?.contratadaName ?? null);
+    onSuccess: ({ data }) => {
+      if (data?.headerBlocks) {
+        setEnterpriseHeaderBlocks(data.headerBlocks);
+        setActiveHeaderVariant((prev) => prev ?? "enterprise");
+      }
+      if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
+      setHeaderIncompleteParties(data?.headerIncompleteParties ?? []);
+      setPersonalIncompleteParties(data?.personalHeaderIncompleteParties ?? []);
+      setPatientName(data?.patientName ?? null);
+      setContratadaName(data?.contratadaName ?? null);
 
-        setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
-        setPersonalOptions(data?.personalBaseOptions ?? []);
+      setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
+      setPersonalOptions(data?.personalBaseOptions ?? []);
 
-        if (data?.contract) {
-          setContractId(data.contract.id);
-          setTitle(data.contract.title);
-          setClausesHtml(data.contract.clauses_html);
-          setCity(data.contract.city ?? "");
-          setState(data.contract.state ?? "");
-          if (data.savedParties) setSavedParties(data.savedParties);
-          setOriginalDocumentId(data.contract.original_document_id);
-          setSignatureInfo(
-            data.contract.is_signed
-              ? {
-                  signedAt: data.contract.signed_at,
-                  verificationCode: data.contract.verification_code,
-                  finalizedDocumentId: data.contract.finalized_document_id,
-                  signedByName: data.signedByName ?? null,
-                }
-              : null,
-          );
-          setFullySignedAt(data.contract.fully_signed_at ?? null);
-          setContractExists(true);
-          setMode("readonly");
-        } else {
-          setOriginalDocumentId(null);
-          setMode("select");
-        }
-        setChangeRequests(data?.changeRequests ?? []);
-      },
-      onError: () => setMode("select"),
+      if (data?.contract) {
+        setContractId(data.contract.id);
+        setTitle(data.contract.title);
+        setClausesHtml(data.contract.clauses_html);
+        setCity(data.contract.city ?? "");
+        setState(data.contract.state ?? "");
+        if (data.savedParties) setSavedParties(data.savedParties);
+        setOriginalDocumentId(data.contract.original_document_id);
+        setSignatureInfo(
+          data.contract.is_signed
+            ? {
+                signedAt: data.contract.signed_at,
+                verificationCode: data.contract.verification_code,
+                finalizedDocumentId: data.contract.finalized_document_id,
+                signedByName: data.signedByName ?? null,
+              }
+            : null,
+        );
+        setFullySignedAt(data.contract.fully_signed_at ?? null);
+        setContractExists(true);
+        setMode("readonly");
+      } else {
+        setOriginalDocumentId(null);
+        setMode("select");
+      }
+      setChangeRequests(data?.changeRequests ?? []);
     },
-  );
+    onError: () => setMode("select"),
+  });
 
   const { execute: resolveChangeRequest, isExecuting: isResolvingChangeRequest } = useAction(
     resolveContractChangeRequestAction,
@@ -275,7 +353,53 @@ export default function PatientContract({
     },
   );
 
+  const { executeAsync: fetchPatientForEditAsync } = useAction(getPatientAction);
+  const { executeAsync: fetchMyAddressAsync } = useAction(getMyAddressAction);
+
+  // Refreshes only the header blocks/incomplete-parties data — unlike `fetchContract`,
+  // it never touches `mode` or the in-progress draft fields (title/city/state/clausesHtml),
+  // so it's safe to call while the professional is mid-edit in the contract form.
+  const { execute: refreshHeaderData, executeAsync: refreshHeaderDataAsync } = useAction(
+    getPatientContractAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data?.headerBlocks) setEnterpriseHeaderBlocks(data.headerBlocks);
+        if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
+        setHeaderIncompleteParties(data?.headerIncompleteParties ?? []);
+        setPersonalIncompleteParties(data?.personalHeaderIncompleteParties ?? []);
+        setPatientName(data?.patientName ?? null);
+        setContratadaName(data?.contratadaName ?? null);
+      },
+    },
+  );
+
   const isGenerating = isSigning || isCreatingTemplate;
+
+  const handleOpenEditPatient = async () => {
+    setIsFetchingPatientForEdit(true);
+    try {
+      const res = await fetchPatientForEditAsync({ patientId });
+      if (res?.data?.patient) {
+        setEditPatientData(res.data.patient as PatientForEdit);
+        setIsEditPatientModalOpen(true);
+      } else {
+        toast.error(res?.serverError ?? "Erro ao carregar dados da gestante");
+      }
+    } finally {
+      setIsFetchingPatientForEdit(false);
+    }
+  };
+
+  const handleOpenEditProfile = async () => {
+    setIsFetchingAddressForEdit(true);
+    try {
+      const res = await fetchMyAddressAsync({});
+      setEditProfileAddress(res?.data?.address ?? null);
+      setIsEditProfileModalOpen(true);
+    } finally {
+      setIsFetchingAddressForEdit(false);
+    }
+  };
 
   const validateForm = () => {
     const result = patientContractFormSchema.safeParse({
@@ -292,6 +416,7 @@ export default function PatientContract({
         errors[field as keyof typeof fieldErrors] = issue.message;
       }
       setFieldErrors(errors);
+      scrollToFirstError(errors);
       return false;
     }
 
@@ -472,7 +597,7 @@ export default function PatientContract({
     setClausesHtml(match.html);
     setCity(match.city ?? "");
     setState(match.state ?? "");
-    setHeaderBlocks(enterpriseMatch ? enterpriseHeaderBlocks : personalHeaderBlocks);
+    setActiveHeaderVariant(enterpriseMatch ? "enterprise" : "personal");
     setFieldErrors({});
     setMode("editing");
   };
@@ -483,7 +608,7 @@ export default function PatientContract({
     setClausesHtml("");
     setCity("");
     setState("");
-    setHeaderBlocks(enterpriseHeaderBlocks);
+    setActiveHeaderVariant("enterprise");
     setFieldErrors({});
     setMode("editing");
   };
@@ -771,7 +896,7 @@ export default function PatientContract({
             {fieldErrors.state && <p className="text-destructive text-sm">{fieldErrors.state}</p>}
           </div>
         </div>
-        <ContractDocument headerBlocks={headerBlocks}>
+        <ContractDocument headerBlocks={headerBlocks} containerRef={clausesContainerRef}>
           <RichEditor
             content={clausesHtml}
             onChange={(html) => {
@@ -819,7 +944,12 @@ export default function PatientContract({
             className="gradient-primary"
             disabled={isSigning || isExporting}
             onClick={() => {
-              if (validateForm()) setIsGenerateModalOpen(true);
+              if (!validateForm()) return;
+              if (activeIncompleteParties.length > 0) {
+                setIsIncompleteDataModalOpen(true);
+                return;
+              }
+              setIsGenerateModalOpen(true);
             }}
           >
             <Plus className="size-4" />
@@ -827,6 +957,102 @@ export default function PatientContract({
           </Button>
         </div>
       </div>
+
+      <ContentModal
+        open={isIncompleteDataModalOpen}
+        onOpenChange={setIsIncompleteDataModalOpen}
+        title="Dados incompletos"
+        description='Alguns dados aparecem como "[não informado]" no cabeçalho do contrato. Atualize-os antes de gerar o contrato.'
+        contentClassName="sm:max-w-[480px]"
+      >
+        <div className="space-y-3 pt-2">
+          {activeIncompleteParties.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              Todos os dados necessários já foram preenchidos.
+            </p>
+          ) : (
+            activeIncompleteParties.map((party) => (
+              <div
+                key={`${party.type}-${party.id}`}
+                className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2"
+              >
+                <div>
+                  <p className="font-medium text-sm">{party.name}</p>
+                  <p className="text-muted-foreground text-xs">{PARTY_TYPE_LABELS[party.type]}</p>
+                </div>
+                {party.type === "patient" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isFetchingPatientForEdit}
+                    onClick={handleOpenEditPatient}
+                  >
+                    {isFetchingPatientForEdit ? (
+                      <LoaderCircle className="size-4 animate-spin" />
+                    ) : (
+                      <Pencil className="size-4" />
+                    )}
+                    {isFetchingPatientForEdit ? "Carregando..." : "Editar dados"}
+                  </Button>
+                )}
+                {party.type !== "patient" && party.isCurrentUser && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isFetchingAddressForEdit}
+                    onClick={handleOpenEditProfile}
+                  >
+                    {isFetchingAddressForEdit ? (
+                      <LoaderCircle className="size-4 animate-spin" />
+                    ) : (
+                      <Pencil className="size-4" />
+                    )}
+                    {isFetchingAddressForEdit ? "Carregando..." : "Editar meu perfil"}
+                  </Button>
+                )}
+              </div>
+            ))
+          )}
+          {activeIncompleteParties.length === 0 && (
+            <div className="flex justify-end pt-2">
+              <Button
+                className="gradient-primary"
+                onClick={() => {
+                  setIsIncompleteDataModalOpen(false);
+                  setIsGenerateModalOpen(true);
+                }}
+              >
+                Continuar
+              </Button>
+            </div>
+          )}
+        </div>
+      </ContentModal>
+
+      {editPatientData && (
+        <EditPatientModal
+          open={isEditPatientModalOpen}
+          onOpenChange={setIsEditPatientModalOpen}
+          patient={editPatientData}
+          onSuccess={async () => {
+            await refreshHeaderDataAsync({ patientId });
+          }}
+        />
+      )}
+
+      <EditProfileModal
+        open={isEditProfileModalOpen}
+        onOpenChange={setIsEditProfileModalOpen}
+        name={profile?.name ?? ""}
+        phone={profile?.phone ?? ""}
+        address={editProfileAddress}
+        professionalType={(profile?.professional_type as ProfessionalType | null) ?? null}
+        professionalDocuments={profile?.professional_documents ?? null}
+        personalDocuments={profile?.personal_documents ?? null}
+        onSuccess={() => {
+          refreshHeaderData({ patientId });
+        }}
+      />
 
       <ContentModal
         open={isGenerateModalOpen}
@@ -942,12 +1168,14 @@ export default function PatientContract({
 function ContractDocument({
   headerBlocks,
   children,
+  containerRef,
 }: {
   headerBlocks: ContractHeaderBlocks | null;
   children: React.ReactNode;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="relative px-0 py-0 text-black text-sm">
+    <div ref={containerRef} className="relative px-0 py-0 text-black text-sm">
       {headerBlocks ? (
         <>
           <div className="mb-4 border-gray-200 border-b pb-4">
