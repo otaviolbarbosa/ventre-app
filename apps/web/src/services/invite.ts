@@ -8,49 +8,10 @@ type ProfessionalType = Database["public"]["Enums"]["professional_type"];
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
-type GetMyInvitesResult = {
-  data?: Invite[];
-  error?: string;
-};
-
 type GetInviteByIdResult = {
   data?: Invite;
   error?: string;
 };
-
-export async function getMyInvites(): Promise<GetMyInvitesResult> {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Usuário não encontrado" };
-  }
-
-  // Use admin client to bypass RLS — the invited professional is not yet
-  // a team member, so RLS on the patients table blocks the JOIN.
-  const supabaseAdmin = await createServerSupabaseAdmin();
-
-  const { data: invites, error } = await supabaseAdmin
-    .from("team_invites")
-    .select(`
-      *,
-      patient:patients!team_invites_patient_id_fkey(id, name, pregnancies(due_date, dum)),
-      inviter:users!team_invites_invited_by_fkey(id, name, professional_type)
-    `)
-    .eq("invited_professional_id", user.id)
-    .eq("status", "pendente")
-    .gt("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { data: invites as Invite[] };
-}
 
 type GetReceivedInvitesResult = {
   data?: { active: Invite[]; inactive: Invite[] };
@@ -376,6 +337,41 @@ export async function resendTeamInvite(
   }
 
   const newExpiresAt = dayjs().add(4, "days").toISOString();
+
+  const { error: updateError } = await supabaseAdmin
+    .from("team_invites")
+    .update({ status: "pendente", expires_at: newExpiresAt })
+    .eq("id", inviteId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  return { patientId: invite.patient_id, expiresAt: newExpiresAt };
+}
+
+export async function reactivateExpiredTeamInvite(
+  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseAdminClient,
+  userId: string,
+  inviteId: string,
+) {
+  const { data: invite, error: inviteError } = await supabase
+    .from("team_invites")
+    .select("id, status, patient_id")
+    .eq("id", inviteId)
+    .eq("invited_by", userId)
+    .single();
+
+  if (inviteError || !invite) {
+    throw new Error("Convite não encontrado");
+  }
+
+  if (invite.status !== "expirado") {
+    throw new Error("Apenas convites expirados podem ser reativados");
+  }
+
+  const newExpiresAt = dayjs().add(7, "days").toISOString();
 
   const { error: updateError } = await supabaseAdmin
     .from("team_invites")
