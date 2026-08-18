@@ -30,8 +30,9 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Ventre - Gestão de Saúde para Profissionais de Saúde e Gestantes",
-  description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
+  title: "Ventre - Gestão de Saúde para Profissionais do Parto e Gestantes",
+  description:
+    "Plataforma de gestão de saúde para profissionais de saúde que atuam diretamente no acompanhamento de gestantes",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -41,8 +42,9 @@ export const metadata: Metadata = {
     "mobile-web-app-capable": "yes",
   },
   openGraph: {
-    title: "Ventre - Gestão de Saúde para Profissionais de Saúde e Gestantes",
-    description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
+    title: "Ventre - Gestão de Saúde para Profissionais do Parto e Gestantes",
+    description:
+      "Plataforma de gestão de saúde para profissionais de saúde que atuam diretamente no acompanhamento de gestantes",
     siteName: "Ventre",
     locale: "pt_BR",
     type: "website",
@@ -57,8 +59,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ventre - Gestão de Saúde para Profissionais de Saúde e Gestantes",
-    description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
+    title: "Ventre - Gestão de Saúde para Profissionais do Parto e Gestantes",
+    description:
+      "Plataforma de gestão de saúde para profissionais de saúde que atuam diretamente no acompanhamento de gestantes",
     images: ["/images/og-image.png"],
   },
 };
