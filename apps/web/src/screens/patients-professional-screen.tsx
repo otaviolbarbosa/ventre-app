@@ -50,7 +50,7 @@ const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
   { key: "final", label: "Bebê a Termo" },
 ];
 
-type PatientsScreenProps = {
+type PatientsProfessionalScreenProps = {
   patients: PatientWithPregnancyFields[];
   totalCount: number;
   currentPage: number;
@@ -63,7 +63,7 @@ type PatientsScreenProps = {
   enterprises?: { id: string; name: string }[];
 };
 
-export default function PatientsScreen({
+export default function PatientsProfessionalScreen({
   patients,
   totalCount,
   currentPage,
@@ -74,7 +74,7 @@ export default function PatientsScreen({
   initialDppMonth,
   initialDppYear,
   enterprises,
-}: PatientsScreenProps) {
+}: PatientsProfessionalScreenProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);

@@ -70,7 +70,7 @@ export default function ContractList({
                     Criado em {dayjs(contract.created_at).format("DD/MM/YYYY")}
                   </p>
                 </div>
-                <div className="flex items-start gap-1.5 sm:shrink-0 sm:gap-4">
+                <div className="flex items-start justify-end gap-1.5 sm:shrink-0 sm:gap-4">
                   {pendingRequest && (
                     <Badge
                       variant="outline"

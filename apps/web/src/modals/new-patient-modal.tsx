@@ -248,7 +248,7 @@ export default function NewPatientModal({
   const { execute: executeInvite, status: inviteStatus } = useAction(createPatientInviteAction, {
     onSuccess: ({ data }) => {
       if (!data?.invite) return;
-      toast.success("Convite criado com sucesso!");
+      // toast.success("Convite criado com sucesso!");
       setCreatedInvite({ id: data.invite.id, name: data.invite.name ?? "Gestante" });
       form.reset();
       setStep(1);

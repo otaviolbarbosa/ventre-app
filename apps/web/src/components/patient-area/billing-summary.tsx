@@ -1,11 +1,12 @@
 "use client";
 
 import { registerInstallmentPaymentAction } from "@/actions/register-installment-payment-action";
-import { formatCurrency, getStatusConfig } from "@/lib/billing/calculations";
+import { StatusBadge } from "@/components/billing/status-badge";
+import { formatCurrency } from "@/lib/billing/calculations";
 import type { BillingWithInstallments } from "@/services/patient-self";
 import type { Database } from "@ventre/supabase/types";
-import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
+import { Card, CardContent, CardHeader } from "@ventre/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
@@ -13,6 +14,7 @@ import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TotalAmount } from "../billing/total-amount";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   credito: "Cartão de Crédito",
@@ -23,7 +25,13 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   outro: "Outro",
 };
 
-export default function BillingSummary({ billings }: { billings: BillingWithInstallments[] }) {
+export default function BillingSummary({
+  billings,
+  professionals,
+}: {
+  billings: BillingWithInstallments[];
+  professionals: Record<string, string>;
+}) {
   const router = useRouter();
   const [openInstallmentId, setOpenInstallmentId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<
@@ -52,42 +60,78 @@ export default function BillingSummary({ billings }: { billings: BillingWithInst
 
   return (
     <div className="space-y-4">
-      {billings.map((billing) => (
-        <div key={billing.id} className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-semibold text-[#433831]">{billing.description}</p>
-            <Badge variant={getStatusConfig(billing.status).variant}>
-              {getStatusConfig(billing.status).label}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            Total: {formatCurrency(billing.total_amount)}
-          </p>
+      {billings.map((billing) => {
+        const sortedInstallments = [...billing.installments].sort(
+          (a, b) => a.installment_number - b.installment_number,
+        );
+        const totalCount = sortedInstallments.length;
 
-          <div className="mt-3 space-y-2">
-            {billing.installments
-              .sort((a, b) => a.installment_number - b.installment_number)
-              .map((installment) => {
-                const statusConfig = getStatusConfig(installment.status);
+        return (
+          <Card key={billing.id} className="flex flex-col">
+            <CardHeader className="p-4 pb-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-1 items-center gap-2">
+                  <h3 className="truncate font-medium">{billing.description}</h3>
+                  <StatusBadge status={billing.status} />
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  <TotalAmount amount={billing.total_amount} />
+                  {/* {formatCurrency(billing.total_amount)} */}
+                </p>
+              </div>
+
+              {billing.splitted_billing && (
+                <div className="mt-2 space-y-0.5 border-t pt-2">
+                  {Object.entries(billing.splitted_billing as Record<string, number>).map(
+                    ([professionalId, amount]) => (
+                      <div
+                        key={professionalId}
+                        className="flex justify-between text-muted-foreground text-xs"
+                      >
+                        <span>{professionals[professionalId] ?? "Profissional"}</span>
+                        <span>{formatCurrency(amount)}</span>
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
+            </CardHeader>
+
+            <CardContent className="mt-2 flex-1 divide-y rounded-none border-t p-0">
+              {sortedInstallments.map((installment) => {
                 const canRegister =
                   installment.status === "pendente" || installment.status === "atrasado";
                 const isOpen = openInstallmentId === installment.id;
 
                 return (
-                  <div key={installment.id} className="rounded-xl border p-3">
+                  <div key={installment.id} className="px-4 py-2.5 text-sm">
                     <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-sm">
-                          Parcela {installment.installment_number} —{" "}
-                          {formatCurrency(installment.amount)}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                          Vencimento {dayjs(installment.due_date).format("DD/MM/YYYY")}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {totalCount > 1 && (
+                          <span className="text-muted-foreground">
+                            {installment.installment_number}/{totalCount}
+                          </span>
+                        )}
+                        <StatusBadge status={installment.status} />
+                        <span className="truncate text-muted-foreground text-xs">
+                          {installment.paid_at ? (
+                            <>
+                              Pago em:{" "}
+                              <span className="font-medium text-foreground text-sm">
+                                {dayjs(installment.paid_at).format("DD/MM/YY")}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              Venc.:{" "}
+                              <span className="font-medium text-foreground text-sm">
+                                {dayjs(installment.due_date).format("DD/MM/YY")}
+                              </span>
+                            </>
+                          )}
+                        </span>
                       </div>
-                      <Badge variant="outline" className="shrink-0">
-                        {statusConfig.label}
-                      </Badge>
+                      <span className="font-medium">{formatCurrency(installment.amount)}</span>
                     </div>
 
                     {canRegister && !isOpen && (
@@ -148,9 +192,10 @@ export default function BillingSummary({ billings }: { billings: BillingWithInst
                   </div>
                 );
               })}
-          </div>
-        </div>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

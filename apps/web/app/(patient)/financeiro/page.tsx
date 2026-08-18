@@ -3,13 +3,13 @@ import BillingSummary from "@/components/patient-area/billing-summary";
 import { getMyBillingSummary } from "@/services/patient-self";
 
 export default async function PatientFinanceiroPage() {
-  const { billings } = await getMyBillingSummary();
+  const { billings, professionals } = await getMyBillingSummary();
 
   return (
     <div>
       <Header title="Financeiro" />
       <div className="space-y-4 px-4">
-        <BillingSummary billings={billings} />
+        <BillingSummary billings={billings} professionals={professionals} />
       </div>
     </div>
   );
