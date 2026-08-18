@@ -112,7 +112,7 @@ Escopo completo descrito acima — duas abas, duas seções em Enviados, reenvio
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Schema & cron | Adicionar `patient_invite_links.status` (migration + backfill), criar rota de cron de expiração em lote e registrar em `vercel.json` | complete | - | - | `.claude/PRPs/plans/completed/invite-status-cron-schema.plan.md` |
 | 2 | Queries de listagem | Criar/estender queries e actions para listar convites enviados (ambas as tabelas) e recebidos, incluindo status derivado/expirado | complete | - | 1 | `.claude/PRPs/plans/completed/invites-listing-queries.plan.md` |
-| 3 | Ação de reenvio para `team_invites` | Nova action de reenvio (extensão do modal de compartilhamento ou envio de e-mail) | pending | with 2 | 1 | - |
+| 3 | Ação de reenvio para `team_invites` | Nova action de reenvio (extensão do modal de compartilhamento ou envio de e-mail) | complete | with 2 | 1 | `.claude/PRPs/plans/completed/resend-team-invite-action.plan.md` |
 | 4 | UI — Tabs + seções | Implementar `Tabs` Enviados/Recebidos, seções por tipo, listas de expirados/rejeitados segregadas, data de expiração, botões de ação | pending | - | 2, 3 | - |
 
 ### Phase Details

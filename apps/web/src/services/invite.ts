@@ -353,3 +353,38 @@ export async function respondToInvite(
 
   return { patientId: null };
 }
+
+export async function resendTeamInvite(
+  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseAdminClient,
+  userId: string,
+  inviteId: string,
+) {
+  const { data: invite, error: inviteError } = await supabase
+    .from("team_invites")
+    .select("id, status, patient_id")
+    .eq("id", inviteId)
+    .eq("invited_by", userId)
+    .single();
+
+  if (inviteError || !invite) {
+    throw new Error("Convite não encontrado");
+  }
+
+  if (invite.status === "aceito") {
+    throw new Error("Este convite já foi aceito");
+  }
+
+  const newExpiresAt = dayjs().add(4, "days").toISOString();
+
+  const { error: updateError } = await supabaseAdmin
+    .from("team_invites")
+    .update({ status: "pendente", expires_at: newExpiresAt })
+    .eq("id", inviteId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  return { patientId: invite.patient_id, expiresAt: newExpiresAt };
+}
