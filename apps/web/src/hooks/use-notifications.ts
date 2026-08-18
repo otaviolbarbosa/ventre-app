@@ -6,13 +6,9 @@ import { subscribeNotificationsAction } from "@/actions/subscribe-notifications-
 import { unsubscribeNotificationsAction } from "@/actions/unsubscribe-notifications-action";
 import { useAuth } from "@/hooks/use-auth";
 import { onForegroundMessage, requestFcmToken } from "@/lib/firebase/client";
+import { NATIVE_PUSH_TOKEN_KEY, isNativeBridge } from "@/lib/native-bridge";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
-// Set only inside apps/mobile's WebView (react-native-webview injects this global).
-function isNativeBridge() {
-  return typeof window !== "undefined" && "ReactNativeWebView" in window;
-}
 
 type NativePushMessage =
   | { type: "push-token"; token: string; platform: "ios" | "android" }
@@ -101,17 +97,25 @@ export function useNotifications() {
           fcmToken: message.token,
           deviceInfo: { platform: message.platform },
         }).then((result) => {
-          if (result?.data?.success) setIsSubscribed(true);
+          if (result?.data?.success) {
+            setIsSubscribed(true);
+            localStorage.setItem(NATIVE_PUSH_TOKEN_KEY, message.token);
+          }
         });
       } else {
         unsubscribeNotificationsAction({ fcmToken: message.token }).then(() => {
           setIsSubscribed(false);
+          localStorage.removeItem(NATIVE_PUSH_TOKEN_KEY);
         });
       }
     };
 
+    window.addEventListener("message", handleMessage as EventListener);
     document.addEventListener("message", handleMessage as EventListener);
-    return () => document.removeEventListener("message", handleMessage as EventListener);
+    return () => {
+      window.removeEventListener("message", handleMessage as EventListener);
+      document.removeEventListener("message", handleMessage as EventListener);
+    };
   }, [user]);
 
   const subscribe = useCallback(async () => {

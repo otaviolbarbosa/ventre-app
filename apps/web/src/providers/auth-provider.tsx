@@ -1,7 +1,9 @@
 "use client";
 
 import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
+import { unsubscribeNotificationsAction } from "@/actions/unsubscribe-notifications-action";
 import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
+import { NATIVE_PUSH_TOKEN_KEY, isNativeBridge } from "@/lib/native-bridge";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@ventre/supabase";
 import type { Tables } from "@ventre/supabase/types";
@@ -105,6 +107,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (isNativeBridge()) {
+      const cachedToken = localStorage.getItem(NATIVE_PUSH_TOKEN_KEY);
+      if (cachedToken) {
+        // Unsubscribe while the session is still valid — waiting for native
+        // to detect the post-logout navigation and relay it back is too late,
+        // the session (and the WebView document) may already be gone by then.
+        await unsubscribeNotificationsAction({ fcmToken: cachedToken });
+        localStorage.removeItem(NATIVE_PUSH_TOKEN_KEY);
+      }
+    }
     await invalidateUserCacheAction({});
     const { error } = await supabase.auth.signOut();
     if (!error) {
