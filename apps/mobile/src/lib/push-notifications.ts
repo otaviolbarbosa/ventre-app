@@ -26,13 +26,35 @@ export function getPushPlatform(): PushPlatform {
   return Platform.OS === "ios" ? "ios" : "android";
 }
 
+// getMessaging() throws synchronously if the native Firebase app isn't
+// initialized yet (e.g. google-services.json/GoogleService-Info.plist is
+// missing, or app.json's config plugins haven't been baked into a native
+// prebuild). Push notifications are additive — the WebView shell must keep
+// working even when Firebase isn't configured, not crash on mount.
+function getMessagingSafely(): ReturnType<typeof getMessaging> | null {
+  try {
+    return getMessaging();
+  } catch (err) {
+    console.warn("[push] Firebase Messaging unavailable:", err);
+    return null;
+  }
+}
+
+// Returned in place of a real unsubscribe function when Firebase Messaging
+// is unavailable, so callers can always call the returned cleanup as-is.
+function noopUnsubscribe() {
+  // Firebase Messaging unavailable — nothing to unsubscribe.
+}
+
 export async function requestPushPermissionAndGetToken(): Promise<string | null> {
+  const messaging = getMessagingSafely();
+  if (!messaging) return null;
+
   if (Platform.OS === "android") {
     // No-op on Android < 13; required for the OS to allow notifications on 13+.
     await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
   }
 
-  const messaging = getMessaging();
   const authStatus = await requestPermission(messaging);
   const granted =
     authStatus === AuthorizationStatus.AUTHORIZED ||
@@ -44,11 +66,15 @@ export async function requestPushPermissionAndGetToken(): Promise<string | null>
 }
 
 export function subscribeToTokenRefresh(onRefresh: (token: string) => void): () => void {
-  return onTokenRefresh(getMessaging(), onRefresh);
+  const messaging = getMessagingSafely();
+  if (!messaging) return noopUnsubscribe;
+  return onTokenRefresh(messaging, onRefresh);
 }
 
 export function subscribeToForegroundMessages(): () => void {
-  return onMessage(getMessaging(), async (remoteMessage) => {
+  const messaging = getMessagingSafely();
+  if (!messaging) return noopUnsubscribe;
+  return onMessage(messaging, async (remoteMessage) => {
     const { title, body } = remoteMessage.notification ?? {};
     if (!title) return;
 
@@ -60,13 +86,18 @@ export function subscribeToForegroundMessages(): () => void {
 }
 
 export async function getInitialDeepLinkUrl(): Promise<string | null> {
-  const message = await getInitialNotification(getMessaging());
+  const messaging = getMessagingSafely();
+  if (!messaging) return null;
+
+  const message = await getInitialNotification(messaging);
   const url = message?.data?.url;
   return typeof url === "string" ? url : null;
 }
 
 export function subscribeToNotificationOpen(onOpen: (url: string) => void): () => void {
-  return onNotificationOpenedApp(getMessaging(), (remoteMessage) => {
+  const messaging = getMessagingSafely();
+  if (!messaging) return noopUnsubscribe;
+  return onNotificationOpenedApp(messaging, (remoteMessage) => {
     const url = remoteMessage.data?.url;
     if (typeof url === "string") onOpen(url);
   });
