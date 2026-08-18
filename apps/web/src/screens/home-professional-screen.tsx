@@ -26,7 +26,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type HomeScreenProps = {
+type HomeProfessionalScreenProps = {
   profile: Tables<"users">;
   enterprises?: { id: string; name: string }[];
 };
@@ -83,7 +83,7 @@ function AgendaSkeleton() {
   );
 }
 
-function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
+function HomeProfessionalScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
   return (
     <div className="flex h-full flex-col">
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
@@ -242,7 +242,10 @@ const FILTER_LABELS: Record<FilterType, string> = {
 
 type DppFilter = { month: number; year: number } | null;
 
-export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
+export default function HomeProfessionalScreen({
+  profile,
+  enterprises,
+}: HomeProfessionalScreenProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dppFilter, setDppFilter] = useState<DppFilter>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -340,161 +343,153 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
     fetchPatients({ filter: activeFilter, search: searchQuery });
   }, [fetchHomeData, fetchPatients, activeFilter, searchQuery]);
 
-  if (isLoadingHome || !homeData) {
-    return <HomeScreenSkeleton profile={profile} />;
-  }
-
   const hasAnyPatients = (homeData?.patients?.length ?? 0) > 0;
 
-  if (!hasAnyPatients && homeData) {
-    return (
-      <div className="flex h-full flex-col">
-        <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-          <Baby className="h-14 w-14 text-muted-foreground/40" />
-          <div>
-            <p className="font-semibold text-lg">Nenhuma gestante cadastrada</p>
-            <p className="mt-1 text-muted-foreground text-sm">
-              Adicione sua primeira gestante para começar o acompanhamento.
-            </p>
-          </div>
-          <Button className="gradient-primary mt-2" onClick={() => setShowNewPatient(true)}>
-            <UserPlusIcon />
-            Adicionar Gestante
-          </Button>
-        </div>
-        <NewPatientModal
-          showModal={showNewPatient}
-          setShowModal={setShowNewPatient}
-          enterprises={enterprises}
-          onSuccess={refreshAll}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex h-full flex-col">
-      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
-
-      <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
-        {/* DPP by Month Cards */}
-        <DppMonthCarousel
-          items={dppByMonth}
-          selectedMonth={dppFilter?.month ?? null}
-          selectedYear={dppFilter?.year ?? null}
-          onSelect={handleDppFilterChange}
-        />
-
-        {/* Main Content: Two columns */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Left: Patient List */}
-          <div className="space-y-4">
-            {/* Title + Filters */}
-            <div className="flex items-center justify-between">
-              <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
-              <div className="flex items-center gap-2">
-                {dppFilter && (
-                  <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
-                    {MONTH_LABELS_FULL[dppFilter.month]}
-                    <button type="button" onClick={handleClearDppFilter}>
-                      <X className="size-3" />
-                    </button>
-                  </Badge>
-                )}
-                {!dppFilter && activeFilter !== "all" && (
-                  <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
-                    {activeLabel}
-                    <button type="button" onClick={() => handleFilterChange("all")}>
-                      <X className="size-3" />
-                    </button>
-                  </Badge>
-                )}
-
-                <Button
-                  className="gradient-primary hidden gap-2 md:flex"
-                  onClick={() => setShowNewPatient(true)}
-                >
-                  <UserPlusIcon />
-                  Nova Gestante
-                </Button>
-                <Button
-                  className="gradient-primary md:hidden"
-                  size="icon"
-                  onClick={() => setShowNewPatient(true)}
-                >
-                  <UserPlusIcon />
-                </Button>
-              </div>
+    <>
+      {isLoadingHome || !homeData ? (
+        <HomeProfessionalScreenSkeleton profile={profile} />
+      ) : !hasAnyPatients ? (
+        <div className="flex h-full flex-col">
+          <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+            <Baby className="h-14 w-14 text-muted-foreground/40" />
+            <div>
+              <p className="font-semibold text-lg">Nenhuma gestante cadastrada</p>
+              <p className="mt-1 text-muted-foreground text-sm">
+                Adicione sua primeira gestante para começar o acompanhamento.
+              </p>
             </div>
+            <Button className="gradient-primary mt-2" onClick={() => setShowNewPatient(true)}>
+              <UserPlusIcon />
+              Adicionar Gestante
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full flex-col">
+          <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
 
-            <div className="flex gap-2">
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  placeholder="Buscar por nome"
-                  className="rounded-full bg-white pl-10"
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
+          <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
+            {/* DPP by Month Cards */}
+            <DppMonthCarousel
+              items={dppByMonth}
+              selectedMonth={dppFilter?.month ?? null}
+              selectedYear={dppFilter?.year ?? null}
+              onSelect={handleDppFilterChange}
+            />
+
+            {/* Main Content: Two columns */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+              {/* Left: Patient List */}
+              <div className="space-y-4">
+                {/* Title + Filters */}
+                <div className="flex items-center justify-between">
+                  <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
+                  <div className="flex items-center gap-2">
+                    {dppFilter && (
+                      <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+                        {MONTH_LABELS_FULL[dppFilter.month]}
+                        <button type="button" onClick={handleClearDppFilter}>
+                          <X className="size-3" />
+                        </button>
+                      </Badge>
+                    )}
+                    {!dppFilter && activeFilter !== "all" && (
+                      <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+                        {activeLabel}
+                        <button type="button" onClick={() => handleFilterChange("all")}>
+                          <X className="size-3" />
+                        </button>
+                      </Badge>
+                    )}
+
+                    <Button
+                      className="gradient-primary hidden gap-2 md:flex"
+                      onClick={() => setShowNewPatient(true)}
+                    >
+                      <UserPlusIcon />
+                      Nova Gestante
+                    </Button>
+                    <Button
+                      className="gradient-primary md:hidden"
+                      size="icon"
+                      onClick={() => setShowNewPatient(true)}
+                    >
+                      <UserPlusIcon />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  {/* Search */}
+                  <div className="relative flex-1">
+                    <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Buscar por nome"
+                      className="rounded-full bg-white pl-10"
+                      value={searchQuery}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                    />
+                  </div>
+                  <FilterDropdown
+                    options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(
+                      ([value, label]) => ({ value, label }),
+                    )}
+                    value={activeFilter}
+                    onChange={(v) => handleFilterChange(v as FilterType)}
+                  />
+                </div>
+
+                {/* Patient List */}
+                {isLoadingPatients ? (
+                  <>
+                    <PatientCardSkeleton />
+                    <PatientCardSkeleton />
+                    <PatientCardSkeleton />
+                    <PatientCardSkeleton />
+                    <PatientCardSkeleton />
+                  </>
+                ) : items.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-12 text-center">
+                    <Baby className="h-10 w-10 text-muted-foreground/50" />
+                    <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {items.map(({ patient, teamMembers }) => (
+                      <Link
+                        key={patient.id}
+                        href={`/patients/${patient.id}`}
+                        className="overflow-hidden rounded-xl border bg-white"
+                      >
+                        <PatientCard patient={patient} teamMembers={teamMembers} />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Upcoming Appointments */}
+              <div className="hidden lg:block">
+                <AppointmentTimeline
+                  appointments={upcomingAppointments}
+                  onNewAppointment={() => setShowNewAppointment(true)}
                 />
               </div>
-              <FilterDropdown
-                options={(Object.entries(FILTER_LABELS) as [FilterType, string][]).map(
-                  ([value, label]) => ({ value, label }),
-                )}
-                value={activeFilter}
-                onChange={(v) => handleFilterChange(v as FilterType)}
-              />
             </div>
 
-            {/* Patient List */}
-            {isLoadingPatients ? (
-              <>
-                <PatientCardSkeleton />
-                <PatientCardSkeleton />
-                <PatientCardSkeleton />
-                <PatientCardSkeleton />
-                <PatientCardSkeleton />
-              </>
-            ) : items.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-12 text-center">
-                <Baby className="h-10 w-10 text-muted-foreground/50" />
-                <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {items.map(({ patient, teamMembers }) => (
-                  <Link
-                    key={patient.id}
-                    href={`/patients/${patient.id}`}
-                    className="overflow-hidden rounded-xl border bg-white"
-                  >
-                    <PatientCard patient={patient} teamMembers={teamMembers} />
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Right: Upcoming Appointments */}
-          <div className="hidden lg:block">
-            <AppointmentTimeline
-              appointments={upcomingAppointments}
-              onNewAppointment={() => setShowNewAppointment(true)}
-            />
+            {/* Mobile: Upcoming Appointments */}
+            <div className="lg:hidden">
+              <AppointmentTimeline
+                appointments={upcomingAppointments}
+                onNewAppointment={() => setShowNewAppointment(true)}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Mobile: Upcoming Appointments */}
-        <div className="lg:hidden">
-          <AppointmentTimeline
-            appointments={upcomingAppointments}
-            onNewAppointment={() => setShowNewAppointment(true)}
-          />
-        </div>
-      </div>
+      )}
 
       <NewPatientModal
         showModal={showNewPatient}
@@ -508,6 +503,6 @@ export default function HomeScreen({ profile, enterprises }: HomeScreenProps) {
         setShowModal={setShowNewAppointment}
         onSuccess={refreshHomeData}
       />
-    </div>
+    </>
   );
 }

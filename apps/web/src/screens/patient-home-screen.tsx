@@ -29,7 +29,7 @@ export default function PatientHomeScreen({
   return (
     <div>
       <ContractErrorToast show={!!contractError} />
-      <Header title={name ? `Olá ${name}!` : "Olá Gestante!"} />
+      <Header title={name ? `Olá ${name}!` : "Olá Gestante!"} noBg />
 
       <div className="space-y-6 px-4">
         {error && (

@@ -19,6 +19,7 @@ import {
   Image,
   LinkIcon,
   Loader2,
+  Paperclip,
   X,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -51,6 +52,7 @@ export function InstallmentList({
 }: InstallmentListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [linkValue, setLinkValue] = useState("");
+  const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null);
 
   const { executeAsync: saveLink, isPending: saving } = useAction(saveInstallmentLinkAction);
   const {
@@ -93,6 +95,36 @@ export function InstallmentList({
     setEditingId(null);
     setLinkValue("");
     onUpdate();
+  };
+
+  const handleUploadReceipt = async (paymentId: string, file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 10MB.");
+      return;
+    }
+
+    setUploadingPaymentId(paymentId);
+    try {
+      const formData = new FormData();
+      formData.append("receipt", file);
+
+      const response = await fetch(`/api/payments/${paymentId}/receipt`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao enviar comprovante");
+      }
+
+      toast.success("Comprovante adicionado!");
+      onUpdate();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao enviar comprovante");
+    } finally {
+      setUploadingPaymentId(null);
+    }
   };
 
   return (
@@ -168,10 +200,46 @@ export function InstallmentList({
                             ) : (
                               <Image className="mr-1 h-4 w-4 text-blue-500" />
                             )}
-                            Comprovante
+                            Abrir comprovante
                           </a>
                         </Button>
                       ))}
+                  {installment.status === "pago" &&
+                    installment.payments.length > 0 &&
+                    installment.payments.every((p) => !p.receipt_url) && (
+                      <label
+                        className={
+                          uploadingPaymentId === installment.payments[0]?.id
+                            ? "pointer-events-none cursor-default opacity-50"
+                            : "cursor-pointer"
+                        }
+                      >
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          disabled={uploadingPaymentId === installment.payments[0]?.id}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            const firstPayment = installment.payments[0];
+                            if (file && firstPayment) {
+                              handleUploadReceipt(firstPayment.id, file);
+                            }
+                          }}
+                        />
+                        <Button variant="ghost" size="sm" asChild>
+                          <span>
+                            {uploadingPaymentId === installment.payments[0]?.id ? (
+                              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Paperclip className="mr-1 h-4 w-4" />
+                            )}
+                            Adicionar comprovante
+                          </span>
+                        </Button>
+                      </label>
+                    )}
                   {installment.status === "em_analise" && (
                     <div className="flex w-full items-center justify-end gap-2">
                       <Button

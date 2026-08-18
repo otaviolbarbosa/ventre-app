@@ -5,7 +5,7 @@ import {
 import { isStaff } from "@/lib/access-control";
 import { dayjs } from "@/lib/dayjs";
 import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
-import { PatientsEnterpriseScreen, PatientsScreen } from "@/screens";
+import { PatientsEnterpriseScreen, PatientsProfessionalScreen } from "@/screens";
 import { buildDppByMonth } from "@/services/home";
 import { getMyPatients } from "@/services/patient";
 import { getDueDatesForUser } from "@/services/patient";
@@ -107,7 +107,7 @@ export default async function PatientsPage({
   const dppByMonth = buildDppByMonth(dueDates, dayjs());
 
   return (
-    <PatientsScreen
+    <PatientsProfessionalScreen
       patients={patients}
       totalCount={totalCount}
       currentPage={currentPage}
