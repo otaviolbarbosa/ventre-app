@@ -8,6 +8,7 @@ export type Patient = Tables<"patients">;
 
 export type Invite = {
   id: string;
+  status: string; // "pendente" | "aceito" | "rejeitado" | "expirado"
   professional_type: ProfessionalType | null;
   expires_at: string;
   patient: {
@@ -20,6 +21,26 @@ export type Invite = {
     name: string;
     professional_type: string | null;
   } | null;
+};
+
+export type SentTeamInvite = {
+  id: string;
+  status: string; // "pendente" | "aceito" | "rejeitado" | "expirado"
+  expires_at: string;
+  professional_type: ProfessionalType | null;
+  patient: { id: string; name: string } | null;
+  invitedProfessional: { id: string; name: string; professional_type: string | null } | null;
+};
+
+export type SentPatientInvite = {
+  id: string;
+  status: string; // "pendente" | "usado" | "expirado"
+  invite_type: string; // "new_patient" | "link_existing"
+  expires_at: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  patient: { id: string; name: string } | null;
 };
 
 export type TeamMember = {

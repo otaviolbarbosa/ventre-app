@@ -1,7 +1,7 @@
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import type { Database, Tables, TablesInsert } from "@ventre/supabase/types";
 import dayjs from "dayjs";
-import type { Invite } from "@/types";
+import type { Invite, SentPatientInvite, SentTeamInvite } from "@/types";
 
 type ProfessionalType = Database["public"]["Enums"]["professional_type"];
 
@@ -52,6 +52,52 @@ export async function getMyInvites(): Promise<GetMyInvitesResult> {
   return { data: invites as Invite[] };
 }
 
+type GetReceivedInvitesResult = {
+  data?: { active: Invite[]; inactive: Invite[] };
+  error?: string;
+};
+
+export async function getReceivedInvites(): Promise<GetReceivedInvitesResult> {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Usuário não encontrado" };
+  }
+
+  // Use admin client to bypass RLS — the invited professional is not yet
+  // a team member, so RLS on the patients table blocks the JOIN.
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  const { data: invites, error } = await supabaseAdmin
+    .from("team_invites")
+    .select(`
+      *,
+      patient:patients!team_invites_patient_id_fkey(id, name, pregnancies(due_date, dum)),
+      inviter:users!team_invites_invited_by_fkey(id, name, professional_type)
+    `)
+    .eq("invited_professional_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const now = new Date();
+  const active: Invite[] = [];
+  const inactive: Invite[] = [];
+
+  for (const invite of invites as Invite[]) {
+    const isActive = invite.status === "pendente" && new Date(invite.expires_at) > now;
+    (isActive ? active : inactive).push(invite);
+  }
+
+  return { data: { active, inactive } };
+}
+
 export async function getInviteById(inviteId: string): Promise<GetInviteByIdResult> {
   const supabaseAdmin = await createServerSupabaseAdmin();
 
@@ -91,6 +137,95 @@ export async function getPendingInviteById(inviteId: string): Promise<GetInviteB
   }
 
   return { data: invite as Invite };
+}
+
+type GetSentTeamInvitesResult = {
+  data?: { active: SentTeamInvite[]; inactive: SentTeamInvite[] };
+  error?: string;
+};
+
+export async function getSentTeamInvites(): Promise<GetSentTeamInvitesResult> {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Usuário não encontrado" };
+  }
+
+  // Plain client is sufficient here (unlike getReceivedInvites): sending a
+  // team invite requires is_team_member(patient_id) at insert time, so RLS
+  // already grants this sender the patients JOIN.
+  const { data: invites, error } = await supabase
+    .from("team_invites")
+    .select(`
+      *,
+      patient:patients!team_invites_patient_id_fkey(id, name),
+      invitedProfessional:users!team_invites_invited_professional_id_fkey(id, name, professional_type)
+    `)
+    .eq("invited_by", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const now = new Date();
+  const active: SentTeamInvite[] = [];
+  const inactive: SentTeamInvite[] = [];
+
+  for (const invite of invites as SentTeamInvite[]) {
+    const isActive = invite.status === "pendente" && new Date(invite.expires_at) > now;
+    (isActive ? active : inactive).push(invite);
+  }
+
+  return { data: { active, inactive } };
+}
+
+type GetSentPatientInvitesResult = {
+  data?: { active: SentPatientInvite[]; inactive: SentPatientInvite[] };
+  error?: string;
+};
+
+export async function getSentPatientInvites(): Promise<GetSentPatientInvitesResult> {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Usuário não encontrado" };
+  }
+
+  // Plain client is sufficient: SELECT RLS allows created_by = auth.uid();
+  // the patients JOIN (link_existing only) is covered by is_team_member,
+  // which INSERT already required of this sender.
+  const { data: invites, error } = await supabase
+    .from("patient_invite_links")
+    .select(`
+      id, status, invite_type, expires_at, name, email, phone,
+      patient:patients!patient_invite_links_patient_id_fkey(id, name)
+    `)
+    .eq("created_by", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const now = new Date();
+  const active: SentPatientInvite[] = [];
+  const inactive: SentPatientInvite[] = [];
+
+  for (const invite of invites as SentPatientInvite[]) {
+    const isActive = invite.status === "pendente" && new Date(invite.expires_at) > now;
+    (isActive ? active : inactive).push(invite);
+  }
+
+  return { data: { active, inactive } };
 }
 
 export async function createInviteForPatientTeamMember(

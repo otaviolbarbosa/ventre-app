@@ -100,6 +100,7 @@
       ".turbo",
       "*.gen.ts",
       "**/public/sw.js",
+      "**/public/pdf.worker.min.mjs",
       ".agents",
       "**/storybook-static",
       "**/.expo",
