@@ -15,7 +15,9 @@ export const confirmInstallmentPaymentAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabaseAdmin, user, profile } }) => {
     const { data: installment } = await supabaseAdmin
       .from("installments")
-      .select("id, status, due_date, billing_id, billings(patient_id, patient:patients(name))")
+      .select(
+        "id, status, due_date, amount, billing_id, billings(patient_id, patient:patients(name))",
+      )
       .eq("id", parsedInput.installmentId)
       .single();
 
@@ -50,7 +52,11 @@ export const confirmInstallmentPaymentAction = authActionClient
     if (parsedInput.decision === "confirm") {
       const { error } = await supabaseAdmin
         .from("installments")
-        .update({ status: "pago", paid_at: new Date().toISOString() })
+        .update({
+          status: "pago",
+          paid_at: new Date().toISOString(),
+          paid_amount: installment.amount,
+        })
         .eq("id", parsedInput.installmentId);
 
       if (error) throw new Error(error.message);

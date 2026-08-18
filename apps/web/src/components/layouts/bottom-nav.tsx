@@ -102,6 +102,13 @@ export default function BottomNav() {
         //   icon: Wrench,
         //   isActive: pathname.startsWith("/ferramentas"),
         // },
+        // Remover ao disponbilizar as ferramentas
+        {
+          name: "Financeiro",
+          href: "/financeiro",
+          icon: CircleDollarSign,
+          isActive: pathname.startsWith("/financeiro"),
+        },
       ]
     : isStaff(profile)
       ? [
@@ -151,14 +158,7 @@ export default function BottomNav() {
         ];
 
   const overflowNav = isPatient(profile)
-    ? [
-        {
-          name: "Financeiro",
-          href: "/financeiro",
-          icon: CircleDollarSign,
-          isActive: pathname.startsWith("/financeiro"),
-        },
-      ]
+    ? []
     : isStaff(profile)
       ? [
           {

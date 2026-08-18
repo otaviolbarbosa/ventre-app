@@ -97,13 +97,14 @@ export type BillingWithInstallments = Billing & { installments: Installment[] };
 
 export async function getMyBillingSummary(): Promise<{
   billings: BillingWithInstallments[];
+  professionals: Record<string, string>;
   error?: string;
 }> {
   const { supabase } = await getServerAuth();
   const { patientId, error } = await getMyPatientId();
 
   if (!patientId) {
-    return { billings: [], error };
+    return { billings: [], professionals: {}, error };
   }
 
   const { data } = await supabase
@@ -112,7 +113,31 @@ export async function getMyBillingSummary(): Promise<{
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false });
 
-  return { billings: (data as BillingWithInstallments[]) ?? [] };
+  const billings = (data as BillingWithInstallments[]) ?? [];
+
+  const professionalIds = Array.from(
+    new Set(
+      billings.flatMap((billing) =>
+        billing.splitted_billing
+          ? Object.keys(billing.splitted_billing as Record<string, number>)
+          : [],
+      ),
+    ),
+  );
+
+  let professionals: Record<string, string> = {};
+  if (professionalIds.length > 0) {
+    const { data: professionalRows } = await supabase
+      .from("users")
+      .select("id, name")
+      .in("id", professionalIds);
+
+    professionals = Object.fromEntries(
+      (professionalRows ?? []).map((professional) => [professional.id, professional.name]),
+    );
+  }
+
+  return { billings, professionals };
 }
 
 export type Contract = Tables<"contracts">;

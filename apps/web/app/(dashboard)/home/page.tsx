@@ -1,6 +1,6 @@
 import { isStaff } from "@/lib/access-control";
 import { getServerAuth, getServerUserEnterprises } from "@/lib/server-auth";
-import { HomeScreen, PatientHomeScreen } from "@/screens";
+import { HomeProfessionalScreen, PatientHomeScreen } from "@/screens";
 import HomeEnterpriseScreen from "@/screens/home-enterprise-screen";
 import {
   getMyContractChangeRequests,
@@ -52,5 +52,5 @@ export default async function Home({
   }
 
   const enterprises = await getServerUserEnterprises();
-  return <HomeScreen profile={profile as Profile} enterprises={enterprises} />;
+  return <HomeProfessionalScreen profile={profile as Profile} enterprises={enterprises} />;
 }
