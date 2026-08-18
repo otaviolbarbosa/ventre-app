@@ -9,7 +9,7 @@ export default function InfoScreen() {
       <div className="flex flex-col items-center gap-2 rounded-xl border bg-card p-6 text-center">
         <h2 className="font-semibold text-lg">{APP_NAME}</h2>
         <p className="text-muted-foreground text-sm">
-          Gestão de Saúde para Profissionais de Saúde e Gestantes
+          Gestão de Saúde para Profissionais do Parto e Gestantes
         </p>
       </div>
 
