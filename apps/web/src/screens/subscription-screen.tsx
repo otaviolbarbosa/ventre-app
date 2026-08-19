@@ -124,58 +124,75 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
       {/* Plano */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <CardTitle className="text-base">{plan?.name ?? "Plano"}</CardTitle>
-            <Badge variant={status.variant}>{status.label}</Badge>
-          </div>
-          {plan?.type && (
-            <p className="text-muted-foreground text-sm">{PLAN_TYPE_MAP[plan.type] ?? plan.type}</p>
-          )}
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Valor</span>
-            <span className="font-semibold">{formatCurrency(plan?.value ?? null)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-sm">Cobrança</span>
-            <span className="text-sm">{frequence}</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <Card className="flex-1">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <CardTitle className="text-base">{plan?.name ?? "Plano"}</CardTitle>
+              <Badge variant={status.variant}>{status.label}</Badge>
+            </div>
+            {plan?.type && (
+              <p className="text-muted-foreground text-sm">
+                {PLAN_TYPE_MAP[plan.type] ?? plan.type}
+              </p>
+            )}
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground text-sm">Titular</span>
+              <div className="flex items-center gap-1">
+                {isStaff(profile) ? (
+                  <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                )}
+                <span className="text-sm">
+                  {isStaff(profile) ? "Organização" : (profile.name ?? profile.email)}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">Valor</span>
+              <span className="font-semibold">{formatCurrency(plan?.value ?? null)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">Cobrança</span>
+              <span className="text-sm">{frequence}</span>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Datas */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Período</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="flex flex-1 items-center justify-between">
-              <span className="text-muted-foreground text-sm">Pagamento</span>
-              <span className="text-sm">{formatDate(subscription.paid_at)}</span>
+        {/* Datas */}
+        <Card className="flex-1">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Período</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex flex-1 items-center justify-between">
+                <span className="text-muted-foreground text-sm">Pagamento</span>
+                <span className="text-sm">{formatDate(subscription.paid_at)}</span>
+              </div>
             </div>
-          </div>
-          <Separator />
-          <div className="flex items-center gap-3">
-            <RefreshCw className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <div className="flex flex-1 items-center justify-between">
-              <span className="text-muted-foreground text-sm">Validade</span>
-              <span className="text-sm">{formatDate(subscription.expires_at)}</span>
+            <Separator />
+            <div className="flex items-center gap-3">
+              <RefreshCw className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex flex-1 items-center justify-between">
+                <span className="text-muted-foreground text-sm">Validade</span>
+                <span className="text-sm">{formatDate(subscription.expires_at)}</span>
+              </div>
             </div>
-          </div>
-          <Separator />
-          <p className="text-muted-foreground text-xs">
-            A renovação é feita automaticamente ao fim de cada período.
-          </p>
-        </CardContent>
-      </Card>
+            <Separator />
+            <p className="text-muted-foreground text-xs">
+              A renovação é feita automaticamente ao fim de cada período.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Titular */}
-      {profile.enterprise_id ? (
+      {/* {profile.enterprise_id ? (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Titular</CardTitle>
@@ -191,7 +208,7 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
             </span>
           </CardContent>
         </Card>
-      ) : null}
+      ) : null} */}
 
       {/* Benefícios */}
       {plan?.benefits && plan.benefits.length > 0 && (

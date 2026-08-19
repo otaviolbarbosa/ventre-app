@@ -24,12 +24,12 @@ import { toast } from "sonner";
 
 type BillingCycle = "month" | "year";
 
-const freeFeatures = [
-  "Gerenciamento de gestantes",
-  "Controle de evolução da gestante",
-  "Notificações em tempo real",
-  "Cartão pré-natal",
-];
+// const freeFeatures = [
+//   "Gerenciamento de gestantes",
+//   "Controle de evolução da gestante",
+//   "Notificações em tempo real",
+//   "Cartão pré-natal",
+// ];
 
 const premiumFeatures = [
   "Gerenciamento de consultas e encontros",
@@ -184,14 +184,14 @@ export default function PaywallScreen() {
             >
               Anual
             </button>
-            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Economize ~16%</Badge>
+            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Economize ~17%</Badge>
           </div>
         </div>
 
         {/* Pricing Cards */}
-        <div className="hero-animate hero-animate-3 grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-6">
+        <div className="hero-animate hero-animate-3 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-6">
           {/* Free */}
-          <div className="flex flex-col rounded-2xl border bg-card p-6 shadow-sm">
+          {/* <div className="flex flex-col rounded-2xl border bg-card p-6 shadow-sm">
             <div className="mb-2">
               <p className="font-poppins font-semibold text-xl">Cuidado Básico</p>
               <p className="text-muted-foreground text-sm">Para começar</p>
@@ -215,7 +215,7 @@ export default function PaywallScreen() {
             <Button variant="outline" className="mt-8 w-full">
               Plano atual
             </Button>
-          </div>
+          </div> */}
 
           {/* Premium — gradient border */}
           <div className="relative rounded-2xl border border-primary bg-gradient-to-br from-card to-secondary/50 p-px shadow-lg">
@@ -235,23 +235,23 @@ export default function PaywallScreen() {
               <div className="mb-6">
                 {isAnnual ? (
                   <>
-                    <span className="font-bold font-poppins text-4xl text-primary">R$299,90</span>
-                    <p className="mt-1 text-muted-foreground text-xs">por ano · R$24,99/mês</p>
+                    <span className="font-bold font-poppins text-4xl text-primary">R$799,00</span>
+                    <p className="mt-1 text-muted-foreground text-xs">por ano · R$79,90/mês</p>
                     <p className="mt-0.5 font-medium text-green-600 text-xs">
-                      Economize R$58,90 no ano
+                      Economize R$159,80 no ano
                     </p>
                   </>
                 ) : (
                   <>
-                    <span className="font-bold font-poppins text-4xl text-primary">R$29,90</span>
+                    <span className="font-bold font-poppins text-4xl text-primary">R$79,90</span>
                     <p className="mt-1 text-muted-foreground text-xs">por mês</p>
                   </>
                 )}
               </div>
 
-              <p className="mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              {/* <p className="mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
                 Tudo do gratuito, mais:
-              </p>
+              </p> */}
 
               <div className="flex-1 space-y-2.5">
                 {premiumFeatures.map((text) => (
@@ -276,39 +276,43 @@ export default function PaywallScreen() {
           </div>
 
           {/* Enterprise */}
-          <div className="flex flex-col rounded-2xl border border-primary/20 bg-card/60 p-6 shadow-sm">
-            <div className="mb-2">
-              <p className="font-poppins font-semibold text-xl">Cuidado Completo (Empresarial)</p>
-              <p className="text-muted-foreground text-sm">Para clínicas e equipes</p>
-            </div>
+          <div className="flex flex-col rounded-2xl border border-primary/20 bg-card/30 p-6 shadow-sm">
+            <div className="flex-1 opacity-30">
+              <div className="mb-2">
+                <p className="font-poppins font-semibold text-xl">Cuidado Completo (Empresarial)</p>
+                <p className="text-muted-foreground text-sm">Para clínicas e equipes</p>
+              </div>
 
-            <div className="mb-6">
-              <span className="font-bold font-poppins text-2xl">Personalizado</span>
-              <p className="mt-1 text-muted-foreground text-xs">Mediante contato com a equipe</p>
-            </div>
-
-            <p className="mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-              Tudo do Mais Cuidado, mais:
-            </p>
-
-            <div className="flex-1 space-y-2.5">
-              {enterpriseFeatures.map((text) => (
-                <div key={text} className="flex items-center gap-3">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <Check className="h-3 w-3 text-primary" />
+              <div className="mb-6">
+                <span className="font-bold font-poppins text-2xl">Personalizado</span>
+                <p className="mt-1 text-muted-foreground text-xs">Mediante contato com a equipe</p>
+              </div>
+              <p className="mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                Tudo do Mais Cuidado, mais:
+              </p>
+              <div className="flex-1 space-y-2.5">
+                {enterpriseFeatures.map((text) => (
+                  <div key={text} className="flex items-center gap-3">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                      <Check className="h-3 w-3 text-primary" />
+                    </div>
+                    <span className="text-sm">{text}</span>
                   </div>
-                  <span className="text-sm">{text}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             <div className="mt-8 space-y-2">
-              <Button variant="outline" className="w-full border-primary/30 hover:bg-primary/5">
-                Falar com Vendas
+              <Button
+                variant="outline"
+                className="w-full border-primary/30 hover:bg-primary/5"
+                asChild
+              >
+                <a href="mailto:falecom@ventre.app">Em breve!</a>
               </Button>
-              <p className="text-center text-muted-foreground text-xs">
+              {/* <p className="text-center text-muted-foreground text-xs">
                 Nossa equipe entrará em contato
-              </p>
+              </p> */}
             </div>
           </div>
         </div>

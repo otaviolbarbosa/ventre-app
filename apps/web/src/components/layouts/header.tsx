@@ -60,18 +60,17 @@ export function Header({ title, back, subtitle, noBg = false }: HeaderProps) {
             backgroundSize: "1360px",
             backgroundPositionX: "-160px",
             backgroundPositionY: "-190px",
-            // filter: "blur(4px)",
           }}
         />
       )}
-      <div className="flex-1">
+      <div className="w-full flex-1">
         <div className="flex items-center gap-2">
           {/* Back button */}
           {back && (
             <Button
               variant="ghost"
               size="icon"
-              className="mx-0 w-6 hover:bg-transparent active:bg-transparent md:hidden"
+              className="mx-0 w-6 shrink-0 hover:bg-transparent active:bg-transparent md:hidden"
               onClick={handleGoBack}
             >
               <ChevronLeft />
@@ -87,7 +86,7 @@ export function Header({ title, back, subtitle, noBg = false }: HeaderProps) {
               )}
             </div>
           )}
-          <div className="flex justify-center gap-2">
+          <div className="flex shrink-0 justify-center">
             <NotificationBell />
           </div>
         </div>
