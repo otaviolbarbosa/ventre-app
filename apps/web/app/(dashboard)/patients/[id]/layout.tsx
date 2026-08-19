@@ -133,9 +133,9 @@ export default function PatientLayout({
         <>
           <Header
             title={
-              <div className="flex items-baseline gap-2">
-                <span>{patient.name}</span>
-                <span className="font-medium font-sans text-sm">
+              <div className="flex min-w-0 items-baseline gap-2">
+                <span className="truncate">{patient.name}</span>
+                <span className="shrink-0 whitespace-nowrap font-medium font-sans text-sm">
                   {calculateGestationalAge(pregnancy?.dum)?.label}
                 </span>
               </div>

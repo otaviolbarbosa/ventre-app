@@ -20,6 +20,7 @@ interface AuthContextType {
     metadata: { name: string },
   ) => Promise<{ data: unknown; error: unknown }>;
   signOut: () => Promise<{ error: unknown }>;
+  refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
   signInWithGoogle: (
     redirectTo?: string,
@@ -119,6 +120,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    await fetchProfile(user.id);
+  }, [user, fetchProfile]);
+
   const resetPassword = async (email: string) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
@@ -163,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    refreshProfile,
     resetPassword,
     signInWithGoogle,
     connectGoogleCalendar,

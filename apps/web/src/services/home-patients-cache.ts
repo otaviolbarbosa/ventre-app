@@ -7,7 +7,6 @@ import {
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Json } from "@ventre/supabase/types";
-import { unstable_cache } from "next/cache";
 
 const TEAM_MEMBERS_SELECT =
   "patient_id, id, professional_id, professional_type, joined_at, is_backup, professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)";
@@ -147,26 +146,6 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
   });
 }
 
-// unstable_cache must be a stable function reference created at module level.
-// Inline creation (inside getCachedHomePatients) creates a new cache namespace on every
-// call, causing consistent cache misses. We memoize one cache function per userId so
-// the reference is stable and per-user tags remain valid for targeted revalidation.
-type CachedFetchFn = (params: FetchParams) => Promise<HomePatientItem[]>;
-const userCacheFns = new Map<string, CachedFetchFn>();
-
-function getOrCreateUserCacheFn(userId: string): CachedFetchFn {
-  if (!userCacheFns.has(userId)) {
-    userCacheFns.set(
-      userId,
-      unstable_cache(fetchHomePatients, ["home-patients", userId], {
-        tags: [`home-patients-${userId}`],
-        revalidate: 300,
-      }),
-    );
-  }
-  return userCacheFns.get(userId) as CachedFetchFn;
-}
-
 export function getCachedHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
-  return getOrCreateUserCacheFn(params.userId)(params);
+  return fetchHomePatients(params);
 }
