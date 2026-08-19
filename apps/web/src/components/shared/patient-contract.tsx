@@ -203,49 +203,50 @@ export default function PatientContract({
   const { execute: fetchContract, isExecuting: isLoadingFetchContract } = useAction(
     getPatientContractAction,
     {
-    onSuccess: ({ data }) => {
-      if (data?.headerBlocks) {
-        setEnterpriseHeaderBlocks(data.headerBlocks);
-        setActiveHeaderVariant((prev) => prev ?? "enterprise");
-      }
-      if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
-      setHeaderIncompleteParties(data?.headerIncompleteParties ?? []);
-      setPersonalIncompleteParties(data?.personalHeaderIncompleteParties ?? []);
-      setPatientName(data?.patientName ?? null);
-      setContratadaName(data?.contratadaName ?? null);
+      onSuccess: ({ data }) => {
+        if (data?.headerBlocks) {
+          setEnterpriseHeaderBlocks(data.headerBlocks);
+          setActiveHeaderVariant((prev) => prev ?? "enterprise");
+        }
+        if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
+        setHeaderIncompleteParties(data?.headerIncompleteParties ?? []);
+        setPersonalIncompleteParties(data?.personalHeaderIncompleteParties ?? []);
+        setPatientName(data?.patientName ?? null);
+        setContratadaName(data?.contratadaName ?? null);
 
-      setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
-      setPersonalOptions(data?.personalBaseOptions ?? []);
+        setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
+        setPersonalOptions(data?.personalBaseOptions ?? []);
 
-      if (data?.contract) {
-        setContractId(data.contract.id);
-        setTitle(data.contract.title);
-        setClausesHtml(data.contract.clauses_html);
-        setCity(data.contract.city ?? "");
-        setState(data.contract.state ?? "");
-        if (data.savedParties) setSavedParties(data.savedParties);
-        setOriginalDocumentId(data.contract.original_document_id);
-        setSignatureInfo(
-          data.contract.is_signed
-            ? {
-                signedAt: data.contract.signed_at,
-                verificationCode: data.contract.verification_code,
-                finalizedDocumentId: data.contract.finalized_document_id,
-                signedByName: data.signedByName ?? null,
-              }
-            : null,
-        );
-        setFullySignedAt(data.contract.fully_signed_at ?? null);
-        setContractExists(true);
-        setMode("readonly");
-      } else {
-        setOriginalDocumentId(null);
-        setMode("select");
-      }
-      setChangeRequests(data?.changeRequests ?? []);
+        if (data?.contract) {
+          setContractId(data.contract.id);
+          setTitle(data.contract.title);
+          setClausesHtml(data.contract.clauses_html);
+          setCity(data.contract.city ?? "");
+          setState(data.contract.state ?? "");
+          if (data.savedParties) setSavedParties(data.savedParties);
+          setOriginalDocumentId(data.contract.original_document_id);
+          setSignatureInfo(
+            data.contract.is_signed
+              ? {
+                  signedAt: data.contract.signed_at,
+                  verificationCode: data.contract.verification_code,
+                  finalizedDocumentId: data.contract.finalized_document_id,
+                  signedByName: data.signedByName ?? null,
+                }
+              : null,
+          );
+          setFullySignedAt(data.contract.fully_signed_at ?? null);
+          setContractExists(true);
+          setMode("readonly");
+        } else {
+          setOriginalDocumentId(null);
+          setMode("select");
+        }
+        setChangeRequests(data?.changeRequests ?? []);
+      },
+      onError: () => setMode("select"),
     },
-    onError: () => setMode("select"),
-  });
+  );
 
   const { execute: resolveChangeRequest, isExecuting: isResolvingChangeRequest } = useAction(
     resolveContractChangeRequestAction,
@@ -701,19 +702,21 @@ export default function PatientContract({
               {isLoadingReadonlyPdf ? "Carregando PDF..." : "Não foi possível carregar o PDF."}
             </p>
           )}
-          <div className="flex justify-between gap-2">
-            <Button
-              variant="ghost"
-              className="text-destructive hover:text-destructive"
-              onClick={() => setIsDeleteConfirmOpen(true)}
-            >
-              <Trash2 className="size-4" />
-              Excluir contrato
-            </Button>
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
+            {!fullySignedAt && (
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Excluir contrato
+              </Button>
+            )}
+            <div className="flex flex-1 gap-2 sm:flex-none">
               {fullySignedAt && (
                 <Button variant="outline" onClick={() => setIsRevokeConfirmOpen(true)}>
-                  Revogar e redigir novo contrato
+                  Revogar e redigir novo
                 </Button>
               )}
               {!fullySignedAt && (
@@ -731,7 +734,7 @@ export default function PatientContract({
                   Editar contrato
                 </Button>
               )}
-              <Button variant="outline" disabled={isExporting} onClick={handleExportPdf}>
+              <Button disabled={isExporting} onClick={handleExportPdf}>
                 <Download className="size-4" />
                 {isExporting ? "Gerando PDF..." : "Baixar contrato"}
               </Button>

@@ -4,7 +4,6 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Json } from "@ventre/supabase/types";
-import { unstable_cache } from "next/cache";
 
 const TEAM_MEMBERS_SELECT =
   "patient_id, id, professional_id, professional_type, joined_at, is_backup, professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)";
@@ -200,20 +199,5 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
 }
 
 export function getCachedEnterpriseHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
-  return unstable_cache(
-    () => fetchEnterpriseHomePatients(params),
-    [
-      "enterprise-home-patients",
-      params.enterpriseId,
-      params.professionalId ?? "all",
-      params.filter,
-      params.search,
-      String(params.dppMonth ?? ""),
-      String(params.dppYear ?? ""),
-    ],
-    {
-      tags: [`enterprise-patients-${params.enterpriseId}`],
-      revalidate: 300,
-    },
-  )();
+  return fetchEnterpriseHomePatients(params);
 }

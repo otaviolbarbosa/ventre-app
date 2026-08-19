@@ -85,7 +85,7 @@ function getInitials(name: string | null): string {
 export default function ProfileScreen({ profile, address }: ProfileScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signOut } = useAuth();
+  const { signOut, refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const [isUploading, setIsUploading] = useState(false);
@@ -131,6 +131,7 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
       }
 
       setAvatarUrl(data.avatar_url);
+      await refreshProfile();
       router.refresh();
     } catch (error) {
       console.error("Upload error:", error);

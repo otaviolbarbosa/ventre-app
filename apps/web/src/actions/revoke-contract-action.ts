@@ -28,8 +28,21 @@ export const revokeContractAction = authActionClient
       }
 
       if (profile.enterprise_id) {
-        if (!isStaff(profile)) {
-          throw new Error("Apenas gestores ou secretárias podem revogar o contrato.");
+        const isManagerOrSecretary = isStaff(profile);
+        let isTeamMember = false;
+        if (!isManagerOrSecretary) {
+          const { data: teamRow } = await supabase
+            .from("team_members")
+            .select("id")
+            .eq("patient_id", patientId)
+            .eq("professional_id", user.id)
+            .maybeSingle();
+          isTeamMember = !!teamRow;
+        }
+        if (!isManagerOrSecretary && !isTeamMember) {
+          throw new Error(
+            "Apenas gestores, secretárias ou membros da equipe de cuidado podem revogar o contrato.",
+          );
         }
       } else {
         const { data: patientRow } = await supabase
