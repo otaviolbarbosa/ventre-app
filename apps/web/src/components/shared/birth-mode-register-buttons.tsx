@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  BIRTH_EVENT_CONFIG,
+  BIRTH_EVENT_TYPES,
+  type BirthEventType,
+} from "@/lib/birth-mode-constants";
 import { AddBirthAmnioticFluidRecordModal } from "@/modals/add-birth-amniotic-fluid-record-modal";
 import { AddBirthCervicalDilationModal } from "@/modals/add-birth-cervical-dilation-modal";
 import { AddBirthContractionModal } from "@/modals/add-birth-contraction-modal";
@@ -7,7 +12,6 @@ import { AddBirthFetalHeartRateModal } from "@/modals/add-birth-fetal-heart-rate
 import { AddBirthFetalStationModal } from "@/modals/add-birth-fetal-station-modal";
 import { AddBirthMedicationAdministrationModal } from "@/modals/add-birth-medication-administration-modal";
 import { AddBirthMembraneRuptureModal } from "@/modals/add-birth-membrane-rupture-modal";
-import { BIRTH_EVENT_CONFIG, BIRTH_EVENT_TYPES, type BirthEventType } from "@/lib/birth-mode-constants";
 import { Button } from "@ventre/ui/button";
 import { useState } from "react";
 
@@ -20,9 +24,10 @@ export function BirthModeRegisterButtons({
   pregnancyId,
   onSuccess,
 }: BirthModeRegisterButtonsProps) {
-  const [activeModal, setActiveModal] = useState<Exclude<BirthEventType, "active_labor_entry"> | null>(
-    null,
-  );
+  const [activeModal, setActiveModal] = useState<Exclude<
+    BirthEventType,
+    "active_labor_entry"
+  > | null>(null);
 
   return (
     <>
@@ -34,12 +39,14 @@ export function BirthModeRegisterButtons({
             <Button
               key={type}
               type="button"
-              variant="outline"
-              className="h-auto flex-col gap-2 py-4"
+              variant="ghost"
               onClick={() => setActiveModal(type)}
+              asChild
             >
-              <Icon className={`h-5 w-5 ${config.colorClass}`} />
-              <span className="text-center text-xs">{config.label}</span>
+              <div className="h-auto flex-col gap-2 rounded-xl border py-4">
+                <Icon className={`h-5 w-5 ${config.colorClass}`} />
+                <span className="text-center text-xs">{config.label}</span>
+              </div>
             </Button>
           );
         })}

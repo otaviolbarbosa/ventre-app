@@ -19,7 +19,6 @@ export function useBirthModeRealtime() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disabled");
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_BIRTH_MODE_REALTIME_SPIKE !== "true") return;
     if (typeof window === "undefined" || !user) return;
 
     let cancelled = false;

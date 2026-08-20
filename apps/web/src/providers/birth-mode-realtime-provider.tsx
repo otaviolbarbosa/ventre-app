@@ -1,14 +1,14 @@
 "use client";
 
-import { useBirthModeRealtime } from "@/hooks/use-birth-mode-realtime";
+import { useBirthModeStatus } from "@/hooks/use-birth-mode-status";
 import { createContext, useContext } from "react";
 
-type BirthModeRealtimeContextType = ReturnType<typeof useBirthModeRealtime>;
+type BirthModeRealtimeContextType = ReturnType<typeof useBirthModeStatus>;
 
 const BirthModeRealtimeContext = createContext<BirthModeRealtimeContextType | null>(null);
 
 export function BirthModeRealtimeProvider({ children }: { children: React.ReactNode }) {
-  const value = useBirthModeRealtime();
+  const value = useBirthModeStatus();
   return (
     <BirthModeRealtimeContext.Provider value={value}>{children}</BirthModeRealtimeContext.Provider>
   );
