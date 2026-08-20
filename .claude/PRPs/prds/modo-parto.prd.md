@@ -130,7 +130,7 @@ O cliente foi explícito: **todo o escopo descrito no prompt original deve ser i
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Modelo de dados & RLS | Tabelas de eventos do parto (únicos e múltiplos), ativação do Modo Parto, RLS via `is_team_member` | complete | - | - | `.claude/PRPs/plans/completed/modo-parto-fase-1-modelo-de-dados.plan.md` |
 | 2 | Realtime spike & infraestrutura | Prova de conceito de subscription/redirect via Supabase Realtime; convenção de canal e cleanup | complete | with 1 | - | `.claude/PRPs/plans/completed/modo-parto-fase-2-realtime-spike.plan.md` |
-| 3 | Notificação WhatsApp de ativação | Fan-out para equipe via fila existente, novo `WhatsAppNotificationType`, handler de fila | pending | with 4 | 1 | - |
+| 3 | Notificação WhatsApp de ativação | Fan-out para equipe via fila existente, novo `WhatsAppNotificationType`, handler de fila | complete | with 4 | 1 | `.claude/PRPs/plans/completed/modo-parto-fase-3-notificacao-whatsapp.plan.md` |
 | 4 | Tela `/modo-parto` e formulários de registro | UI de registro para todos os eventos, com alerta de duplicidade (30 min) | pending | with 3 | 1, 2 | - |
 | 5 | Redirect automático + barra persistente | Notificação in-app, contagem de 10s, barra de status global no layout | pending | - | 2, 4 | - |
 | 6 | Extensão do fluxo de finalização | Estender `finish-care-modal.tsx` + action + schema `pregnancies` com dados de desfecho do parto | pending | with 3 | 1 | - |
