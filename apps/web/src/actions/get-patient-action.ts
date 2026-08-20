@@ -13,7 +13,7 @@ export const getPatientAction = authActionClient
     const { data: patient, error } = await supabase
       .from("patients")
       .select(
-        "*, addresses(street, number, complement, neighborhood, city, state, zipcode), pregnancies(id, baby_name, due_date, dum, has_finished, born_at, delivery_method, observations, created_at, updated_at, patient_id)",
+        "*, addresses(street, number, complement, neighborhood, city, state, zipcode), pregnancies(id, baby_name, due_date, dum, has_finished, born_at, delivery_method, observations, created_at, updated_at, patient_id, birth_mode_active)",
       )
       .eq("id", parsedInput.patientId)
       .single();
@@ -40,6 +40,7 @@ export const getPatientAction = authActionClient
         born_at: pregnancy?.born_at ?? null,
         delivery_method: pregnancy?.delivery_method ?? null,
         observations: pregnancy?.observations ?? null,
+        birth_mode_active: pregnancy?.birth_mode_active ?? false,
       },
       pregnancy,
     };

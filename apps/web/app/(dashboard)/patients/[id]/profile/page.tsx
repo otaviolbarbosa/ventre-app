@@ -1,4 +1,5 @@
 "use client";
+import { activateBirthModeAction } from "@/actions/activate-birth-mode-action";
 import { deletePregnancyAction } from "@/actions/delete-pregnancy-action";
 import { getPatientAction } from "@/actions/get-patient-action";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -8,6 +9,7 @@ import PatientContract from "@/components/shared/patient-contract";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
+import { useAuth } from "@/hooks/use-auth";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
 import InviteExistingPatientModal from "@/modals/invite-existing-patient-modal";
@@ -16,7 +18,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@v
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { CalendarPlus, CheckCircle2, HeartHandshake, SearchX, Trash2 } from "lucide-react";
+import {
+  CalendarPlus,
+  CheckCircle2,
+  HeartHandshake,
+  HeartPulse,
+  SearchX,
+  Trash2,
+} from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -29,10 +38,13 @@ export default function PatientProfilePage() {
   const [showInvitePatientModal, setShowInvitePatientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const { confirm } = useConfirmModal();
+  const { isObstetrician, isNurse, isDoula } = useAuth();
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
   const { executeAsync: deletePregnancy } = useAction(deletePregnancyAction);
+  const { executeAsync: activateBirthMode, isPending: isActivatingBirthMode } =
+    useAction(activateBirthModeAction);
 
   useEffect(() => {
     fetchPatient({ patientId });
@@ -40,6 +52,24 @@ export default function PatientProfilePage() {
 
   const patient = result.data?.patient;
   const pregnancy = result.data?.pregnancy;
+
+  function handleActivateBirthMode(pregnancyId: string) {
+    confirm({
+      title: "Ativar Modo Parto",
+      description:
+        "Isso enviará uma notificação por WhatsApp para toda a equipe de cuidado da gestante. Confirma a ativação?",
+      confirmLabel: "Ativar",
+      onConfirm: async () => {
+        const res = await activateBirthMode({ pregnancyId });
+        if (res?.serverError) {
+          toast.error(res.serverError);
+          return;
+        }
+        toast.success("Modo Parto ativado!");
+        router.push(`/modo-parto?pregnancyId=${pregnancyId}`);
+      },
+    });
+  }
 
   function handleConfirmDelete() {
     confirm({
@@ -97,6 +127,31 @@ export default function PatientProfilePage() {
               Novo Agendamento
             </Button>
           </div>
+
+          {!patient.has_finished && pregnancy?.id && (isObstetrician || isNurse || isDoula) && (
+            <div className="flex justify-end">
+              {patient.birth_mode_active ? (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                  onClick={() => router.push(`/modo-parto?pregnancyId=${pregnancy.id}`)}
+                >
+                  <HeartPulse className="mr-2 h-4 w-4" />
+                  Abrir Modo Parto
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                  disabled={isActivatingBirthMode}
+                  onClick={() => handleActivateBirthMode(pregnancy.id)}
+                >
+                  <HeartPulse className="mr-2 h-4 w-4" />
+                  Modo Parto
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <Accordion type="multiple" className="w-full" defaultValue={["informacoes"]}>
