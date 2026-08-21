@@ -165,8 +165,12 @@ export default function InvitesScreen({ received, sentTeam, sentPatient }: Invit
                           invite={invite}
                           isActive={false}
                           processing={false}
-                          onAccept={() => {}}
-                          onReject={() => {}}
+                          onAccept={() => {
+                            // no-op: inactive invites are read-only
+                          }}
+                          onReject={() => {
+                            // no-op: inactive invites are read-only
+                          }}
                         />
                       ))}
                     </div>

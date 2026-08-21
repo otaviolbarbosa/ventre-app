@@ -8,9 +8,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const navLinks = [
-  { label: "Funcionalidades", href: "/#features" },
-  { label: "Como funciona", href: "/#how-it-works" },
-  { label: "Planos", href: "/paywall" },
+  { label: "Funcionalidades", href: "/#f-1a" },
+  { label: "Para quem é", href: "/#personas-1a" },
+  { label: "Segurança", href: "/#seg-1a" },
+  { label: "Planos", href: "/#planos-1a" },
 ];
 
 type Props = {
@@ -85,7 +86,7 @@ export function PublicHeaderClient({ userId }: Props) {
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button className="gradient-primary shadow-soft">Cadastrar grátis</Button>
+                  <Button className="gradient-primary shadow-soft">Criar conta grátis</Button>
                 </Link>
               </>
             )}
@@ -150,7 +151,7 @@ export function PublicHeaderClient({ userId }: Props) {
                   </Button>
                 </Link>
                 <Link href="/register" onClick={() => setMenuOpen(false)}>
-                  <Button className="gradient-primary w-full">Cadastrar grátis</Button>
+                  <Button className="gradient-primary w-full">Criar conta grátis</Button>
                 </Link>
               </>
             )}
