@@ -1,6 +1,8 @@
 "use client";
 
 import { addBirthCervicalDilationAction } from "@/actions/add-birth-cervical-dilation-action";
+import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
+import { dayjs } from "@/lib/dayjs";
 import {
   type BirthCervicalDilationInput,
   birthCervicalDilationSchema,
@@ -9,6 +11,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
+import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Slider } from "@ventre/ui/slider";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -33,11 +37,11 @@ export function AddBirthCervicalDilationModal({
 
   const form = useForm<BirthCervicalDilationInput>({
     resolver: zodResolver(birthCervicalDilationSchema),
-    defaultValues: { dilation_cm: undefined },
+    defaultValues: { dilation_cm: undefined, ...defaultBirthEventDateTime() },
   });
 
   useEffect(() => {
-    if (open) form.reset({ dilation_cm: undefined });
+    if (open) form.reset({ dilation_cm: undefined, ...defaultBirthEventDateTime() });
   }, [open, form]);
 
   async function onSubmit(values: BirthCervicalDilationInput) {
@@ -69,7 +73,7 @@ export function AddBirthCervicalDilationModal({
             name="dilation_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Dilatação: {field.value ?? 0} cm *</FormLabel>
+                <FormLabel>Dilatação: {field.value ? field.value.toFixed(1) : 0} cm *</FormLabel>
                 <FormControl>
                   <Slider
                     min={0}
@@ -87,6 +91,48 @@ export function AddBirthCervicalDilationModal({
               </FormItem>
             )}
           />
+
+          <div className="flex gap-2">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Data *</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
+                      placeholderText="Selecione a data"
+                      hideCalendar
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora *</FormLabel>
+                  <FormControl>
+                    <TimePicker
+                      selected={field.value ? new Date(`1970-01-01T${field.value}:00`) : null}
+                      onChange={(date) => field.onChange(date ? dayjs(date).format("HH:mm") : "")}
+                      timeIntervals={1}
+                      hidePredefinedTimes
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

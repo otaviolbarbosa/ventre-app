@@ -1,12 +1,16 @@
 "use client";
 
 import { addBirthContractionAction } from "@/actions/add-birth-contraction-action";
+import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
+import { dayjs } from "@/lib/dayjs";
 import { type BirthContractionInput, birthContractionSchema } from "@/lib/validations/birth-mode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
+import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -30,11 +34,11 @@ export function AddBirthContractionModal({
 
   const form = useForm<BirthContractionInput>({
     resolver: zodResolver(birthContractionSchema),
-    defaultValues: { duration_seconds: undefined },
+    defaultValues: { duration_seconds: undefined, ...defaultBirthEventDateTime() },
   });
 
   useEffect(() => {
-    if (open) form.reset({ duration_seconds: undefined });
+    if (open) form.reset({ duration_seconds: undefined, ...defaultBirthEventDateTime() });
   }, [open, form]);
 
   async function onSubmit(values: BirthContractionInput) {
@@ -46,9 +50,7 @@ export function AddBirthContractionModal({
     toast.success("Contração registrada!");
     if (result?.data?.duplicateWarning) {
       const { minutesAgo, professionalName } = result.data.duplicateWarning;
-      toast.warning(
-        `${professionalName} já registrou uma contração há ${minutesAgo} min`,
-      );
+      toast.warning(`${professionalName} já registrou uma contração há ${minutesAgo} min`);
     }
     onOpenChange(false);
     onSuccess();
@@ -76,6 +78,48 @@ export function AddBirthContractionModal({
               </FormItem>
             )}
           />
+
+          <div className="flex gap-2">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Data *</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
+                      placeholderText="Selecione a data"
+                      hideCalendar
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora *</FormLabel>
+                  <FormControl>
+                    <TimePicker
+                      selected={field.value ? new Date(`1970-01-01T${field.value}:00`) : null}
+                      onChange={(date) => field.onChange(date ? dayjs(date).format("HH:mm") : "")}
+                      timeIntervals={1}
+                      hidePredefinedTimes
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

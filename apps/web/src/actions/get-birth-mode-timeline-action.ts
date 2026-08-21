@@ -81,8 +81,8 @@ export const getBirthModeTimelineAction = authActionClient
     if (pregnancy?.birth_mode_activated_at) {
       const activatedBy = pregnancy.activated_by as { name: string } | null;
       events.push({
-        type: "active_labor_entry",
-        id: `active-labor-entry-${pregnancyId}`,
+        type: "start_monitoring",
+        id: `start-monitoring-${pregnancyId}`,
         occurredAt: pregnancy.birth_mode_activated_at,
         professionalId: pregnancy.birth_mode_activated_by,
         professionalName: activatedBy?.name ?? "Profissional",

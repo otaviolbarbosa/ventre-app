@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  combineDateAndTime,
   duplicateWindowStart,
   resolvePregnancyPatientId,
   toDuplicateWarning,
@@ -33,11 +34,14 @@ export const addBirthContractionAction = authActionClient
 
     const patientId = await resolvePregnancyPatientId(supabase, pregnancyId);
 
+    const { date, time, ...rest } = data;
+
     const { error } = await supabase.from("birth_contractions").insert({
       pregnancy_id: pregnancyId,
       patient_id: patientId,
       professional_id: user.id,
-      ...data,
+      measured_at: combineDateAndTime(date, time),
+      ...rest,
     });
 
     if (error) throw new Error(error.message);

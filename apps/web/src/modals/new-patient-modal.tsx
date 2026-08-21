@@ -794,10 +794,10 @@ export default function NewPatientModal({
                         name="partner_name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nome do parceiro</FormLabel>
+                            <FormLabel>Nome da parceria</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Nome do parceiro"
+                                placeholder="Nome da parceria"
                                 {...field}
                                 value={field.value ?? ""}
                               />

@@ -1,6 +1,7 @@
 "use client";
 
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { EmptyState } from "@/components/shared/empty-state";
 import {
   AMNIOTIC_FLUID_TYPE_LABELS,
   BIRTH_CONTRACTION_EFFECTIVENESS_LABELS,
@@ -8,13 +9,12 @@ import {
   BIRTH_MEDICATION_TYPE_LABELS,
 } from "@/lib/birth-mode-constants";
 import { dayjs } from "@/lib/dayjs";
-import { EmptyState } from "@/components/shared/empty-state";
 import { Activity } from "lucide-react";
 
 function describeEvent(event: BirthModeTimelineEvent): string {
   switch (event.type) {
-    case "active_labor_entry":
-      return "Entrada em fase ativa registrada";
+    case "start_monitoring":
+      return "Início do acompanhamento registrado";
     case "contraction": {
       const { duration_seconds, effectiveness } = event.payload as {
         duration_seconds: number;
@@ -33,7 +33,7 @@ function describeEvent(event: BirthModeTimelineEvent): string {
     }
     case "fetal_heart_rate": {
       const { bpm } = event.payload as { bpm: number };
-      return `FCF: ${bpm} bpm`;
+      return `BCF: ${bpm} bpm`;
     }
     case "amniotic_fluid": {
       const { fluid_type } = event.payload as { fluid_type: string };
