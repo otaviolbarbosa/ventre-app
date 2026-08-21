@@ -317,6 +317,449 @@ export type Database = {
           },
         ]
       }
+      birth_amniotic_fluid_records: {
+        Row: {
+          created_at: string
+          fluid_type: Database["public"]["Enums"]["birth_amniotic_fluid_type"]
+          id: string
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          created_at?: string
+          fluid_type: Database["public"]["Enums"]["birth_amniotic_fluid_type"]
+          id?: string
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          created_at?: string
+          fluid_type?: Database["public"]["Enums"]["birth_amniotic_fluid_type"]
+          id?: string
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_amniotic_fluid_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_amniotic_fluid_records_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_amniotic_fluid_records_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_apgar_scores: {
+        Row: {
+          activity: number
+          appearance: number
+          created_at: string
+          grimace: number
+          id: string
+          minute: number
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          pulse: number
+          respiration: number
+          total: number | null
+        }
+        Insert: {
+          activity: number
+          appearance: number
+          created_at?: string
+          grimace: number
+          id?: string
+          minute: number
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          pulse: number
+          respiration: number
+          total?: number | null
+        }
+        Update: {
+          activity?: number
+          appearance?: number
+          created_at?: string
+          grimace?: number
+          id?: string
+          minute?: number
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+          pulse?: number
+          respiration?: number
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_apgar_scores_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_apgar_scores_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_apgar_scores_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_cervical_dilations: {
+        Row: {
+          created_at: string
+          dilation_cm: number
+          id: string
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          created_at?: string
+          dilation_cm: number
+          id?: string
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          created_at?: string
+          dilation_cm?: number
+          id?: string
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_cervical_dilations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_cervical_dilations_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_cervical_dilations_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_contractions: {
+        Row: {
+          created_at: string
+          duration_seconds: number
+          effectiveness:
+            | Database["public"]["Enums"]["birth_contraction_effectiveness"]
+            | null
+          id: string
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds: number
+          effectiveness?:
+            | Database["public"]["Enums"]["birth_contraction_effectiveness"]
+            | null
+          id?: string
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number
+          effectiveness?:
+            | Database["public"]["Enums"]["birth_contraction_effectiveness"]
+            | null
+          id?: string
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_contractions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_contractions_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_contractions_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_fetal_heart_rates: {
+        Row: {
+          bpm: number
+          created_at: string
+          id: string
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          bpm: number
+          created_at?: string
+          id?: string
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          bpm?: number
+          created_at?: string
+          id?: string
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_fetal_heart_rates_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_fetal_heart_rates_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_fetal_heart_rates_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_fetal_stations: {
+        Row: {
+          created_at: string
+          id: string
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          station_lee: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          station_lee: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+          station_lee?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_fetal_stations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_fetal_stations_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_fetal_stations_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_medication_administrations: {
+        Row: {
+          administered_at: string
+          created_at: string
+          id: string
+          medication_type: Database["public"]["Enums"]["birth_medication_type"]
+          notes: string | null
+          other_birth_medication_type: string | null
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          administered_at?: string
+          created_at?: string
+          id?: string
+          medication_type: Database["public"]["Enums"]["birth_medication_type"]
+          notes?: string | null
+          other_birth_medication_type?: string | null
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          administered_at?: string
+          created_at?: string
+          id?: string
+          medication_type?: Database["public"]["Enums"]["birth_medication_type"]
+          notes?: string | null
+          other_birth_medication_type?: string | null
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_medication_administrations_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_medication_administrations_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_medication_administrations_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_membrane_ruptures: {
+        Row: {
+          created_at: string
+          id: string
+          occurred_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          occurred_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          occurred_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_membrane_ruptures_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_membrane_ruptures_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: true
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_membrane_ruptures_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_change_requests: {
         Row: {
           contract_id: string
@@ -1446,6 +1889,12 @@ export type Database = {
         Row: {
           abortions_count: number | null
           baby_name: string | null
+          baby_sex: Database["public"]["Enums"]["baby_sex"] | null
+          birth_mode_activated_at: string | null
+          birth_mode_activated_by: string | null
+          birth_mode_active: boolean
+          birth_mode_ended_at: string | null
+          birth_weight_grams: number | null
           born_at: string | null
           cesareans_count: number | null
           created_at: string
@@ -1468,6 +1917,12 @@ export type Database = {
         Insert: {
           abortions_count?: number | null
           baby_name?: string | null
+          baby_sex?: Database["public"]["Enums"]["baby_sex"] | null
+          birth_mode_activated_at?: string | null
+          birth_mode_activated_by?: string | null
+          birth_mode_active?: boolean
+          birth_mode_ended_at?: string | null
+          birth_weight_grams?: number | null
           born_at?: string | null
           cesareans_count?: number | null
           created_at?: string
@@ -1492,6 +1947,12 @@ export type Database = {
         Update: {
           abortions_count?: number | null
           baby_name?: string | null
+          baby_sex?: Database["public"]["Enums"]["baby_sex"] | null
+          birth_mode_activated_at?: string | null
+          birth_mode_activated_by?: string | null
+          birth_mode_active?: boolean
+          birth_mode_ended_at?: string | null
+          birth_weight_grams?: number | null
           born_at?: string | null
           cesareans_count?: number | null
           created_at?: string
@@ -1514,6 +1975,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pregnancies_birth_mode_activated_by_fkey"
+            columns: ["birth_mode_activated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pregnancies_created_by_fkey"
             columns: ["created_by"]
@@ -2390,10 +2858,25 @@ export type Database = {
         | "polyhydramnios"
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro" | "exame"
+      baby_sex: "masculino" | "feminino"
       billing_fee_type: "fixed" | "percentage"
       billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
+      birth_amniotic_fluid_type:
+        | "intacto"
+        | "com_sangue"
+        | "claro"
+        | "com_meconio"
+      birth_contraction_effectiveness:
+        | "efetiva"
+        | "intermediaria"
+        | "nao_efetiva"
+      birth_medication_type:
+        | "fluidos_intravenosos"
+        | "ocitocina"
+        | "analgesia"
+        | "outros"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
-      delivery_method: "cesarean" | "vaginal"
+      delivery_method: "cesarean" | "vaginal" | "vaginal_assisted"
       doppler_result: "normal" | "abnormal" | "not_performed"
       fetal_presentation: "cephalic" | "pelvic" | "transverse"
       installment_status:
@@ -2595,10 +3078,28 @@ export const Constants = {
       ],
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro", "exame"],
+      baby_sex: ["masculino", "feminino"],
       billing_fee_type: ["fixed", "percentage"],
       billing_status: ["pendente", "pago", "atrasado", "cancelado"],
+      birth_amniotic_fluid_type: [
+        "intacto",
+        "com_sangue",
+        "claro",
+        "com_meconio",
+      ],
+      birth_contraction_effectiveness: [
+        "efetiva",
+        "intermediaria",
+        "nao_efetiva",
+      ],
+      birth_medication_type: [
+        "fluidos_intravenosos",
+        "ocitocina",
+        "analgesia",
+        "outros",
+      ],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-      delivery_method: ["cesarean", "vaginal"],
+      delivery_method: ["cesarean", "vaginal", "vaginal_assisted"],
       doppler_result: ["normal", "abnormal", "not_performed"],
       fetal_presentation: ["cephalic", "pelvic", "transverse"],
       installment_status: [

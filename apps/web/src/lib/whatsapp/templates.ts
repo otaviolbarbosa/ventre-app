@@ -12,6 +12,7 @@ export type WhatsAppNotificationType =
   | "contract_fully_signed"
   | "billing_status_updated"
   | "vaccine_record_updated"
+  | "birth_mode_activated"
   // Fase 3 — trigger/cron-based (paciente)
   | "appointment_reminder"
   | "appointment_unconfirmed"
@@ -110,6 +111,13 @@ export function getWhatsAppTemplate(
     }),
     vaccine_record_updated: () => ({
       name: "vaccine_record_updated",
+      parameters: [params.patientName ?? ""],
+    }),
+    // Corpo do template deve ficar genérico/operacional (ex.: "Modo Parto ativado para
+    // {{1}}. Abra o app para acompanhar.") — política do WhatsApp Business restringe
+    // conteúdo relacionado a saúde em templates, então nada de termos clínicos aqui.
+    birth_mode_activated: () => ({
+      name: "birth_mode_activated",
       parameters: [params.patientName ?? ""],
     }),
     appointment_reminder: () => ({
