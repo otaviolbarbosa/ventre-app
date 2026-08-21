@@ -546,7 +546,11 @@ export default function HomePage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Link href="/register">
-              <Button className="gap-2 bg-secondary px-10 text-primary hover:bg-secondary/90" size="xl">
+              <Button
+                className="gap-2 px-10 text-primary hover:bg-secondary/90"
+                size="xl"
+                variant="secondary"
+              >
                 Criar conta grátis
                 <ArrowRight className="h-4 w-4" />
               </Button>
