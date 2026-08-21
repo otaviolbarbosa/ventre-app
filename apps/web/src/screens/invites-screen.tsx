@@ -165,8 +165,12 @@ export default function InvitesScreen({ received, sentTeam, sentPatient }: Invit
                           invite={invite}
                           isActive={false}
                           processing={false}
-                          onAccept={() => {}}
-                          onReject={() => {}}
+                          onAccept={() => {
+                            // convite finalizado — sem ação disponível
+                          }}
+                          onReject={() => {
+                            // convite finalizado — sem ação disponível
+                          }}
                         />
                       ))}
                     </div>
