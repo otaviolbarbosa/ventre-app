@@ -67,7 +67,9 @@ function LoginForm() {
         description:
           message === "Invalid login credentials"
             ? "Email ou senha incorretos"
-            : message || "Ocorreu um erro ao fazer login.",
+            : message === "Email not confirmed"
+              ? "Verifique seu email para confirmar o seu cadastro"
+              : message || "Ocorreu um erro ao fazer login.",
       });
       setIsLoading(false);
       return;
