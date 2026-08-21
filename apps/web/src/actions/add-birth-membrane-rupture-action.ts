@@ -1,6 +1,6 @@
 "use server";
 
-import { resolvePregnancyPatientId } from "@/lib/birth-mode-duplicate-check";
+import { combineDateAndTime, resolvePregnancyPatientId } from "@/lib/birth-mode-duplicate-check";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { birthMembraneRuptureSchema } from "@/lib/validations/birth-mode";
@@ -18,11 +18,13 @@ export const addBirthMembraneRuptureAction = authActionClient
 
     const patientId = await resolvePregnancyPatientId(supabase, pregnancyId);
 
+    const { date, time } = data;
+
     const { error } = await supabase.from("birth_membrane_ruptures").insert({
       pregnancy_id: pregnancyId,
       patient_id: patientId,
       professional_id: user.id,
-      ...data,
+      occurred_at: combineDateAndTime(date, time),
     });
 
     if (error) {

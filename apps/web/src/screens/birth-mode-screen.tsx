@@ -85,9 +85,9 @@ export function BirthModeScreen({
 
   return (
     <div className="flex flex-1 flex-col space-y-4 px-4 pt-4 pb-28 sm:pb-4 md:px-6">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-start justify-between gap-2 sm:items-center">
         <h1 className="font-poppins font-semibold text-lg">{patientName}</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
           {hasFinished ? (
             <Badge variant="secondary" className="gap-1.5">
               Parto Finalizado
@@ -106,7 +106,7 @@ export function BirthModeScreen({
               onClick={() => setShowFinishModal(true)}
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Finalizar Acompanhamento
+              Registrar Nascimento
             </Button>
           )}
         </div>

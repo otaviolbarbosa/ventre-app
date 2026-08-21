@@ -26,7 +26,7 @@ export function BirthModeRegisterButtons({
 }: BirthModeRegisterButtonsProps) {
   const [activeModal, setActiveModal] = useState<Exclude<
     BirthEventType,
-    "active_labor_entry"
+    "start_monitoring"
   > | null>(null);
 
   return (

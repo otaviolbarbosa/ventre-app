@@ -1,6 +1,8 @@
 "use client";
 
 import { addBirthFetalHeartRateAction } from "@/actions/add-birth-fetal-heart-rate-action";
+import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
+import { dayjs } from "@/lib/dayjs";
 import {
   type BirthFetalHeartRateInput,
   birthFetalHeartRateSchema,
@@ -8,7 +10,10 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
+import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Slider } from "@ventre/ui/slider";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -33,11 +38,11 @@ export function AddBirthFetalHeartRateModal({
 
   const form = useForm<BirthFetalHeartRateInput>({
     resolver: zodResolver(birthFetalHeartRateSchema),
-    defaultValues: { bpm: undefined },
+    defaultValues: { bpm: 125, ...defaultBirthEventDateTime() },
   });
 
   useEffect(() => {
-    if (open) form.reset({ bpm: undefined });
+    if (open) form.reset({ bpm: 125, ...defaultBirthEventDateTime() });
   }, [open, form]);
 
   async function onSubmit(values: BirthFetalHeartRateInput) {
@@ -46,10 +51,10 @@ export function AddBirthFetalHeartRateModal({
       toast.error(result.serverError);
       return;
     }
-    toast.success("FCF registrada!");
+    toast.success("BCF registrada!");
     if (result?.data?.duplicateWarning) {
       const { minutesAgo, professionalName } = result.data.duplicateWarning;
-      toast.warning(`${professionalName} já registrou a FCF há ${minutesAgo} min`);
+      toast.warning(`${professionalName} já registrou a BCF há ${minutesAgo} min`);
     }
     onOpenChange(false);
     onSuccess();
@@ -60,7 +65,7 @@ export function AddBirthFetalHeartRateModal({
       open={open}
       onOpenChange={onOpenChange}
       title="Registrar Frequência Cardíaca Fetal"
-      description="Informe a FCF em batimentos por minuto"
+      description="Informe a BCF em batimentos por minuto"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -69,16 +74,30 @@ export function AddBirthFetalHeartRateModal({
             name="bpm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>FCF: {field.value ?? 140} bpm *</FormLabel>
-                <FormControl>
-                  <Slider
-                    min={0}
-                    max={250}
-                    step={1}
-                    value={[field.value ?? 140]}
-                    onValueChange={([value]) => field.onChange(value)}
-                  />
-                </FormControl>
+                <div className="flex items-center justify-between gap-2 pb-3">
+                  <FormLabel className="whitespace-nowrap">BCF (bpm) *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={250}
+                      className="text-right"
+                      value={field.value ?? ""}
+                      onChange={(event) =>
+                        field.onChange(
+                          event.target.value === "" ? undefined : Number(event.target.value),
+                        )
+                      }
+                    />
+                  </FormControl>
+                </div>
+                <Slider
+                  min={0}
+                  max={250}
+                  step={1}
+                  value={[field.value ?? 125]}
+                  onValueChange={([value]) => field.onChange(value)}
+                />
                 <div className="flex justify-between text-muted-foreground text-xs">
                   <span>0 bpm</span>
                   <span>250 bpm</span>
@@ -87,6 +106,48 @@ export function AddBirthFetalHeartRateModal({
               </FormItem>
             )}
           />
+
+          <div className="flex gap-2">
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Data *</FormLabel>
+                  <FormControl>
+                    <DatePicker
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
+                      placeholderText="Selecione a data"
+                      hideCalendar
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hora *</FormLabel>
+                  <FormControl>
+                    <TimePicker
+                      selected={field.value ? new Date(`1970-01-01T${field.value}:00`) : null}
+                      onChange={(date) => field.onChange(date ? dayjs(date).format("HH:mm") : "")}
+                      timeIntervals={1}
+                      hidePredefinedTimes
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

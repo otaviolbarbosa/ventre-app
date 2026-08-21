@@ -1,3 +1,4 @@
+import { dayjs } from "@/lib/dayjs";
 import type { createServerSupabaseClient } from "@ventre/supabase/server";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
@@ -26,6 +27,16 @@ export function toDuplicateWarning(
     minutesAgo,
     professionalName: row.professional?.name ?? "outro profissional",
   };
+}
+
+export function combineDateAndTime(date: string, time: string): string {
+  return new Date(`${date}T${time}:00`).toISOString();
+}
+
+/** Date/time defaults pre-filled in birth-event modals — current moment, editable by the professional. */
+export function defaultBirthEventDateTime(): { date: string; time: string } {
+  const now = dayjs();
+  return { date: now.format("YYYY-MM-DD"), time: now.format("HH:mm") };
 }
 
 /** Resolves patient_id for a pregnancy — `birth_*` inserts require it per generated TS types,

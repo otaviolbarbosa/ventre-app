@@ -150,7 +150,7 @@ export function AddUltrasoundModal({
             {(
               [
                 ["ccn_mm", "CCN (mm)"],
-                ["fetal_heart_rate_bpm", "FCF (bpm)"],
+                ["fetal_heart_rate_bpm", "BCF (bpm)"],
                 ["nuchal_translucency_mm", "TN (mm)"],
                 ["cervical_length_cm", "Colo (cm)"],
                 ["estimated_weight_g", "Peso est. (g)"],

@@ -30,7 +30,7 @@ export const BIRTH_CONTRACTION_EFFECTIVENESS_LABELS: Record<string, string> = {
 };
 
 export type BirthEventType =
-  | "active_labor_entry"
+  | "start_monitoring"
   | "contraction"
   | "cervical_dilation"
   | "fetal_station"
@@ -43,8 +43,8 @@ export const BIRTH_EVENT_CONFIG: Record<
   BirthEventType,
   { label: string; icon: LucideIcon; colorClass: string }
 > = {
-  active_labor_entry: {
-    label: "Entrada em fase ativa",
+  start_monitoring: {
+    label: "Início do acompanhamento",
     icon: PlayCircle,
     colorClass: "text-primary",
   },
@@ -55,14 +55,14 @@ export const BIRTH_EVENT_CONFIG: Record<
     icon: Baby,
     colorClass: "text-orange-500",
   },
-  fetal_heart_rate: { label: "FCF", icon: HeartPulse, colorClass: "text-red-500" },
-  amniotic_fluid: { label: "Fluido amniótico", icon: Droplet, colorClass: "text-teal-500" },
+  fetal_heart_rate: { label: "BCF", icon: HeartPulse, colorClass: "text-red-500" },
+  amniotic_fluid: { label: "Líquido amniótico", icon: Droplet, colorClass: "text-teal-500" },
   medication: { label: "Medicamento", icon: Waves, colorClass: "text-yellow-500" },
   membrane_rupture: { label: "Bolsa rota", icon: Droplet, colorClass: "text-blue-500" },
 };
 
 export const BIRTH_EVENT_TYPES: {
-  type: Exclude<BirthEventType, "active_labor_entry">;
+  type: Exclude<BirthEventType, "start_monitoring">;
   cardinality: "multiple" | "single";
 }[] = [
   { type: "contraction", cardinality: "multiple" },

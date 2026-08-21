@@ -1,14 +1,14 @@
 "use client";
+import Whatsapp from "@/assets/custom-icons/whatsapp";
+import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
+import { EditPatientModal } from "@/modals/edit-patient-modal";
+import type { PatientAddress } from "@/types";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import dayjs from "dayjs";
 import { MapPin, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
-import Whatsapp from "@/assets/custom-icons/whatsapp";
-import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
-import { EditPatientModal } from "@/modals/edit-patient-modal";
-import type { PatientAddress } from "@/types";
 import InfoItem from "./info-item";
 
 type PatientInfoProps = {
@@ -113,7 +113,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <InfoItem label="Nome do parceiro" value={patient.partner_name} />
+        <InfoItem label="Nome da parceria" value={patient.partner_name} />
         <InfoItem label="Estado civil" value={maritalStatusLabel ?? "-"} />
         <InfoItem label="Profissão" value={patient.occupation ?? "-"} />
       </div>
