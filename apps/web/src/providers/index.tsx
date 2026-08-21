@@ -4,6 +4,7 @@ import { ConfirmationModalProvider } from "@ventre/ui/contexts/confirmation-moda
 import { Toaster } from "@ventre/ui/sonner";
 import { PwaInstallBanner } from "@/components/shared/pwa-install-banner";
 import { AuthProvider } from "./auth-provider";
+import { BirthModeRealtimeProvider } from "./birth-mode-realtime-provider";
 import { NotificationsProvider } from "./notifications-provider";
 import { PosthogProvider } from "./posthog-provider";
 import { PwaProvider } from "./pwa-provider";
@@ -14,13 +15,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <PosthogProvider>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         <AuthProvider>
-          <NotificationsProvider>
-            <PwaProvider>
-              <ConfirmationModalProvider>{children}</ConfirmationModalProvider>
-              <PwaInstallBanner />
-              <Toaster />
-            </PwaProvider>
-          </NotificationsProvider>
+          <BirthModeRealtimeProvider>
+            <NotificationsProvider>
+              <PwaProvider>
+                <ConfirmationModalProvider>{children}</ConfirmationModalProvider>
+                <PwaInstallBanner />
+                <Toaster />
+              </PwaProvider>
+            </NotificationsProvider>
+          </BirthModeRealtimeProvider>
         </AuthProvider>
       </ThemeProvider>
     </PosthogProvider>

@@ -556,6 +556,27 @@ async function handlePatientInviteLink(
   };
 }
 
+async function handleBirthModeActivated(
+  supabaseAdmin: SupabaseAdmin,
+  notification: DequeuedNotification,
+): Promise<WhatsAppQueueHandlerResult> {
+  const { data: pregnancy, error } = await supabaseAdmin
+    .from("pregnancies")
+    .select("birth_mode_active, patient:patients!pregnancies_patient_id_fkey(name)")
+    .eq("id", notification.referenceId)
+    .maybeSingle();
+  if (error)
+    throw new Error(`Falha ao buscar gestação ${notification.referenceId}: ${error.message}`);
+  if (!pregnancy || !pregnancy.birth_mode_active) return { action: "skip" };
+
+  const patient = pregnancy.patient as unknown as { name: string } | null;
+  return {
+    action: "send",
+    recipient: recipientOf(notification),
+    templateParams: { patientName: patient?.name ?? "" },
+  };
+}
+
 export const WHATSAPP_QUEUE_HANDLERS: Partial<
   Record<WhatsAppNotificationType, WhatsAppQueueHandler>
 > = {
@@ -576,4 +597,5 @@ export const WHATSAPP_QUEUE_HANDLERS: Partial<
   subscription_billing_issue: handleSubscriptionBillingIssue,
   patient_self_registration_invite: handlePatientInviteLink,
   patient_link_existing_invite: handlePatientInviteLink,
+  birth_mode_activated: handleBirthModeActivated,
 };

@@ -105,7 +105,8 @@
       "**/storybook-static",
       "**/.expo",
       "**/ios",
-      "**/android"
+      "**/android",
+      ".claude/worktrees"
     ]
   }
 }

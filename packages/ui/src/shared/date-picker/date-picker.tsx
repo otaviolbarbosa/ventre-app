@@ -20,6 +20,8 @@ export interface DatePickerProps {
   maxDate?: Date;
   dateFormat?: string;
   className?: string;
+  /** Quando `true`, oculta o calendário — o campo continua editável via digitação. */
+  hideCalendar?: boolean;
 }
 
 const CustomInput = forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
@@ -31,8 +33,7 @@ const CustomInput = forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         value={value}
         onClick={onClick}
         placeholder={placeholder}
-        readOnly
-        className="cursor-pointer pr-10"
+        className="pr-10"
       />
       {!props.disabled && (
         <CalendarIcon className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />
@@ -51,6 +52,7 @@ export function DatePicker({
   maxDate,
   dateFormat = "dd/MM/yyyy",
   className,
+  hideCalendar = false,
 }: DatePickerProps) {
   return (
     <div className="lumiar-datepicker-wrapper">
@@ -64,6 +66,7 @@ export function DatePicker({
         dateFormat={dateFormat}
         locale="pt-BR"
         className={className}
+        open={hideCalendar ? false : undefined}
         customInput={
           <InputMask component={CustomInput} mask="__/__/____" replacement={{ _: /\d/ }} />
         }

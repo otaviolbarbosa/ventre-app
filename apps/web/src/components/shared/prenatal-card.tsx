@@ -916,10 +916,10 @@ function UltrasoundsSection({
                 </div>
               </div>
 
-              {/* Linha 1: FCF · CCN · TN · Colo */}
+              {/* Linha 1: BCF · CCN · TN · Colo */}
               <div className="grid grid-cols-4 divide-x text-center">
                 <div className="px-3 py-2.5">
-                  <p className="mb-0.5 text-muted-foreground text-xs">FCF (bpm)</p>
+                  <p className="mb-0.5 text-muted-foreground text-xs">BCF (bpm)</p>
                   <p className="font-medium text-sm">{usg.fetal_heart_rate_bpm ?? "-"}</p>
                 </div>
                 <div className="px-3 py-2.5">
