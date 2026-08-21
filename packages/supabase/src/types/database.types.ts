@@ -369,6 +369,73 @@ export type Database = {
           },
         ]
       }
+      birth_apgar_scores: {
+        Row: {
+          activity: number
+          appearance: number
+          created_at: string
+          grimace: number
+          id: string
+          minute: number
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          pulse: number
+          respiration: number
+          total: number | null
+        }
+        Insert: {
+          activity: number
+          appearance: number
+          created_at?: string
+          grimace: number
+          id?: string
+          minute: number
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          pulse: number
+          respiration: number
+          total?: number | null
+        }
+        Update: {
+          activity?: number
+          appearance?: number
+          created_at?: string
+          grimace?: number
+          id?: string
+          minute?: number
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+          pulse?: number
+          respiration?: number
+          total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_apgar_scores_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_apgar_scores_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_apgar_scores_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       birth_cervical_dilations: {
         Row: {
           created_at: string
@@ -1822,10 +1889,12 @@ export type Database = {
         Row: {
           abortions_count: number | null
           baby_name: string | null
+          baby_sex: Database["public"]["Enums"]["baby_sex"] | null
           birth_mode_activated_at: string | null
           birth_mode_activated_by: string | null
           birth_mode_active: boolean
           birth_mode_ended_at: string | null
+          birth_weight_grams: number | null
           born_at: string | null
           cesareans_count: number | null
           created_at: string
@@ -1848,10 +1917,12 @@ export type Database = {
         Insert: {
           abortions_count?: number | null
           baby_name?: string | null
+          baby_sex?: Database["public"]["Enums"]["baby_sex"] | null
           birth_mode_activated_at?: string | null
           birth_mode_activated_by?: string | null
           birth_mode_active?: boolean
           birth_mode_ended_at?: string | null
+          birth_weight_grams?: number | null
           born_at?: string | null
           cesareans_count?: number | null
           created_at?: string
@@ -1876,10 +1947,12 @@ export type Database = {
         Update: {
           abortions_count?: number | null
           baby_name?: string | null
+          baby_sex?: Database["public"]["Enums"]["baby_sex"] | null
           birth_mode_activated_at?: string | null
           birth_mode_activated_by?: string | null
           birth_mode_active?: boolean
           birth_mode_ended_at?: string | null
+          birth_weight_grams?: number | null
           born_at?: string | null
           cesareans_count?: number | null
           created_at?: string
@@ -2785,6 +2858,7 @@ export type Database = {
         | "polyhydramnios"
       appointment_status: "agendada" | "realizada" | "cancelada"
       appointment_type: "consulta" | "encontro" | "exame"
+      baby_sex: "masculino" | "feminino"
       billing_fee_type: "fixed" | "percentage"
       billing_status: "pendente" | "pago" | "atrasado" | "cancelado"
       birth_amniotic_fluid_type:
@@ -2802,7 +2876,7 @@ export type Database = {
         | "analgesia"
         | "outros"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
-      delivery_method: "cesarean" | "vaginal"
+      delivery_method: "cesarean" | "vaginal" | "vaginal_assisted"
       doppler_result: "normal" | "abnormal" | "not_performed"
       fetal_presentation: "cephalic" | "pelvic" | "transverse"
       installment_status:
@@ -3004,6 +3078,7 @@ export const Constants = {
       ],
       appointment_status: ["agendada", "realizada", "cancelada"],
       appointment_type: ["consulta", "encontro", "exame"],
+      baby_sex: ["masculino", "feminino"],
       billing_fee_type: ["fixed", "percentage"],
       billing_status: ["pendente", "pago", "atrasado", "cancelado"],
       birth_amniotic_fluid_type: [
@@ -3024,7 +3099,7 @@ export const Constants = {
         "outros",
       ],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-      delivery_method: ["cesarean", "vaginal"],
+      delivery_method: ["cesarean", "vaginal", "vaginal_assisted"],
       doppler_result: ["normal", "abnormal", "not_performed"],
       fetal_presentation: ["cephalic", "pelvic", "transverse"],
       installment_status: [

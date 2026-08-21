@@ -29,18 +29,24 @@ export function toDuplicateWarning(
 }
 
 /** Resolves patient_id for a pregnancy — `birth_*` inserts require it per generated TS types,
- * even though the `set_patient_id_from_pregnancy` trigger overwrites it server-side regardless. */
+ * even though the `set_patient_id_from_pregnancy` trigger overwrites it server-side regardless.
+ * Also asserts Modo Parto is currently active for the pregnancy, so birth events can't be
+ * registered outside an active Modo Parto session (defense in depth — the UI already blocks this,
+ * but RLS alone doesn't, since `is_team_member` doesn't consider `birth_mode_active`). */
 export async function resolvePregnancyPatientId(
   supabase: SupabaseClient,
   pregnancyId: string,
 ): Promise<string> {
   const { data, error } = await supabase
     .from("pregnancies")
-    .select("patient_id")
+    .select("patient_id, birth_mode_active")
     .eq("id", pregnancyId)
     .single();
 
   if (error) throw new Error(error.message);
+  if (!data.birth_mode_active) {
+    throw new Error("Modo Parto não está ativo para esta gestação");
+  }
 
   return data.patient_id;
 }

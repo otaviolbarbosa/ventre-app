@@ -5,8 +5,8 @@ import { type BirthFetalStationInput, birthFetalStationSchema } from "@/lib/vali
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { Slider } from "@ventre/ui/slider";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -66,16 +66,23 @@ export function AddBirthFetalStationModal({
             name="station_lee"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Plano de Lee *</FormLabel>
+                <FormLabel>
+                  Plano de Lee: {field.value !== undefined && field.value > 0 ? "+" : ""}
+                  {field.value ?? 0} *
+                </FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    min="-4"
-                    max="4"
-                    {...field}
-                    value={field.value ?? ""}
+                  <Slider
+                    min={-4}
+                    max={4}
+                    step={1}
+                    value={[field.value ?? 0]}
+                    onValueChange={([value]) => field.onChange(value)}
                   />
                 </FormControl>
+                <div className="flex justify-between text-muted-foreground text-xs">
+                  <span>-4</span>
+                  <span>+4</span>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

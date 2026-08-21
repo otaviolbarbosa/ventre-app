@@ -8,8 +8,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { Slider } from "@ventre/ui/slider";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -69,17 +69,20 @@ export function AddBirthCervicalDilationModal({
             name="dilation_cm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Dilatação (cm) *</FormLabel>
+                <FormLabel>Dilatação: {field.value ?? 0} cm *</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    max="10"
-                    {...field}
-                    value={field.value ?? ""}
+                  <Slider
+                    min={0}
+                    max={10}
+                    step={0.5}
+                    value={[field.value ?? 0]}
+                    onValueChange={([value]) => field.onChange(value)}
                   />
                 </FormControl>
+                <div className="flex justify-between text-muted-foreground text-xs">
+                  <span>0 cm</span>
+                  <span>10 cm</span>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

@@ -35,7 +35,7 @@ export const getBirthModeTimelineAction = authActionClient
       supabase
         .from("pregnancies")
         .select(
-          "birth_mode_activated_at, birth_mode_activated_by, activated_by:users!pregnancies_birth_mode_activated_by_fkey(name)",
+          "patient_id, birth_mode_activated_at, birth_mode_activated_by, has_finished, birth_mode_active, activated_by:users!pregnancies_birth_mode_activated_by_fkey(name), patient:patients(name)",
         )
         .eq("id", pregnancyId)
         .single(),
@@ -173,5 +173,12 @@ export const getBirthModeTimelineAction = authActionClient
 
     events.sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
 
-    return { events };
+    return {
+      events,
+      patientId: pregnancy?.patient_id ?? null,
+      patientName: (pregnancy?.patient as { name: string } | null)?.name ?? null,
+      hasFinished: pregnancy?.has_finished ?? false,
+      birthModeActive: pregnancy?.birth_mode_active ?? false,
+      wasActivated: pregnancy?.birth_mode_activated_at != null,
+    };
   });

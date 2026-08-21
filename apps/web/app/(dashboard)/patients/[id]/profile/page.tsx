@@ -152,6 +152,22 @@ export default function PatientProfilePage() {
               )}
             </div>
           )}
+
+          {patient.has_finished &&
+            pregnancy?.id &&
+            pregnancy.birth_mode_activated_at &&
+            (isObstetrician || isNurse || isDoula) && (
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => router.push(`/modo-parto?pregnancyId=${pregnancy.id}`)}
+                >
+                  <HeartPulse className="mr-2 h-4 w-4" />
+                  Ver Registros do Parto
+                </Button>
+              </div>
+            )}
         </div>
 
         <Accordion type="multiple" className="w-full" defaultValue={["informacoes"]}>
@@ -248,6 +264,7 @@ export default function PatientProfilePage() {
         open={showFinishModal}
         onOpenChange={setShowFinishModal}
         patientId={patientId}
+        pregnancyId={pregnancy?.id}
         onSuccess={() => fetchPatient({ patientId })}
       />
 

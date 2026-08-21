@@ -133,7 +133,7 @@ O cliente foi explícito: **todo o escopo descrito no prompt original deve ser i
 | 3 | Notificação WhatsApp de ativação | Fan-out para equipe via fila existente, novo `WhatsAppNotificationType`, handler de fila | complete | with 4 | 1 | `.claude/PRPs/plans/completed/modo-parto-fase-3-notificacao-whatsapp.plan.md` |
 | 4 | Tela `/modo-parto` e formulários de registro | UI de registro para todos os eventos, com alerta de duplicidade (30 min) | complete | with 3 | 1, 2 | `.claude/PRPs/plans/completed/modo-parto-fase-4-tela-registro.plan.md` |
 | 5 | Redirect automático + barra persistente | Notificação in-app, contagem de 10s, barra de status global no layout | in-progress | - | 2, 4 | `.claude/PRPs/plans/modo-parto-fase-5-redirect-e-barra.plan.md` |
-| 6 | Extensão do fluxo de finalização | Estender `finish-care-modal.tsx` + action + schema `pregnancies` com dados de desfecho do parto | pending | with 3 | 1 | - |
+| 6 | Extensão do fluxo de finalização | Estender `finish-care-modal.tsx` + action + schema `pregnancies` com dados de desfecho do parto | complete | with 3 | 1 | `.claude/PRPs/plans/completed/modo-parto-fase-6-extensao-finalizacao.plan.md` |
 
 ### Phase Details
 

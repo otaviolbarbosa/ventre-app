@@ -8,8 +8,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { Slider } from "@ventre/ui/slider";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
@@ -69,10 +69,20 @@ export function AddBirthFetalHeartRateModal({
             name="bpm"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>FCF (bpm) *</FormLabel>
+                <FormLabel>FCF: {field.value ?? 140} bpm *</FormLabel>
                 <FormControl>
-                  <Input type="number" min="1" max="299" {...field} value={field.value ?? ""} />
+                  <Slider
+                    min={0}
+                    max={250}
+                    step={1}
+                    value={[field.value ?? 140]}
+                    onValueChange={([value]) => field.onChange(value)}
+                  />
                 </FormControl>
+                <div className="flex justify-between text-muted-foreground text-xs">
+                  <span>0 bpm</span>
+                  <span>250 bpm</span>
+                </div>
                 <FormMessage />
               </FormItem>
             )}
