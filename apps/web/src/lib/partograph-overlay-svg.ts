@@ -3,6 +3,7 @@ import { computeAlertActionLines, type ChartPoint, hoursSince, resolveChartT0 } 
 import {
   type ColumnBand,
   type ContinuousBand,
+  CONTRACTIONS_BAND,
   DILATION_BAND,
   FCF_BAND,
   PULSE_PA_BAND,
@@ -172,6 +173,54 @@ function buildPulsePaElements(events: BirthModeTimelineEvent[], t0: number): str
   return [pulseLine, pulseDots, paMarks].join("");
 }
 
+const CONTRACTION_PATTERN_DEFS = `
+  <defs>
+    <pattern id="contraction-dots" width="4" height="4" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="0.6" fill="#111827" />
+    </pattern>
+    <pattern id="contraction-diag" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="#111827" stroke-width="1.2" />
+    </pattern>
+  </defs>
+`;
+
+function contractionFill(durationSeconds: number | null): string {
+  if (durationSeconds == null) return "url(#contraction-dots)";
+  if (durationSeconds < 20) return "url(#contraction-dots)";
+  if (durationSeconds <= 40) return "url(#contraction-diag)";
+  return "#111827";
+}
+
+function buildContractionsElements(events: BirthModeTimelineEvent[], t0: number): string {
+  const contractionEvents = events.filter((event) => event.type === "contraction");
+  // One bar per hour column — keep the latest reading recorded within that column.
+  const byColumn = new Map<number, { frequency: number; duration: number | null }>();
+  for (const event of contractionEvents) {
+    const column = nearestHourColumn(hoursSince(t0, event.occurredAt));
+    const { contractions_per_10min, duration_seconds } = event.payload as {
+      contractions_per_10min: number | null;
+      duration_seconds: number;
+    };
+    byColumn.set(column, {
+      frequency: contractions_per_10min ?? 0,
+      duration: duration_seconds ?? null,
+    });
+  }
+
+  const barWidth = 6;
+  const bars = Array.from(byColumn.entries())
+    .map(([column, { frequency, duration }]) => {
+      const x = columnX(CONTRACTIONS_BAND, column) - barWidth / 2;
+      const clampedFrequency = Math.max(0, Math.min(5, frequency));
+      const barHeight = (clampedFrequency / 5) * (CONTRACTIONS_BAND.yBottom - CONTRACTIONS_BAND.yTop);
+      const y = CONTRACTIONS_BAND.yBottom - barHeight;
+      return `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${contractionFill(duration)}" />`;
+    })
+    .join("");
+
+  return bars.length > 0 ? `${CONTRACTION_PATTERN_DEFS}${bars}` : "";
+}
+
 export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): string {
   const t0 = resolveChartT0(events);
   if (t0 === null) {
@@ -181,6 +230,7 @@ export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): str
   const fcf = buildFcfElements(events, t0);
   const dilationStation = buildDilationStationElements(events, t0);
   const pulsePa = buildPulsePaElements(events, t0);
+  const contractions = buildContractionsElements(events, t0);
 
-  return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}${pulsePa}</svg>`;
+  return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}${pulsePa}${contractions}</svg>`;
 }
