@@ -5,6 +5,7 @@ import {
   type ContinuousBand,
   DILATION_BAND,
   FCF_BAND,
+  PULSE_PA_BAND,
   STATION_BAND,
   TEMPLATE_HEIGHT,
   TEMPLATE_WIDTH,
@@ -15,6 +16,8 @@ const DILATION_COLOR = "#1d4ed8";
 const STATION_COLOR = "#f97316";
 const ALERT_COLOR = "#eab308";
 const ACTION_COLOR = "#ef4444";
+const PULSE_COLOR = "#eab308";
+const PA_COLOR = "#3b82f6";
 
 export function mapContinuousX(band: Pick<ContinuousBand, "x0" | "x1">, hoursSinceT0: number): number {
   const clamped = Math.max(0, Math.min(23, hoursSinceT0));
@@ -122,6 +125,53 @@ function buildDilationStationElements(events: BirthModeTimelineEvent[], t0: numb
   ].join("");
 }
 
+function paArrowMarks(x: number, systolicY: number, diastolicY: number): string {
+  const cap = 3;
+  return [
+    `<line x1="${x}" y1="${systolicY}" x2="${x}" y2="${diastolicY}" stroke="${PA_COLOR}" stroke-width="1" />`,
+    `<polygon points="${x},${systolicY} ${x - cap},${systolicY + cap} ${x + cap},${systolicY + cap}" fill="${PA_COLOR}" />`,
+    `<polygon points="${x},${diastolicY} ${x - cap},${diastolicY - cap} ${x + cap},${diastolicY - cap}" fill="${PA_COLOR}" />`,
+  ].join("");
+}
+
+function buildPulsePaElements(events: BirthModeTimelineEvent[], t0: number): string {
+  const vitalsEvents = events.filter((event) => event.type === "maternal_vitals");
+
+  const pulsePixels = vitalsEvents
+    .map((event) => {
+      const { pulse_bpm } = event.payload as { pulse_bpm: number | null };
+      if (pulse_bpm == null) return null;
+      return {
+        x: mapContinuousX(PULSE_PA_BAND, hoursSince(t0, event.occurredAt)),
+        y: mapContinuousY(PULSE_PA_BAND, pulse_bpm),
+      };
+    })
+    .filter((p): p is { x: number; y: number } => p != null)
+    .sort((a, b) => a.x - b.x);
+
+  const pulseLine =
+    pulsePixels.length > 0
+      ? `<polyline points="${pulsePixels.map((p) => `${p.x},${p.y}`).join(" ")}" fill="none" stroke="${PULSE_COLOR}" stroke-width="1" />`
+      : "";
+  const pulseDots = pulsePixels
+    .map((p) => `<circle cx="${p.x}" cy="${p.y}" r="1.6" fill="${PULSE_COLOR}" />`)
+    .join("");
+
+  const paMarks = vitalsEvents
+    .map((event) => {
+      const { systolic_bp, diastolic_bp } = event.payload as {
+        systolic_bp: number | null;
+        diastolic_bp: number | null;
+      };
+      if (systolic_bp == null || diastolic_bp == null) return "";
+      const x = mapContinuousX(PULSE_PA_BAND, hoursSince(t0, event.occurredAt));
+      return paArrowMarks(x, mapContinuousY(PULSE_PA_BAND, systolic_bp), mapContinuousY(PULSE_PA_BAND, diastolic_bp));
+    })
+    .join("");
+
+  return [pulseLine, pulseDots, paMarks].join("");
+}
+
 export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): string {
   const t0 = resolveChartT0(events);
   if (t0 === null) {
@@ -130,6 +180,7 @@ export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): str
 
   const fcf = buildFcfElements(events, t0);
   const dilationStation = buildDilationStationElements(events, t0);
+  const pulsePa = buildPulsePaElements(events, t0);
 
-  return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}</svg>`;
+  return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}${pulsePa}</svg>`;
 }
