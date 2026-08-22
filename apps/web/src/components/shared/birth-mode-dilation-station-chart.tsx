@@ -4,6 +4,7 @@ import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-a
 import { useIsCompactViewport } from "@/hooks/use-media-query";
 import {
   type ChartPoint,
+  computeAlertActionLines,
   hoursSince as hoursSinceT0,
   resolveChartT0,
 } from "@/lib/birth-mode-chart-utils";
@@ -78,19 +79,7 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
   // Modelo clássico (Ministério da Saúde): fase ativa começa ao atingir 4cm de
   // dilatação; a Linha de Alerta sobe 1cm/h a partir desse ponto até 10cm; a
   // Linha de Ação é a mesma linha deslocada 4h à direita (PRD Fase 3).
-  const activePhaseStart = dilationPoints.find((point) => point.y >= 4);
-  const alertLine: ChartPoint[] = activePhaseStart
-    ? [
-        { x: activePhaseStart.x, y: activePhaseStart.y },
-        { x: activePhaseStart.x + (DILATION_MAX - activePhaseStart.y), y: DILATION_MAX },
-      ]
-    : [];
-  const actionLine: ChartPoint[] = activePhaseStart
-    ? [
-        { x: activePhaseStart.x + 4, y: activePhaseStart.y },
-        { x: activePhaseStart.x + 4 + (DILATION_MAX - activePhaseStart.y), y: DILATION_MAX },
-      ]
-    : [];
+  const { alertLine, actionLine } = computeAlertActionLines(dilationPoints, DILATION_MAX);
 
   const allX = [...dilationPoints, ...stationPoints, ...alertLine, ...actionLine].map(
     (point) => point.x,

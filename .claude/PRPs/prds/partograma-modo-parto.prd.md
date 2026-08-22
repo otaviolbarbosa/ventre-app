@@ -129,7 +129,7 @@ Tudo de uma vez (conforme decisão do stakeholder): partograma completo, exibido
 | 3 | Mini-gráfico: dilatação/estação | Mini-gráfico por sessão para dilatação cervical + estação fetal (Dee Lee) com Linha de Alerta/Ação | complete | with 4 | 1, 2 | `.claude/PRPs/reports/mini-grafico-dilatacao-estacao-report.md` |
 | 4 | Mini-gráficos: demais tracks | Mini-gráficos por sessão para BCF, contrações (frequência/duração), ocitocina, medicações, ruptura de membrana, vitais maternos, urina | complete | with 3 | 1, 2 | `.claude/PRPs/plans/completed/mini-graficos-demais-tracks.plan.md` |
 | 5 | Tempo real + polimento mobile/tablet | Estender realtime para atualizar as mini-sessões em novos eventos; melhor esforço de legibilidade em telas pequenas | complete | - | 3, 4 | `.claude/PRPs/plans/completed/tempo-real-polimento-mobile-partograma.plan.md` |
-| 6 | Exportar PDF (nice to have) | Compor o layout clássico completo/compactado (todos os tracks sincronizados no mesmo eixo de tempo, como no modelo de referência) a partir dos dados das mini-sessões, e gerar o PDF | pending | - | 5 | - |
+| 6 | Exportar PDF (nice to have) | Compor o layout clássico completo/compactado (todos os tracks sincronizados no mesmo eixo de tempo, como no modelo de referência) a partir dos dados das mini-sessões, e gerar o PDF | complete | - | 5 | `.claude/PRPs/plans/completed/exportar-pdf-partograma.plan.md` |
 
 ### Phase Details
 

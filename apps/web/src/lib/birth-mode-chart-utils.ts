@@ -15,6 +15,26 @@ export function hoursSince(t0: number, iso: string): number {
   return (new Date(iso).getTime() - t0) / (1000 * 60 * 60);
 }
 
+export function computeAlertActionLines(
+  dilationPoints: ChartPoint[],
+  dilationMax: number,
+): { alertLine: ChartPoint[]; actionLine: ChartPoint[] } {
+  const activePhaseStart = dilationPoints.find((point) => point.y >= 4);
+  const alertLine: ChartPoint[] = activePhaseStart
+    ? [
+        { x: activePhaseStart.x, y: activePhaseStart.y },
+        { x: activePhaseStart.x + (dilationMax - activePhaseStart.y), y: dilationMax },
+      ]
+    : [];
+  const actionLine: ChartPoint[] = activePhaseStart
+    ? [
+        { x: activePhaseStart.x + 4, y: activePhaseStart.y },
+        { x: activePhaseStart.x + 4 + (dilationMax - activePhaseStart.y), y: dilationMax },
+      ]
+    : [];
+  return { alertLine, actionLine };
+}
+
 export function computeContractionsPer10Min(
   contractionEvents: { id: string; occurredAt: string }[],
 ): Map<string, number> {

@@ -1,5 +1,6 @@
 "use client";
 
+import { exportPartographPdfAction } from "@/actions/export-partograph-pdf-action";
 import { getBirthModeTimelineAction } from "@/actions/get-birth-mode-timeline-action";
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
 import { BirthModePartograph } from "@/components/shared/birth-mode-partograph";
@@ -13,9 +14,10 @@ import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Skeleton } from "@ventre/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
-import { CheckCircle2, HeartHandshake } from "lucide-react";
+import { CheckCircle2, FileDown, HeartHandshake, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type BirthModeScreenProps = {
   pregnancyId: string;
@@ -80,6 +82,27 @@ export function BirthModeScreen({
 
   useBirthModeTimelineRealtime(pregnancyId, resolveProfessionalName, onNewEvent);
 
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { execute: exportPdf } = useAction(exportPartographPdfAction, {
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const byteChars = atob(data.pdfBase64);
+      const byteNumbers = Array.from(byteChars, (c) => c.charCodeAt(0));
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao gerar PDF do partograma");
+    },
+    onExecute: () => setIsExportingPdf(true),
+    onSettled: () => setIsExportingPdf(false),
+  });
+
   if (isPending && wasActivated === null) {
     return (
       <div className="space-y-2 p-4">
@@ -115,6 +138,20 @@ export function BirthModeScreen({
               Modo Parto Ativo
             </Badge>
           )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isExportingPdf}
+            onClick={() => exportPdf({ pregnancyId })}
+          >
+            {isExportingPdf ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileDown className="mr-2 h-4 w-4" />
+            )}
+            {isExportingPdf ? "Gerando PDF..." : "Exportar PDF"}
+          </Button>
           {!hasFinished && patientId && (
             <Button
               type="button"
