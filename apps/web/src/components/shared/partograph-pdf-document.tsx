@@ -182,9 +182,9 @@ function LineTrackBand({
             opacity={0.15}
           />
         )}
-        {/* biome-ignore lint/suspicious/noArrayIndexKey: bandas são desenhadas uma única vez em um documento PDF estático, sem reconciliação/reordenação */}
         {primarySeries.map((series, index) => (
           <Polyline
+            // biome-ignore lint/suspicious/noArrayIndexKey: bandas são desenhadas uma única vez em um documento PDF estático, sem reconciliação/reordenação
             key={`primary-${index}`}
             points={toPolylinePoints(series.points, maxHours, primaryMin, primaryMax, height)}
             stroke={series.color}
@@ -193,12 +193,12 @@ function LineTrackBand({
             fill="none"
           />
         ))}
-        {/* biome-ignore lint/suspicious/noArrayIndexKey: idem — sem reconciliação */}
         {primarySeries.flatMap((series, si) =>
           series.dashed
             ? []
             : series.points.map((point, pi) => (
                 <Circle
+                  // biome-ignore lint/suspicious/noArrayIndexKey: idem — sem reconciliação
                   key={`primary-${si}-${pi}`}
                   cx={scaleX(point.x, maxHours)}
                   cy={scaleY(point.y, primaryMin, primaryMax, height)}
@@ -210,8 +210,8 @@ function LineTrackBand({
         {secondaryMin != null &&
           secondaryMax != null &&
           secondarySeries?.map((series, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: idem — sem reconciliação
             <Polyline
+              // biome-ignore lint/suspicious/noArrayIndexKey: idem — sem reconciliação
               key={`secondary-${index}`}
               points={toPolylinePoints(series.points, maxHours, secondaryMin, secondaryMax, height)}
               stroke={series.color}
@@ -223,8 +223,8 @@ function LineTrackBand({
           secondaryMax != null &&
           secondarySeries?.flatMap((series, si) =>
             series.points.map((point, pi) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: idem — sem reconciliação
               <Circle
+                // biome-ignore lint/suspicious/noArrayIndexKey: idem — sem reconciliação
                 key={`secondary-${si}-${pi}`}
                 cx={scaleX(point.x, maxHours)}
                 cy={scaleY(point.y, secondaryMin, secondaryMax, height)}
