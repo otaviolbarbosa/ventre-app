@@ -125,7 +125,7 @@ Tudo de uma vez (conforme decisão do stakeholder): partograma completo, exibido
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Completar captura de dados | Migrações + schemas Zod + safe-actions + modais para frequência de contração (derivada, não campo manual), dose/gotejamento de ocitocina, vitais maternos, urina e ruptura de membrana detalhada; expor tudo (incl. APGAR) em `getBirthModeTimelineAction` | complete | with 2 | - | `.claude/PRPs/plans/completed/completar-captura-dados-partograma.plan.md` |
-| 2 | Shell da aba Partograma | Introduzir `Tabs` em `birth-mode-screen.tsx` (Partograma / Linha do tempo), estrutura de mini-sessões (título + container de mini-gráfico) | pending | with 1 | - | - |
+| 2 | Shell da aba Partograma | Introduzir `Tabs` em `birth-mode-screen.tsx` (Partograma / Linha do tempo), estrutura de mini-sessões (título + container de mini-gráfico) | complete | with 1 | - | `.claude/PRPs/plans/completed/shell-aba-partograma.plan.md` |
 | 3 | Mini-gráfico: dilatação/estação | Mini-gráfico por sessão para dilatação cervical + estação fetal (Dee Lee) com Linha de Alerta/Ação | pending | with 4 | 1, 2 | - |
 | 4 | Mini-gráficos: demais tracks | Mini-gráficos por sessão para BCF, contrações (frequência/duração), ocitocina, medicações, ruptura de membrana, vitais maternos, urina | pending | with 3 | 1, 2 | - |
 | 5 | Tempo real + polimento mobile/tablet | Estender realtime para atualizar as mini-sessões em novos eventos; melhor esforço de legibilidade em telas pequenas | pending | - | 3, 4 | - |

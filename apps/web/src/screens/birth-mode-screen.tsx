@@ -2,6 +2,7 @@
 
 import { getBirthModeTimelineAction } from "@/actions/get-birth-mode-timeline-action";
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { BirthModePartograph } from "@/components/shared/birth-mode-partograph";
 import { BirthModeRegisterButtons } from "@/components/shared/birth-mode-register-buttons";
 import { BirthModeTimeline } from "@/components/shared/birth-mode-timeline";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -10,6 +11,7 @@ import { useBirthModeTimelineRealtime } from "@/hooks/use-birth-mode-timeline-re
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Skeleton } from "@ventre/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
 import { CheckCircle2, HeartHandshake } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -126,7 +128,18 @@ export function BirthModeScreen({
           <Skeleton className="h-16 w-full" />
         </div>
       ) : (
-        <BirthModeTimeline events={events} />
+        <Tabs defaultValue="partograph">
+          <TabsList className="w-full max-w-md">
+            <TabsTrigger value="partograph">Partograma</TabsTrigger>
+            <TabsTrigger value="timeline">Linha do tempo</TabsTrigger>
+          </TabsList>
+          <TabsContent value="partograph">
+            <BirthModePartograph events={events} />
+          </TabsContent>
+          <TabsContent value="timeline">
+            <BirthModeTimeline events={events} />
+          </TabsContent>
+        </Tabs>
       )}
 
       {patientId && (
