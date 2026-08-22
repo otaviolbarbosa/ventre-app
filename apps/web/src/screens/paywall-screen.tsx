@@ -236,7 +236,7 @@ export default function PaywallScreen() {
                 {isAnnual ? (
                   <>
                     <span className="font-bold font-poppins text-4xl text-primary">R$799,00</span>
-                    <p className="mt-1 text-muted-foreground text-xs">por ano · R$79,90/mês</p>
+                    <p className="mt-1 text-muted-foreground text-xs">por ano · R$66,58/mês</p>
                     <p className="mt-0.5 font-medium text-green-600 text-xs">
                       Economize R$159,80 no ano
                     </p>
