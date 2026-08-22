@@ -1,16 +1,36 @@
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
 import { computeAlertActionLines, type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
 import {
+  AMNIOTIC_FLUID_TYPE_LABELS,
+  BIRTH_MEDICATION_TYPE_LABELS,
+  BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS,
+} from "@/lib/birth-mode-constants";
+import {
   type ColumnBand,
   type ContinuousBand,
   CONTRACTIONS_BAND,
   DILATION_BAND,
   FCF_BAND,
+  LA_BOLSA_ROW,
+  MEDICATION_ROW,
+  OXYTOCIN_ROW,
   PULSE_PA_BAND,
   STATION_BAND,
+  TEMPERATURE_ROW,
   TEMPLATE_HEIGHT,
   TEMPLATE_WIDTH,
+  URINE_KETONE_ROW,
+  URINE_PROTEIN_ROW,
+  URINE_VOLUME_ROW,
 } from "@/lib/partograph-template-calibration";
+
+const DIPSTICK_SHORT_LABELS: Record<string, string> = {
+  ausente: "-",
+  tracos: "tr",
+  uma_cruz: "+",
+  duas_cruzes: "++",
+  tres_cruzes: "+++",
+};
 
 const FCF_COLOR = "#1d4ed8";
 const DILATION_COLOR = "#1d4ed8";
@@ -221,6 +241,131 @@ function buildContractionsElements(events: BirthModeTimelineEvent[], t0: number)
   return bars.length > 0 ? `${CONTRACTION_PATTERN_DEFS}${bars}` : "";
 }
 
+// Stacks 1+ lines of text centered on an hour column, growing upward from the row's
+// bottom gridline — used for every band that's a blank text row on the template rather
+// than a numeric-scale grid (Ocitocina, Medicamentos, L.A./Bolsa, Temperatura, Urina).
+function stampColumnText(band: ColumnBand, hoursSinceT0: number, lines: string[]): string {
+  if (lines.length === 0) return "";
+  const x = columnX(band, hoursSinceT0);
+  const lineHeight = 6;
+  return lines
+    .map((line, index) => {
+      const y = band.yBottom - index * lineHeight - 2;
+      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle">${line}</text>`;
+    })
+    .join("");
+}
+
+function buildOxytocinElements(events: BirthModeTimelineEvent[], t0: number): string {
+  return events
+    .filter(
+      (event) =>
+        event.type === "medication" &&
+        (event.payload as { medication_type: string }).medication_type === "ocitocina",
+    )
+    .map((event) => {
+      const { oxytocin_concentration_u_per_l, oxytocin_drip_rate_gtt_per_min } = event.payload as {
+        oxytocin_concentration_u_per_l: number | null;
+        oxytocin_drip_rate_gtt_per_min: number | null;
+      };
+      const lines = [
+        oxytocin_concentration_u_per_l != null ? `${oxytocin_concentration_u_per_l}U/L` : null,
+        oxytocin_drip_rate_gtt_per_min != null ? `${oxytocin_drip_rate_gtt_per_min}gtt` : null,
+      ].filter((line): line is string => line != null);
+      return stampColumnText(OXYTOCIN_ROW, hoursSince(t0, event.occurredAt), lines);
+    })
+    .join("");
+}
+
+function buildMedicationElements(events: BirthModeTimelineEvent[], t0: number): string {
+  return events
+    .filter(
+      (event) =>
+        event.type === "medication" &&
+        (event.payload as { medication_type: string }).medication_type !== "ocitocina",
+    )
+    .map((event) => {
+      const { medication_type, other_birth_medication_type } = event.payload as {
+        medication_type: string;
+        other_birth_medication_type: string | null;
+      };
+      const label =
+        medication_type === "outros" && other_birth_medication_type
+          ? other_birth_medication_type
+          : (BIRTH_MEDICATION_TYPE_LABELS[medication_type] ?? medication_type);
+      return stampColumnText(MEDICATION_ROW, hoursSince(t0, event.occurredAt), [label]);
+    })
+    .join("");
+}
+
+function buildLaBolsaElements(events: BirthModeTimelineEvent[], t0: number): string {
+  const amnioticFluid = events
+    .filter((event) => event.type === "amniotic_fluid")
+    .map((event) => {
+      const { fluid_type } = event.payload as { fluid_type: string };
+      const label = AMNIOTIC_FLUID_TYPE_LABELS[fluid_type] ?? fluid_type;
+      return stampColumnText(LA_BOLSA_ROW, hoursSince(t0, event.occurredAt), [label.charAt(0).toUpperCase()]);
+    })
+    .join("");
+
+  const ruptures = events
+    .filter((event) => event.type === "membrane_rupture")
+    .map((event) => {
+      const { rupture_type } = event.payload as { rupture_type: string };
+      const label = BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS[rupture_type] ?? rupture_type;
+      return stampColumnText(LA_BOLSA_ROW, hoursSince(t0, event.occurredAt), [`Bolsa: ${label.charAt(0)}`]);
+    })
+    .join("");
+
+  return amnioticFluid + ruptures;
+}
+
+function buildTemperatureElements(events: BirthModeTimelineEvent[], t0: number): string {
+  return events
+    .filter((event) => event.type === "maternal_vitals")
+    .map((event) => {
+      const { temperature_celsius } = event.payload as { temperature_celsius: number | null };
+      if (temperature_celsius == null) return "";
+      return stampColumnText(TEMPERATURE_ROW, hoursSince(t0, event.occurredAt), [`${temperature_celsius}`]);
+    })
+    .join("");
+}
+
+function buildUrineElements(events: BirthModeTimelineEvent[], t0: number): string {
+  return events
+    .filter((event) => event.type === "urine_test")
+    .map((event) => {
+      const { protein_level, ketone_level, volume_ml } = event.payload as {
+        protein_level: string | null;
+        ketone_level: string | null;
+        volume_ml: number | null;
+      };
+      const hours = hoursSince(t0, event.occurredAt);
+      const protein =
+        protein_level != null
+          ? stampColumnText(URINE_PROTEIN_ROW, hours, [DIPSTICK_SHORT_LABELS[protein_level] ?? protein_level])
+          : "";
+      const ketone =
+        ketone_level != null
+          ? stampColumnText(URINE_KETONE_ROW, hours, [DIPSTICK_SHORT_LABELS[ketone_level] ?? ketone_level])
+          : "";
+      const volume =
+        volume_ml != null ? stampColumnText(URINE_VOLUME_ROW, hours, [`${volume_ml}`]) : "";
+      return protein + ketone + volume;
+    })
+    .join("");
+}
+
+function buildColumnTextBands(events: BirthModeTimelineEvent[], t0: number): string {
+  return [
+    buildOxytocinElements(events, t0),
+    buildMedicationElements(events, t0),
+    buildLaBolsaElements(events, t0),
+    buildTemperatureElements(events, t0),
+    buildUrineElements(events, t0),
+  ].join("");
+}
+
 export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): string {
   const t0 = resolveChartT0(events);
   if (t0 === null) {
@@ -231,6 +376,7 @@ export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): str
   const dilationStation = buildDilationStationElements(events, t0);
   const pulsePa = buildPulsePaElements(events, t0);
   const contractions = buildContractionsElements(events, t0);
+  const columnText = buildColumnTextBands(events, t0);
 
-  return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}${pulsePa}${contractions}</svg>`;
+  return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}${pulsePa}${contractions}${columnText}</svg>`;
 }
