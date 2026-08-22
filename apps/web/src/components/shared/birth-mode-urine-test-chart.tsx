@@ -1,6 +1,7 @@
 "use client";
 
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { useIsCompactViewport } from "@/hooks/use-media-query";
 import { BIRTH_URINE_DIPSTICK_LABELS } from "@/lib/birth-mode-constants";
 import { type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
 import { dayjs } from "@/lib/dayjs";
@@ -28,6 +29,7 @@ type BirthModeUrineTestChartProps = {
 
 export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps) {
   const [primaryColor, setPrimaryColor] = useState<string | null>(null);
+  const isCompact = useIsCompactViewport();
 
   useEffect(() => {
     setPrimaryColor(`hsl(${getCssVar("--primary")})`);
@@ -94,7 +96,7 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
 
   return (
     <div className="space-y-2">
-      <div className="h-64">
+      <div className="relative h-64 min-w-0">
         <Line
           data={data}
           options={{
@@ -106,6 +108,7 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
                 min: 0,
                 max: maxX,
                 title: { display: true, text: "Horas desde o início" },
+                ticks: { maxTicksLimit: isCompact ? 4 : 8, maxRotation: 0 },
               },
               y: {
                 min: 0,

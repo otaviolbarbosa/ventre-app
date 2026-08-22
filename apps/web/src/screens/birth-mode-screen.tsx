@@ -8,6 +8,7 @@ import { BirthModeTimeline } from "@/components/shared/birth-mode-timeline";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
 import { useBirthModeTimelineRealtime } from "@/hooks/use-birth-mode-timeline-realtime";
+import { computeContractionsPer10Min } from "@/lib/birth-mode-chart-utils";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Skeleton } from "@ventre/ui/skeleton";
@@ -59,7 +60,22 @@ export function BirthModeScreen({
   );
 
   const onNewEvent = useCallback((event: BirthModeTimelineEvent) => {
-    setEvents((prev) => (prev.some((e) => e.id === event.id) ? prev : [...prev, event]));
+    setEvents((prev) => {
+      if (prev.some((e) => e.id === event.id)) return prev;
+      const next = [...prev, event];
+      if (event.type !== "contraction") return next;
+
+      const contractionEvents = next
+        .filter((e) => e.type === "contraction")
+        .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
+      const frequencyById = computeContractionsPer10Min(contractionEvents);
+
+      return next.map((e) =>
+        e.type === "contraction"
+          ? { ...e, payload: { ...e.payload, contractions_per_10min: frequencyById.get(e.id) ?? null } }
+          : e,
+      );
+    });
   }, []);
 
   useBirthModeTimelineRealtime(pregnancyId, resolveProfessionalName, onNewEvent);

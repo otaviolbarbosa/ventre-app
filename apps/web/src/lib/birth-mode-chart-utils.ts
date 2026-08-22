@@ -14,3 +14,19 @@ export function resolveChartT0(events: BirthModeTimelineEvent[]): number | null 
 export function hoursSince(t0: number, iso: string): number {
   return (new Date(iso).getTime() - t0) / (1000 * 60 * 60);
 }
+
+export function computeContractionsPer10Min(
+  contractionEvents: { id: string; occurredAt: string }[],
+): Map<string, number> {
+  const contractionsPer10MinById = new Map<string, number>();
+  const trailingWindow: number[] = [];
+  for (const event of contractionEvents) {
+    const time = new Date(event.occurredAt).getTime();
+    trailingWindow.push(time);
+    while (trailingWindow.length > 0 && (trailingWindow[0] ?? time) < time - 10 * 60 * 1000) {
+      trailingWindow.shift();
+    }
+    contractionsPer10MinById.set(event.id, trailingWindow.length);
+  }
+  return contractionsPer10MinById;
+}

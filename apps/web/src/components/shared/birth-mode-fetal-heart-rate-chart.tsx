@@ -1,6 +1,7 @@
 "use client";
 
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { useIsCompactViewport } from "@/hooks/use-media-query";
 import { type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
 import {
   Chart as ChartJS,
@@ -31,6 +32,7 @@ type BirthModeFetalHeartRateChartProps = {
 
 export function BirthModeFetalHeartRateChart({ events }: BirthModeFetalHeartRateChartProps) {
   const [primaryColor, setPrimaryColor] = useState<string | null>(null);
+  const isCompact = useIsCompactViewport();
 
   useEffect(() => {
     setPrimaryColor(`hsl(${getCssVar("--primary")})`);
@@ -99,7 +101,7 @@ export function BirthModeFetalHeartRateChart({ events }: BirthModeFetalHeartRate
   };
 
   return (
-    <div className="h-64">
+    <div className="relative h-64 min-w-0">
       <Line
         data={data}
         options={{
@@ -111,6 +113,7 @@ export function BirthModeFetalHeartRateChart({ events }: BirthModeFetalHeartRate
               min: 0,
               max: maxX,
               title: { display: true, text: "Horas desde o início" },
+              ticks: { maxTicksLimit: isCompact ? 4 : 8, maxRotation: 0 },
             },
             y: {
               min: BPM_MIN,
@@ -122,7 +125,11 @@ export function BirthModeFetalHeartRateChart({ events }: BirthModeFetalHeartRate
             legend: {
               display: true,
               position: "bottom" as const,
-              labels: { boxWidth: 10, font: { size: 10 }, filter: (item) => Boolean(item.text) },
+              labels: {
+                boxWidth: 10,
+                font: { size: isCompact ? 9 : 10 },
+                filter: (item) => Boolean(item.text),
+              },
             },
             tooltip: { filter: (item) => item.dataset.label != null },
           },

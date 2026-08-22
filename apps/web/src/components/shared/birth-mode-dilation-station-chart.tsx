@@ -1,6 +1,7 @@
 "use client";
 
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { useIsCompactViewport } from "@/hooks/use-media-query";
 import {
   type ChartPoint,
   hoursSince as hoursSinceT0,
@@ -35,6 +36,7 @@ type BirthModeDilationStationChartProps = {
 
 export function BirthModeDilationStationChart({ events }: BirthModeDilationStationChartProps) {
   const [primaryColor, setPrimaryColor] = useState<string | null>(null);
+  const isCompact = useIsCompactViewport();
 
   useEffect(() => {
     setPrimaryColor(`hsl(${getCssVar("--primary")})`);
@@ -139,7 +141,7 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
   };
 
   return (
-    <div className="h-64">
+    <div className="relative h-64 min-w-0">
       <Line
         data={data}
         options={{
@@ -151,6 +153,7 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
               min: 0,
               max: maxX,
               title: { display: true, text: "Horas desde o início" },
+              ticks: { maxTicksLimit: isCompact ? 4 : 8, maxRotation: 0 },
             },
             y: {
               min: DILATION_MIN,
@@ -169,7 +172,7 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
             legend: {
               display: true,
               position: "bottom" as const,
-              labels: { boxWidth: 10, font: { size: 10 } },
+              labels: { boxWidth: 10, font: { size: isCompact ? 9 : 10 } },
             },
             tooltip: { filter: (item) => item.dataset.label != null },
           },
