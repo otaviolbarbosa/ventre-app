@@ -315,7 +315,8 @@ function buildLaBolsaElements(events: BirthModeTimelineEvent[], t0: number): str
   const ruptures = events
     .filter((event) => event.type === "membrane_rupture")
     .map((event) => {
-      const { rupture_type } = event.payload as { rupture_type: string };
+      const { rupture_type } = event.payload as { rupture_type: string | null };
+      if (rupture_type == null) return "";
       const label = BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS[rupture_type] ?? rupture_type;
       return stampColumnText(LA_BOLSA_ROW, hoursSince(t0, event.occurredAt), [`Bolsa: ${label.charAt(0)}`]);
     })
