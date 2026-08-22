@@ -241,6 +241,10 @@ function buildContractionsElements(events: BirthModeTimelineEvent[], t0: number)
   return bars.length > 0 ? `${CONTRACTION_PATTERN_DEFS}${bars}` : "";
 }
 
+function escapeXmlText(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 // Stacks 1+ lines of text centered on an hour column, growing upward from the row's
 // bottom gridline — used for every band that's a blank text row on the template rather
 // than a numeric-scale grid (Ocitocina, Medicamentos, L.A./Bolsa, Temperatura, Urina).
@@ -251,7 +255,7 @@ function stampColumnText(band: ColumnBand, hoursSinceT0: number, lines: string[]
   return lines
     .map((line, index) => {
       const y = band.yBottom - index * lineHeight - 2;
-      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle">${line}</text>`;
+      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle">${escapeXmlText(line)}</text>`;
     })
     .join("");
 }
