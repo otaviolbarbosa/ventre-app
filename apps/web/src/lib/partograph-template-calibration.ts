@@ -49,11 +49,16 @@ export const DILATION_BAND: ContinuousBand = {
   valueMax: 10,
 };
 
+// De Lee's own axis runs the opposite direction from dilatação's on the same physical
+// grid: -3 sits near the top of the labelled scale (y≈236) and +4 sits near the bottom
+// (y≈387) — descent increases downward. yTop (387) > yBottom (236) here is intentional:
+// mapContinuousY maps valueMax (4) to yTop and valueMin (-3) to yBottom, which correctly
+// places +4 at y≈387 and -3 at y≈236.
 export const STATION_BAND: ContinuousBand = {
   x0: 56,
   x1: 543,
-  yTop: 193,
-  yBottom: 408,
+  yTop: 387,
+  yBottom: 236,
   valueMin: -3,
   valueMax: 4,
 };
