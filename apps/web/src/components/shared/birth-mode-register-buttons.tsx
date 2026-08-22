@@ -10,8 +10,10 @@ import { AddBirthCervicalDilationModal } from "@/modals/add-birth-cervical-dilat
 import { AddBirthContractionModal } from "@/modals/add-birth-contraction-modal";
 import { AddBirthFetalHeartRateModal } from "@/modals/add-birth-fetal-heart-rate-modal";
 import { AddBirthFetalStationModal } from "@/modals/add-birth-fetal-station-modal";
+import { AddBirthMaternalVitalsModal } from "@/modals/add-birth-maternal-vitals-modal";
 import { AddBirthMedicationAdministrationModal } from "@/modals/add-birth-medication-administration-modal";
 import { AddBirthMembraneRuptureModal } from "@/modals/add-birth-membrane-rupture-modal";
+import { AddBirthUrineTestModal } from "@/modals/add-birth-urine-test-modal";
 import { Button } from "@ventre/ui/button";
 import { useState } from "react";
 
@@ -26,7 +28,7 @@ export function BirthModeRegisterButtons({
 }: BirthModeRegisterButtonsProps) {
   const [activeModal, setActiveModal] = useState<Exclude<
     BirthEventType,
-    "start_monitoring"
+    "start_monitoring" | "apgar"
   > | null>(null);
 
   return (
@@ -91,6 +93,18 @@ export function BirthModeRegisterButtons({
       <AddBirthMembraneRuptureModal
         open={activeModal === "membrane_rupture"}
         onOpenChange={(open) => setActiveModal(open ? "membrane_rupture" : null)}
+        pregnancyId={pregnancyId}
+        onSuccess={onSuccess}
+      />
+      <AddBirthMaternalVitalsModal
+        open={activeModal === "maternal_vitals"}
+        onOpenChange={(open) => setActiveModal(open ? "maternal_vitals" : null)}
+        pregnancyId={pregnancyId}
+        onSuccess={onSuccess}
+      />
+      <AddBirthUrineTestModal
+        open={activeModal === "urine_test"}
+        onOpenChange={(open) => setActiveModal(open ? "urine_test" : null)}
         pregnancyId={pregnancyId}
         onSuccess={onSuccess}
       />

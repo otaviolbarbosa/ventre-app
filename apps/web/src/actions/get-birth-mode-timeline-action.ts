@@ -31,6 +31,9 @@ export const getBirthModeTimelineAction = authActionClient
       { data: amnioticFluidRecords },
       { data: medicationAdministrations },
       { data: membraneRuptures },
+      { data: maternalVitals },
+      { data: urineTests },
+      { data: apgarScores },
     ] = await Promise.all([
       supabase
         .from("pregnancies")
@@ -74,9 +77,38 @@ export const getBirthModeTimelineAction = authActionClient
         .select("*, professional:users(name)")
         .eq("pregnancy_id", pregnancyId)
         .order("occurred_at", { ascending: true }),
+      supabase
+        .from("birth_maternal_vitals")
+        .select("*, professional:users(name)")
+        .eq("pregnancy_id", pregnancyId)
+        .order("measured_at", { ascending: true }),
+      supabase
+        .from("birth_urine_tests")
+        .select("*, professional:users(name)")
+        .eq("pregnancy_id", pregnancyId)
+        .order("measured_at", { ascending: true }),
+      supabase
+        .from("birth_apgar_scores")
+        .select("*, professional:users(name)")
+        .eq("pregnancy_id", pregnancyId)
+        .order("minute", { ascending: true }),
     ]);
 
     const events: BirthModeTimelineEvent[] = [];
+
+    // Frequência de contrações por 10 min é derivada do intervalo entre os `measured_at`
+    // das contrações já registradas, não um campo capturado manualmente.
+    const contractionRows = contractions ?? [];
+    const contractionsPer10MinById = new Map<string, number>();
+    const trailingWindow: number[] = [];
+    for (const row of contractionRows) {
+      const time = new Date(row.measured_at).getTime();
+      trailingWindow.push(time);
+      while (trailingWindow.length > 0 && (trailingWindow[0] ?? time) < time - 10 * 60 * 1000) {
+        trailingWindow.shift();
+      }
+      contractionsPer10MinById.set(row.id, trailingWindow.length);
+    }
 
     if (pregnancy?.birth_mode_activated_at) {
       const activatedBy = pregnancy.activated_by as { name: string } | null;
@@ -90,14 +122,18 @@ export const getBirthModeTimelineAction = authActionClient
       });
     }
 
-    for (const row of contractions ?? []) {
+    for (const row of contractionRows) {
       events.push({
         type: "contraction",
         id: row.id,
         occurredAt: row.measured_at,
         professionalId: row.professional_id,
         professionalName: (row.professional as { name: string } | null)?.name ?? "Profissional",
-        payload: { duration_seconds: row.duration_seconds, effectiveness: row.effectiveness },
+        payload: {
+          duration_seconds: row.duration_seconds,
+          effectiveness: row.effectiveness,
+          contractions_per_10min: contractionsPer10MinById.get(row.id) ?? null,
+        },
       });
     }
 
@@ -156,6 +192,8 @@ export const getBirthModeTimelineAction = authActionClient
           medication_type: row.medication_type,
           other_birth_medication_type: row.other_birth_medication_type,
           notes: row.notes,
+          oxytocin_concentration_u_per_l: row.oxytocin_concentration_u_per_l,
+          oxytocin_drip_rate_gtt_per_min: row.oxytocin_drip_rate_gtt_per_min,
         },
       });
     }
@@ -167,7 +205,52 @@ export const getBirthModeTimelineAction = authActionClient
         occurredAt: row.occurred_at,
         professionalId: row.professional_id,
         professionalName: (row.professional as { name: string } | null)?.name ?? "Profissional",
-        payload: {},
+        payload: {
+          rupture_type: row.rupture_type,
+          fluid_type_at_rupture: row.fluid_type_at_rupture,
+        },
+      });
+    }
+
+    for (const row of maternalVitals ?? []) {
+      events.push({
+        type: "maternal_vitals",
+        id: row.id,
+        occurredAt: row.measured_at,
+        professionalId: row.professional_id,
+        professionalName: (row.professional as { name: string } | null)?.name ?? "Profissional",
+        payload: {
+          systolic_bp: row.systolic_bp,
+          diastolic_bp: row.diastolic_bp,
+          pulse_bpm: row.pulse_bpm,
+          temperature_celsius: row.temperature_celsius,
+        },
+      });
+    }
+
+    for (const row of urineTests ?? []) {
+      events.push({
+        type: "urine_test",
+        id: row.id,
+        occurredAt: row.measured_at,
+        professionalId: row.professional_id,
+        professionalName: (row.professional as { name: string } | null)?.name ?? "Profissional",
+        payload: {
+          protein_level: row.protein_level,
+          ketone_level: row.ketone_level,
+          volume_ml: row.volume_ml,
+        },
+      });
+    }
+
+    for (const row of apgarScores ?? []) {
+      events.push({
+        type: "apgar",
+        id: row.id,
+        occurredAt: row.created_at,
+        professionalId: row.professional_id,
+        professionalName: (row.professional as { name: string } | null)?.name ?? "Profissional",
+        payload: { minute: row.minute, total: row.total },
       });
     }
 

@@ -1,13 +1,10 @@
 "use client";
 
-import { addBirthMedicationAdministrationAction } from "@/actions/add-birth-medication-administration-action";
-import { BIRTH_MEDICATION_TYPE_LABELS } from "@/lib/birth-mode-constants";
+import { addBirthUrineTestAction } from "@/actions/add-birth-urine-test-action";
+import { BIRTH_URINE_DIPSTICK_LABELS } from "@/lib/birth-mode-constants";
 import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
 import { dayjs } from "@/lib/dayjs";
-import {
-  type BirthMedicationAdministrationInput,
-  birthMedicationAdministrationSchema,
-} from "@/lib/validations/birth-mode";
+import { type BirthUrineTestInput, birthUrineTestSchema } from "@/lib/validations/birth-mode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
@@ -16,67 +13,58 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { TimePicker } from "@ventre/ui/shared/time-picker";
-import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-type AddBirthMedicationAdministrationModalProps = {
+type AddBirthUrineTestModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pregnancyId: string;
   onSuccess: () => void;
 };
 
-export function AddBirthMedicationAdministrationModal({
+export function AddBirthUrineTestModal({
   open,
   onOpenChange,
   pregnancyId,
   onSuccess,
-}: AddBirthMedicationAdministrationModalProps) {
-  const { executeAsync: addMedication, isPending } = useAction(
-    addBirthMedicationAdministrationAction,
-  );
+}: AddBirthUrineTestModalProps) {
+  const { executeAsync: addUrineTest, isPending } = useAction(addBirthUrineTestAction);
 
-  const form = useForm<BirthMedicationAdministrationInput>({
-    resolver: zodResolver(birthMedicationAdministrationSchema),
+  const form = useForm<BirthUrineTestInput>({
+    resolver: zodResolver(birthUrineTestSchema),
     defaultValues: {
-      medication_type: undefined,
-      other_birth_medication_type: undefined,
-      notes: undefined,
-      oxytocin_concentration_u_per_l: undefined,
-      oxytocin_drip_rate_gtt_per_min: undefined,
+      protein_level: undefined,
+      ketone_level: undefined,
+      volume_ml: undefined,
       ...defaultBirthEventDateTime(),
     },
   });
 
-  const medicationType = form.watch("medication_type");
-
   useEffect(() => {
     if (open) {
       form.reset({
-        medication_type: undefined,
-        other_birth_medication_type: undefined,
-        notes: undefined,
-        oxytocin_concentration_u_per_l: undefined,
-        oxytocin_drip_rate_gtt_per_min: undefined,
+        protein_level: undefined,
+        ketone_level: undefined,
+        volume_ml: undefined,
         ...defaultBirthEventDateTime(),
       });
     }
   }, [open, form]);
 
-  async function onSubmit(values: BirthMedicationAdministrationInput) {
-    const result = await addMedication({ pregnancyId, data: values });
+  async function onSubmit(values: BirthUrineTestInput) {
+    const result = await addUrineTest({ pregnancyId, data: values });
     if (result?.serverError) {
       toast.error(result.serverError);
       return;
     }
-    toast.success("Medicamento registrado!");
+    toast.success("Exame de urina registrado!");
     if (result?.data?.duplicateWarning) {
       const { minutesAgo, professionalName } = result.data.duplicateWarning;
-      toast.warning(`${professionalName} já registrou um medicamento há ${minutesAgo} min`);
+      toast.warning(`${professionalName} já registrou urina há ${minutesAgo} min`);
     }
     onOpenChange(false);
     onSuccess();
@@ -86,92 +74,71 @@ export function AddBirthMedicationAdministrationModal({
     <ContentModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Registrar Administração de Medicamento"
-      description="Selecione o tipo de medicamento administrado"
+      title="Registrar Urina"
+      description="Preencha os campos que foram medidos"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="medication_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.entries(BIRTH_MEDICATION_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {medicationType === "outros" && (
+          <div className="flex gap-2">
             <FormField
               control={form.control}
-              name="other_birth_medication_type"
+              name="protein_level"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Qual medicamento? *</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ""} />
-                  </FormControl>
+                <FormItem className="flex-1">
+                  <FormLabel>Proteína</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(BIRTH_URINE_DIPSTICK_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
 
-          {medicationType === "ocitocina" && (
-            <div className="flex gap-2">
-              <FormField
-                control={form.control}
-                name="oxytocin_concentration_u_per_l"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Concentração (U/L) *</FormLabel>
+            <FormField
+              control={form.control}
+              name="ketone_level"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Cetonúria</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
-                      <Input type="number" step="0.1" min="0" {...field} value={field.value ?? ""} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="oxytocin_drip_rate_gtt_per_min"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Gotejamento (gtt/min) *</FormLabel>
-                    <FormControl>
-                      <Input type="number" min="0" {...field} value={field.value ?? ""} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
+                    <SelectContent>
+                      {Object.entries(BIRTH_URINE_DIPSTICK_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}
-            name="notes"
+            name="volume_ml"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Observações</FormLabel>
+                <FormLabel>Volume (ml)</FormLabel>
                 <FormControl>
-                  <Textarea rows={3} {...field} value={field.value ?? ""} />
+                  <Input type="number" step="0.1" min="0" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

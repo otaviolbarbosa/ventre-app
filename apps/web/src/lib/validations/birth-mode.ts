@@ -53,18 +53,61 @@ export const birthMedicationAdministrationSchema = z
     medication_type: z.enum(["fluidos_intravenosos", "ocitocina", "analgesia", "outros"]),
     other_birth_medication_type: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
+    oxytocin_concentration_u_per_l: z.coerce.number().positive().optional().nullable(),
+    oxytocin_drip_rate_gtt_per_min: z.coerce.number().int().min(0).optional().nullable(),
     ...birthEventDateTimeSchema,
   })
   .refine((v) => v.medication_type !== "outros" || !!v.other_birth_medication_type, {
     message: "Especifique o medicamento",
     path: ["other_birth_medication_type"],
-  });
+  })
+  .refine((v) => v.medication_type !== "ocitocina" || !!v.oxytocin_concentration_u_per_l, {
+    message: "Informe a concentração da ocitocina",
+    path: ["oxytocin_concentration_u_per_l"],
+  })
+  .refine(
+    (v) =>
+      v.medication_type !== "ocitocina" ||
+      (v.oxytocin_drip_rate_gtt_per_min !== undefined &&
+        v.oxytocin_drip_rate_gtt_per_min !== null),
+    {
+      message: "Informe o gotejamento da ocitocina",
+      path: ["oxytocin_drip_rate_gtt_per_min"],
+    },
+  );
 export type BirthMedicationAdministrationInput = z.infer<
   typeof birthMedicationAdministrationSchema
 >;
 
 // ── Bolsa rota ───────────────────────────────────────────────────────────────
 export const birthMembraneRuptureSchema = z.object({
+  rupture_type: z.enum(["espontanea", "artificial"]),
+  fluid_type_at_rupture: z.enum(["claro", "com_meconio", "com_sangue"]),
   ...birthEventDateTimeSchema,
 });
 export type BirthMembraneRuptureInput = z.infer<typeof birthMembraneRuptureSchema>;
+
+// ── Vitais maternos ──────────────────────────────────────────────────────────
+export const birthMaternalVitalsSchema = z.object({
+  systolic_bp: z.coerce.number().int().positive().optional().nullable(),
+  diastolic_bp: z.coerce.number().int().positive().optional().nullable(),
+  pulse_bpm: z.coerce.number().int().positive().optional().nullable(),
+  temperature_celsius: z.coerce.number().positive().optional().nullable(),
+  ...birthEventDateTimeSchema,
+});
+export type BirthMaternalVitalsInput = z.infer<typeof birthMaternalVitalsSchema>;
+
+// ── Urina ────────────────────────────────────────────────────────────────────
+export const birthUrineTestSchema = z.object({
+  protein_level: z
+    .enum(["ausente", "tracos", "uma_cruz", "duas_cruzes", "tres_cruzes"])
+    .optional()
+    .nullable(),
+  ketone_level: z
+    .enum(["ausente", "tracos", "uma_cruz", "duas_cruzes", "tres_cruzes"])
+    .optional()
+    .nullable(),
+  volume_ml: z.coerce.number().min(0).optional().nullable(),
+  ...birthEventDateTimeSchema,
+});
+export type BirthUrineTestInput = z.infer<typeof birthUrineTestSchema>;
