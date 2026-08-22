@@ -70,6 +70,14 @@ export function columnX(band: ColumnBand, hoursSinceT0: number): number {
   return band.columnX[nearestHourColumn(hoursSinceT0)] ?? band.columnX[0] ?? 0;
 }
 
+// Indexes a band's column-x lookup directly by an already-resolved column index (0-23),
+// as opposed to columnX which takes raw hoursSinceT0 and rounds it — use this when the
+// value in hand is already a column index, to avoid re-running nearestHourColumn on an
+// integer (a no-op, but confusing to read).
+function columnXByIndex(band: ColumnBand, columnIndex: number): number {
+  return band.columnX[columnIndex] ?? band.columnX[0] ?? 0;
+}
+
 function buildFcfElements(events: BirthModeTimelineEvent[], t0: number): string {
   const points = events
     .filter((event) => event.type === "fetal_heart_rate")
@@ -231,14 +239,15 @@ function buildContractionsElements(events: BirthModeTimelineEvent[], t0: number)
     };
     byColumn.set(column, {
       frequency: contractions_per_10min ?? 0,
-      duration: duration_seconds ?? null,
+      // duration_seconds is NOT NULL in birth_contractions — no fallback needed.
+      duration: duration_seconds,
     });
   }
 
   const barWidth = 6;
   const bars = Array.from(byColumn.entries())
     .map(([column, { frequency, duration }]) => {
-      const x = columnX(CONTRACTIONS_BAND, column) - barWidth / 2;
+      const x = columnXByIndex(CONTRACTIONS_BAND, column) - barWidth / 2;
       const clampedFrequency = Math.max(0, Math.min(5, frequency));
       const barHeight = (clampedFrequency / 5) * (CONTRACTIONS_BAND.yBottom - CONTRACTIONS_BAND.yTop);
       const y = CONTRACTIONS_BAND.yBottom - barHeight;
