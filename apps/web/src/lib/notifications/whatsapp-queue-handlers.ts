@@ -546,13 +546,10 @@ async function handlePatientInviteLink(
     return { action: "skip" };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const inviteLink = `${appUrl}/patient-registration?piid=${invite.id}`;
-
   return {
     action: "send",
     recipient: recipientOf(notification),
-    templateParams: { patientName: invite.name ?? "Gestante", inviteLink },
+    templateParams: { patientName: invite.name ?? "Gestante", patientInviteId: invite.id },
   };
 }
 

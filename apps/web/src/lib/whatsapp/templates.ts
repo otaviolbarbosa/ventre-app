@@ -47,12 +47,13 @@ type WhatsAppTemplateParams = {
   appointmentCount?: number;
   amount?: string;
   month?: string;
-  inviteLink?: string;
+  patientInviteId?: string;
 };
 
 type WhatsAppTemplate = {
   name: string;
   parameters: string[];
+  buttonParameter?: string;
 };
 
 // Os nomes abaixo são placeholders de negócio — a submissão real dos templates no Meta
@@ -187,11 +188,13 @@ export function getWhatsAppTemplate(
     }),
     patient_self_registration_invite: () => ({
       name: "patient_self_registration_invite",
-      parameters: [params.patientName ?? "", params.inviteLink ?? ""],
+      parameters: [params.patientName ?? ""],
+      buttonParameter: params.patientInviteId ?? "",
     }),
     patient_link_existing_invite: () => ({
       name: "patient_link_existing_invite",
-      parameters: [params.patientName ?? "", params.inviteLink ?? ""],
+      parameters: [params.patientName ?? ""],
+      buttonParameter: params.patientInviteId ?? "",
     }),
   };
 
