@@ -12,7 +12,7 @@ USING (
   AND EXISTS (
     SELECT 1 FROM public.pregnancies preg
     JOIN public.patients pat ON pat.id = preg.patient_id
-    WHERE preg.id = (storage.foldername(name))[1]::uuid
+    WHERE preg.id = (storage.foldername(storage.objects.name))[1]::uuid
       AND (public.is_team_member(pat.id) OR pat.user_id = auth.uid())
   )
 );
@@ -26,7 +26,7 @@ WITH CHECK (
   AND EXISTS (
     SELECT 1 FROM public.pregnancies preg
     JOIN public.patients pat ON pat.id = preg.patient_id
-    WHERE preg.id = (storage.foldername(name))[1]::uuid
+    WHERE preg.id = (storage.foldername(storage.objects.name))[1]::uuid
       AND (public.is_team_member(pat.id) OR pat.user_id = auth.uid())
   )
 );
