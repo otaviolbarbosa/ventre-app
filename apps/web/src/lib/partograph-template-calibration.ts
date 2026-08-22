@@ -66,21 +66,30 @@ export const STATION_BAND: ContinuousBand = {
 export const PULSE_PA_BAND: ContinuousBand = {
   x0: 56,
   x1: 543,
-  yTop: 632,
-  yBottom: 779,
+  yTop: 641,
+  yBottom: 769,
   valueMin: 60,
   valueMax: 180,
 };
 
 export const CONTRACTIONS_BAND: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 451,
+  yTop: 457,
   yBottom: 511,
 };
 
-export const OXYTOCIN_ROW: ColumnBand = {
+// Ocitocina has two stacked sub-rows on the template ("U/L" on top, "gotas/min" below) —
+// split the same way the three urine sub-rows are, so each value stamps into its own row
+// instead of both stacking into the bottom sub-row.
+export const OXYTOCIN_CONCENTRATION_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
   yTop: 511,
+  yBottom: 520,
+};
+
+export const OXYTOCIN_DRIP_ROW: ColumnBand = {
+  columnX: HOUR_COLUMN_X,
+  yTop: 520,
   yBottom: 529,
 };
 
@@ -90,9 +99,18 @@ export const MEDICATION_ROW: ColumnBand = {
   yBottom: 632,
 };
 
-export const LA_BOLSA_ROW: ColumnBand = {
+// L.A. (liquido amniótico) and Bolsa are two stacked sub-rows on the template — split so
+// amniotic-fluid events and membrane-rupture events land in their own row instead of
+// overlapping in the same cell.
+export const LA_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
   yTop: 150,
+  yBottom: 172,
+};
+
+export const BOLSA_ROW: ColumnBand = {
+  columnX: HOUR_COLUMN_X,
+  yTop: 172,
   yBottom: 193,
 };
 

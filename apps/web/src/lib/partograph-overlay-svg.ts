@@ -1,19 +1,17 @@
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
 import { computeAlertActionLines, type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
+import { BIRTH_MEDICATION_TYPE_LABELS, BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS } from "@/lib/birth-mode-constants";
 import {
-  AMNIOTIC_FLUID_TYPE_LABELS,
-  BIRTH_MEDICATION_TYPE_LABELS,
-  BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS,
-} from "@/lib/birth-mode-constants";
-import {
+  BOLSA_ROW,
   type ColumnBand,
   type ContinuousBand,
   CONTRACTIONS_BAND,
   DILATION_BAND,
   FCF_BAND,
-  LA_BOLSA_ROW,
+  LA_ROW,
   MEDICATION_ROW,
-  OXYTOCIN_ROW,
+  OXYTOCIN_CONCENTRATION_ROW,
+  OXYTOCIN_DRIP_ROW,
   PULSE_PA_BAND,
   STATION_BAND,
   TEMPERATURE_ROW,
@@ -30,6 +28,16 @@ const DIPSTICK_SHORT_LABELS: Record<string, string> = {
   uma_cruz: "+",
   duas_cruzes: "++",
   tres_cruzes: "+++",
+};
+
+// Short codes keyed by the raw `fluid_type` DB enum value (birth_amniotic_fluid_type),
+// not by first-lettering the localized label — "Claro"/"Com mecônio"/"Com sangue" all
+// start with "C", which previously collapsed every fluid type to the same glyph.
+const AMNIOTIC_FLUID_SHORT_CODES: Record<string, string> = {
+  claro: "C",
+  com_meconio: "M",
+  com_sangue: "S",
+  intacto: "I",
 };
 
 const FCF_COLOR = "#1d4ed8";
@@ -255,34 +263,61 @@ function stampColumnText(band: ColumnBand, hoursSinceT0: number, lines: string[]
   return lines
     .map((line, index) => {
       const y = band.yBottom - index * lineHeight - 2;
-      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle">${escapeXmlText(line)}</text>`;
+      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">${escapeXmlText(line)}</text>`;
     })
+    .join("");
+}
+
+// Groups items by hour column first, then stamps each column once with all of that
+// column's lines — so multiple events landing in the same hour stack (via
+// stampColumnText's own multi-line handling) instead of being drawn on top of each other.
+function stampGroupedByColumn(band: ColumnBand, entries: { hoursSinceT0: number; line: string }[]): string {
+  const byColumn = new Map<number, string[]>();
+  for (const { hoursSinceT0, line } of entries) {
+    const column = nearestHourColumn(hoursSinceT0);
+    const lines = byColumn.get(column) ?? [];
+    lines.push(line);
+    byColumn.set(column, lines);
+  }
+  return Array.from(byColumn.entries())
+    .map(([column, lines]) => stampColumnText(band, column, lines))
     .join("");
 }
 
 function buildOxytocinElements(events: BirthModeTimelineEvent[], t0: number): string {
-  return events
-    .filter(
-      (event) =>
-        event.type === "medication" &&
-        (event.payload as { medication_type: string }).medication_type === "ocitocina",
-    )
-    .map((event) => {
-      const { oxytocin_concentration_u_per_l, oxytocin_drip_rate_gtt_per_min } = event.payload as {
-        oxytocin_concentration_u_per_l: number | null;
-        oxytocin_drip_rate_gtt_per_min: number | null;
-      };
-      const lines = [
-        oxytocin_concentration_u_per_l != null ? `${oxytocin_concentration_u_per_l}U/L` : null,
-        oxytocin_drip_rate_gtt_per_min != null ? `${oxytocin_drip_rate_gtt_per_min}gtt` : null,
-      ].filter((line): line is string => line != null);
-      return stampColumnText(OXYTOCIN_ROW, hoursSince(t0, event.occurredAt), lines);
-    })
-    .join("");
+  const oxytocinEvents = events.filter(
+    (event) =>
+      event.type === "medication" &&
+      (event.payload as { medication_type: string }).medication_type === "ocitocina",
+  );
+
+  const concentration = stampGroupedByColumn(
+    OXYTOCIN_CONCENTRATION_ROW,
+    oxytocinEvents
+      .map((event) => {
+        const { oxytocin_concentration_u_per_l } = event.payload as { oxytocin_concentration_u_per_l: number | null };
+        if (oxytocin_concentration_u_per_l == null) return null;
+        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `${oxytocin_concentration_u_per_l}U/L` };
+      })
+      .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null),
+  );
+
+  const drip = stampGroupedByColumn(
+    OXYTOCIN_DRIP_ROW,
+    oxytocinEvents
+      .map((event) => {
+        const { oxytocin_drip_rate_gtt_per_min } = event.payload as { oxytocin_drip_rate_gtt_per_min: number | null };
+        if (oxytocin_drip_rate_gtt_per_min == null) return null;
+        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `${oxytocin_drip_rate_gtt_per_min}gtt` };
+      })
+      .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null),
+  );
+
+  return concentration + drip;
 }
 
 function buildMedicationElements(events: BirthModeTimelineEvent[], t0: number): string {
-  return events
+  const entries = events
     .filter(
       (event) =>
         event.type === "medication" &&
@@ -297,68 +332,78 @@ function buildMedicationElements(events: BirthModeTimelineEvent[], t0: number): 
         medication_type === "outros" && other_birth_medication_type
           ? other_birth_medication_type
           : (BIRTH_MEDICATION_TYPE_LABELS[medication_type] ?? medication_type);
-      return stampColumnText(MEDICATION_ROW, hoursSince(t0, event.occurredAt), [label]);
-    })
-    .join("");
+      return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: label };
+    });
+
+  return stampGroupedByColumn(MEDICATION_ROW, entries);
 }
 
 function buildLaBolsaElements(events: BirthModeTimelineEvent[], t0: number): string {
-  const amnioticFluid = events
-    .filter((event) => event.type === "amniotic_fluid")
-    .map((event) => {
-      const { fluid_type } = event.payload as { fluid_type: string };
-      const label = AMNIOTIC_FLUID_TYPE_LABELS[fluid_type] ?? fluid_type;
-      return stampColumnText(LA_BOLSA_ROW, hoursSince(t0, event.occurredAt), [label.charAt(0).toUpperCase()]);
-    })
-    .join("");
+  const amnioticFluid = stampGroupedByColumn(
+    LA_ROW,
+    events
+      .filter((event) => event.type === "amniotic_fluid")
+      .map((event) => {
+        const { fluid_type } = event.payload as { fluid_type: string };
+        const code = AMNIOTIC_FLUID_SHORT_CODES[fluid_type] ?? fluid_type.charAt(0).toUpperCase();
+        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: code };
+      }),
+  );
 
-  const ruptures = events
-    .filter((event) => event.type === "membrane_rupture")
-    .map((event) => {
-      const { rupture_type } = event.payload as { rupture_type: string | null };
-      if (rupture_type == null) return "";
-      const label = BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS[rupture_type] ?? rupture_type;
-      return stampColumnText(LA_BOLSA_ROW, hoursSince(t0, event.occurredAt), [`Bolsa: ${label.charAt(0)}`]);
-    })
-    .join("");
+  const ruptures = stampGroupedByColumn(
+    BOLSA_ROW,
+    events
+      .filter((event) => event.type === "membrane_rupture")
+      .map((event) => {
+        const { rupture_type } = event.payload as { rupture_type: string | null };
+        if (rupture_type == null) return null;
+        const label = BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS[rupture_type] ?? rupture_type;
+        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `Bolsa: ${label.charAt(0)}` };
+      })
+      .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null),
+  );
 
   return amnioticFluid + ruptures;
 }
 
 function buildTemperatureElements(events: BirthModeTimelineEvent[], t0: number): string {
-  return events
+  const entries = events
     .filter((event) => event.type === "maternal_vitals")
     .map((event) => {
       const { temperature_celsius } = event.payload as { temperature_celsius: number | null };
-      if (temperature_celsius == null) return "";
-      return stampColumnText(TEMPERATURE_ROW, hoursSince(t0, event.occurredAt), [`${temperature_celsius}`]);
+      if (temperature_celsius == null) return null;
+      return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `${temperature_celsius}` };
     })
-    .join("");
+    .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null);
+
+  return stampGroupedByColumn(TEMPERATURE_ROW, entries);
 }
 
 function buildUrineElements(events: BirthModeTimelineEvent[], t0: number): string {
-  return events
-    .filter((event) => event.type === "urine_test")
+  const urineEvents = events.filter((event) => event.type === "urine_test");
+
+  const toEntries = (key: "protein_level" | "ketone_level") =>
+    urineEvents
+      .map((event) => {
+        const value = (event.payload as Record<string, string | null>)[key];
+        if (value == null) return null;
+        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: DIPSTICK_SHORT_LABELS[value] ?? value };
+      })
+      .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null);
+
+  const volumeEntries = urineEvents
     .map((event) => {
-      const { protein_level, ketone_level, volume_ml } = event.payload as {
-        protein_level: string | null;
-        ketone_level: string | null;
-        volume_ml: number | null;
-      };
-      const hours = hoursSince(t0, event.occurredAt);
-      const protein =
-        protein_level != null
-          ? stampColumnText(URINE_PROTEIN_ROW, hours, [DIPSTICK_SHORT_LABELS[protein_level] ?? protein_level])
-          : "";
-      const ketone =
-        ketone_level != null
-          ? stampColumnText(URINE_KETONE_ROW, hours, [DIPSTICK_SHORT_LABELS[ketone_level] ?? ketone_level])
-          : "";
-      const volume =
-        volume_ml != null ? stampColumnText(URINE_VOLUME_ROW, hours, [`${volume_ml}`]) : "";
-      return protein + ketone + volume;
+      const { volume_ml } = event.payload as { volume_ml: number | null };
+      if (volume_ml == null) return null;
+      return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `${volume_ml}` };
     })
-    .join("");
+    .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null);
+
+  const protein = stampGroupedByColumn(URINE_PROTEIN_ROW, toEntries("protein_level"));
+  const ketone = stampGroupedByColumn(URINE_KETONE_ROW, toEntries("ketone_level"));
+  const volume = stampGroupedByColumn(URINE_VOLUME_ROW, volumeEntries);
+
+  return protein + ketone + volume;
 }
 
 function buildColumnTextBands(events: BirthModeTimelineEvent[], t0: number): string {
