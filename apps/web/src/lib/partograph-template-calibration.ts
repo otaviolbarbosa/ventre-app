@@ -25,13 +25,13 @@ export type ColumnBand = {
 // Pixel x-center of each of the 24 hour columns (1-24, left to right) under "hora do
 // exame" — shared by every band, since the grid is one continuous table.
 const HOUR_COLUMN_X = [
-  56, 78, 99, 120, 141, 162, 183, 205, 226, 247, 268, 289, 310, 332, 353, 374, 395, 416, 437, 459,
-  480, 501, 522, 543,
+  51, 73, 94, 115, 136, 157, 178, 200, 221, 242, 263, 284, 305, 327, 348, 369, 390, 411, 432, 454,
+  475, 496, 517, 538,
 ];
 
 export const FCF_BAND: ContinuousBand = {
-  x0: 56,
-  x1: 543,
+  x0: 51,
+  x1: 538,
   yTop: 64,
   yBottom: 150,
   valueMin: 100,
@@ -41,8 +41,8 @@ export const FCF_BAND: ContinuousBand = {
 // Dilatação (0-10cm, left axis) and Descida/De Lee (-3..+4, mirrored right axis) share the
 // same grid — only valueMin/valueMax differ.
 export const DILATION_BAND: ContinuousBand = {
-  x0: 56,
-  x1: 543,
+  x0: 51,
+  x1: 538,
   yTop: 193,
   yBottom: 408,
   valueMin: 0,
@@ -55,8 +55,8 @@ export const DILATION_BAND: ContinuousBand = {
 // mapContinuousY maps valueMax (4) to yTop and valueMin (-3) to yBottom, which correctly
 // places +4 at y≈387 and -3 at y≈236.
 export const STATION_BAND: ContinuousBand = {
-  x0: 56,
-  x1: 543,
+  x0: 51,
+  x1: 538,
   yTop: 387,
   yBottom: 236,
   valueMin: -3,
@@ -64,8 +64,8 @@ export const STATION_BAND: ContinuousBand = {
 };
 
 export const PULSE_PA_BAND: ContinuousBand = {
-  x0: 56,
-  x1: 543,
+  x0: 51,
+  x1: 538,
   yTop: 641,
   yBottom: 769,
   valueMin: 60,
@@ -81,19 +81,19 @@ export const CONTRACTIONS_BAND: ColumnBand = {
 // Ocitocina has two stacked sub-rows on the template ("U/L" on top, "gotas/min" below) —
 // split the same way the three urine sub-rows are, so each value stamps into its own row
 // instead of both stacking into the bottom sub-row. Boundaries re-measured directly from
-// the template (scoped pixel scan of y=440-560) rather than the original full-height scan,
+// the template (scoped pixel scan of y=440-510) rather than the original full-height scan,
 // which mixed in gridlines from unrelated bands: true split is 511-518 / 518-529, not the
 // originally-assumed even 511-520 / 520-529 split.
 export const OXYTOCIN_CONCENTRATION_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 511,
-  yBottom: 518,
+  yTop: 521,
+  yBottom: 528,
 };
 
 export const OXYTOCIN_DRIP_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 518,
-  yBottom: 529,
+  yTop: 528,
+  yBottom: 539,
 };
 
 export const MEDICATION_ROW: ColumnBand = {
@@ -125,18 +125,22 @@ export const BOLSA_ROW: ColumnBand = {
   yBottom: 193,
 };
 
-// yTop re-measured (scoped scan of y=770-841): the true top boundary of the temperatura
-// row is 779, not 786 — the original full-height scan mis-assigned it a few px too low,
-// which visually reads as "temperature sits below its row".
+// Re-measured directly from the template (scoped pixel scan of y=769-814): the temperatura
+// row is the single cell band 786-797 — 779 is the blank gap below the pulso/P.A. band's own
+// bottom border, and 800 falls between two real gridlines (797 and 803) rather than on one,
+// which is why stamped values previously rendered low and to the right of their cell.
 export const TEMPERATURE_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 779,
-  yBottom: 800,
+  yTop: 786,
+  yBottom: 797,
 };
 
+// yTop corrected to 803 — the real gridline (see TEMPERATURE_ROW comment). 797 is the
+// temperatura row's own bottom border, with a blank ~6px gap before proteina starts at 803;
+// the original 800 sat inside that gap, matching neither boundary.
 export const URINE_PROTEIN_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 800,
+  yTop: 803,
   yBottom: 814,
 };
 

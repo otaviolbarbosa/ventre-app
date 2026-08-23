@@ -105,7 +105,7 @@ function buildFcfElements(events: BirthModeTimelineEvent[], t0: number): string 
 function triangleApexPoints(x: number, apexY: number): string {
   // Apex (top vertex) sits exactly at (x, apexY) per explicit product requirement —
   // the base is drawn below it, never centered on the point.
-  return `${x},${apexY} ${x - 6},${apexY + 10} ${x + 6},${apexY + 10}`;
+  return `${x},${apexY} ${x - 9},${apexY + 15} ${x + 9},${apexY + 15}`;
 }
 
 function buildDilationStationElements(events: BirthModeTimelineEvent[], t0: number): string {
@@ -148,7 +148,7 @@ function buildDilationStationElements(events: BirthModeTimelineEvent[], t0: numb
   const stationCircles = stationPixels
     .map(
       (p) =>
-        `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="none" stroke="${STATION_COLOR}" stroke-width="1.2" />`,
+        `<circle cx="${p.x}" cy="${p.y}" r="5.5" fill="none" stroke="${STATION_COLOR}" stroke-width="1.4" />`,
     )
     .join("");
 

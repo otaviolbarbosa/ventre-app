@@ -17,7 +17,7 @@ import {
   PointElement,
   Tooltip,
 } from "chart.js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 
 ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, Legend, Filler);
@@ -30,26 +30,26 @@ function getCssVar(name: string): string {
 // Para a ponta do triângulo (e não o centro) ficar exatamente sobre o valor, desenhamos
 // o triângulo num canvas próprio com o vértice superior no centro do canvas — assim o
 // centro que o Chart.js usa para posicionar coincide com a ponta, não com o centroide.
-function createApexTrianglePointStyle(color: string, size = 16): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    const apexX = size / 2;
-    const apexY = size / 2;
-    const halfBase = size / 2.4;
-    const baseY = apexY + halfBase * 1.4;
-    ctx.beginPath();
-    ctx.moveTo(apexX, apexY);
-    ctx.lineTo(apexX - halfBase, baseY);
-    ctx.lineTo(apexX + halfBase, baseY);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-  }
-  return canvas;
-}
+// function createApexTrianglePointStyle(color: string, size = 16): HTMLCanvasElement {
+//   const canvas = document.createElement("canvas");
+//   canvas.width = size;
+//   canvas.height = size;
+//   const ctx = canvas.getContext("2d");
+//   if (ctx) {
+//     const apexX = size / 2;
+//     const apexY = size / 2;
+//     const halfBase = size / 2.4;
+//     const baseY = apexY + halfBase * 1.4;
+//     ctx.beginPath();
+//     ctx.moveTo(apexX, apexY);
+//     ctx.lineTo(apexX - halfBase, baseY);
+//     ctx.lineTo(apexX + halfBase, baseY);
+//     ctx.closePath();
+//     ctx.fillStyle = color;
+//     ctx.fill();
+//   }
+//   return canvas;
+// }
 
 const DILATION_MIN = 0;
 const DILATION_MAX = 10;
@@ -68,10 +68,10 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
     setPrimaryColor(`hsl(${getCssVar("--primary")})`);
   }, []);
 
-  const dilationPointStyle = useMemo(
-    () => createApexTrianglePointStyle(primaryColor ?? "#000000", 16),
-    [primaryColor],
-  );
+  // const dilationPointStyle = useMemo(
+  //   () => createApexTrianglePointStyle(primaryColor ?? "#000000", 24),
+  //   [primaryColor],
+  // );
 
   const dilationEvents = events.filter((event) => event.type === "cervical_dilation");
   const stationEvents = events.filter((event) => event.type === "fetal_station");
@@ -127,42 +127,47 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
         label: "Dilatação (cm)",
         data: dilationPoints,
         borderColor: primaryColor,
-        backgroundColor: primaryColor,
-        pointStyle: dilationPointStyle,
-        pointRadius: 6,
+        borderWidth: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.0)",
+        pointStyle: "triangle" as const,
+        // pointStyle: dilationPointStyle,
+        pointRadius: 4,
+        pointHoverRadius: 4,
         yAxisID: "y",
         spanGaps: false,
-        showLine: false,
+        tension: 0.1,
       },
       {
         label: "Estação (De Lee)",
         data: stationPoints,
         borderColor: "rgba(249, 115, 22, 0.9)",
-        backgroundColor: "rgba(249, 115, 22, 0.9)",
+        borderWidth: 1,
+        backgroundColor: "rgba(249, 115, 22, 0.0)",
         pointStyle: "circle" as const,
-        pointRadius: 8,
+        pointRadius: 4,
+        pointHoverRadius: 4,
         yAxisID: "y1",
         spanGaps: false,
-        showLine: false,
+        tension: 0.1,
       },
-      {
-        label: "Linha de Alerta",
-        data: alertLine,
-        borderColor: "rgba(234, 179, 8, 0.8)",
-        borderDash: [6, 4],
-        borderWidth: 1.5,
-        pointRadius: 0,
-        yAxisID: "y",
-      },
-      {
-        label: "Linha de Ação",
-        data: actionLine,
-        borderColor: "rgba(239, 68, 68, 0.8)",
-        borderDash: [2, 3],
-        borderWidth: 1.5,
-        pointRadius: 0,
-        yAxisID: "y",
-      },
+      // {
+      //   label: "Linha de Alerta",
+      //   data: alertLine,
+      //   borderColor: "rgba(234, 179, 8, 0.8)",
+      //   borderDash: [6, 4],
+      //   borderWidth: 1.5,
+      //   pointRadius: 0,
+      //   yAxisID: "y",
+      // },
+      // {
+      //   label: "Linha de Ação",
+      //   data: actionLine,
+      //   borderColor: "rgba(239, 68, 68, 0.8)",
+      //   borderDash: [2, 3],
+      //   borderWidth: 1.5,
+      //   pointRadius: 0,
+      //   yAxisID: "y",
+      // },
     ],
   };
 

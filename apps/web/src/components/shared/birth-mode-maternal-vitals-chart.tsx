@@ -23,9 +23,9 @@ function getCssVar(name: string): string {
 }
 
 const BP_MIN = 40;
-const BP_MAX = 200;
+const BP_MAX = 180;
 const PULSE_MIN = 40;
-const PULSE_MAX = 160;
+const PULSE_MAX = 180;
 
 type BirthModeMaternalVitalsChartProps = {
   events: BirthModeTimelineEvent[];
@@ -107,30 +107,37 @@ export function BirthModeMaternalVitalsChart({ events }: BirthModeMaternalVitals
       {
         label: "PA sistólica",
         data: systolicPoints,
-        borderColor: primaryColor,
-        backgroundColor: primaryColor,
+        borderColor: "rgba(59, 130, 246, 0.5)",
+        borderWidth: 1,
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        fill: 1,
         pointStyle: "circle" as const,
         pointRadius: 4,
+        pointHoverRadius: 4,
         yAxisID: "y",
         spanGaps: false,
       },
       {
         label: "PA diastólica",
         data: diastolicPoints,
-        borderColor: "rgba(59, 130, 246, 0.8)",
-        backgroundColor: "rgba(59, 130, 246, 0.8)",
-        pointStyle: "triangle" as const,
+        borderColor: "rgba(59, 130, 246, 0.5)",
+        borderWidth: 1,
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        pointStyle: "circle" as const,
         pointRadius: 4,
+        pointHoverRadius: 4,
         yAxisID: "y",
         spanGaps: false,
       },
       {
         label: "Pulso (bpm)",
         data: pulsePoints,
-        borderColor: "rgba(249, 115, 22, 0.9)",
-        backgroundColor: "rgba(249, 115, 22, 0.9)",
+        borderColor: primaryColor,
+        borderWidth: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.0)",
         pointStyle: "rectRot" as const,
         pointRadius: 4,
+        pointHoverRadius: 4,
         yAxisID: "y1",
         spanGaps: false,
       },

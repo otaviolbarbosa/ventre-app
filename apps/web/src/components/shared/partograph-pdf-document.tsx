@@ -1,8 +1,8 @@
-import type { PartographHeaderInfo } from "@/lib/partograph-header-data";
+import path from "node:path";
 import { PDF_FONT_FAMILY } from "@/lib/contract-pdf-fonts";
 import { dayjs } from "@/lib/dayjs";
+import type { PartographHeaderInfo } from "@/lib/partograph-header-data";
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
-import path from "node:path";
 
 export type PartographPdfData = {
   headerInfo: PartographHeaderInfo;
@@ -27,22 +27,27 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottom: "1 solid #e5e7eb",
   },
+  // Height derived from the logo's real aspect ratio (1438x452) — a fixed square would
+  // squash it.
   logo: {
-    width: 48,
-    height: 48,
+    width: 80,
+    height: 80 / (1438 / 452),
     marginRight: 12,
   },
   headerInfo: {
     flexGrow: 1,
+    alignItems: "flex-end",
   },
   title: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "bold",
+    textAlign: "right",
   },
   subtitle: {
     fontSize: 9,
     color: "#6b7280",
     marginTop: 2,
+    textAlign: "right",
   },
   // Capped to fit the remaining page height below the header (A4 = 842pt tall, minus
   // 48pt page padding and an ~80-90pt header block — up to 3 subtitle lines when the
@@ -76,7 +81,9 @@ export function PartographPdfDocument({ data }: { data: PartographPdfData }) {
               {headerInfo.gestationalAgeLabel
                 ? `Idade gestacional: ${headerInfo.gestationalAgeLabel}`
                 : "Idade gestacional: não informada"}
-              {headerInfo.dueDate ? ` · DPP: ${dayjs(headerInfo.dueDate).format("DD/MM/YYYY")}` : ""}
+              {headerInfo.dueDate
+                ? ` · DPP: ${dayjs(headerInfo.dueDate).format("DD/MM/YYYY")}`
+                : ""}
             </Text>
             <Text style={styles.subtitle}>
               Modelo clássico (Ministério da Saúde) — gerado em {dayjs().format("DD/MM/YYYY HH:mm")}
