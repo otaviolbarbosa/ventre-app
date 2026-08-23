@@ -1,5 +1,9 @@
 import path from "node:path";
-import { PDF_FONT_FAMILY } from "@/lib/contract-pdf-fonts";
+import {
+  PDF_FONT_FAMILY,
+  PDF_FONT_FAMILY_LATO,
+  PDF_FONT_FAMILY_POPPINS,
+} from "@/lib/contract-pdf-fonts";
 import { dayjs } from "@/lib/dayjs";
 import type { PartographHeaderInfo } from "@/lib/partograph-header-data";
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
@@ -18,7 +22,8 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: PDF_FONT_FAMILY,
     fontSize: 9,
-    padding: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 32,
   },
   header: {
     flexDirection: "row",
@@ -35,16 +40,18 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   headerInfo: {
+    fontFamily: PDF_FONT_FAMILY_LATO,
     flexGrow: 1,
     alignItems: "flex-end",
   },
   title: {
+    fontFamily: PDF_FONT_FAMILY_POPPINS,
     fontSize: 12,
     fontWeight: "bold",
     textAlign: "right",
   },
   subtitle: {
-    fontSize: 9,
+    fontSize: 8,
     color: "#6b7280",
     marginTop: 2,
     textAlign: "right",
@@ -61,9 +68,12 @@ const styles = StyleSheet.create({
     height: 680,
   },
   emptyMessage: {
-    fontSize: 9,
+    fontSize: 8,
     color: "#6b7280",
     marginTop: 24,
+  },
+  partographContainer: {
+    alignItems: "center",
   },
 });
 
@@ -95,14 +105,16 @@ export function PartographPdfDocument({ data }: { data: PartographPdfData }) {
             ) : null}
           </View>
         </View>
-        {imageBuffer ? (
-          <Image
-            src={`data:image/png;base64,${imageBuffer.toString("base64")}`}
-            style={styles.partographImage}
-          />
-        ) : (
-          <Text style={styles.emptyMessage}>Sem dados suficientes para gerar o partograma.</Text>
-        )}
+        <View style={styles.partographContainer}>
+          {imageBuffer ? (
+            <Image
+              src={`data:image/png;base64,${imageBuffer.toString("base64")}`}
+              style={styles.partographImage}
+            />
+          ) : (
+            <Text style={styles.emptyMessage}>Sem dados suficientes para gerar o partograma.</Text>
+          )}
+        </View>
       </Page>
     </Document>
   );
