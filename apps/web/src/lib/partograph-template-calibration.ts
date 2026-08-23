@@ -80,16 +80,19 @@ export const CONTRACTIONS_BAND: ColumnBand = {
 
 // Ocitocina has two stacked sub-rows on the template ("U/L" on top, "gotas/min" below) —
 // split the same way the three urine sub-rows are, so each value stamps into its own row
-// instead of both stacking into the bottom sub-row.
+// instead of both stacking into the bottom sub-row. Boundaries re-measured directly from
+// the template (scoped pixel scan of y=440-560) rather than the original full-height scan,
+// which mixed in gridlines from unrelated bands: true split is 511-518 / 518-529, not the
+// originally-assumed even 511-520 / 520-529 split.
 export const OXYTOCIN_CONCENTRATION_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
   yTop: 511,
-  yBottom: 520,
+  yBottom: 518,
 };
 
 export const OXYTOCIN_DRIP_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 520,
+  yTop: 518,
   yBottom: 529,
 };
 
@@ -98,6 +101,14 @@ export const MEDICATION_ROW: ColumnBand = {
   yTop: 529,
   yBottom: 632,
 };
+
+// Medicamentos are written vertically, one 30-minute slot per column (twice the density
+// of every other band's hourly columns) — each hour cell's slot splits into two half-hour
+// slots straddling its center.
+export const MEDICATION_HALF_HOUR_X: number[] = HOUR_COLUMN_X.flatMap((center) => [
+  center - 5.3,
+  center + 5.3,
+]);
 
 // L.A. (liquido amniótico) and Bolsa are two stacked sub-rows on the template — split so
 // amniotic-fluid events and membrane-rupture events land in their own row instead of
@@ -114,9 +125,12 @@ export const BOLSA_ROW: ColumnBand = {
   yBottom: 193,
 };
 
+// yTop re-measured (scoped scan of y=770-841): the true top boundary of the temperatura
+// row is 779, not 786 — the original full-height scan mis-assigned it a few px too low,
+// which visually reads as "temperature sits below its row".
 export const TEMPERATURE_ROW: ColumnBand = {
   columnX: HOUR_COLUMN_X,
-  yTop: 786,
+  yTop: 779,
   yBottom: 800,
 };
 

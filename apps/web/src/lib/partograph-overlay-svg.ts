@@ -1,14 +1,18 @@
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
-import { computeAlertActionLines, type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
-import { BIRTH_MEDICATION_TYPE_LABELS, BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS } from "@/lib/birth-mode-constants";
+import { type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
+import {
+  BIRTH_MEDICATION_TYPE_LABELS,
+  BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS,
+} from "@/lib/birth-mode-constants";
 import {
   BOLSA_ROW,
+  CONTRACTIONS_BAND,
   type ColumnBand,
   type ContinuousBand,
-  CONTRACTIONS_BAND,
   DILATION_BAND,
   FCF_BAND,
   LA_ROW,
+  MEDICATION_HALF_HOUR_X,
   MEDICATION_ROW,
   OXYTOCIN_CONCENTRATION_ROW,
   OXYTOCIN_DRIP_ROW,
@@ -43,12 +47,13 @@ const AMNIOTIC_FLUID_SHORT_CODES: Record<string, string> = {
 const FCF_COLOR = "#1d4ed8";
 const DILATION_COLOR = "#1d4ed8";
 const STATION_COLOR = "#f97316";
-const ALERT_COLOR = "#eab308";
-const ACTION_COLOR = "#ef4444";
 const PULSE_COLOR = "#eab308";
 const PA_COLOR = "#3b82f6";
 
-export function mapContinuousX(band: Pick<ContinuousBand, "x0" | "x1">, hoursSinceT0: number): number {
+export function mapContinuousX(
+  band: Pick<ContinuousBand, "x0" | "x1">,
+  hoursSinceT0: number,
+): number {
   const clamped = Math.max(0, Math.min(23, hoursSinceT0));
   return band.x0 + (clamped / 23) * (band.x1 - band.x0);
 }
@@ -100,7 +105,7 @@ function buildFcfElements(events: BirthModeTimelineEvent[], t0: number): string 
 function triangleApexPoints(x: number, apexY: number): string {
   // Apex (top vertex) sits exactly at (x, apexY) per explicit product requirement —
   // the base is drawn below it, never centered on the point.
-  return `${x},${apexY} ${x - 4},${apexY + 7} ${x + 4},${apexY + 7}`;
+  return `${x},${apexY} ${x - 6},${apexY + 10} ${x + 6},${apexY + 10}`;
 }
 
 function buildDilationStationElements(events: BirthModeTimelineEvent[], t0: number): string {
@@ -119,8 +124,6 @@ function buildDilationStationElements(events: BirthModeTimelineEvent[], t0: numb
       y: (event.payload as { station_lee: number }).station_lee,
     }))
     .sort((a, b) => a.x - b.x);
-
-  const { alertLine, actionLine } = computeAlertActionLines(dilationPoints, 10);
 
   const dilationPixels = dilationPoints.map((p) => ({
     x: mapContinuousX(DILATION_BAND, p.x),
@@ -143,23 +146,13 @@ function buildDilationStationElements(events: BirthModeTimelineEvent[], t0: numb
       ? `<polyline points="${stationPixels.map((p) => `${p.x},${p.y}`).join(" ")}" fill="none" stroke="${STATION_COLOR}" stroke-width="1" stroke-dasharray="3 2" />`
       : "";
   const stationCircles = stationPixels
-    .map((p) => `<circle cx="${p.x}" cy="${p.y}" r="2.2" fill="none" stroke="${STATION_COLOR}" stroke-width="1" />`)
+    .map(
+      (p) =>
+        `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="none" stroke="${STATION_COLOR}" stroke-width="1.2" />`,
+    )
     .join("");
 
-  const toLine = (points: ChartPoint[], color: string) => {
-    if (points.length === 0) return "";
-    const pixels = points.map((p) => `${mapContinuousX(DILATION_BAND, p.x)},${mapContinuousY(DILATION_BAND, p.y)}`);
-    return `<polyline points="${pixels.join(" ")}" fill="none" stroke="${color}" stroke-width="0.75" stroke-dasharray="3 2" />`;
-  };
-
-  return [
-    dilationLine,
-    dilationTriangles,
-    stationLine,
-    stationCircles,
-    toLine(alertLine, ALERT_COLOR),
-    toLine(actionLine, ACTION_COLOR),
-  ].join("");
+  return [dilationLine, dilationTriangles, stationLine, stationCircles].join("");
 }
 
 function paArrowMarks(x: number, systolicY: number, diastolicY: number): string {
@@ -202,60 +195,73 @@ function buildPulsePaElements(events: BirthModeTimelineEvent[], t0: number): str
       };
       if (systolic_bp == null || diastolic_bp == null) return "";
       const x = mapContinuousX(PULSE_PA_BAND, hoursSince(t0, event.occurredAt));
-      return paArrowMarks(x, mapContinuousY(PULSE_PA_BAND, systolic_bp), mapContinuousY(PULSE_PA_BAND, diastolic_bp));
+      return paArrowMarks(
+        x,
+        mapContinuousY(PULSE_PA_BAND, systolic_bp),
+        mapContinuousY(PULSE_PA_BAND, diastolic_bp),
+      );
     })
     .join("");
 
   return [pulseLine, pulseDots, paMarks].join("");
 }
 
-const CONTRACTION_PATTERN_DEFS = `
-  <defs>
-    <pattern id="contraction-dots" width="4" height="4" patternUnits="userSpaceOnUse">
-      <circle cx="2" cy="2" r="0.6" fill="#111827" />
-    </pattern>
-    <pattern id="contraction-diag" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-      <line x1="0" y1="0" x2="0" y2="4" stroke="#111827" stroke-width="1.2" />
-    </pattern>
-  </defs>
-`;
+const CONTRACTION_ROW_HEIGHT = (CONTRACTIONS_BAND.yBottom - CONTRACTIONS_BAND.yTop) / 5;
+const CONTRACTION_CELL_WIDTH = 14;
 
-function contractionFill(durationSeconds: number | null): string {
-  if (durationSeconds == null) return "url(#contraction-dots)";
-  if (durationSeconds < 20) return "url(#contraction-dots)";
-  if (durationSeconds <= 40) return "url(#contraction-diag)";
-  return "#111827";
+// One cell per hour column, at the row matching that reading's frequency (1-5, template
+// rows top-to-bottom are 5,4,3,2,1) — filled full if the contraction was effective (>40s),
+// half (bottom half) if borderline (20-40s), or left as an outline only if <20s.
+function contractionCell(x: number, cellYTop: number, durationSeconds: number): string {
+  const cellX = x - CONTRACTION_CELL_WIDTH / 2;
+  const outline = `<rect x="${cellX}" y="${cellYTop}" width="${CONTRACTION_CELL_WIDTH}" height="${CONTRACTION_ROW_HEIGHT}" fill="none" stroke="#111827" stroke-width="0.6" />`;
+  if (durationSeconds > 40) {
+    return `<rect x="${cellX}" y="${cellYTop}" width="${CONTRACTION_CELL_WIDTH}" height="${CONTRACTION_ROW_HEIGHT}" fill="#111827" />`;
+  }
+  if (durationSeconds >= 20) {
+    const halfY = cellYTop + CONTRACTION_ROW_HEIGHT / 2;
+    return `${outline}<rect x="${cellX}" y="${halfY}" width="${CONTRACTION_CELL_WIDTH}" height="${CONTRACTION_ROW_HEIGHT / 2}" fill="#111827" />`;
+  }
+  return outline;
 }
 
-function buildContractionsElements(events: BirthModeTimelineEvent[], t0: number): string {
-  const contractionEvents = events.filter((event) => event.type === "contraction");
-  // One bar per hour column — keep the latest reading recorded within that column.
-  const byColumn = new Map<number, { frequency: number; duration: number | null }>();
+function buildContractionsElements(events: BirthModeTimelineEvent[]): string {
+  const contractionEvents = events
+    .filter((event) => event.type === "contraction")
+    .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
+
+  if (contractionEvents.length === 0) return "";
+
+  // The contractions band counts its own columns starting from the first contraction
+  // ever recorded, not the shared chart t0 (which may be the birth-mode activation time,
+  // well before labor's active contractions began).
+  const localT0 = new Date(contractionEvents[0]?.occurredAt ?? 0).getTime();
+
+  // One cell per hour column — keep the latest reading recorded within that column.
+  const byColumn = new Map<number, { frequency: number; duration: number }>();
   for (const event of contractionEvents) {
-    const column = nearestHourColumn(hoursSince(t0, event.occurredAt));
+    const hoursSinceLocal = (new Date(event.occurredAt).getTime() - localT0) / (1000 * 60 * 60);
+    const column = nearestHourColumn(hoursSinceLocal);
     const { contractions_per_10min, duration_seconds } = event.payload as {
       contractions_per_10min: number | null;
       duration_seconds: number;
     };
     byColumn.set(column, {
-      frequency: contractions_per_10min ?? 0,
+      frequency: contractions_per_10min ?? 1,
       // duration_seconds is NOT NULL in birth_contractions — no fallback needed.
       duration: duration_seconds,
     });
   }
 
-  const barWidth = 6;
-  const bars = Array.from(byColumn.entries())
+  return Array.from(byColumn.entries())
     .map(([column, { frequency, duration }]) => {
-      const x = columnXByIndex(CONTRACTIONS_BAND, column) - barWidth / 2;
-      const clampedFrequency = Math.max(0, Math.min(5, frequency));
-      const barHeight = (clampedFrequency / 5) * (CONTRACTIONS_BAND.yBottom - CONTRACTIONS_BAND.yTop);
-      const y = CONTRACTIONS_BAND.yBottom - barHeight;
-      return `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${contractionFill(duration)}" />`;
+      const clampedFrequency = Math.max(1, Math.min(5, Math.round(frequency)));
+      const rowIndexFromTop = 5 - clampedFrequency;
+      const cellYTop = CONTRACTIONS_BAND.yTop + rowIndexFromTop * CONTRACTION_ROW_HEIGHT;
+      const x = columnXByIndex(CONTRACTIONS_BAND, column);
+      return contractionCell(x, cellYTop, duration);
     })
     .join("");
-
-  return bars.length > 0 ? `${CONTRACTION_PATTERN_DEFS}${bars}` : "";
 }
 
 function escapeXmlText(value: string): string {
@@ -280,7 +286,10 @@ function stampColumnText(band: ColumnBand, hoursSinceT0: number, lines: string[]
 // Groups items by hour column first, then stamps each column once with all of that
 // column's lines — so multiple events landing in the same hour stack (via
 // stampColumnText's own multi-line handling) instead of being drawn on top of each other.
-function stampGroupedByColumn(band: ColumnBand, entries: { hoursSinceT0: number; line: string }[]): string {
+function stampGroupedByColumn(
+  band: ColumnBand,
+  entries: { hoursSinceT0: number; line: string }[],
+): string {
   const byColumn = new Map<number, string[]>();
   for (const { hoursSinceT0, line } of entries) {
     const column = nearestHourColumn(hoursSinceT0);
@@ -304,9 +313,14 @@ function buildOxytocinElements(events: BirthModeTimelineEvent[], t0: number): st
     OXYTOCIN_CONCENTRATION_ROW,
     oxytocinEvents
       .map((event) => {
-        const { oxytocin_concentration_u_per_l } = event.payload as { oxytocin_concentration_u_per_l: number | null };
+        const { oxytocin_concentration_u_per_l } = event.payload as {
+          oxytocin_concentration_u_per_l: number | null;
+        };
         if (oxytocin_concentration_u_per_l == null) return null;
-        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `${oxytocin_concentration_u_per_l}U/L` };
+        return {
+          hoursSinceT0: hoursSince(t0, event.occurredAt),
+          line: `${oxytocin_concentration_u_per_l}`,
+        };
       })
       .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null),
   );
@@ -315,14 +329,25 @@ function buildOxytocinElements(events: BirthModeTimelineEvent[], t0: number): st
     OXYTOCIN_DRIP_ROW,
     oxytocinEvents
       .map((event) => {
-        const { oxytocin_drip_rate_gtt_per_min } = event.payload as { oxytocin_drip_rate_gtt_per_min: number | null };
+        const { oxytocin_drip_rate_gtt_per_min } = event.payload as {
+          oxytocin_drip_rate_gtt_per_min: number | null;
+        };
         if (oxytocin_drip_rate_gtt_per_min == null) return null;
-        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `${oxytocin_drip_rate_gtt_per_min}gtt` };
+        return {
+          hoursSinceT0: hoursSince(t0, event.occurredAt),
+          line: `${oxytocin_drip_rate_gtt_per_min}`,
+        };
       })
       .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null),
   );
 
   return concentration + drip;
+}
+
+// Medicamentos get their own half-hour-resolution column index (0-47), independent of
+// the hourly nearestHourColumn used by every other band.
+function nearestHalfHourColumn(hoursSinceT0: number): number {
+  return Math.max(0, Math.min(47, Math.round(hoursSinceT0 * 2)));
 }
 
 function buildMedicationElements(events: BirthModeTimelineEvent[], t0: number): string {
@@ -341,10 +366,26 @@ function buildMedicationElements(events: BirthModeTimelineEvent[], t0: number): 
         medication_type === "outros" && other_birth_medication_type
           ? other_birth_medication_type
           : (BIRTH_MEDICATION_TYPE_LABELS[medication_type] ?? medication_type);
-      return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: label };
+      return { column: nearestHalfHourColumn(hoursSince(t0, event.occurredAt)), label };
     });
 
-  return stampGroupedByColumn(MEDICATION_ROW, entries);
+  const byColumn = new Map<number, string[]>();
+  for (const { column, label } of entries) {
+    const labels = byColumn.get(column) ?? [];
+    labels.push(label);
+    byColumn.set(column, labels);
+  }
+
+  return Array.from(byColumn.entries())
+    .map(([column, labels]) => {
+      const x = MEDICATION_HALF_HOUR_X[column] ?? MEDICATION_HALF_HOUR_X[0] ?? 0;
+      const y = MEDICATION_ROW.yBottom - 4;
+      const text = labels.join(" / ");
+      // Vertical text reading bottom-to-top within the slot, anchored near the row's
+      // bottom edge so it grows upward into the tall blank medicamentos block.
+      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" transform="rotate(-90 ${x} ${y})">${escapeXmlText(text)}</text>`;
+    })
+    .join("");
 }
 
 function buildLaBolsaElements(events: BirthModeTimelineEvent[], t0: number): string {
@@ -367,7 +408,10 @@ function buildLaBolsaElements(events: BirthModeTimelineEvent[], t0: number): str
         const { rupture_type } = event.payload as { rupture_type: string | null };
         if (rupture_type == null) return null;
         const label = BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS[rupture_type] ?? rupture_type;
-        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: `Bolsa: ${label.charAt(0)}` };
+        return {
+          hoursSinceT0: hoursSince(t0, event.occurredAt),
+          line: `Bolsa: ${label.charAt(0)}`,
+        };
       })
       .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null),
   );
@@ -396,7 +440,10 @@ function buildUrineElements(events: BirthModeTimelineEvent[], t0: number): strin
       .map((event) => {
         const value = (event.payload as Record<string, string | null>)[key];
         if (value == null) return null;
-        return { hoursSinceT0: hoursSince(t0, event.occurredAt), line: DIPSTICK_SHORT_LABELS[value] ?? value };
+        return {
+          hoursSinceT0: hoursSince(t0, event.occurredAt),
+          line: DIPSTICK_SHORT_LABELS[value] ?? value,
+        };
       })
       .filter((entry): entry is { hoursSinceT0: number; line: string } => entry != null);
 
@@ -434,7 +481,7 @@ export function buildPartographOverlaySvg(events: BirthModeTimelineEvent[]): str
   const fcf = buildFcfElements(events, t0);
   const dilationStation = buildDilationStationElements(events, t0);
   const pulsePa = buildPulsePaElements(events, t0);
-  const contractions = buildContractionsElements(events, t0);
+  const contractions = buildContractionsElements(events);
   const columnText = buildColumnTextBands(events, t0);
 
   return `<svg width="${TEMPLATE_WIDTH}" height="${TEMPLATE_HEIGHT}" xmlns="http://www.w3.org/2000/svg">${fcf}${dilationStation}${pulsePa}${contractions}${columnText}</svg>`;
