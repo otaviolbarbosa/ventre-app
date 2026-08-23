@@ -653,6 +653,67 @@ export type Database = {
           },
         ]
       }
+      birth_maternal_vitals: {
+        Row: {
+          created_at: string
+          diastolic_bp: number | null
+          id: string
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          pulse_bpm: number | null
+          systolic_bp: number | null
+          temperature_celsius: number | null
+        }
+        Insert: {
+          created_at?: string
+          diastolic_bp?: number | null
+          id?: string
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          pulse_bpm?: number | null
+          systolic_bp?: number | null
+          temperature_celsius?: number | null
+        }
+        Update: {
+          created_at?: string
+          diastolic_bp?: number | null
+          id?: string
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+          pulse_bpm?: number | null
+          systolic_bp?: number | null
+          temperature_celsius?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_maternal_vitals_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_maternal_vitals_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_maternal_vitals_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       birth_medication_administrations: {
         Row: {
           administered_at: string
@@ -661,6 +722,8 @@ export type Database = {
           medication_type: Database["public"]["Enums"]["birth_medication_type"]
           notes: string | null
           other_birth_medication_type: string | null
+          oxytocin_concentration_u_per_l: number | null
+          oxytocin_drip_rate_gtt_per_min: number | null
           patient_id: string
           pregnancy_id: string
           professional_id: string
@@ -672,6 +735,8 @@ export type Database = {
           medication_type: Database["public"]["Enums"]["birth_medication_type"]
           notes?: string | null
           other_birth_medication_type?: string | null
+          oxytocin_concentration_u_per_l?: number | null
+          oxytocin_drip_rate_gtt_per_min?: number | null
           patient_id: string
           pregnancy_id: string
           professional_id: string
@@ -683,6 +748,8 @@ export type Database = {
           medication_type?: Database["public"]["Enums"]["birth_medication_type"]
           notes?: string | null
           other_birth_medication_type?: string | null
+          oxytocin_concentration_u_per_l?: number | null
+          oxytocin_drip_rate_gtt_per_min?: number | null
           patient_id?: string
           pregnancy_id?: string
           professional_id?: string
@@ -714,27 +781,45 @@ export type Database = {
       birth_membrane_ruptures: {
         Row: {
           created_at: string
+          fluid_type_at_rupture:
+            | Database["public"]["Enums"]["birth_amniotic_fluid_type"]
+            | null
           id: string
           occurred_at: string
           patient_id: string
           pregnancy_id: string
           professional_id: string
+          rupture_type:
+            | Database["public"]["Enums"]["birth_membrane_rupture_type"]
+            | null
         }
         Insert: {
           created_at?: string
+          fluid_type_at_rupture?:
+            | Database["public"]["Enums"]["birth_amniotic_fluid_type"]
+            | null
           id?: string
           occurred_at?: string
           patient_id: string
           pregnancy_id: string
           professional_id: string
+          rupture_type?:
+            | Database["public"]["Enums"]["birth_membrane_rupture_type"]
+            | null
         }
         Update: {
           created_at?: string
+          fluid_type_at_rupture?:
+            | Database["public"]["Enums"]["birth_amniotic_fluid_type"]
+            | null
           id?: string
           occurred_at?: string
           patient_id?: string
           pregnancy_id?: string
           professional_id?: string
+          rupture_type?:
+            | Database["public"]["Enums"]["birth_membrane_rupture_type"]
+            | null
         }
         Relationships: [
           {
@@ -753,6 +838,76 @@ export type Database = {
           },
           {
             foreignKeyName: "birth_membrane_ruptures_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      birth_urine_tests: {
+        Row: {
+          created_at: string
+          id: string
+          ketone_level:
+            | Database["public"]["Enums"]["birth_urine_dipstick_level"]
+            | null
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          protein_level:
+            | Database["public"]["Enums"]["birth_urine_dipstick_level"]
+            | null
+          volume_ml: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ketone_level?:
+            | Database["public"]["Enums"]["birth_urine_dipstick_level"]
+            | null
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+          protein_level?:
+            | Database["public"]["Enums"]["birth_urine_dipstick_level"]
+            | null
+          volume_ml?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ketone_level?:
+            | Database["public"]["Enums"]["birth_urine_dipstick_level"]
+            | null
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+          protein_level?:
+            | Database["public"]["Enums"]["birth_urine_dipstick_level"]
+            | null
+          volume_ml?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_urine_tests_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_urine_tests_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_urine_tests_professional_id_fkey"
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -2875,6 +3030,13 @@ export type Database = {
         | "ocitocina"
         | "analgesia"
         | "outros"
+      birth_membrane_rupture_type: "espontanea" | "artificial"
+      birth_urine_dipstick_level:
+        | "ausente"
+        | "tracos"
+        | "uma_cruz"
+        | "duas_cruzes"
+        | "tres_cruzes"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       delivery_method: "cesarean" | "vaginal" | "vaginal_assisted"
       doppler_result: "normal" | "abnormal" | "not_performed"
@@ -3097,6 +3259,14 @@ export const Constants = {
         "ocitocina",
         "analgesia",
         "outros",
+      ],
+      birth_membrane_rupture_type: ["espontanea", "artificial"],
+      birth_urine_dipstick_level: [
+        "ausente",
+        "tracos",
+        "uma_cruz",
+        "duas_cruzes",
+        "tres_cruzes",
       ],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       delivery_method: ["cesarean", "vaginal", "vaginal_assisted"],

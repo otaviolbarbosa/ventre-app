@@ -16,6 +16,9 @@ const TABLE_TO_EVENT_TYPE: Record<string, BirthEventType> = {
   birth_amniotic_fluid_records: "amniotic_fluid",
   birth_medication_administrations: "medication",
   birth_membrane_ruptures: "membrane_rupture",
+  birth_maternal_vitals: "maternal_vitals",
+  birth_urine_tests: "urine_test",
+  birth_apgar_scores: "apgar",
 };
 
 const TIME_COLUMN_BY_TABLE: Record<string, string> = {
@@ -26,20 +29,34 @@ const TIME_COLUMN_BY_TABLE: Record<string, string> = {
   birth_amniotic_fluid_records: "measured_at",
   birth_medication_administrations: "administered_at",
   birth_membrane_ruptures: "occurred_at",
+  birth_maternal_vitals: "measured_at",
+  birth_urine_tests: "measured_at",
+  birth_apgar_scores: "created_at",
 };
 
 const PAYLOAD_KEYS_BY_TABLE: Record<string, string[]> = {
+  // Nota: contractions_per_10min é derivado no fetch completo (getBirthModeTimelineAction) a
+  // partir do histórico de contrações; eventos chegados via realtime não recalculam esse valor.
   birth_contractions: ["duration_seconds", "effectiveness"],
   birth_cervical_dilations: ["dilation_cm"],
   birth_fetal_stations: ["station_lee"],
   birth_fetal_heart_rates: ["bpm"],
   birth_amniotic_fluid_records: ["fluid_type"],
-  birth_medication_administrations: ["medication_type", "other_birth_medication_type", "notes"],
-  birth_membrane_ruptures: [],
+  birth_medication_administrations: [
+    "medication_type",
+    "other_birth_medication_type",
+    "notes",
+    "oxytocin_concentration_u_per_l",
+    "oxytocin_drip_rate_gtt_per_min",
+  ],
+  birth_membrane_ruptures: ["rupture_type", "fluid_type_at_rupture"],
+  birth_maternal_vitals: ["systolic_bp", "diastolic_bp", "pulse_bpm", "temperature_celsius"],
+  birth_urine_tests: ["protein_level", "ketone_level", "volume_ml"],
+  birth_apgar_scores: ["minute", "total"],
 };
 
 /**
- * Subscribes to INSERT events across the 7 `birth_*` tables for a single pregnancy,
+ * Subscribes to INSERT events across the `birth_*` tables for a single pregnancy,
  * normalizing each incoming row into the same shape used by getBirthModeTimelineAction.
  * Professional names aren't included in Realtime payloads, so the caller must resolve
  * them (e.g. via a professionalId -> name map built from the initial fetch).

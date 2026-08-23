@@ -1,20 +1,16 @@
 "use client";
 
-import { addBirthMembraneRuptureAction } from "@/actions/add-birth-membrane-rupture-action";
-import {
-  AMNIOTIC_FLUID_TYPE_LABELS,
-  BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS,
-} from "@/lib/birth-mode-constants";
+import { addBirthMaternalVitalsAction } from "@/actions/add-birth-maternal-vitals-action";
 import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
 import { dayjs } from "@/lib/dayjs";
 import {
-  type BirthMembraneRuptureInput,
-  birthMembraneRuptureSchema,
+  type BirthMaternalVitalsInput,
+  birthMaternalVitalsSchema,
 } from "@/lib/validations/birth-mode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { TimePicker } from "@ventre/ui/shared/time-picker";
@@ -24,26 +20,28 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-type AddBirthMembraneRuptureModalProps = {
+type AddBirthMaternalVitalsModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pregnancyId: string;
   onSuccess: () => void;
 };
 
-export function AddBirthMembraneRuptureModal({
+export function AddBirthMaternalVitalsModal({
   open,
   onOpenChange,
   pregnancyId,
   onSuccess,
-}: AddBirthMembraneRuptureModalProps) {
-  const { executeAsync: addRupture, isPending } = useAction(addBirthMembraneRuptureAction);
+}: AddBirthMaternalVitalsModalProps) {
+  const { executeAsync: addVitals, isPending } = useAction(addBirthMaternalVitalsAction);
 
-  const form = useForm<BirthMembraneRuptureInput>({
-    resolver: zodResolver(birthMembraneRuptureSchema),
+  const form = useForm<BirthMaternalVitalsInput>({
+    resolver: zodResolver(birthMaternalVitalsSchema),
     defaultValues: {
-      rupture_type: undefined,
-      fluid_type_at_rupture: undefined,
+      systolic_bp: undefined,
+      diastolic_bp: undefined,
+      pulse_bpm: undefined,
+      temperature_celsius: undefined,
       ...defaultBirthEventDateTime(),
     },
   });
@@ -51,20 +49,26 @@ export function AddBirthMembraneRuptureModal({
   useEffect(() => {
     if (open) {
       form.reset({
-        rupture_type: undefined,
-        fluid_type_at_rupture: undefined,
+        systolic_bp: undefined,
+        diastolic_bp: undefined,
+        pulse_bpm: undefined,
+        temperature_celsius: undefined,
         ...defaultBirthEventDateTime(),
       });
     }
   }, [open, form]);
 
-  async function onSubmit(values: BirthMembraneRuptureInput) {
-    const result = await addRupture({ pregnancyId, data: values });
+  async function onSubmit(values: BirthMaternalVitalsInput) {
+    const result = await addVitals({ pregnancyId, data: values });
     if (result?.serverError) {
       toast.error(result.serverError);
       return;
     }
-    toast.success("Bolsa rota registrada!");
+    toast.success("Vitais maternos registrados!");
+    if (result?.data?.duplicateWarning) {
+      const { minutesAgo, professionalName } = result.data.duplicateWarning;
+      toast.warning(`${professionalName} já registrou vitais maternos há ${minutesAgo} min`);
+    }
     onOpenChange(false);
     onSuccess();
   }
@@ -73,60 +77,70 @@ export function AddBirthMembraneRuptureModal({
     <ContentModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Registrar Bolsa Rota"
-      description="Confirme a data e hora do rompimento. Este registro é único por parto."
+      title="Registrar Vitais Maternos"
+      description="Preencha os campos que foram medidos"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="rupture_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+          <div className="flex gap-2">
+            <FormField
+              control={form.control}
+              name="systolic_bp"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>PA sistólica (mmHg)</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
+                    <Input type="number" min="0" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <SelectContent>
-                    {Object.entries(BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="fluid_type_at_rupture"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Líquido amniótico *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+            <FormField
+              control={form.control}
+              name="diastolic_bp"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>PA diastólica (mmHg)</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
+                    <Input type="number" min="0" {...field} value={field.value ?? ""} />
                   </FormControl>
-                  <SelectContent>
-                    {Object.entries(AMNIOTIC_FLUID_TYPE_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <FormField
+              control={form.control}
+              name="pulse_bpm"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Pulso (bpm)</FormLabel>
+                  <FormControl>
+                    <Input type="number" min="0" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="temperature_celsius"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>Temperatura (°C)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.1" min="0" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <div className="flex gap-2">
             <FormField
@@ -176,7 +190,7 @@ export function AddBirthMembraneRuptureModal({
             </Button>
             <Button type="submit" className="gradient-primary" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar
+              Salvar
             </Button>
           </div>
         </form>

@@ -1,5 +1,6 @@
 "use client";
 
+import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
 import {
   BIRTH_EVENT_CONFIG,
   BIRTH_EVENT_TYPES,
@@ -10,24 +11,36 @@ import { AddBirthCervicalDilationModal } from "@/modals/add-birth-cervical-dilat
 import { AddBirthContractionModal } from "@/modals/add-birth-contraction-modal";
 import { AddBirthFetalHeartRateModal } from "@/modals/add-birth-fetal-heart-rate-modal";
 import { AddBirthFetalStationModal } from "@/modals/add-birth-fetal-station-modal";
+import { AddBirthMaternalVitalsModal } from "@/modals/add-birth-maternal-vitals-modal";
 import { AddBirthMedicationAdministrationModal } from "@/modals/add-birth-medication-administration-modal";
 import { AddBirthMembraneRuptureModal } from "@/modals/add-birth-membrane-rupture-modal";
+import { AddBirthUrineTestModal } from "@/modals/add-birth-urine-test-modal";
 import { Button } from "@ventre/ui/button";
 import { useState } from "react";
 
 type BirthModeRegisterButtonsProps = {
   pregnancyId: string;
+  events: BirthModeTimelineEvent[];
   onSuccess: () => void;
 };
 
 export function BirthModeRegisterButtons({
   pregnancyId,
+  events,
   onSuccess,
 }: BirthModeRegisterButtonsProps) {
   const [activeModal, setActiveModal] = useState<Exclude<
     BirthEventType,
-    "start_monitoring"
+    "start_monitoring" | "apgar"
   > | null>(null);
+
+  // Eventos com cardinalidade "single" (ex: bolsa rota) só podem ser registrados uma
+  // vez — desabilita o botão assim que já existir um evento desse tipo na timeline.
+  const registeredSingleTypes = new Set(
+    BIRTH_EVENT_TYPES.filter(({ cardinality }) => cardinality === "single")
+      .map(({ type }) => type)
+      .filter((type) => events.some((event) => event.type === type)),
+  );
 
   return (
     <>
@@ -35,15 +48,24 @@ export function BirthModeRegisterButtons({
         {BIRTH_EVENT_TYPES.map(({ type }) => {
           const config = BIRTH_EVENT_CONFIG[type];
           const Icon = config.icon;
+          const isDisabled = registeredSingleTypes.has(type);
           return (
             <Button
               key={type}
               type="button"
               variant="ghost"
-              onClick={() => setActiveModal(type)}
+              onClick={() => {
+                if (isDisabled) return;
+                setActiveModal(type);
+              }}
               asChild
             >
-              <div className="h-auto flex-col gap-2 rounded-xl border py-4">
+              <div
+                className={`h-auto flex-col gap-2 rounded-xl border py-4 ${
+                  isDisabled ? "pointer-events-none cursor-not-allowed opacity-50" : ""
+                }`}
+                aria-disabled={isDisabled}
+              >
                 <Icon className={`h-5 w-5 ${config.colorClass}`} />
                 <span className="text-center text-xs">{config.label}</span>
               </div>
@@ -91,6 +113,18 @@ export function BirthModeRegisterButtons({
       <AddBirthMembraneRuptureModal
         open={activeModal === "membrane_rupture"}
         onOpenChange={(open) => setActiveModal(open ? "membrane_rupture" : null)}
+        pregnancyId={pregnancyId}
+        onSuccess={onSuccess}
+      />
+      <AddBirthMaternalVitalsModal
+        open={activeModal === "maternal_vitals"}
+        onOpenChange={(open) => setActiveModal(open ? "maternal_vitals" : null)}
+        pregnancyId={pregnancyId}
+        onSuccess={onSuccess}
+      />
+      <AddBirthUrineTestModal
+        open={activeModal === "urine_test"}
+        onOpenChange={(open) => setActiveModal(open ? "urine_test" : null)}
         pregnancyId={pregnancyId}
         onSuccess={onSuccess}
       />

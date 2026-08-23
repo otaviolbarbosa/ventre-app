@@ -6,6 +6,7 @@ import {
   type LucideIcon,
   PlayCircle,
   Ruler,
+  TestTube,
   Waves,
 } from "lucide-react";
 
@@ -29,6 +30,19 @@ export const BIRTH_CONTRACTION_EFFECTIVENESS_LABELS: Record<string, string> = {
   nao_efetiva: "Não efetiva",
 };
 
+export const BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS: Record<string, string> = {
+  espontanea: "Espontânea",
+  artificial: "Artificial",
+};
+
+export const BIRTH_URINE_DIPSTICK_LABELS: Record<string, string> = {
+  ausente: "Ausente",
+  tracos: "Traços",
+  uma_cruz: "+",
+  duas_cruzes: "++",
+  tres_cruzes: "+++",
+};
+
 export type BirthEventType =
   | "start_monitoring"
   | "contraction"
@@ -37,7 +51,10 @@ export type BirthEventType =
   | "fetal_heart_rate"
   | "amniotic_fluid"
   | "medication"
-  | "membrane_rupture";
+  | "membrane_rupture"
+  | "maternal_vitals"
+  | "urine_test"
+  | "apgar";
 
 export const BIRTH_EVENT_CONFIG: Record<
   BirthEventType,
@@ -59,10 +76,13 @@ export const BIRTH_EVENT_CONFIG: Record<
   amniotic_fluid: { label: "Líquido amniótico", icon: Droplet, colorClass: "text-teal-500" },
   medication: { label: "Medicamento", icon: Waves, colorClass: "text-yellow-500" },
   membrane_rupture: { label: "Bolsa rota", icon: Droplet, colorClass: "text-blue-500" },
+  maternal_vitals: { label: "Vitais maternos", icon: HeartPulse, colorClass: "text-rose-500" },
+  urine_test: { label: "Urina", icon: TestTube, colorClass: "text-lime-600" },
+  apgar: { label: "Apgar", icon: Baby, colorClass: "text-indigo-500" },
 };
 
 export const BIRTH_EVENT_TYPES: {
-  type: Exclude<BirthEventType, "start_monitoring">;
+  type: Exclude<BirthEventType, "start_monitoring" | "apgar">;
   cardinality: "multiple" | "single";
 }[] = [
   { type: "contraction", cardinality: "multiple" },
@@ -72,4 +92,6 @@ export const BIRTH_EVENT_TYPES: {
   { type: "amniotic_fluid", cardinality: "multiple" },
   { type: "medication", cardinality: "multiple" },
   { type: "membrane_rupture", cardinality: "single" },
+  { type: "maternal_vitals", cardinality: "multiple" },
+  // { type: "urine_test", cardinality: "multiple" },
 ];
