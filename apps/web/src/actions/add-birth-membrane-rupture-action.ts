@@ -18,13 +18,14 @@ export const addBirthMembraneRuptureAction = authActionClient
 
     const patientId = await resolvePregnancyPatientId(supabase, pregnancyId);
 
-    const { date, time } = data;
+    const { date, time, ...rest } = data;
 
     const { error } = await supabase.from("birth_membrane_ruptures").insert({
       pregnancy_id: pregnancyId,
       patient_id: patientId,
       professional_id: user.id,
       occurred_at: combineDateAndTime(date, time),
+      ...rest,
     });
 
     if (error) {

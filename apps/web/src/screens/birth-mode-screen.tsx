@@ -1,18 +1,23 @@
 "use client";
 
+import { exportPartographPdfAction } from "@/actions/export-partograph-pdf-action";
 import { getBirthModeTimelineAction } from "@/actions/get-birth-mode-timeline-action";
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { BirthModePartograph } from "@/components/shared/birth-mode-partograph";
 import { BirthModeRegisterButtons } from "@/components/shared/birth-mode-register-buttons";
 import { BirthModeTimeline } from "@/components/shared/birth-mode-timeline";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
 import { useBirthModeTimelineRealtime } from "@/hooks/use-birth-mode-timeline-realtime";
+import { computeContractionsPer10Min } from "@/lib/birth-mode-chart-utils";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { CheckCircle2, HeartHandshake } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
+import { CheckCircle2, FileDown, HeartHandshake, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type BirthModeScreenProps = {
   pregnancyId: string;
@@ -57,10 +62,49 @@ export function BirthModeScreen({
   );
 
   const onNewEvent = useCallback((event: BirthModeTimelineEvent) => {
-    setEvents((prev) => (prev.some((e) => e.id === event.id) ? prev : [...prev, event]));
+    setEvents((prev) => {
+      if (prev.some((e) => e.id === event.id)) return prev;
+      const next = [...prev, event];
+      if (event.type !== "contraction") return next;
+
+      const contractionEvents = next
+        .filter((e) => e.type === "contraction")
+        .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
+      const frequencyById = computeContractionsPer10Min(contractionEvents);
+
+      return next.map((e) =>
+        e.type === "contraction"
+          ? {
+              ...e,
+              payload: { ...e.payload, contractions_per_10min: frequencyById.get(e.id) ?? null },
+            }
+          : e,
+      );
+    });
   }, []);
 
   useBirthModeTimelineRealtime(pregnancyId, resolveProfessionalName, onNewEvent);
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { execute: exportPdf } = useAction(exportPartographPdfAction, {
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const byteChars = atob(data.pdfBase64);
+      const byteNumbers = Array.from(byteChars, (c) => c.charCodeAt(0));
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao gerar PDF do partograma");
+    },
+    onExecute: () => setIsExportingPdf(true),
+    onSettled: () => setIsExportingPdf(false),
+  });
 
   if (isPending && wasActivated === null) {
     return (
@@ -97,24 +141,41 @@ export function BirthModeScreen({
               Modo Parto Ativo
             </Badge>
           )}
-          {!hasFinished && patientId && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
-              onClick={() => setShowFinishModal(true)}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Registrar Nascimento
-            </Button>
-          )}
         </div>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isExportingPdf}
+          onClick={() => exportPdf({ pregnancyId })}
+        >
+          {isExportingPdf ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileDown className="mr-2 h-4 w-4" />
+          )}
+          {isExportingPdf ? "Gerando PDF..." : "Exportar PDF"}
+        </Button>
+        {!hasFinished && patientId && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+            onClick={() => setShowFinishModal(true)}
+          >
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Registrar Nascimento
+          </Button>
+        )}
       </div>
 
       {!hasFinished && (
         <BirthModeRegisterButtons
           pregnancyId={pregnancyId}
+          events={events}
           onSuccess={() => fetchTimeline({ pregnancyId })}
         />
       )}
@@ -126,7 +187,18 @@ export function BirthModeScreen({
           <Skeleton className="h-16 w-full" />
         </div>
       ) : (
-        <BirthModeTimeline events={events} />
+        <Tabs defaultValue="partograph">
+          <TabsList className="w-full max-w-md">
+            <TabsTrigger value="partograph">Partograma</TabsTrigger>
+            <TabsTrigger value="timeline">Linha do tempo</TabsTrigger>
+          </TabsList>
+          <TabsContent value="partograph">
+            <BirthModePartograph events={events} />
+          </TabsContent>
+          <TabsContent value="timeline">
+            <BirthModeTimeline events={events} />
+          </TabsContent>
+        </Tabs>
       )}
 
       {patientId && (

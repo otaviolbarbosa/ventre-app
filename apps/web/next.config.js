@@ -17,6 +17,7 @@ const nextConfig = {
       "./public/fonts/**",
       "./public/images/digital-signature-stamp.png",
       "./src/assets/ventre.png",
+      "./src/assets/partograph-template.png",
     ],
   },
   images: {

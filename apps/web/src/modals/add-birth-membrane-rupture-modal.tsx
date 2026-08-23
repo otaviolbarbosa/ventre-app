@@ -1,6 +1,10 @@
 "use client";
 
 import { addBirthMembraneRuptureAction } from "@/actions/add-birth-membrane-rupture-action";
+import {
+  AMNIOTIC_FLUID_TYPE_LABELS,
+  BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS,
+} from "@/lib/birth-mode-constants";
 import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
 import { dayjs } from "@/lib/dayjs";
 import {
@@ -10,6 +14,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { TimePicker } from "@ventre/ui/shared/time-picker";
@@ -36,11 +41,21 @@ export function AddBirthMembraneRuptureModal({
 
   const form = useForm<BirthMembraneRuptureInput>({
     resolver: zodResolver(birthMembraneRuptureSchema),
-    defaultValues: defaultBirthEventDateTime(),
+    defaultValues: {
+      rupture_type: undefined,
+      fluid_type_at_rupture: undefined,
+      ...defaultBirthEventDateTime(),
+    },
   });
 
   useEffect(() => {
-    if (open) form.reset(defaultBirthEventDateTime());
+    if (open) {
+      form.reset({
+        rupture_type: undefined,
+        fluid_type_at_rupture: undefined,
+        ...defaultBirthEventDateTime(),
+      });
+    }
   }, [open, form]);
 
   async function onSubmit(values: BirthMembraneRuptureInput) {
@@ -63,6 +78,56 @@ export function AddBirthMembraneRuptureModal({
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="rupture_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tipo *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.entries(BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="fluid_type_at_rupture"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Líquido amniótico *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.entries(AMNIOTIC_FLUID_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="flex gap-2">
             <FormField
               control={form.control}

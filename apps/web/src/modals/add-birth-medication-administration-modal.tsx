@@ -46,6 +46,8 @@ export function AddBirthMedicationAdministrationModal({
       medication_type: undefined,
       other_birth_medication_type: undefined,
       notes: undefined,
+      oxytocin_concentration_u_per_l: undefined,
+      oxytocin_drip_rate_gtt_per_min: undefined,
       ...defaultBirthEventDateTime(),
     },
   });
@@ -58,6 +60,8 @@ export function AddBirthMedicationAdministrationModal({
         medication_type: undefined,
         other_birth_medication_type: undefined,
         notes: undefined,
+        oxytocin_concentration_u_per_l: undefined,
+        oxytocin_drip_rate_gtt_per_min: undefined,
         ...defaultBirthEventDateTime(),
       });
     }
@@ -126,6 +130,38 @@ export function AddBirthMedicationAdministrationModal({
                 </FormItem>
               )}
             />
+          )}
+
+          {medicationType === "ocitocina" && (
+            <div className="flex gap-2">
+              <FormField
+                control={form.control}
+                name="oxytocin_concentration_u_per_l"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Concentração (U/L) *</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.1" min="0" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="oxytocin_drip_rate_gtt_per_min"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel>Gotejamento (gtt/min) *</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="0" {...field} value={field.value ?? ""} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           )}
 
           <FormField
