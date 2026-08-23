@@ -42,7 +42,9 @@ export function BirthModeMembraneRuptureSummary({ events }: BirthModeMembraneRup
       {ruptureEvent && (
         <div className="rounded-lg border bg-muted/30 p-3 text-sm">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-medium">Bolsa rota{ruptureTypeLabel ? ` (${ruptureTypeLabel})` : ""}</span>
+            <span className="font-medium">
+              Bolsa rota{ruptureTypeLabel ? ` (${ruptureTypeLabel})` : ""}
+            </span>
             <span className="whitespace-nowrap text-muted-foreground text-xs">
               {dayjs(ruptureEvent.occurredAt).format("HH:mm")}
             </span>
@@ -60,8 +62,13 @@ export function BirthModeMembraneRuptureSummary({ events }: BirthModeMembraneRup
           {fluidEvents.map((event) => {
             const { fluid_type } = event.payload as { fluid_type: string };
             return (
-              <div key={event.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                <span>Líquido amniótico: {AMNIOTIC_FLUID_TYPE_LABELS[fluid_type] ?? fluid_type}</span>
+              <div
+                key={event.id}
+                className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
+              >
+                <span>
+                  Líquido amniótico: {AMNIOTIC_FLUID_TYPE_LABELS[fluid_type] ?? fluid_type}
+                </span>
                 <span className="whitespace-nowrap text-muted-foreground text-xs">
                   {dayjs(event.occurredAt).format("HH:mm")}
                 </span>

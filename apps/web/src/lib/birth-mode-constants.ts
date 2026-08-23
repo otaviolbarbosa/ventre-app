@@ -93,5 +93,5 @@ export const BIRTH_EVENT_TYPES: {
   { type: "medication", cardinality: "multiple" },
   { type: "membrane_rupture", cardinality: "single" },
   { type: "maternal_vitals", cardinality: "multiple" },
-  { type: "urine_test", cardinality: "multiple" },
+  // { type: "urine_test", cardinality: "multiple" },
 ];

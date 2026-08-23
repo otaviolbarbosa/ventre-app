@@ -2,8 +2,8 @@
 
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
 import { useIsCompactViewport } from "@/hooks/use-media-query";
-import { BIRTH_URINE_DIPSTICK_LABELS } from "@/lib/birth-mode-constants";
 import { type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
+import { BIRTH_URINE_DIPSTICK_LABELS } from "@/lib/birth-mode-constants";
 import { dayjs } from "@/lib/dayjs";
 import {
   Chart as ChartJS,
@@ -38,13 +38,13 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
   const urineEvents = events.filter((event) => event.type === "urine_test");
 
   if (primaryColor === null) {
-    return <div className="h-64 animate-pulse rounded-lg bg-muted" />;
+    return <div className="h-48 animate-pulse rounded-lg bg-muted" />;
   }
 
   if (urineEvents.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
-        Nenhum registro de urina ainda
+      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
+        Nenhum registro de urina encontrado
       </div>
     );
   }
@@ -53,8 +53,8 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
 
   if (t0 === null) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
-        Nenhum registro de urina ainda
+      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
+        Nenhum registro de urina encontrado
       </div>
     );
   }
@@ -77,7 +77,12 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
     })
     .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
 
-  const maxX = Math.max(1, ...volumePoints.map((point) => point.x)) + 1;
+  const maxX = Math.ceil(Math.max(1, ...volumePoints.map((point) => point.x))) + 1;
+  // Chart.js ignora ticks.stepSize e recalcula um passo "nice number" (ex: 1.9, 3.7)
+  // quando autoSkip precisa reduzir a quantidade de ticks abaixo do que stepSize
+  // produziria. Calculamos o passo inteiro nós mesmos e desligamos o autoSkip para
+  // garantir que as linhas de grade caiam sempre em horas inteiras.
+  const xTickStepHours = Math.max(1, Math.ceil(maxX / (isCompact ? 6 : 12)));
   const maxVolume = Math.max(50, ...volumePoints.map((point) => point.y)) + 20;
 
   const data = {
@@ -96,7 +101,7 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
 
   return (
     <div className="space-y-2">
-      <div className="relative h-64 min-w-0">
+      <div className="relative h-48 min-w-0">
         <Line
           data={data}
           options={{
@@ -108,7 +113,12 @@ export function BirthModeUrineTestChart({ events }: BirthModeUrineTestChartProps
                 min: 0,
                 max: maxX,
                 title: { display: true, text: "Horas desde o início" },
-                ticks: { maxTicksLimit: isCompact ? 4 : 8, maxRotation: 0 },
+                ticks: {
+                  stepSize: xTickStepHours,
+                  autoSkip: false,
+                  maxRotation: 0,
+                },
+                grid: { display: true, drawOnChartArea: true },
               },
               y: {
                 min: 0,

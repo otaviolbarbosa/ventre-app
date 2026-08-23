@@ -28,6 +28,11 @@ const BIRTH_PARTOGRAPH_SESSIONS: {
   configType: BirthEventType;
 }[] = [
   {
+    id: "membrane_rupture",
+    title: "Bolsa Rota & Líquido Amniótico",
+    configType: "membrane_rupture",
+  },
+  {
     id: "dilation_station",
     title: "Dilatação Cervical & Estação Fetal",
     configType: "cervical_dilation",
@@ -53,20 +58,15 @@ const BIRTH_PARTOGRAPH_SESSIONS: {
     configType: "medication",
   },
   {
-    id: "membrane_rupture",
-    title: "Bolsa Rota & Líquido Amniótico",
-    configType: "membrane_rupture",
-  },
-  {
     id: "maternal_vitals",
     title: "Vitais Maternos",
     configType: "maternal_vitals",
   },
-  {
-    id: "urine_test",
-    title: "Urina",
-    configType: "urine_test",
-  },
+  // {
+  //   id: "urine_test",
+  //   title: "Urina",
+  //   configType: "urine_test",
+  // },
 ];
 
 type BirthModePartographProps = {
@@ -102,14 +102,16 @@ export function BirthModePartograph({ events }: BirthModePartographProps) {
         const Icon = config.icon;
 
         return (
-          <Card key={session.id}>
-            <CardHeader className="pb-2">
+          <Card key={session.id} className="rounded-none border-none bg-transparent">
+            <CardHeader className="px-0 pt-4 pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Icon className={`h-4 w-4 ${config.colorClass}`} />
                 {session.title}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">{renderSessionContent(session.id, events)}</CardContent>
+            <CardContent className="px-0 pt-0 pb-4">
+              {renderSessionContent(session.id, events)}
+            </CardContent>
           </Card>
         );
       })}

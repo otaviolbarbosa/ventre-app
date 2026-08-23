@@ -74,7 +74,10 @@ export function BirthModeScreen({
 
       return next.map((e) =>
         e.type === "contraction"
-          ? { ...e, payload: { ...e.payload, contractions_per_10min: frequencyById.get(e.id) ?? null } }
+          ? {
+              ...e,
+              payload: { ...e.payload, contractions_per_10min: frequencyById.get(e.id) ?? null },
+            }
           : e,
       );
     });
@@ -138,38 +141,41 @@ export function BirthModeScreen({
               Modo Parto Ativo
             </Badge>
           )}
+        </div>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isExportingPdf}
+          onClick={() => exportPdf({ pregnancyId })}
+        >
+          {isExportingPdf ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <FileDown className="mr-2 h-4 w-4" />
+          )}
+          {isExportingPdf ? "Gerando PDF..." : "Exportar PDF"}
+        </Button>
+        {!hasFinished && patientId && (
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={isExportingPdf}
-            onClick={() => exportPdf({ pregnancyId })}
+            className="border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+            onClick={() => setShowFinishModal(true)}
           >
-            {isExportingPdf ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileDown className="mr-2 h-4 w-4" />
-            )}
-            {isExportingPdf ? "Gerando PDF..." : "Exportar PDF"}
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            Registrar Nascimento
           </Button>
-          {!hasFinished && patientId && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="border-amber-500 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
-              onClick={() => setShowFinishModal(true)}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Registrar Nascimento
-            </Button>
-          )}
-        </div>
+        )}
       </div>
 
       {!hasFinished && (
         <BirthModeRegisterButtons
           pregnancyId={pregnancyId}
+          events={events}
           onSuccess={() => fetchTimeline({ pregnancyId })}
         />
       )}

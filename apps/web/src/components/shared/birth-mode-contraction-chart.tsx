@@ -41,14 +41,14 @@ export function BirthModeContractionChart({ events }: BirthModeContractionChartP
   const contractionEvents = events.filter((event) => event.type === "contraction");
 
   if (primaryColor === null) {
-    return <div className="h-64 animate-pulse rounded-lg bg-muted" />;
+    return <div className="h-48 animate-pulse rounded-lg bg-muted" />;
   }
 
   const t0 = resolveChartT0(events);
 
   if (t0 === null) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
+      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
         Nenhum registro de contração ainda
       </div>
     );
@@ -74,7 +74,12 @@ export function BirthModeContractionChart({ events }: BirthModeContractionChartP
     .sort((a, b) => a.x - b.x);
 
   const allX = [...frequencyPoints, ...durationPoints].map((point) => point.x);
-  const maxX = Math.max(1, ...allX) + 1;
+  const maxX = Math.ceil(Math.max(1, ...allX)) + 1;
+  // Chart.js ignora ticks.stepSize e recalcula um passo "nice number" (ex: 1.9, 3.7)
+  // quando autoSkip precisa reduzir a quantidade de ticks abaixo do que stepSize
+  // produziria. Calculamos o passo inteiro nós mesmos e desligamos o autoSkip para
+  // garantir que as linhas de grade caiam sempre em horas inteiras.
+  const xTickStepHours = Math.max(1, Math.ceil(maxX / (isCompact ? 6 : 12)));
 
   const data = {
     datasets: [
@@ -102,7 +107,7 @@ export function BirthModeContractionChart({ events }: BirthModeContractionChartP
   };
 
   return (
-    <div className="relative h-64 min-w-0">
+    <div className="relative h-48 min-w-0">
       <Line
         data={data}
         options={{
@@ -113,8 +118,13 @@ export function BirthModeContractionChart({ events }: BirthModeContractionChartP
               type: "linear",
               min: 0,
               max: maxX,
-              title: { display: true, text: "Horas desde o início" },
-              ticks: { maxTicksLimit: isCompact ? 4 : 8, maxRotation: 0 },
+              title: { display: false, text: "Horas desde o início" },
+              ticks: {
+                stepSize: xTickStepHours,
+                autoSkip: false,
+                maxRotation: 0,
+              },
+              grid: { display: true, drawOnChartArea: true },
             },
             y: {
               min: FREQUENCY_MIN,
@@ -131,7 +141,7 @@ export function BirthModeContractionChart({ events }: BirthModeContractionChartP
           },
           plugins: {
             legend: {
-              display: true,
+              display: false,
               position: "bottom" as const,
               labels: { boxWidth: 10, font: { size: isCompact ? 9 : 10 } },
             },

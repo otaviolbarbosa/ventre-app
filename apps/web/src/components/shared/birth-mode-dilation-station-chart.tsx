@@ -17,7 +17,7 @@ import {
   PointElement,
   Tooltip,
 } from "chart.js";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Line } from "react-chartjs-2";
 
 ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, Legend, Filler);
@@ -26,10 +26,35 @@ function getCssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+// Chart.js centra qualquer pointStyle (built-in ou canvas/imagem) no ponto de dados.
+// Para a ponta do triângulo (e não o centro) ficar exatamente sobre o valor, desenhamos
+// o triângulo num canvas próprio com o vértice superior no centro do canvas — assim o
+// centro que o Chart.js usa para posicionar coincide com a ponta, não com o centroide.
+function createApexTrianglePointStyle(color: string, size = 16): HTMLCanvasElement {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const apexX = size / 2;
+    const apexY = size / 2;
+    const halfBase = size / 2.4;
+    const baseY = apexY + halfBase * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(apexX, apexY);
+    ctx.lineTo(apexX - halfBase, baseY);
+    ctx.lineTo(apexX + halfBase, baseY);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  return canvas;
+}
+
 const DILATION_MIN = 0;
 const DILATION_MAX = 10;
-const STATION_MIN = -3;
-const STATION_MAX = 3;
+const STATION_MIN = -4;
+const STATION_MAX = 4;
 
 type BirthModeDilationStationChartProps = {
   events: BirthModeTimelineEvent[];
@@ -43,18 +68,23 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
     setPrimaryColor(`hsl(${getCssVar("--primary")})`);
   }, []);
 
+  const dilationPointStyle = useMemo(
+    () => createApexTrianglePointStyle(primaryColor ?? "#000000", 16),
+    [primaryColor],
+  );
+
   const dilationEvents = events.filter((event) => event.type === "cervical_dilation");
   const stationEvents = events.filter((event) => event.type === "fetal_station");
 
   if (primaryColor === null) {
-    return <div className="h-64 animate-pulse rounded-lg bg-muted" />;
+    return <div className="h-48 animate-pulse rounded-lg bg-muted" />;
   }
 
   const t0 = resolveChartT0(events);
 
   if (t0 === null) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
+      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
         Nenhum registro de dilatação ou estação ainda
       </div>
     );
@@ -84,7 +114,12 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
   const allX = [...dilationPoints, ...stationPoints, ...alertLine, ...actionLine].map(
     (point) => point.x,
   );
-  const maxX = Math.max(4, ...allX) + 1;
+  const maxX = Math.ceil(Math.max(4, ...allX)) + 1;
+  // Chart.js ignora ticks.stepSize e recalcula um passo "nice number" (ex: 1.9, 3.7)
+  // quando autoSkip precisa reduzir a quantidade de ticks abaixo do que stepSize
+  // produziria. Calculamos o passo inteiro nós mesmos e desligamos o autoSkip para
+  // garantir que as linhas de grade caiam sempre em horas inteiras.
+  const xTickStepHours = Math.max(1, Math.ceil(maxX / (isCompact ? 6 : 12)));
 
   const data = {
     datasets: [
@@ -93,20 +128,22 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
         data: dilationPoints,
         borderColor: primaryColor,
         backgroundColor: primaryColor,
-        pointStyle: "circle" as const,
-        pointRadius: 4,
+        pointStyle: dilationPointStyle,
+        pointRadius: 6,
         yAxisID: "y",
         spanGaps: false,
+        showLine: false,
       },
       {
         label: "Estação (De Lee)",
         data: stationPoints,
         borderColor: "rgba(249, 115, 22, 0.9)",
         backgroundColor: "rgba(249, 115, 22, 0.9)",
-        pointStyle: "rectRot" as const,
-        pointRadius: 4,
+        pointStyle: "circle" as const,
+        pointRadius: 8,
         yAxisID: "y1",
         spanGaps: false,
+        showLine: false,
       },
       {
         label: "Linha de Alerta",
@@ -130,7 +167,7 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
   };
 
   return (
-    <div className="relative h-64 min-w-0">
+    <div className="relative h-48 min-w-0">
       <Line
         data={data}
         options={{
@@ -141,25 +178,31 @@ export function BirthModeDilationStationChart({ events }: BirthModeDilationStati
               type: "linear",
               min: 0,
               max: maxX,
-              title: { display: true, text: "Horas desde o início" },
-              ticks: { maxTicksLimit: isCompact ? 4 : 8, maxRotation: 0 },
+              title: { display: false, text: "Horas desde o início" },
+              ticks: {
+                stepSize: xTickStepHours,
+                autoSkip: false,
+                maxRotation: 0,
+              },
+              grid: { display: true, drawOnChartArea: true },
             },
             y: {
               min: DILATION_MIN,
               max: DILATION_MAX,
-              title: { display: true, text: "Dilatação (cm)" },
+              title: { display: true, text: "Dilatação (cm) ▲" },
             },
             y1: {
               min: STATION_MIN,
               max: STATION_MAX,
+              reverse: true,
               position: "right" as const,
               grid: { drawOnChartArea: false },
-              title: { display: true, text: "Estação (De Lee)" },
+              title: { display: true, text: "Estação (De Lee) ●" },
             },
           },
           plugins: {
             legend: {
-              display: true,
+              display: false,
               position: "bottom" as const,
               labels: { boxWidth: 10, font: { size: isCompact ? 9 : 10 } },
             },
