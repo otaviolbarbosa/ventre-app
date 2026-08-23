@@ -11,6 +11,7 @@ export type BirthModeTimelineData = {
   hasFinished: boolean;
   birthModeActive: boolean;
   wasActivated: boolean;
+  partographUnlockedAt: string | null;
 };
 
 export async function fetchBirthModeTimelineData(
@@ -33,7 +34,7 @@ export async function fetchBirthModeTimelineData(
     supabase
       .from("pregnancies")
       .select(
-        "patient_id, birth_mode_activated_at, birth_mode_activated_by, has_finished, birth_mode_active, activated_by:users!pregnancies_birth_mode_activated_by_fkey(name), patient:patients(name)",
+        "patient_id, birth_mode_activated_at, birth_mode_activated_by, has_finished, birth_mode_active, partograph_unlocked_at, activated_by:users!pregnancies_birth_mode_activated_by_fkey(name), patient:patients(name)",
       )
       .eq("id", pregnancyId)
       .single(),
@@ -251,5 +252,6 @@ export async function fetchBirthModeTimelineData(
     hasFinished: pregnancy?.has_finished ?? false,
     birthModeActive: pregnancy?.birth_mode_active ?? false,
     wasActivated: pregnancy?.birth_mode_activated_at != null,
+    partographUnlockedAt: pregnancy?.partograph_unlocked_at ?? null,
   };
 }

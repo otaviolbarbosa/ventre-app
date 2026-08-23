@@ -2049,6 +2049,12 @@ export type Database = {
           birth_mode_activated_by: string | null
           birth_mode_active: boolean
           birth_mode_ended_at: string | null
+          birth_mode_induction_type:
+            | Database["public"]["Enums"]["birth_mode_induction_type"]
+            | null
+          birth_mode_labour_type:
+            | Database["public"]["Enums"]["birth_mode_labour_type"]
+            | null
           birth_weight_grams: number | null
           born_at: string | null
           cesareans_count: number | null
@@ -2064,7 +2070,9 @@ export type Database = {
           id: string
           initial_bmi: number | null
           initial_weight_kg: number | null
+          labour_start_description: string | null
           observations: string | null
+          partograph_unlocked_at: string | null
           patient_id: string
           reference_hospital: string | null
           updated_at: string
@@ -2077,6 +2085,12 @@ export type Database = {
           birth_mode_activated_by?: string | null
           birth_mode_active?: boolean
           birth_mode_ended_at?: string | null
+          birth_mode_induction_type?:
+            | Database["public"]["Enums"]["birth_mode_induction_type"]
+            | null
+          birth_mode_labour_type?:
+            | Database["public"]["Enums"]["birth_mode_labour_type"]
+            | null
           birth_weight_grams?: number | null
           born_at?: string | null
           cesareans_count?: number | null
@@ -2094,7 +2108,9 @@ export type Database = {
           id?: string
           initial_bmi?: number | null
           initial_weight_kg?: number | null
+          labour_start_description?: string | null
           observations?: string | null
+          partograph_unlocked_at?: string | null
           patient_id: string
           reference_hospital?: string | null
           updated_at?: string
@@ -2107,6 +2123,12 @@ export type Database = {
           birth_mode_activated_by?: string | null
           birth_mode_active?: boolean
           birth_mode_ended_at?: string | null
+          birth_mode_induction_type?:
+            | Database["public"]["Enums"]["birth_mode_induction_type"]
+            | null
+          birth_mode_labour_type?:
+            | Database["public"]["Enums"]["birth_mode_labour_type"]
+            | null
           birth_weight_grams?: number | null
           born_at?: string | null
           cesareans_count?: number | null
@@ -2124,7 +2146,9 @@ export type Database = {
           id?: string
           initial_bmi?: number | null
           initial_weight_kg?: number | null
+          labour_start_description?: string | null
           observations?: string | null
+          partograph_unlocked_at?: string | null
           patient_id?: string
           reference_hospital?: string | null
           updated_at?: string
@@ -3031,6 +3055,8 @@ export type Database = {
         | "analgesia"
         | "outros"
       birth_membrane_rupture_type: "espontanea" | "artificial"
+      birth_mode_induction_type: "balao" | "misoprostol" | "ocitocina"
+      birth_mode_labour_type: "espontaneo" | "induzido"
       birth_urine_dipstick_level:
         | "ausente"
         | "tracos"
@@ -3261,6 +3287,8 @@ export const Constants = {
         "outros",
       ],
       birth_membrane_rupture_type: ["espontanea", "artificial"],
+      birth_mode_induction_type: ["balao", "misoprostol", "ocitocina"],
+      birth_mode_labour_type: ["espontaneo", "induzido"],
       birth_urine_dipstick_level: [
         "ausente",
         "tracos",

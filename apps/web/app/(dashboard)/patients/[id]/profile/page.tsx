@@ -1,5 +1,4 @@
 "use client";
-import { activateBirthModeAction } from "@/actions/activate-birth-mode-action";
 import { deletePregnancyAction } from "@/actions/delete-pregnancy-action";
 import { getPatientAction } from "@/actions/get-patient-action";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -14,6 +13,7 @@ import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
 import InviteExistingPatientModal from "@/modals/invite-existing-patient-modal";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
+import { StartLabourModal } from "@/modals/start-labour-modal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
@@ -37,14 +37,13 @@ export default function PatientProfilePage() {
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [showInvitePatientModal, setShowInvitePatientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
+  const [showStartLabourModal, setShowStartLabourModal] = useState(false);
   const { confirm } = useConfirmModal();
   const { isObstetrician, isNurse, isDoula } = useAuth();
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
   const { executeAsync: deletePregnancy } = useAction(deletePregnancyAction);
-  const { executeAsync: activateBirthMode, isPending: isActivatingBirthMode } =
-    useAction(activateBirthModeAction);
 
   useEffect(() => {
     fetchPatient({ patientId });
@@ -52,24 +51,6 @@ export default function PatientProfilePage() {
 
   const patient = result.data?.patient;
   const pregnancy = result.data?.pregnancy;
-
-  function handleActivateBirthMode(pregnancyId: string) {
-    confirm({
-      title: "Ativar Modo Parto",
-      description:
-        "Isso enviará uma notificação por WhatsApp para toda a equipe de cuidado da gestante. Confirma a ativação?",
-      confirmLabel: "Ativar",
-      onConfirm: async () => {
-        const res = await activateBirthMode({ pregnancyId });
-        if (res?.serverError) {
-          toast.error(res.serverError);
-          return;
-        }
-        toast.success("Modo Parto ativado!");
-        router.push(`/modo-parto?pregnancyId=${pregnancyId}`);
-      },
-    });
-  }
 
   function handleConfirmDelete() {
     confirm({
@@ -143,8 +124,7 @@ export default function PatientProfilePage() {
                 <Button
                   variant="outline"
                   className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
-                  disabled={isActivatingBirthMode}
-                  onClick={() => handleActivateBirthMode(pregnancy.id)}
+                  onClick={() => setShowStartLabourModal(true)}
                 >
                   <HeartPulse className="mr-2 h-4 w-4" />
                   Modo Parto
@@ -278,6 +258,11 @@ export default function PatientProfilePage() {
         patients={[]}
         showModal={showNewAppointmentModal}
         setShowModal={setShowNewAppointmentModal}
+      />
+      <StartLabourModal
+        open={showStartLabourModal}
+        onOpenChange={setShowStartLabourModal}
+        pregnancyId={pregnancy?.id ?? ""}
       />
     </>
   );
