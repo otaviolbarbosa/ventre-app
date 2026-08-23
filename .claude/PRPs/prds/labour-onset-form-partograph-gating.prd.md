@@ -123,7 +123,7 @@ Ambas as capacidades (formulário + gating) entram juntas na mesma entrega — n
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Migration + tipos | Adicionar colunas `birth_mode_labour_type`, `birth_mode_induction_type`, `labour_start_description`, `partograph_unlocked_at` em `pregnancies`; regenerar `database.types.ts` | complete | - | - | `.claude/PRPs/plans/completed/labour-onset-form-partograph-gating-phase-1.plan.md` |
 | 2 | Formulário de início de parto | Novo componente de formulário + extensão de `activateBirthModeSchema`/`activateBirthModeAction`; substituir `confirm()` em `patients/[id]/profile/page.tsx` | complete | - | 1 | `.claude/PRPs/plans/completed/labour-onset-form-partograph-gating-phase-2.plan.md` |
-| 3 | Cálculo e persistência do gating | Função de intervalo de 3min em `birth-mode-chart-utils.ts`; lógica de "set se nulo" em `add-birth-contraction-action`/`add-birth-cervical-dilation-action`; incluir `partograph_unlocked_at` no retorno de `fetchBirthModeTimelineData` | pending | - | 1 | - |
+| 3 | Cálculo e persistência do gating | Função de intervalo de 3min em `birth-mode-chart-utils.ts`; lógica de "set se nulo" em `add-birth-contraction-action`/`add-birth-cervical-dilation-action`; incluir `partograph_unlocked_at` no retorno de `fetchBirthModeTimelineData` | complete | - | 1 | `.claude/PRPs/plans/completed/labour-onset-form-partograph-gating-phase-3.plan.md` |
 | 4 | Gating na UI do modo parto | `birth-mode-screen.tsx`: desabilitar/ocultar tab Partograma e filtrar `events` passados a `BirthModePartograph` conforme `partograph_unlocked_at`; manter sincronismo via realtime | pending | - | 3 | - |
 
 ### Phase Details

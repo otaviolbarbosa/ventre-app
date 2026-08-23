@@ -6,6 +6,7 @@ import {
   resolvePregnancyPatientId,
   toDuplicateWarning,
 } from "@/lib/birth-mode-duplicate-check";
+import { maybeUnlockPartograph } from "@/lib/birth-mode-partograph-gating";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { birthCervicalDilationSchema } from "@/lib/validations/birth-mode";
@@ -45,6 +46,13 @@ export const addBirthCervicalDilationAction = authActionClient
     });
 
     if (error) throw new Error(error.message);
+
+    maybeUnlockPartograph(supabase, pregnancyId).catch((err) => {
+      console.error(
+        "[add-birth-cervical-dilation] Failed to check partograph unlock threshold",
+        err,
+      );
+    });
 
     await captureServerEvent(user.id, "add_birth_cervical_dilation", { pregnancy_id: pregnancyId });
 
