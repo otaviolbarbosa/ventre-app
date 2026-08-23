@@ -8,6 +8,7 @@ import { BirthModeRegisterButtons } from "@/components/shared/birth-mode-registe
 import { BirthModeTimeline } from "@/components/shared/birth-mode-timeline";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
+import { useBirthModeRealtime } from "@/hooks/use-birth-mode-realtime";
 import { useBirthModeTimelineRealtime } from "@/hooks/use-birth-mode-timeline-realtime";
 import { computeContractionsPer10Min } from "@/lib/birth-mode-chart-utils";
 import { Badge } from "@ventre/ui/badge";
@@ -16,7 +17,7 @@ import { Skeleton } from "@ventre/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
 import { CheckCircle2, FileDown, HeartHandshake, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type BirthModeScreenProps = {
@@ -33,6 +34,7 @@ export function BirthModeScreen({
   const [patientName, setPatientName] = useState(initialPatientName);
   const [hasFinished, setHasFinished] = useState(false);
   const [wasActivated, setWasActivated] = useState<boolean | null>(null);
+  const [partographUnlockedAt, setPartographUnlockedAt] = useState<string | null>(null);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const professionalNamesRef = useRef<Map<string, string>>(new Map());
 
@@ -44,6 +46,7 @@ export function BirthModeScreen({
       if (data.patientName) setPatientName(data.patientName);
       setHasFinished(data.hasFinished);
       setWasActivated(data.wasActivated);
+      setPartographUnlockedAt(data.partographUnlockedAt);
       for (const event of data.events) {
         if (event.professionalId) {
           professionalNamesRef.current.set(event.professionalId, event.professionalName);
@@ -84,6 +87,20 @@ export function BirthModeScreen({
   }, []);
 
   useBirthModeTimelineRealtime(pregnancyId, resolveProfessionalName, onNewEvent);
+
+  const { lastActivation } = useBirthModeRealtime();
+
+  useEffect(() => {
+    if (lastActivation?.id === pregnancyId && lastActivation.partograph_unlocked_at) {
+      setPartographUnlockedAt(lastActivation.partograph_unlocked_at);
+    }
+  }, [lastActivation, pregnancyId]);
+
+  const partographEvents = useMemo(() => {
+    if (!partographUnlockedAt) return [];
+    const unlockedAtMs = new Date(partographUnlockedAt).getTime();
+    return events.filter((event) => new Date(event.occurredAt).getTime() >= unlockedAtMs);
+  }, [events, partographUnlockedAt]);
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const { execute: exportPdf } = useAction(exportPartographPdfAction, {
@@ -187,14 +204,16 @@ export function BirthModeScreen({
           <Skeleton className="h-16 w-full" />
         </div>
       ) : (
-        <Tabs defaultValue="partograph">
+        <Tabs defaultValue={partographUnlockedAt ? "partograph" : "timeline"}>
           <TabsList className="w-full max-w-md">
-            <TabsTrigger value="partograph">Partograma</TabsTrigger>
+            {partographUnlockedAt && <TabsTrigger value="partograph">Partograma</TabsTrigger>}
             <TabsTrigger value="timeline">Linha do tempo</TabsTrigger>
           </TabsList>
-          <TabsContent value="partograph">
-            <BirthModePartograph events={events} />
-          </TabsContent>
+          {partographUnlockedAt && (
+            <TabsContent value="partograph">
+              <BirthModePartograph events={partographEvents} />
+            </TabsContent>
+          )}
           <TabsContent value="timeline">
             <BirthModeTimeline events={events} />
           </TabsContent>

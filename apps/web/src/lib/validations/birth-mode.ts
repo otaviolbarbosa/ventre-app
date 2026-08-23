@@ -1,8 +1,21 @@
 import { z } from "zod";
 
-export const activateBirthModeSchema = z.object({
-  pregnancyId: z.string().uuid("ID da gestação inválido"),
-});
+export const activateBirthModeSchema = z
+  .object({
+    pregnancyId: z.string().uuid("ID da gestação inválido"),
+    birth_mode_labour_type: z.enum(["espontaneo", "induzido"], {
+      message: "Selecione o tipo de trabalho de parto",
+    }),
+    birth_mode_induction_type: z
+      .enum(["balao", "misoprostol", "ocitocina"])
+      .optional()
+      .nullable(),
+    labour_start_description: z.string().optional().nullable(),
+  })
+  .refine((v) => v.birth_mode_labour_type !== "induzido" || !!v.birth_mode_induction_type, {
+    message: "Informe o tipo de indução",
+    path: ["birth_mode_induction_type"],
+  });
 
 export type ActivateBirthModeInput = z.infer<typeof activateBirthModeSchema>;
 

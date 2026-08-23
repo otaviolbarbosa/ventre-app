@@ -63,6 +63,21 @@ export function FinishCareModal({
 
   const addBornAt = form.watch("addBornAt");
   const addApgar = form.watch("addApgar");
+  const apgar1Values = form.watch("apgar1");
+  const apgar5Values = form.watch("apgar5");
+
+  function sumApgar(values: {
+    appearance?: number;
+    pulse?: number;
+    grimace?: number;
+    activity?: number;
+    respiration?: number;
+  }) {
+    return APGAR_COMPONENTS.reduce((sum, { key }) => sum + (values[key] ?? 0), 0);
+  }
+
+  const apgar1Total = sumApgar(apgar1Values);
+  const apgar5Total = sumApgar(apgar5Values);
 
   async function onSubmit(values: BirthOutcomeInput) {
     const res = await executeAsync({
@@ -297,43 +312,56 @@ export function FinishCareModal({
                   )}
 
                   {addApgar && pregnancyId && (
-                    <div className="grid grid-cols-2 gap-4 rounded-md border border-input p-3">
-                      {(["apgar1", "apgar5"] as const).map((timepoint) => (
-                        <div key={timepoint} className="space-y-2">
-                          <p className="font-medium text-sm">
-                            {timepoint === "apgar1" ? "1 minuto" : "5 minutos"}
-                          </p>
-                          {APGAR_COMPONENTS.map(({ key, label }) => (
-                            <FormField
-                              key={key}
-                              control={form.control}
-                              name={`${timepoint}.${key}`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel className="font-normal text-xs">{label}</FormLabel>
-                                  <Select
-                                    onValueChange={(v) => field.onChange(Number(v))}
-                                    value={field.value !== undefined ? String(field.value) : ""}
-                                  >
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="0-2" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="0">0</SelectItem>
-                                      <SelectItem value="1">1</SelectItem>
-                                      <SelectItem value="2">2</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          ))}
-                        </div>
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid grid-cols-2 gap-4 rounded-md border border-input p-3">
+                        {(["apgar1", "apgar5"] as const).map((timepoint) => (
+                          <div key={timepoint} className="space-y-2">
+                            <p className="font-medium text-sm">
+                              {timepoint === "apgar1" ? "1 minuto" : "5 minutos"}
+                            </p>
+                            {APGAR_COMPONENTS.map(({ key, label }) => (
+                              <FormField
+                                key={key}
+                                control={form.control}
+                                name={`${timepoint}.${key}`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="font-normal text-xs">{label}</FormLabel>
+                                    <Select
+                                      onValueChange={(v) => field.onChange(Number(v))}
+                                      value={field.value !== undefined ? String(field.value) : ""}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="0-2" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="0">0</SelectItem>
+                                        <SelectItem value="1">1</SelectItem>
+                                        <SelectItem value="2">2</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-around rounded-md border border-input bg-muted/40 p-3">
+                        <p className="text-sm">
+                          Nota APGAR 1 minuto:{" "}
+                          <span className="font-semibold">{apgar1Total}/10</span>
+                        </p>
+                        <p className="text-sm">
+                          Nota APGAR 5 minutos:{" "}
+                          <span className="font-semibold">{apgar5Total}/10</span>
+                        </p>
+                      </div>
+                    </>
                   )}
                 </div>
               </>

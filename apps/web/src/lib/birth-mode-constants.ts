@@ -35,6 +35,17 @@ export const BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS: Record<string, string> = {
   artificial: "Artificial",
 };
 
+export const BIRTH_MODE_LABOUR_TYPE_LABELS: Record<string, string> = {
+  espontaneo: "Espontâneo",
+  induzido: "Induzido",
+};
+
+export const BIRTH_MODE_INDUCTION_TYPE_LABELS: Record<string, string> = {
+  balao: "Balão",
+  misoprostol: "Misoprostol",
+  ocitocina: "Ocitocina",
+};
+
 export const BIRTH_URINE_DIPSTICK_LABELS: Record<string, string> = {
   ausente: "Ausente",
   tracos: "Traços",

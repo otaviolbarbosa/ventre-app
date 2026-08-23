@@ -6,6 +6,7 @@ import {
   resolvePregnancyPatientId,
   toDuplicateWarning,
 } from "@/lib/birth-mode-duplicate-check";
+import { maybeUnlockPartograph } from "@/lib/birth-mode-partograph-gating";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { birthContractionSchema } from "@/lib/validations/birth-mode";
@@ -45,6 +46,10 @@ export const addBirthContractionAction = authActionClient
     });
 
     if (error) throw new Error(error.message);
+
+    maybeUnlockPartograph(supabase, pregnancyId).catch((err) => {
+      console.error("[add-birth-contraction] Failed to check partograph unlock threshold", err);
+    });
 
     await captureServerEvent(user.id, "add_birth_contraction", { pregnancy_id: pregnancyId });
 
