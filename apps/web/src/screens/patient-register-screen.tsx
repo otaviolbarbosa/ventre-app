@@ -3,6 +3,7 @@
 import { completePatientRegistrationAction } from "@/actions/complete-patient-registration-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { ESTADOS_BR } from "@/lib/constants";
+import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
 import {
   type LinkExistingPatientRegistrationInput,
   type PatientSelfRegistrationInput,
@@ -44,7 +45,27 @@ type LinkedPatient = {
   phone: string;
 };
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4 | 5;
+
+type DueDateCalcMethod = "gestational_age" | "dum" | "dpp" | "fiv";
+type FivTransferType = "D0" | "D3" | "D5" | "D6" | "D7";
+
+const FIV_TRANSFER_OPTIONS: { value: FivTransferType; label: string }[] = [
+  { value: "D0", label: "D0 — transferência no dia da coleta" },
+  { value: "D3", label: "D3 — transferência 3 dias após a coleta" },
+  { value: "D5", label: "D5 — transferência 5 dias após a coleta" },
+  { value: "D6", label: "D6 — transferência 6 dias após a coleta" },
+  { value: "D7", label: "D7 — transferência 7 dias após a coleta" },
+];
+
+// Dias somados à data de transferência para chegar na DPP (280 dias de gestação - idade do embrião na transferência)
+const FIV_DPP_OFFSET_DAYS: Record<FivTransferType, number> = {
+  D0: 266,
+  D3: 263,
+  D5: 261,
+  D6: 260,
+  D7: 259,
+};
 
 const step1Schema = z
   .object({
@@ -68,12 +89,20 @@ function getInitials(name: string) {
     .slice(0, 2);
 }
 
-function StepIndicator({ current }: { current: Step }) {
-  const steps = [
-    { n: 1, label: "Email e senha" },
-    { n: 2, label: "Seus dados" },
-    { n: 3, label: "Confirmação" },
-  ];
+function StepIndicator({ current, isNewPatient }: { current: Step; isNewPatient: boolean }) {
+  const steps = isNewPatient
+    ? [
+        { n: 1, label: "Email e senha" },
+        { n: 2, label: "Meus dados" },
+        { n: 3, label: "Contato" },
+        { n: 4, label: "Endereço" },
+        { n: 5, label: "Confirmação" },
+      ]
+    : [
+        { n: 1, label: "Email e senha" },
+        { n: 2, label: "Seus dados" },
+        { n: 3, label: "Confirmação" },
+      ];
 
   return (
     <div className="mb-10 flex items-center justify-center">
@@ -143,6 +172,13 @@ export default function PatientRegisterScreen({
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [addressVisible, setAddressVisible] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [dueDateCalcMethod, setDueDateCalcMethod] = useState<DueDateCalcMethod | undefined>(
+    undefined,
+  );
+  const [gestAgeWeeks, setGestAgeWeeks] = useState("");
+  const [gestAgeDays, setGestAgeDays] = useState("");
+  const [fivTransferDate, setFivTransferDate] = useState("");
+  const [fivTransferType, setFivTransferType] = useState<FivTransferType>("D5");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const step1Form = useForm<Step1Values>({
@@ -214,6 +250,97 @@ export default function PatientRegisterScreen({
     setAvatarPreviewUrl(URL.createObjectURL(file));
   }
 
+  function resetDueDateFields() {
+    selfRegForm.setValue("dum", "");
+    selfRegForm.setValue("due_date", "");
+  }
+
+  function handleCalcMethodChange(method: DueDateCalcMethod) {
+    setDueDateCalcMethod(method);
+    setGestAgeWeeks("");
+    setGestAgeDays("");
+    setFivTransferDate("");
+    setFivTransferType("D5");
+    resetDueDateFields();
+  }
+
+  function applyGestAge(weeksStr: string, daysStr: string) {
+    setGestAgeWeeks(weeksStr);
+    setGestAgeDays(daysStr);
+    const weeks = Number(weeksStr);
+    const days = Number(daysStr);
+    if (weeksStr === "" || daysStr === "" || Number.isNaN(weeks) || Number.isNaN(days)) {
+      resetDueDateFields();
+      return;
+    }
+    const dum = dayjs().subtract(weeks * 7 + days, "day");
+    selfRegForm.setValue("dum", dum.format("YYYY-MM-DD"));
+    selfRegForm.setValue("due_date", dum.add(280, "day").format("YYYY-MM-DD"));
+  }
+
+  function applyDum(date: Date | null) {
+    if (!date) {
+      resetDueDateFields();
+      return;
+    }
+    const dumStr = date.toISOString().slice(0, 10);
+    selfRegForm.setValue("dum", dumStr);
+    selfRegForm.setValue("due_date", dayjs(dumStr).add(280, "day").format("YYYY-MM-DD"));
+  }
+
+  function applyDpp(date: Date | null) {
+    if (!date) {
+      resetDueDateFields();
+      return;
+    }
+    const dppStr = date.toISOString().slice(0, 10);
+    selfRegForm.setValue("due_date", dppStr);
+    selfRegForm.setValue("dum", dayjs(dppStr).subtract(280, "day").format("YYYY-MM-DD"));
+  }
+
+  function applyFiv(transferDateStr: string, type: FivTransferType) {
+    setFivTransferDate(transferDateStr);
+    setFivTransferType(type);
+    if (!transferDateStr) {
+      resetDueDateFields();
+      return;
+    }
+    const dpp = dayjs(transferDateStr).add(FIV_DPP_OFFSET_DAYS[type], "day");
+    selfRegForm.setValue("due_date", dpp.format("YYYY-MM-DD"));
+    selfRegForm.setValue("dum", dpp.subtract(280, "day").format("YYYY-MM-DD"));
+  }
+
+  const SELF_REG_STEP_FIELDS: Partial<Record<Step, (keyof PatientSelfRegistrationInput)[]>> = {
+    2: ["name"],
+    3: ["phone"],
+  };
+
+  async function goToNextSelfReg() {
+    if (step === 2 && !dueDateCalcMethod) {
+      toast.error("Selecione o método de cálculo da DUM/DPP");
+      return;
+    }
+
+    if (step === 4) {
+      const valid = await selfRegForm.trigger();
+      if (!valid) return;
+      setDataValues(selfRegForm.getValues());
+      setStep(5);
+      return;
+    }
+
+    const fields = SELF_REG_STEP_FIELDS[step];
+    if (fields && fields.length > 0) {
+      const valid = await selfRegForm.trigger(fields);
+      if (!valid) return;
+    }
+    setStep((prev) => Math.min(prev + 1, 4) as Step);
+  }
+
+  function goToPrevSelfReg() {
+    setStep((prev) => Math.max(prev - 1, 1) as Step);
+  }
+
   // async function handleGoogleSignup() {
   //   const { error } = await signInWithGoogle("/patient-registration/complete", {
   //     name: "patient_invite",
@@ -243,6 +370,10 @@ export default function PatientRegisterScreen({
         email: finalEmail || undefined,
         phone: finalPhone,
         partner_name: selfRegValues?.partner_name,
+        rg: selfRegValues?.rg,
+        cpf: selfRegValues?.cpf,
+        marital_status: selfRegValues?.marital_status,
+        occupation: selfRegValues?.occupation,
         due_date: selfRegValues?.due_date,
         dum: selfRegValues?.dum,
         baby_name: selfRegValues?.baby_name,
@@ -317,7 +448,7 @@ export default function PatientRegisterScreen({
         </div>
 
         <div className="rounded-2xl bg-white p-8 shadow-sm">
-          <StepIndicator current={step} />
+          <StepIndicator current={step} isNewPatient={isNewPatient} />
 
           {/* ── Step 1: Email e senha ── */}
           {step === 1 && (
@@ -397,267 +528,594 @@ export default function PatientRegisterScreen({
             </div>
           )}
 
-          {/* ── Step 2: Dados ── */}
-          {step === 2 && isNewPatient && (
+          {/* ── Steps 2-4: Meus dados / Contato / Endereço ── */}
+          {(step === 2 || step === 3 || step === 4) && isNewPatient && (
             <Form {...selfRegForm}>
               <form
-                onSubmit={selfRegForm.handleSubmit((values) => {
-                  setDataValues(values);
-                  setStep(3);
-                })}
+                onSubmit={(e) => e.preventDefault()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.preventDefault();
+                }}
                 className="space-y-4"
               >
-                <div className="flex flex-col items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="group relative"
-                  >
-                    <Avatar className="h-20 w-20 shadow-md">
-                      <AvatarImage src={avatarPreviewUrl ?? undefined} className="object-cover" />
-                      <AvatarFallback className="bg-primary/10 text-lg text-primary">
-                        {getInitials(displayName || "?")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Camera className="h-5 w-5 text-white" />
-                    </div>
-                  </button>
-                  <p className="text-muted-foreground text-xs">Clique para adicionar uma foto</p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                </div>
-
-                <FormField
-                  control={selfRegForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome completo *</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={selfRegForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Telefone *</FormLabel>
-                      <FormControl>
-                        <InputMask
-                          component={Input}
-                          mask="(__) _____-____"
-                          replacement={{ _: /\d/ }}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField
-                    control={selfRegForm.control}
-                    name="due_date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Data prevista do parto (DPP) *</FormLabel>
-                        <FormControl>
-                          <DatePicker
-                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                            onChange={(date) => {
-                              field.onChange(date ? date.toISOString().slice(0, 10) : "");
-                              if (date) {
-                                selfRegForm.setValue(
-                                  "dum",
-                                  dayjs(date).subtract(280, "day").format("YYYY-MM-DD"),
-                                );
-                              }
-                            }}
-                            placeholderText="Selecione a data"
+                {/* ── Step 2: Meus dados ── */}
+                {step === 2 && (
+                  <>
+                    <div className="flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group relative"
+                      >
+                        <Avatar className="h-20 w-20 shadow-md">
+                          <AvatarImage
+                            src={avatarPreviewUrl ?? undefined}
+                            className="object-cover"
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={selfRegForm.control}
-                    name="dum"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Última menstruação (DUM)</FormLabel>
-                        <FormControl>
-                          <DatePicker
-                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                            onChange={(date) =>
-                              field.onChange(date ? date.toISOString().slice(0, 10) : "")
-                            }
-                            placeholderText="Calculado automaticamente"
-                            disabled
-                            className="bg-muted"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={selfRegForm.control}
-                  name="address.zipcode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEP</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <InputMask
-                            component={Input}
-                            mask="_____-___"
-                            replacement={{ _: /\d/ }}
-                            placeholder="00000-000"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              const digits = e.target.value.replace(/\D/g, "");
-                              if (digits.length === 8) lookupCep({ cep: digits });
-                              if (digits.length < 8) setAddressVisible(false);
-                            }}
-                          />
-                          {isFetchingCep && (
-                            <div className="absolute inset-y-0 right-3 flex items-center">
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            </div>
-                          )}
+                          <AvatarFallback className="bg-primary/10 text-lg text-primary">
+                            {getInitials(displayName || "?")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+                          <Camera className="h-5 w-5 text-white" />
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      </button>
+                      <p className="text-muted-foreground text-xs">
+                        Clique para adicionar uma foto
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                      />
+                    </div>
 
-                <div className="grid gap-4 sm:grid-cols-4">
-                  <FormField
-                    control={selfRegForm.control}
-                    name="address.street"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-3">
-                        <FormLabel>Rua</FormLabel>
-                        <FormControl>
-                          <Input disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={selfRegForm.control}
-                    name="address.number"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número</FormLabel>
-                        <FormControl>
-                          <Input disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <FormField
-                    control={selfRegForm.control}
-                    name="address.neighborhood"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Bairro</FormLabel>
-                        <FormControl>
-                          <Input disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={selfRegForm.control}
-                    name="address.city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cidade</FormLabel>
-                        <FormControl>
-                          <Input disabled={!addressVisible} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={selfRegForm.control}
-                    name="address.state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado</FormLabel>
-                        <Select
-                          value={field.value ?? undefined}
-                          onValueChange={field.onChange}
-                          disabled={!addressVisible}
-                        >
+                    <FormField
+                      control={selfRegForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome completo *</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="UF" />
-                            </SelectTrigger>
+                            <Input {...field} />
                           </FormControl>
-                          <SelectContent>
-                            {ESTADOS_BR.map((estado) => (
-                              <SelectItem key={estado.sigla} value={estado.sigla}>
-                                {estado.sigla}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <FormField
-                  control={selfRegForm.control}
-                  name="observations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Observações</FormLabel>
-                      <FormControl>
-                        <Textarea rows={2} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={selfRegForm.control}
+                      name="partner_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome da parceria</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={selfRegForm.control}
+                        name="rg"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>RG</FormLabel>
+                            <FormControl>
+                              <Input {...field} value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={selfRegForm.control}
+                        name="cpf"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>CPF</FormLabel>
+                            <FormControl>
+                              <InputMask
+                                component={Input}
+                                mask="___.___.___-__"
+                                replacement={{ _: /\d/ }}
+                                {...field}
+                                value={field.value ?? ""}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={selfRegForm.control}
+                        name="marital_status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estado civil</FormLabel>
+                            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {MARITAL_STATUS_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={selfRegForm.control}
+                        name="occupation"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Profissão</FormLabel>
+                            <FormControl>
+                              <Input {...field} value={field.value ?? ""} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={selfRegForm.control}
+                      name="baby_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do bebê</FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-2">
+                      <FormLabel>Calculo da Idade Gestacional *</FormLabel>
+                      <Select
+                        value={dueDateCalcMethod}
+                        onValueChange={(v) => handleCalcMethodChange(v as DueDateCalcMethod)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o método de cálculo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gestational_age">Idade gestacional</SelectItem>
+                          <SelectItem value="dum">Data da última menstruação (DUM)</SelectItem>
+                          <SelectItem value="dpp">Data prevista do parto (DPP)</SelectItem>
+                          <SelectItem value="fiv">FIV/FET (transferência de embrião)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {dueDateCalcMethod === "gestational_age" && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormItem>
+                          <FormLabel>Semanas *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={45}
+                              placeholder="Ex: 20"
+                              value={gestAgeWeeks}
+                              onChange={(e) => applyGestAge(e.target.value, gestAgeDays)}
+                            />
+                          </FormControl>
+                        </FormItem>
+                        <FormItem>
+                          <FormLabel>Dias *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              max={6}
+                              placeholder="Ex: 3"
+                              value={gestAgeDays}
+                              onChange={(e) => applyGestAge(gestAgeWeeks, e.target.value)}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      </div>
+                    )}
+
+                    {dueDateCalcMethod === "fiv" && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormItem>
+                          <FormLabel>Data da transferência *</FormLabel>
+                          <FormControl>
+                            <DatePicker
+                              selected={
+                                fivTransferDate ? new Date(`${fivTransferDate}T00:00:00`) : null
+                              }
+                              onChange={(date) =>
+                                applyFiv(
+                                  date ? date.toISOString().slice(0, 10) : "",
+                                  fivTransferType,
+                                )
+                              }
+                              placeholderText="Selecione a data"
+                            />
+                          </FormControl>
+                        </FormItem>
+                        <FormItem>
+                          <FormLabel>Tipo de transferência *</FormLabel>
+                          <Select
+                            value={fivTransferType}
+                            onValueChange={(v) => applyFiv(fivTransferDate, v as FivTransferType)}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {FIV_TRANSFER_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      </div>
+                    )}
+
+                    {dueDateCalcMethod === "dum" && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={selfRegForm.control}
+                          name="dum"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Última menstruação (DUM) *</FormLabel>
+                              <FormControl>
+                                <DatePicker
+                                  selected={
+                                    field.value ? new Date(`${field.value}T00:00:00`) : null
+                                  }
+                                  onChange={applyDum}
+                                  placeholderText="Selecione a data"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={selfRegForm.control}
+                          name="due_date"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Data prevista do parto (DPP)</FormLabel>
+                              <FormControl>
+                                <DatePicker
+                                  selected={
+                                    field.value ? new Date(`${field.value}T00:00:00`) : null
+                                  }
+                                  onChange={() => undefined}
+                                  placeholderText="Calculado automaticamente"
+                                  disabled
+                                  className="bg-muted"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    {dueDateCalcMethod === "dpp" && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={selfRegForm.control}
+                          name="due_date"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Data prevista do parto (DPP) *</FormLabel>
+                              <FormControl>
+                                <DatePicker
+                                  selected={
+                                    field.value ? new Date(`${field.value}T00:00:00`) : null
+                                  }
+                                  onChange={applyDpp}
+                                  placeholderText="Selecione a data"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={selfRegForm.control}
+                          name="dum"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Última menstruação (DUM)</FormLabel>
+                              <FormControl>
+                                <DatePicker
+                                  selected={
+                                    field.value ? new Date(`${field.value}T00:00:00`) : null
+                                  }
+                                  onChange={() => undefined}
+                                  placeholderText="Calculado automaticamente"
+                                  disabled
+                                  className="bg-muted"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    {(dueDateCalcMethod === "gestational_age" || dueDateCalcMethod === "fiv") && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={selfRegForm.control}
+                          name="dum"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Última menstruação (DUM)</FormLabel>
+                              <FormControl>
+                                <DatePicker
+                                  selected={
+                                    field.value ? new Date(`${field.value}T00:00:00`) : null
+                                  }
+                                  onChange={() => undefined}
+                                  placeholderText="Calculado automaticamente"
+                                  disabled
+                                  className="bg-muted"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={selfRegForm.control}
+                          name="due_date"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Data prevista do parto (DPP)</FormLabel>
+                              <FormControl>
+                                <DatePicker
+                                  selected={
+                                    field.value ? new Date(`${field.value}T00:00:00`) : null
+                                  }
+                                  onChange={() => undefined}
+                                  placeholderText="Calculado automaticamente"
+                                  disabled
+                                  className="bg-muted"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+
+                    <FormField
+                      control={selfRegForm.control}
+                      name="observations"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Observações</FormLabel>
+                          <FormControl>
+                            <Textarea rows={2} {...field} value={field.value ?? ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* ── Step 3: Contato ── */}
+                {step === 3 && (
+                  <>
+                    <FormField
+                      control={selfRegForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="email@exemplo.com"
+                              {...field}
+                              value={field.value ?? ""}
+                              readOnly
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={selfRegForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone *</FormLabel>
+                          <FormControl>
+                            <InputMask
+                              component={Input}
+                              placeholder="(99) 99999-9999"
+                              mask="(__) _____-____"
+                              replacement={{ _: /\d/ }}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* ── Step 4: Endereço ── */}
+                {step === 4 && (
+                  <>
+                    <FormField
+                      control={selfRegForm.control}
+                      name="address.zipcode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CEP</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <InputMask
+                                component={Input}
+                                mask="_____-___"
+                                replacement={{ _: /\d/ }}
+                                placeholder="00000-000"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  const digits = e.target.value.replace(/\D/g, "");
+                                  if (digits.length === 8) lookupCep({ cep: digits });
+                                  if (digits.length < 8) setAddressVisible(false);
+                                }}
+                              />
+                              {isFetchingCep && (
+                                <div className="absolute inset-y-0 right-3 flex items-center">
+                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid gap-4 sm:grid-cols-4">
+                      <FormField
+                        control={selfRegForm.control}
+                        name="address.street"
+                        render={({ field }) => (
+                          <FormItem className="sm:col-span-3">
+                            <FormLabel>Rua</FormLabel>
+                            <FormControl>
+                              <Input disabled={!addressVisible} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={selfRegForm.control}
+                        name="address.number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Número</FormLabel>
+                            <FormControl>
+                              <Input disabled={!addressVisible} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormField
+                        control={selfRegForm.control}
+                        name="address.neighborhood"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bairro</FormLabel>
+                            <FormControl>
+                              <Input disabled={!addressVisible} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={selfRegForm.control}
+                        name="address.city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cidade</FormLabel>
+                            <FormControl>
+                              <Input disabled={!addressVisible} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={selfRegForm.control}
+                        name="address.state"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Estado</FormLabel>
+                            <Select
+                              value={field.value ?? undefined}
+                              onValueChange={field.onChange}
+                              disabled={!addressVisible}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="UF" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {ESTADOS_BR.map((estado) => (
+                                  <SelectItem key={estado.sigla} value={estado.sigla}>
+                                    {estado.sigla}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="flex gap-2 pt-1">
                   <Button
                     type="button"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => setStep(1)}
+                    onClick={step === 2 ? () => setStep(1) : goToPrevSelfReg}
                   >
                     Voltar
                   </Button>
-                  <Button type="submit" className="gradient-primary flex-1">
+                  <Button
+                    type="button"
+                    className="gradient-primary flex-1"
+                    onClick={goToNextSelfReg}
+                  >
                     Próximo
                   </Button>
                 </div>
@@ -750,8 +1208,8 @@ export default function PatientRegisterScreen({
             </Form>
           )}
 
-          {/* ── Step 3: Confirmation ── */}
-          {step === 3 && dataValues && (
+          {/* ── Confirmation ── */}
+          {step === (isNewPatient ? 5 : 3) && dataValues && (
             <div className="space-y-5">
               <div className="flex flex-col items-center gap-2">
                 <Avatar className="h-20 w-20 shadow-md">
@@ -822,7 +1280,7 @@ export default function PatientRegisterScreen({
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(isNewPatient ? 4 : 2)}
                   disabled={isFinishing}
                 >
                   Voltar

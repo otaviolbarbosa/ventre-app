@@ -574,7 +574,11 @@ export default function NewPatientModal({
     setIsNavigating(true);
     setStep((prev) => {
       let next = Math.min(prev + 1, 5) as StepNumber;
-      if (isInviteMode && next === 3) next = 4;
+      if (isInviteMode) {
+        while (next === 2 || next === 3) {
+          next = Math.min(next + 1, 5) as StepNumber;
+        }
+      }
       return next;
     });
     setTimeout(() => setIsNavigating(false), 400);
@@ -583,13 +587,17 @@ export default function NewPatientModal({
   function goToPrev() {
     setStep((prev) => {
       let next = Math.max(prev - 1, 1) as StepNumber;
-      if (isInviteMode && next === 3) next = 2;
+      if (isInviteMode) {
+        while (next === 2 || next === 3) {
+          next = Math.max(next - 1, 1) as StepNumber;
+        }
+      }
       return next;
     });
   }
 
   async function handleInviteSubmit() {
-    const valid = await form.trigger(["name", "phone"]);
+    const valid = await form.trigger(["name"]);
     if (!valid) return;
 
     const data = form.getValues();

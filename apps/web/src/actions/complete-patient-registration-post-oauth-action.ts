@@ -99,7 +99,7 @@ export const completePatientRegistrationPostOAuthAction = authActionClient
 
       await supabaseAdmin
         .from("patient_invite_links")
-        .update({ used_at: new Date().toISOString(), patient_id: patient.id })
+        .update({ used_at: new Date().toISOString(), patient_id: patient.id, status: "usado" })
         .eq("id", parsedInput.inviteId);
     } else {
       if (!invite.patient_id) {
@@ -113,7 +113,7 @@ export const completePatientRegistrationPostOAuthAction = authActionClient
 
       await supabaseAdmin
         .from("patient_invite_links")
-        .update({ used_at: new Date().toISOString() })
+        .update({ used_at: new Date().toISOString(), status: "usado" })
         .eq("id", parsedInput.inviteId);
     }
 

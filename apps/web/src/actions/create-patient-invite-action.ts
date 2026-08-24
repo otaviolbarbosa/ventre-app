@@ -50,7 +50,7 @@ export const createPatientInviteAction = authActionClient
         enterprise_id: enterpriseId,
         name: parsedInput.name,
         email: parsedInput.email || null,
-        phone: parsedInput.phone,
+        phone: parsedInput.phone || null,
         metadata,
       })
       .select()
