@@ -1,7 +1,7 @@
 "use server";
 
 import { actionClient } from "@/lib/safe-action";
-import type { CreatePatientInput } from "@/lib/validations/patient";
+import { MARITAL_STATUS_OPTIONS, type CreatePatientInput, type MaritalStatus } from "@/lib/validations/patient";
 import { createPatientWithTeamAndBilling } from "@/services/patient-onboarding";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
@@ -14,6 +14,12 @@ const schema = z.object({
   phone: z.string().optional(),
   // Type 1 (new_patient) fields
   partner_name: z.string().optional(),
+  rg: z.string().optional(),
+  cpf: z.string().optional(),
+  marital_status: z
+    .enum(MARITAL_STATUS_OPTIONS.map((o) => o.value) as [MaritalStatus, ...MaritalStatus[]])
+    .optional(),
+  occupation: z.string().optional(),
   due_date: z.string().optional(),
   dum: z.string().optional(),
   baby_name: z.string().optional(),
@@ -99,6 +105,10 @@ export const completePatientRegistrationAction = actionClient
         email: finalEmail,
         phone: finalPhone,
         partner_name: parsedInput.partner_name,
+        rg: parsedInput.rg,
+        cpf: parsedInput.cpf,
+        marital_status: parsedInput.marital_status,
+        occupation: parsedInput.occupation,
         baby_name: parsedInput.baby_name,
         due_date: parsedInput.due_date,
         dum: parsedInput.dum,
@@ -133,7 +143,7 @@ export const completePatientRegistrationAction = actionClient
 
       await supabaseAdmin
         .from("patient_invite_links")
-        .update({ used_at: new Date().toISOString(), patient_id: patient.id })
+        .update({ used_at: new Date().toISOString(), patient_id: patient.id, status: "usado" })
         .eq("id", inviteId);
     } else {
       if (!invite.patient_id) {
@@ -151,7 +161,7 @@ export const completePatientRegistrationAction = actionClient
 
       await supabaseAdmin
         .from("patient_invite_links")
-        .update({ used_at: new Date().toISOString() })
+        .update({ used_at: new Date().toISOString(), status: "usado" })
         .eq("id", inviteId);
     }
 

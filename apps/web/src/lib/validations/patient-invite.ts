@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { createBillingSchema } from "./billing";
+import { MARITAL_STATUS_OPTIONS, type MaritalStatus } from "./patient";
 
 export const createPatientInviteSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.union([z.string().email("Email inválido"), z.literal("")]).optional(),
-  phone: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
+  phone: z
+    .union([z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"), z.literal("")])
+    .optional(),
   professional_ids: z
     .array(z.string().uuid())
     .min(1, "Selecione pelo menos uma profissional")
@@ -22,6 +25,12 @@ export const patientSelfRegistrationSchema = z.object({
   email: z.union([z.string().email("Email inválido"), z.literal("")]).optional(),
   phone: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
   partner_name: z.string().optional(),
+  rg: z.string().optional(),
+  cpf: z.string().optional(),
+  marital_status: z
+    .enum(MARITAL_STATUS_OPTIONS.map((o) => o.value) as [MaritalStatus, ...MaritalStatus[]])
+    .optional(),
+  occupation: z.string().optional(),
   due_date: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
     message: "Data prevista do parto inválida",
   }),
