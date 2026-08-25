@@ -13,7 +13,7 @@ import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
 import {
   Check,
-  CheckCircle,
+  CircleDollarSign,
   ExternalLink,
   FileText,
   Image,
@@ -332,7 +332,7 @@ export function InstallmentList({
                           variant="outline"
                           onClick={() => onRecordPayment(installment)}
                         >
-                          <CheckCircle className="mr-1 h-4 w-4" />
+                          <CircleDollarSign className="mr-1 h-4 w-4" />
                           Registrar Pagamento
                         </Button>
                       </div>

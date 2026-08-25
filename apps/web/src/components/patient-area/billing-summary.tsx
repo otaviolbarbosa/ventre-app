@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader } from "@ventre/ui/card";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
-import { Loader2, Paperclip } from "lucide-react";
+import { CircleDollarSign, Loader2, Paperclip } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -203,6 +203,7 @@ export default function BillingSummary({
                             setOpenInstallmentId(installment.id);
                           }}
                         >
+                          <CircleDollarSign className="h-4 w-4" />
                           Registrar pagamento
                         </Button>
                       </div>
