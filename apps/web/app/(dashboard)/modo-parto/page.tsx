@@ -2,6 +2,7 @@
 
 import { getActiveBirthModePregnancyAction } from "@/actions/get-active-birth-mode-pregnancy-action";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useAuth } from "@/hooks/use-auth";
 import { BirthModeScreen } from "@/screens/birth-mode-screen";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
@@ -9,6 +10,7 @@ import { Skeleton } from "@ventre/ui/skeleton";
 import { HeartHandshake } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect } from "react";
 
 export default function ModoPartoPage() {
@@ -16,15 +18,34 @@ export default function ModoPartoPage() {
   const searchParams = useSearchParams();
   const pregnancyId = searchParams.get("pregnancyId");
 
-  const { execute: fetchActivePregnancies, result, isPending } = useAction(
-    getActiveBirthModePregnancyAction,
-  );
+  const { isDoula } = useAuth();
+  const disableBirthModeForDoulas = useFeatureFlagEnabled("disable-birth-mode-for-doulas");
+  const birthModeDisabled = isDoula && !!disableBirthModeForDoulas;
+
+  const {
+    execute: fetchActivePregnancies,
+    result,
+    isPending,
+  } = useAction(getActiveBirthModePregnancyAction);
 
   useEffect(() => {
+    if (birthModeDisabled) {
+      router.replace("/home?error=acesso-negado");
+      return;
+    }
     fetchActivePregnancies();
-  }, [fetchActivePregnancies]);
+  }, [fetchActivePregnancies, birthModeDisabled, router]);
 
   const activePregnancies = result.data?.pregnancies ?? [];
+
+  if (birthModeDisabled) {
+    return (
+      <div className="space-y-2 p-4">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
 
   if (pregnancyId) {
     const current = activePregnancies.find((p) => p.id === pregnancyId);
