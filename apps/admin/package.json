@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^4.1.0",
     "@ventre/supabase": "workspace:*",
     "@ventre/ui": "workspace:*",
+    "@ventre/whatsapp": "workspace:*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
     "class-variance-authority": "^0.7.1",
