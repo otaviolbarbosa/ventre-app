@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -40,6 +41,7 @@ export default function PatientProfilePage() {
   const [showStartLabourModal, setShowStartLabourModal] = useState(false);
   const { confirm } = useConfirmModal();
   const { isObstetrician, isNurse, isDoula } = useAuth();
+  const disableBirthModeForDoulas = useFeatureFlagEnabled("disable-birth-mode-for-doulas");
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
@@ -109,7 +111,9 @@ export default function PatientProfilePage() {
             </Button>
           </div>
 
-          {!patient.has_finished && pregnancy?.id && (isObstetrician || isNurse || isDoula) && (
+          {!patient.has_finished &&
+            pregnancy?.id &&
+            (isObstetrician || isNurse || (isDoula && !disableBirthModeForDoulas)) && (
             <div className="flex justify-end">
               {patient.birth_mode_active ? (
                 <Button
