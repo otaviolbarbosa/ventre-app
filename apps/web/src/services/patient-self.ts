@@ -5,7 +5,8 @@ type Pregnancy = Tables<"pregnancies">;
 type Patient = Tables<"patients">;
 type Appointment = Tables<"appointments">;
 type Billing = Tables<"billings">;
-type Installment = Tables<"installments">;
+type Payment = Tables<"payments">;
+type Installment = Tables<"installments"> & { payments: Payment[] };
 
 export type MyPatient = Patient & { address: Record<string, string | null> | null };
 
@@ -109,7 +110,7 @@ export async function getMyBillingSummary(): Promise<{
 
   const { data } = await supabase
     .from("billings")
-    .select("*, installments(*)")
+    .select("*, installments(*, payments(*))")
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false });
 
