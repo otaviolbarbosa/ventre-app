@@ -62,6 +62,8 @@ export async function POST(request: Request) {
     const payload = parseResult.data;
 
     for (const statusUpdate of extractStatusUpdates(payload)) {
+      // DEBUG TEMPORÁRIO — remover após diagnosticar o teste manual de WhatsApp no admin.
+      console.log("[whatsapp-webhook][debug] status recebido:", statusUpdate);
       if (statusUpdate.status === "sent") continue; // já gravado como "sent" no envio (worker)
       await updateNotificationLogStatusByExternalId(
         supabaseAdmin,

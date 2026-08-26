@@ -2,7 +2,16 @@
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@ventre/supabase";
-import { Building2, CreditCard, Heart, Home, LogOut, Receipt, Users } from "lucide-react";
+import {
+  Building2,
+  CreditCard,
+  Heart,
+  Home,
+  LogOut,
+  MessageCircle,
+  Receipt,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -13,6 +22,7 @@ const navItems = [
   { href: "/plans", label: "Planos", icon: CreditCard },
   { href: "/subscriptions", label: "Assinaturas", icon: Receipt },
   { href: "/patients", label: "Pacientes", icon: Heart },
+  { href: "/whatsapp-test", label: "Teste WhatsApp", icon: MessageCircle },
 ];
 
 export function SidebarNav() {
