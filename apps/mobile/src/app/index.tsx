@@ -11,7 +11,8 @@ import {
   subscribeToTokenRefresh,
 } from "@/lib/push-notifications";
 
-const LANDING_URI = "https://ventre.app/landing";
+const WEB_BASE_URL = process.env.EXPO_PUBLIC_WEB_BASE_URL;
+const LANDING_URI = `${WEB_BASE_URL}/landing`;
 const UNAUTHENTICATED_PATHS = new Set(["/landing", "/login"]);
 
 // Hermes doesn't ship a global URL polyfill, so parse the pathname by hand.
@@ -69,10 +70,10 @@ export default function Index() {
   // Tap-to-deep-link: killed-state launch and background→foreground tap.
   useEffect(() => {
     getInitialDeepLinkUrl().then((url) => {
-      if (url) setWebViewUri(`https://ventre.app${url}`);
+      if (url) setWebViewUri(`${WEB_BASE_URL}${url}`);
     });
     return subscribeToNotificationOpen((url) => {
-      setWebViewUri(`https://ventre.app${url}`);
+      setWebViewUri(`${WEB_BASE_URL}${url}`);
     });
   }, []);
 
