@@ -12,7 +12,9 @@
       "bundleIdentifier": "app.ventre.mobile",
       "googleServicesFile": "./google-services/GoogleService-Info.plist",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       },
       "entitlements": {
         "aps-environment": "development"
@@ -44,7 +46,9 @@
         }
       ],
       "@react-native-firebase/app",
-      "@react-native-firebase/messaging"
+      "@react-native-firebase/messaging",
+      "@react-native-google-signin/google-signin",
+      "./plugins/withDisableFirebaseSpm"
     ],
     "experiments": {
       "typedRoutes": true,
