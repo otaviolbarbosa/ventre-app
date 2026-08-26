@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "app.ventre.mobile",
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "googleServicesFile": "./google-services/GoogleService-Info.plist",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"]
       },
@@ -27,7 +27,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "app.ventre.mobile",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services/google-services.json"
     },
     "web": {
       "output": "static",
