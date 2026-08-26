@@ -10,7 +10,7 @@ export default async function PlanDetailPage({ params }: { params: Params }) {
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, name, slug, description, type, value, benefits")
+    .select("id, name, slug, description, type, value, benefits, is_active")
     .eq("id", id)
     .single();
 

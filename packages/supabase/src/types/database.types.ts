@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -2013,6 +2013,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_active: boolean
           name: string
           slug: string
           type: Database["public"]["Enums"]["plan_type"]
@@ -2023,6 +2024,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_active?: boolean
           name: string
           slug: string
           type: Database["public"]["Enums"]["plan_type"]
@@ -2033,6 +2035,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_active?: boolean
           name?: string
           slug?: string
           type?: Database["public"]["Enums"]["plan_type"]
@@ -2954,6 +2957,7 @@ export type Database = {
         }
         Returns: {
           address: Json
+          avatar_url: string
           born_at: string
           created_at: string
           created_by: string

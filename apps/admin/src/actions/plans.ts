@@ -34,6 +34,7 @@ const planSchema = z.object({
   type: z.enum(["free", "premium", "enterprise"]),
   value: z.number().min(0).nullable().optional(),
   benefits: z.array(z.string()).optional(),
+  is_active: z.boolean().optional(),
 });
 
 const updatePlanSchema = planSchema.extend({
@@ -42,6 +43,11 @@ const updatePlanSchema = planSchema.extend({
 
 const deletePlanSchema = z.object({
   id: z.string().uuid(),
+});
+
+const togglePlanActiveSchema = z.object({
+  id: z.string().uuid(),
+  is_active: z.boolean(),
 });
 
 export const createPlanAction = adminActionClient
@@ -80,5 +86,20 @@ export const deletePlanAction = adminActionClient
     if (error) throw new Error(error.message);
 
     revalidatePath("/plans");
+    return { success: true };
+  });
+
+export const togglePlanActiveAction = adminActionClient
+  .schema(togglePlanActiveSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { error } = await ctx.supabaseAdmin
+      .from("plans")
+      .update({ is_active: parsedInput.is_active })
+      .eq("id", parsedInput.id);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/plans");
+    revalidatePath(`/plans/${parsedInput.id}`);
     return { success: true };
   });

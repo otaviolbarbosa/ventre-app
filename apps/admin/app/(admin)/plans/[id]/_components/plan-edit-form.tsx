@@ -6,6 +6,7 @@ import { Card, CardContent } from "@ventre/ui/card";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Switch } from "@ventre/ui/switch";
 import { Textarea } from "@ventre/ui/textarea";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
@@ -20,6 +21,7 @@ type Plan = {
   type: string;
   value: number | null;
   benefits: string[];
+  is_active: boolean;
 };
 
 export function PlanEditForm({ plan }: { plan: Plan }) {
@@ -30,6 +32,7 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
   const [type, setType] = useState(plan.type);
   const [value, setValue] = useState<string>(plan.value != null ? String(plan.value) : "");
   const [benefitsText, setBenefitsText] = useState(plan.benefits.join("\n"));
+  const [isActive, setIsActive] = useState(plan.is_active);
 
   const { execute: executeUpdate, isExecuting: isUpdating } = useAction(updatePlanAction, {
     onSuccess: () => {
@@ -66,6 +69,7 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
       type: type as "free" | "premium" | "enterprise",
       value: value !== "" ? Number(value) : null,
       benefits,
+      is_active: isActive,
     });
   }
 
@@ -139,6 +143,11 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
                 className="resize-none font-mono text-xs"
                 placeholder={"Benefício 1\nBenefício 2\nBenefício 3"}
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch checked={isActive} onCheckedChange={setIsActive} />
+              <Label>{isActive ? "Ativo" : "Inativo"}</Label>
             </div>
 
             <div className="flex items-center justify-between pt-2">

@@ -32,6 +32,7 @@
     "@radix-ui/react-separator": "^1.1.1",
     "@radix-ui/react-slider": "^1.4.7",
     "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-switch": "^1.1.2",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-input/mask": "^2.0.4",

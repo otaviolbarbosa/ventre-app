@@ -1,10 +1,11 @@
 "use client";
 
-import { deletePlanAction, getPaginatedPlansAction } from "@/actions/plans";
+import { deletePlanAction, getPaginatedPlansAction, togglePlanActiveAction } from "@/actions/plans";
 import { formatCurrency } from "@/lib/utils";
 import type { Tables } from "@ventre/supabase/types";
 import { Badge } from "@ventre/ui/badge";
 import { DataTable } from "@ventre/ui/shared/data-table";
+import { Switch } from "@ventre/ui/switch";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
@@ -40,6 +41,16 @@ export function PlansTable() {
     },
     onError: ({ error }) => {
       toast.error(error.serverError ?? "Erro ao excluir plano");
+    },
+  });
+
+  const { execute: togglePlanActive } = useAction(togglePlanActiveAction, {
+    onSuccess: () => {
+      loadPlans(lastFetchRef.current);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao atualizar status do plano");
+      loadPlans(lastFetchRef.current);
     },
   });
 
@@ -89,6 +100,21 @@ export function PlansTable() {
             name: "benefits",
             callback: (plan) => (
               <span className="text-muted-foreground">{plan.benefits?.length ?? 0} item(s)</span>
+            ),
+          },
+          {
+            label: "Status",
+            name: "is_active",
+            callback: (plan) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={plan.is_active}
+                  onCheckedChange={(checked) => togglePlanActive({ id: plan.id, is_active: checked })}
+                />
+                <span className="text-muted-foreground text-xs">
+                  {plan.is_active ? "Ativo" : "Inativo"}
+                </span>
+              </div>
             ),
           },
         ],
