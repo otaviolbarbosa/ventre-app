@@ -106,14 +106,19 @@ export async function getEnterprisePatients(
 
     let patientsQuery = supabase
       .from("patients")
-      .select("*, addresses(street, number, complement, neighborhood, city, state, zipcode)")
+      .select(
+        "*, addresses(street, number, complement, neighborhood, city, state, zipcode), user:users!patients_user_id_fkey(avatar_url)",
+      )
       .in("id", filteredIds);
     if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
     const { data: patientsData } = await patientsQuery;
 
     rows = (patientsData ?? [])
       .map((p) => {
-        const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
+        const { addresses: addrs, user, ...patientData } = p as typeof p & {
+          addresses: unknown[];
+          user: { avatar_url: string | null } | null;
+        };
         const address =
           Array.isArray(addrs) && addrs.length > 0
             ? (addrs[0] as Record<string, string | null>)
@@ -126,6 +131,7 @@ export async function getEnterprisePatients(
           has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
           born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
           observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+          avatar_url: user?.avatar_url ?? null,
         };
       })
       .sort((a, b) => {
