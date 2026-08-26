@@ -27,6 +27,7 @@ type RawPatient = {
   has_finished?: boolean;
   born_at?: string | null;
   observations?: string | null;
+  avatar_url?: string | null;
 };
 
 type FetchParams = {
@@ -66,7 +67,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
     let query = supabase
       .from("pregnancies")
       .select(
-        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*, addresses(street, number, complement, neighborhood, city, state, zipcode))",
+        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*, addresses(street, number, complement, neighborhood, city, state, zipcode), user:users!patients_user_id_fkey(avatar_url))",
       )
       .in("patient_id", patientIds)
       .lte("due_date", endDate)
@@ -82,8 +83,13 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
     if (!data || data.length === 0) return [];
 
     rawPatients = data.map(({ patient, due_date, dum, has_finished, born_at, observations }) => {
-      const { addresses: addrs, ...patientData } = patient as unknown as RawPatient & {
+      const {
+        addresses: addrs,
+        user,
+        ...patientData
+      } = patient as unknown as RawPatient & {
         addresses: unknown[];
+        user: { avatar_url: string | null } | null;
       };
       const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
       return {
@@ -94,6 +100,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
         has_finished,
         born_at,
         observations,
+        avatar_url: user?.avatar_url ?? null,
       };
     });
   } else {

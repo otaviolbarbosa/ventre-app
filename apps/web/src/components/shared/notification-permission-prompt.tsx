@@ -2,7 +2,7 @@
 
 import { useNotificationsContext } from "@/providers/notifications-provider";
 import { Button } from "@ventre/ui/button";
-import { Bell, X } from "lucide-react";
+import { Bell, LoaderCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const COOLDOWN_KEY = "ventre_push_prompt_dismissed";
@@ -11,6 +11,7 @@ const COOLDOWN_DAYS = 7;
 export function NotificationPermissionPrompt() {
   const { permissionStatus, requestPermission } = useNotificationsContext();
   const [visible, setVisible] = useState(false);
+  const [isPermissionRequested, setIsPermissionRequested] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -32,7 +33,9 @@ export function NotificationPermissionPrompt() {
   if (!visible) return null;
 
   const handleActivate = async () => {
+    setIsPermissionRequested(true);
     await requestPermission();
+    setIsPermissionRequested(false);
     setVisible(false);
   };
 
@@ -53,10 +56,21 @@ export function NotificationPermissionPrompt() {
             Receba lembretes de consultas e atualizações da equipe.
           </p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" className="gradient-primary" onClick={handleActivate}>
+            <Button
+              size="sm"
+              className="gradient-primary"
+              disabled={isPermissionRequested}
+              onClick={handleActivate}
+            >
+              {isPermissionRequested && <LoaderCircle className="h-4 w-4 animate-spin" />}
               Ativar
             </Button>
-            <Button size="sm" variant="ghost" onClick={handleDismiss}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isPermissionRequested}
+              onClick={handleDismiss}
+            >
               Agora não
             </Button>
           </div>

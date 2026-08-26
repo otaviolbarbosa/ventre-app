@@ -40,7 +40,12 @@ export type SentPatientInvite = {
   name: string | null;
   email: string | null;
   phone: string | null;
-  patient: { id: string; name: string } | null;
+  patient: {
+    id: string;
+    name: string;
+    user: { avatar_url: string | null } | null;
+    pregnancies: { due_date: string; dum: string | null }[];
+  } | null;
 };
 
 export type TeamMember = {
@@ -86,6 +91,7 @@ export type PatientWithGestationalInfo = Tables<"patients"> & {
   remainingDays: number;
   progress: number;
   address?: PatientAddress | null;
+  avatar_url?: string | null;
 };
 
 export type PatientFilter = "all" | "recent" | "trim1" | "trim2" | "trim3" | "final" | "finished";

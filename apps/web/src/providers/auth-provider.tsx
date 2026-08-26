@@ -47,23 +47,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
-    if (error) {
-      console.error("[fetchProfile] erro ao buscar perfil:", error);
-      return;
+    // Erros de rede/timeout são transitórios — sem retry, um único blip deixa o profile
+    // travado em null pelo resto da sessão (TOKEN_REFRESHED não re-dispara o fetch).
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+      if (!error) {
+        setProfile(data);
+        return;
+      }
+      console.error(`[fetchProfile] tentativa ${attempt}/${maxAttempts} falhou:`, error);
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      }
     }
-    setProfile(data);
   }, []);
 
   useEffect(() => {
     const getUser = async () => {
       const {
         data: { user },
+        error,
       } = await supabase.auth.getUser();
 
-      setUser(user);
-      if (user) {
-        await fetchProfile(user.id);
+      // getUser() revalida a sessão contra o servidor da Auth — um blip de rede aqui
+      // derruba `user` para null mesmo com sessão local válida. getSession() é local
+      // (lê do storage, sem round-trip) e serve de fallback nesse caso.
+      if (error) {
+        console.error("[getUser] erro ao validar sessão, usando sessão local:", error);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        if (session?.user) await fetchProfile(session.user.id);
+      } else {
+        setUser(user);
+        if (user) await fetchProfile(user.id);
       }
       setLoading(false);
     };

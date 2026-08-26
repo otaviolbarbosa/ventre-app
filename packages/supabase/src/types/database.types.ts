@@ -2954,6 +2954,7 @@ export type Database = {
         }
         Returns: {
           address: Json
+          avatar_url: string
           born_at: string
           created_at: string
           created_by: string
