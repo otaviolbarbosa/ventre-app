@@ -112,6 +112,28 @@ export async function proxy(request: NextRequest) {
       url.pathname = "/home";
       return NextResponse.redirect(url);
     }
+
+    // Patients only get the shared (dashboard) routes plus their own (patient) routes —
+    // everything else under (dashboard) is professional/staff-only.
+    const patientAllowedPrefixes = [
+      "/home",
+      "/profile",
+      "/notifications",
+      "/agenda",
+      "/cartao-pre-natal",
+      "/financeiro",
+      "/ferramentas",
+      "/contrato",
+    ];
+    const isPatientAllowedRoute = patientAllowedPrefixes.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+
+    if (profile?.user_type === "patient" && !isPatientAllowedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
