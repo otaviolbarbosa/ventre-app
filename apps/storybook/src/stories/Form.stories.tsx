@@ -40,7 +40,11 @@ type ProfileValues = z.infer<typeof profileSchema>;
 
 function ProfileFormExample() {
   const form = useForm<ProfileValues>({
-    resolver: zodResolver(profileSchema),
+    // zodResolver's generic inference hits TS2589 (excessively deep) under this app's
+    // tsconfig; casting the schema input to `any` short-circuits it. useForm<ProfileValues>'s
+    // own generic still keeps the rest of the form typed.
+    // biome-ignore lint/suspicious/noExplicitAny: see comment above
+    resolver: zodResolver(profileSchema as any),
     defaultValues: { name: "", email: "" },
   });
 
@@ -86,7 +90,11 @@ export const Playground: Story = {
 
 function ProfileFormWithErrorsExample() {
   const form = useForm<ProfileValues>({
-    resolver: zodResolver(profileSchema),
+    // zodResolver's generic inference hits TS2589 (excessively deep) under this app's
+    // tsconfig; casting the schema input to `any` short-circuits it. useForm<ProfileValues>'s
+    // own generic still keeps the rest of the form typed.
+    // biome-ignore lint/suspicious/noExplicitAny: see comment above
+    resolver: zodResolver(profileSchema as any),
     defaultValues: { name: "", email: "" },
     mode: "onSubmit",
   });
