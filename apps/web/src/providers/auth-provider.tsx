@@ -191,8 +191,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           {},
           60_000,
         );
-        if (result.error) {
-          return { data: null, error: new Error(googleSignInErrorMessage(result.error)) };
+        if (result.error || !result.access_token || !result.refresh_token) {
+          return {
+            data: null,
+            error: new Error(googleSignInErrorMessage(result.error ?? "unknown")),
+          };
         }
         const { error } = await supabase.auth.setSession({
           access_token: result.access_token,
