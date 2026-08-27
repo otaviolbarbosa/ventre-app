@@ -106,20 +106,59 @@ export interface NetAmountResult {
   feeLineItems: AppliedFeeLineItem[];
 }
 
-export function computeNetAmountCents(
-  grossAmountCents: number,
+export interface InstallmentAmountSource {
+  amount: number;
+  paid_amount: number;
+  splitted_installment: SplittedBilling | null;
+}
+
+export interface AmountResult {
+  totalAmountCents: number;
+  netAmountCents: number;
+  totalFeesCents: number;
+  totalPaidAmountCents: number;
+  netPaidAmountCents: number;
+  totalPaidFeesCents: number;
+  feeLineItems: AppliedFeeLineItem[];
+}
+
+export function computeAmountCents(
+  installment: InstallmentAmountSource,
   appliedFees: AppliedBillingFee[],
-  professionalId: string,
-): NetAmountResult {
-  const professionalFees = appliedFees.filter((fee) => fee.professional_id === professionalId);
+  professionalId?: string,
+): AmountResult {
+  const professionalGrossAmountCents =
+    professionalId && installment.splitted_installment
+      ? installment.splitted_installment[professionalId]
+      : undefined;
+
+  const totalAmountCents = professionalGrossAmountCents ?? installment.amount;
+
+  const paidRatio = installment.amount > 0 ? installment.paid_amount / installment.amount : 0;
+  const totalPaidAmountCents =
+    professionalGrossAmountCents !== undefined
+      ? Math.round(professionalGrossAmountCents * paidRatio)
+      : installment.paid_amount;
+
+  const professionalFees = professionalId
+    ? appliedFees.filter((fee) => fee.professional_id === professionalId)
+    : [];
 
   if (professionalFees.length === 0) {
-    return { netAmountCents: grossAmountCents, totalFeesCents: 0, feeLineItems: [] };
+    return {
+      totalAmountCents,
+      netAmountCents: totalAmountCents,
+      totalFeesCents: 0,
+      totalPaidAmountCents,
+      netPaidAmountCents: totalPaidAmountCents,
+      totalPaidFeesCents: 0,
+      feeLineItems: [],
+    };
   }
 
-  const baseAmountCents = professionalFees[0]?.base_amount_cents ?? grossAmountCents;
-  const ratio = baseAmountCents === 0 ? 0 : grossAmountCents / baseAmountCents;
-  const isBillingLevel = baseAmountCents === grossAmountCents;
+  const baseAmountCents = professionalFees[0]?.base_amount_cents ?? totalAmountCents;
+  const ratio = baseAmountCents === 0 ? 0 : totalAmountCents / baseAmountCents;
+  const isBillingLevel = baseAmountCents === totalAmountCents;
 
   const feeLineItems: AppliedFeeLineItem[] = professionalFees.map((fee) => ({
     fee_id: fee.fee_id,
@@ -132,10 +171,15 @@ export function computeNetAmountCents(
   }));
 
   const totalFeesCents = feeLineItems.reduce((sum, item) => sum + item.amountCents, 0);
+  const totalPaidFeesCents = Math.round(totalFeesCents * paidRatio);
 
   return {
-    netAmountCents: grossAmountCents - totalFeesCents,
+    totalAmountCents,
+    netAmountCents: totalAmountCents - totalFeesCents,
     totalFeesCents,
+    totalPaidAmountCents,
+    netPaidAmountCents: totalPaidAmountCents - totalPaidFeesCents,
+    totalPaidFeesCents,
     feeLineItems,
   };
 }
@@ -260,7 +304,7 @@ type StatusConfig = {
 const statusConfigs: Record<BillingStatus | InstallmentStatus, StatusConfig> = {
   pendente: { label: "A Receber", variant: "warning" },
   pago: { label: "Pago", variant: "success" },
-  atrasado: { label: "Atrasado", variant: "destructive" },
+  atrasado: { label: "Vencida", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },
   em_analise: { label: "Em Análise", variant: "default" },
 };

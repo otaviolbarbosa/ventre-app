@@ -1,0 +1,209 @@
+"use client";
+
+import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import { useIsCompactViewport } from "@/hooks/use-media-query";
+import { type ChartPoint, hoursSince, resolveChartT0 } from "@/lib/birth-mode-chart-utils";
+import { dayjs } from "@/lib/dayjs";
+import {
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  Tooltip,
+} from "chart.js";
+import { useEffect, useState } from "react";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, Legend, Filler);
+
+function getCssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+const BP_MIN = 40;
+const BP_MAX = 180;
+const PULSE_MIN = 40;
+const PULSE_MAX = 180;
+
+type BirthModeMaternalVitalsChartProps = {
+  events: BirthModeTimelineEvent[];
+};
+
+export function BirthModeMaternalVitalsChart({ events }: BirthModeMaternalVitalsChartProps) {
+  const [primaryColor, setPrimaryColor] = useState<string | null>(null);
+  const isCompact = useIsCompactViewport();
+
+  useEffect(() => {
+    setPrimaryColor(`hsl(${getCssVar("--primary")})`);
+  }, []);
+
+  const vitalsEvents = events.filter((event) => event.type === "maternal_vitals");
+
+  if (primaryColor === null) {
+    return <div className="h-48 animate-pulse rounded-lg bg-muted" />;
+  }
+
+  if (vitalsEvents.length === 0) {
+    return (
+      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
+        Nenhum registro de vitais maternos ainda
+      </div>
+    );
+  }
+
+  const t0 = resolveChartT0(events);
+
+  if (t0 === null) {
+    return (
+      <div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-muted-foreground text-xs">
+        Nenhum registro de vitais maternos ainda
+      </div>
+    );
+  }
+
+  const systolicPoints: ChartPoint[] = vitalsEvents
+    .map((event) => {
+      const { systolic_bp } = event.payload as { systolic_bp: number | null };
+      return systolic_bp == null ? null : { x: hoursSince(t0, event.occurredAt), y: systolic_bp };
+    })
+    .filter((point): point is ChartPoint => point != null)
+    .sort((a, b) => a.x - b.x);
+
+  const diastolicPoints: ChartPoint[] = vitalsEvents
+    .map((event) => {
+      const { diastolic_bp } = event.payload as { diastolic_bp: number | null };
+      return diastolic_bp == null ? null : { x: hoursSince(t0, event.occurredAt), y: diastolic_bp };
+    })
+    .filter((point): point is ChartPoint => point != null)
+    .sort((a, b) => a.x - b.x);
+
+  const pulsePoints: ChartPoint[] = vitalsEvents
+    .map((event) => {
+      const { pulse_bpm } = event.payload as { pulse_bpm: number | null };
+      return pulse_bpm == null ? null : { x: hoursSince(t0, event.occurredAt), y: pulse_bpm };
+    })
+    .filter((point): point is ChartPoint => point != null)
+    .sort((a, b) => a.x - b.x);
+
+  const temperatureEvents = vitalsEvents
+    .filter(
+      (event) =>
+        (event.payload as { temperature_celsius: number | null }).temperature_celsius != null,
+    )
+    .sort((a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime());
+
+  const allX = [...systolicPoints, ...diastolicPoints, ...pulsePoints].map((point) => point.x);
+  const maxX = Math.ceil(Math.max(1, ...allX));
+  // Chart.js ignora ticks.stepSize e recalcula um passo "nice number" (ex: 1.9, 3.7)
+  // quando autoSkip precisa reduzir a quantidade de ticks abaixo do que stepSize
+  // produziria. Calculamos o passo inteiro nós mesmos e desligamos o autoSkip para
+  // garantir que as linhas de grade caiam sempre em horas inteiras.
+  const xTickStepHours = Math.max(1, Math.ceil(maxX / (isCompact ? 6 : 12)));
+
+  const data = {
+    datasets: [
+      {
+        label: "PA sistólica",
+        data: systolicPoints,
+        borderColor: "rgba(59, 130, 246, 0.5)",
+        borderWidth: 1,
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        fill: 1,
+        pointStyle: "circle" as const,
+        pointRadius: 4,
+        pointHoverRadius: 4,
+        yAxisID: "y",
+        spanGaps: false,
+      },
+      {
+        label: "PA diastólica",
+        data: diastolicPoints,
+        borderColor: "rgba(59, 130, 246, 0.5)",
+        borderWidth: 1,
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        pointStyle: "circle" as const,
+        pointRadius: 4,
+        pointHoverRadius: 4,
+        yAxisID: "y",
+        spanGaps: false,
+      },
+      {
+        label: "Pulso (bpm)",
+        data: pulsePoints,
+        borderColor: primaryColor,
+        borderWidth: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.0)",
+        pointStyle: "rectRot" as const,
+        pointRadius: 4,
+        pointHoverRadius: 4,
+        yAxisID: "y1",
+        spanGaps: false,
+      },
+    ],
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="relative h-48 min-w-0">
+        <Line
+          data={data}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: "linear",
+                min: 0,
+                max: maxX,
+                title: { display: false, text: "Horas desde o início" },
+                ticks: {
+                  stepSize: xTickStepHours,
+                  autoSkip: false,
+                  maxRotation: 0,
+                },
+                grid: { display: true, drawOnChartArea: true },
+              },
+              y: {
+                min: BP_MIN,
+                max: BP_MAX,
+                title: { display: true, text: "PA (mmHg)" },
+              },
+              y1: {
+                min: PULSE_MIN,
+                max: PULSE_MAX,
+                position: "right" as const,
+                grid: { drawOnChartArea: false },
+                title: { display: true, text: "Pulso (bpm)" },
+              },
+            },
+            plugins: {
+              legend: {
+                display: true,
+                position: "bottom" as const,
+                labels: { boxWidth: 10, font: { size: isCompact ? 9 : 10 } },
+              },
+              tooltip: { filter: (item) => item.dataset.label != null },
+            },
+          }}
+        />
+      </div>
+      {temperatureEvents.length > 0 && (
+        <div className="divide-y divide-border">
+          {temperatureEvents.map((event) => {
+            const { temperature_celsius } = event.payload as { temperature_celsius: number };
+            return (
+              <div key={event.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                <span>Temperatura: {temperature_celsius}°C</span>
+                <span className="whitespace-nowrap text-muted-foreground text-xs">
+                  {dayjs(event.occurredAt).format("HH:mm")}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,4 +1,3 @@
-import { calculateBillingStatus } from "@/lib/billing/calculations";
 import { cancelInstallmentNotifications } from "@/lib/billing/notifications";
 import { recordPaymentSchema } from "@/lib/validations/billing";
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
@@ -193,25 +192,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // If installment is fully paid, cancel its pending notifications
     if (installmentPaid) {
       cancelInstallmentNotifications(installmentId);
-    }
-
-    // Recalculate billing paid_amount and status
-    const { data: allInstallments } = await supabaseAdmin
-      .from("installments")
-      .select("paid_amount, status")
-      .eq("billing_id", installment.billing_id);
-
-    if (allInstallments) {
-      const billingPaidAmount = allInstallments.reduce((sum, i) => sum + i.paid_amount, 0);
-      const billingStatus = calculateBillingStatus(allInstallments);
-
-      await supabaseAdmin
-        .from("billings")
-        .update({
-          paid_amount: billingPaidAmount,
-          status: billingStatus,
-        })
-        .eq("id", installment.billing_id);
     }
 
     return NextResponse.json({ payment }, { status: 201 });

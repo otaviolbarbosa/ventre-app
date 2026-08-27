@@ -1,9 +1,9 @@
 "use client";
 
+import ventreLogo from "@/assets/ventre.png";
 import { BadgeCheck, Loader2, Upload, XCircle } from "lucide-react";
 import Image from "next/image";
 import { use, useRef, useState } from "react";
-import ventreLogo from "@/assets/ventre.png";
 
 type VerificationState = "idle" | "uploading" | "success" | "failure";
 
@@ -172,11 +172,7 @@ export default function CheckContractPage({
               <div className="h-px w-16 rounded-full bg-border" />
 
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Assinado eletronicamente por{" "}
-                <span className="font-semibold text-primary">
-                  {result?.signedByName ?? "Profissional"}
-                </span>{" "}
-                em{" "}
+                Assinado eletronicamente em{" "}
                 {result?.signedAt
                   ? new Date(result.signedAt).toLocaleString("pt-BR")
                   : "data desconhecida"}

@@ -8,16 +8,27 @@ import PatientContract from "@/components/shared/patient-contract";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
+import { useAuth } from "@/hooks/use-auth";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { dayjs } from "@/lib/dayjs";
+import InviteExistingPatientModal from "@/modals/invite-existing-patient-modal";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
+import { StartLabourModal } from "@/modals/start-labour-modal";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@ventre/ui/accordion";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
-import { CalendarPlus, CheckCircle2, SearchX, Trash2 } from "lucide-react";
+import {
+  CalendarPlus,
+  CheckCircle2,
+  HeartHandshake,
+  HeartPulse,
+  SearchX,
+  Trash2,
+} from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,8 +36,12 @@ export default function PatientProfilePage() {
   const params = useParams();
   const router = useRouter();
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showInvitePatientModal, setShowInvitePatientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
+  const [showStartLabourModal, setShowStartLabourModal] = useState(false);
   const { confirm } = useConfirmModal();
+  const { isObstetrician, isNurse, isDoula } = useAuth();
+  const disableBirthModeForDoulas = useFeatureFlagEnabled("disable-birth-mode-for-doulas");
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
@@ -75,11 +90,68 @@ export default function PatientProfilePage() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex justify-end">
-          <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
-            <CalendarPlus className="mr-2 h-4 w-4" />
-            Novo Agendamento
-          </Button>
+        <div className="flex justify-end gap-2">
+          {!patient.user_id && (
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setShowInvitePatientModal(true)}
+              >
+                <HeartHandshake className="mr-2 h-4 w-4" />
+                Convidar Gestante
+              </Button>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button className="gradient-primary" onClick={() => setShowNewAppointmentModal(true)}>
+              <CalendarPlus className="mr-2 h-4 w-4" />
+              Novo Agendamento
+            </Button>
+          </div>
+
+          {!patient.has_finished &&
+            pregnancy?.id &&
+            (isObstetrician || isNurse || (isDoula && !disableBirthModeForDoulas)) && (
+            <div className="flex justify-end">
+              {patient.birth_mode_active ? (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                  onClick={() => router.push(`/modo-parto?pregnancyId=${pregnancy.id}`)}
+                >
+                  <HeartPulse className="mr-2 h-4 w-4" />
+                  Abrir Modo Parto
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                  onClick={() => setShowStartLabourModal(true)}
+                >
+                  <HeartPulse className="mr-2 h-4 w-4" />
+                  Modo Parto
+                </Button>
+              )}
+            </div>
+          )}
+
+          {patient.has_finished &&
+            pregnancy?.id &&
+            pregnancy.birth_mode_activated_at &&
+            (isObstetrician || isNurse || isDoula) && (
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => router.push(`/modo-parto?pregnancyId=${pregnancy.id}`)}
+                >
+                  <HeartPulse className="mr-2 h-4 w-4" />
+                  Ver Registros do Parto
+                </Button>
+              </div>
+            )}
         </div>
 
         <Accordion type="multiple" className="w-full" defaultValue={["informacoes"]}>
@@ -176,14 +248,25 @@ export default function PatientProfilePage() {
         open={showFinishModal}
         onOpenChange={setShowFinishModal}
         patientId={patientId}
+        pregnancyId={pregnancy?.id}
         onSuccess={() => fetchPatient({ patientId })}
       />
 
+      <InviteExistingPatientModal
+        patient={patient}
+        isOpen={showInvitePatientModal}
+        setIsOpen={setShowInvitePatientModal}
+      />
       <NewAppointmentModal
         patientId={patientId}
         patients={[]}
         showModal={showNewAppointmentModal}
         setShowModal={setShowNewAppointmentModal}
+      />
+      <StartLabourModal
+        open={showStartLabourModal}
+        onOpenChange={setShowStartLabourModal}
+        pregnancyId={pregnancy?.id ?? ""}
       />
     </>
   );

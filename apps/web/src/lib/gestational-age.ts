@@ -1,6 +1,6 @@
+import { dayjs } from "@/lib/dayjs";
 import type { PatientWithGestationalInfo } from "@/types";
 import type { Tables } from "@ventre/supabase/types";
-import { dayjs } from "@/lib/dayjs";
 
 interface GestationalAge {
   weeks: number;
@@ -29,7 +29,8 @@ export function calculateGestationalAge(
   const days = totalDays % 7;
 
   const label = days === 0 ? `${weeks}s` : `${weeks}s ${days}d`;
-  const fullLabel = days === 0 ? `${weeks} semanas` : `${weeks} semanas e ${days} dias`;
+  const fullLabel =
+    days === 0 ? `${weeks} semanas` : `${weeks} semanas e ${days} ${days === 1 ? "dia" : "dias"}`;
 
   return { weeks, days, totalDays, label, fullLabel };
 }

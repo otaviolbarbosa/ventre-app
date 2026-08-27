@@ -7,7 +7,6 @@ import {
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Json } from "@ventre/supabase/types";
-import { unstable_cache } from "next/cache";
 
 const TEAM_MEMBERS_SELECT =
   "patient_id, id, professional_id, professional_type, joined_at, is_backup, professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)";
@@ -28,6 +27,7 @@ type RawPatient = {
   has_finished?: boolean;
   born_at?: string | null;
   observations?: string | null;
+  avatar_url?: string | null;
 };
 
 type FetchParams = {
@@ -67,7 +67,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
     let query = supabase
       .from("pregnancies")
       .select(
-        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*, addresses(street, number, complement, neighborhood, city, state, zipcode))",
+        "patient_id, due_date, dum, has_finished, born_at, observations, patient:patients!inner(*, addresses(street, number, complement, neighborhood, city, state, zipcode), user:users!patients_user_id_fkey(avatar_url))",
       )
       .in("patient_id", patientIds)
       .lte("due_date", endDate)
@@ -83,8 +83,13 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
     if (!data || data.length === 0) return [];
 
     rawPatients = data.map(({ patient, due_date, dum, has_finished, born_at, observations }) => {
-      const { addresses: addrs, ...patientData } = patient as unknown as RawPatient & {
+      const {
+        addresses: addrs,
+        user,
+        ...patientData
+      } = patient as unknown as RawPatient & {
         addresses: unknown[];
+        user: { avatar_url: string | null } | null;
       };
       const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
       return {
@@ -95,6 +100,7 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
         has_finished,
         born_at,
         observations,
+        avatar_url: user?.avatar_url ?? null,
       };
     });
   } else {
@@ -147,26 +153,6 @@ async function fetchHomePatients(params: FetchParams): Promise<HomePatientItem[]
   });
 }
 
-// unstable_cache must be a stable function reference created at module level.
-// Inline creation (inside getCachedHomePatients) creates a new cache namespace on every
-// call, causing consistent cache misses. We memoize one cache function per userId so
-// the reference is stable and per-user tags remain valid for targeted revalidation.
-type CachedFetchFn = (params: FetchParams) => Promise<HomePatientItem[]>;
-const userCacheFns = new Map<string, CachedFetchFn>();
-
-function getOrCreateUserCacheFn(userId: string): CachedFetchFn {
-  if (!userCacheFns.has(userId)) {
-    userCacheFns.set(
-      userId,
-      unstable_cache(fetchHomePatients, ["home-patients", userId], {
-        tags: [`home-patients-${userId}`],
-        revalidate: 300,
-      }),
-    );
-  }
-  return userCacheFns.get(userId) as CachedFetchFn;
-}
-
 export function getCachedHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
-  return getOrCreateUserCacheFn(params.userId)(params);
+  return fetchHomePatients(params);
 }

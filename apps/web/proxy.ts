@@ -50,9 +50,12 @@ export async function proxy(request: NextRequest) {
     "/policies",
     "/check/",
     "/auth/callback",
-    "/register/patient",
+    "/patient-registration",
     "/api/stripe/webhook",
     "/api/check/",
+    "/api/cron/",
+    "/api/whatsapp/webhook",
+    "/api/patient-registration/",
   ];
   const isPublicRoute =
     pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route));
@@ -94,6 +97,7 @@ export async function proxy(request: NextRequest) {
     }
 
     const isOnboardingComplete =
+      profile?.user_type === "patient" ||
       (profile?.user_type === "professional" && profile?.professional_type !== null) ||
       (isStaff && hasEnterprise);
 
@@ -104,6 +108,28 @@ export async function proxy(request: NextRequest) {
     }
 
     if (isOnboardingComplete && pathname === "/onboarding") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/home";
+      return NextResponse.redirect(url);
+    }
+
+    // Patients only get the shared (dashboard) routes plus their own (patient) routes —
+    // everything else under (dashboard) is professional/staff-only.
+    const patientAllowedPrefixes = [
+      "/home",
+      "/profile",
+      "/notifications",
+      "/agenda",
+      "/cartao-pre-natal",
+      "/financeiro",
+      "/ferramentas",
+      "/contrato",
+    ];
+    const isPatientAllowedRoute = patientAllowedPrefixes.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+
+    if (profile?.user_type === "patient" && !isPatientAllowedRoute) {
       const url = request.nextUrl.clone();
       url.pathname = "/home";
       return NextResponse.redirect(url);
@@ -122,6 +148,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|sw\\.js|firebase-messaging-sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|sw\\.js|firebase-messaging-sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mjs)$).*)",
   ],
 };

@@ -1,4 +1,5 @@
 "use client";
+import bgFingerprint from "@/assets/bg-fingerprint.png";
 import { NotificationBell } from "@/components/shared/notification-bell";
 import { cn } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
@@ -8,11 +9,12 @@ import { useEffect, useState } from "react";
 
 interface HeaderProps {
   title?: React.ReactNode;
-  back?: string | boolean;
   subtitle?: React.ReactNode;
+  back?: string | boolean;
+  noBg?: boolean;
 }
 
-export function Header({ title, back, subtitle }: HeaderProps) {
+export function Header({ title, back, subtitle, noBg = false }: HeaderProps) {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -45,18 +47,30 @@ export function Header({ title, back, subtitle }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 flex min-h-16 items-center bg-background px-4 py-3 transition-shadow duration-300 md:px-6",
-        isScrolled && "shadow-gray-200 shadow-lg",
+        "sticky top-0 z-40 mb-6 flex min-h-16 items-center px-4 py-3 transition-shadow duration-300 md:px-6",
+        isScrolled && "bg-background shadow-gray-200 shadow-lg",
       )}
     >
-      <div className="flex-1">
+      {!noBg && (
+        <div
+          className="-z-10 pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `url(${bgFingerprint.src})`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "1360px",
+            backgroundPositionX: "-160px",
+            backgroundPositionY: "-190px",
+          }}
+        />
+      )}
+      <div className="w-full flex-1">
         <div className="flex items-center gap-2">
           {/* Back button */}
           {back && (
             <Button
               variant="ghost"
               size="icon"
-              className="mx-0 w-6 hover:bg-transparent active:bg-transparent md:hidden"
+              className="mx-0 w-6 shrink-0 hover:bg-transparent active:bg-transparent md:hidden"
               onClick={handleGoBack}
             >
               <ChevronLeft />
@@ -72,7 +86,7 @@ export function Header({ title, back, subtitle }: HeaderProps) {
               )}
             </div>
           )}
-          <div className="flex justify-center gap-2">
+          <div className="flex shrink-0 justify-center">
             <NotificationBell />
           </div>
         </div>

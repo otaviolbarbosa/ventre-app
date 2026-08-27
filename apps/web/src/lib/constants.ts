@@ -5,6 +5,12 @@ export const PATIENTS_PER_PAGE = 10;
 export const PREGNANCY_DELIVERY_METHOD: Record<Enums<"delivery_method">, string> = {
   cesarean: "Cesárea",
   vaginal: "Parto Normal",
+  vaginal_assisted: "Parto Normal Assistido",
+};
+
+export const BABY_SEX_LABELS: Record<Enums<"baby_sex">, string> = {
+  masculino: "Masculino",
+  feminino: "Feminino",
 };
 
 export const ESTADOS_BR = [

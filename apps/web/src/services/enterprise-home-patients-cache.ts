@@ -4,7 +4,6 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Json } from "@ventre/supabase/types";
-import { unstable_cache } from "next/cache";
 
 const TEAM_MEMBERS_SELECT =
   "patient_id, id, professional_id, professional_type, joined_at, is_backup, professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)";
@@ -39,6 +38,7 @@ type RawPatient = {
   family_history_hypertension?: boolean | null;
   family_history_twin?: boolean | null;
   family_history_others?: string | null;
+  avatar_url?: string | null;
 };
 
 type FetchParams = {
@@ -114,7 +114,9 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
 
     let patientsQuery = supabase
       .from("patients")
-      .select("*, addresses(street, number, complement, neighborhood, city, state, zipcode)")
+      .select(
+        "*, addresses(street, number, complement, neighborhood, city, state, zipcode), user:users!patients_user_id_fkey(avatar_url)",
+      )
       .in("id", filteredByDppIds)
       .limit(20);
 
@@ -124,7 +126,10 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
     if (error) throw new Error(error.message);
 
     rawPatients = (data ?? []).map((p) => {
-      const { addresses: addrs, ...patientData } = p as typeof p & { addresses: unknown[] };
+      const { addresses: addrs, user, ...patientData } = p as typeof p & {
+        addresses: unknown[];
+        user: { avatar_url: string | null } | null;
+      };
       const address = Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Json) : null;
       return {
         ...patientData,
@@ -134,6 +139,7 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
         has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
         born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
         observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+        avatar_url: user?.avatar_url ?? null,
       };
     });
   } else {
@@ -200,20 +206,5 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
 }
 
 export function getCachedEnterpriseHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
-  return unstable_cache(
-    () => fetchEnterpriseHomePatients(params),
-    [
-      "enterprise-home-patients",
-      params.enterpriseId,
-      params.professionalId ?? "all",
-      params.filter,
-      params.search,
-      String(params.dppMonth ?? ""),
-      String(params.dppYear ?? ""),
-    ],
-    {
-      tags: [`enterprise-patients-${params.enterpriseId}`],
-      revalidate: 300,
-    },
-  )();
+  return fetchEnterpriseHomePatients(params);
 }

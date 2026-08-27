@@ -8,6 +8,7 @@ export type Patient = Tables<"patients">;
 
 export type Invite = {
   id: string;
+  status: string; // "pendente" | "aceito" | "rejeitado" | "expirado"
   professional_type: ProfessionalType | null;
   expires_at: string;
   patient: {
@@ -19,6 +20,31 @@ export type Invite = {
     id: string;
     name: string;
     professional_type: string | null;
+  } | null;
+};
+
+export type SentTeamInvite = {
+  id: string;
+  status: string; // "pendente" | "aceito" | "rejeitado" | "expirado"
+  expires_at: string;
+  professional_type: ProfessionalType | null;
+  patient: { id: string; name: string } | null;
+  invitedProfessional: { id: string; name: string; professional_type: string | null } | null;
+};
+
+export type SentPatientInvite = {
+  id: string;
+  status: string; // "pendente" | "usado" | "expirado"
+  invite_type: string; // "new_patient" | "link_existing"
+  expires_at: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  patient: {
+    id: string;
+    name: string;
+    user: { avatar_url: string | null } | null;
+    pregnancies: { due_date: string; dum: string | null }[];
   } | null;
 };
 
@@ -65,6 +91,7 @@ export type PatientWithGestationalInfo = Tables<"patients"> & {
   remainingDays: number;
   progress: number;
   address?: PatientAddress | null;
+  avatar_url?: string | null;
 };
 
 export type PatientFilter = "all" | "recent" | "trim1" | "trim2" | "trim3" | "final" | "finished";

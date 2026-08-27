@@ -2,7 +2,7 @@
 
 import {
   type AppliedBillingFee,
-  computeNetAmountCents,
+  computeAmountCents,
   computeTotalNetAmountCents,
   formatCurrency,
 } from "@/lib/billing/calculations";
@@ -26,7 +26,15 @@ export function ProfessionalNetAmount({
 }: ProfessionalNetAmountProps) {
   const [open, setOpen] = useState(false);
   const { netAmountCents, totalFeesCents, feeLineItems } = professionalId
-    ? computeNetAmountCents(grossAmountCents, appliedFees, professionalId)
+    ? computeAmountCents(
+        {
+          amount: grossAmountCents,
+          paid_amount: 0,
+          splitted_installment: { [professionalId]: grossAmountCents },
+        },
+        appliedFees,
+        professionalId,
+      )
     : computeTotalNetAmountCents(grossAmountCents, appliedFees);
 
   const label = professionalName ?? "Valor líquido";

@@ -9,10 +9,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
+import { Separator } from "@ventre/ui/separator";
 
 const registerSchema = z
   .object({
@@ -199,7 +201,23 @@ export default function RegisterPage() {
         </form>
       </Form>
 
-      <p className="hero-animate hero-animate-3 text-center text-muted-foreground text-sm">
+      {/* Divider */}
+      <div className="hero-animate hero-animate-3 relative">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-background px-3 text-muted-foreground text-xs uppercase tracking-wide">
+            ou continue com
+          </span>
+        </div>
+      </div>
+
+      <div className="hero-animate hero-animate-4">
+        <SocialLoginButtons redirectTo="/home" />
+      </div>
+
+      <p className="hero-animate hero-animate-5 text-center text-muted-foreground text-sm">
         Já tem uma conta?{" "}
         <Link href="/login" className="font-medium text-primary hover:underline">
           Entrar

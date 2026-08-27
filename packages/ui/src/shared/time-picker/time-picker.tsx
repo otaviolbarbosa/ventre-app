@@ -7,6 +7,7 @@ import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { InputMask } from "@react-input/mask";
 import { Input } from "@ventre/ui/input";
+import { cn } from "@ventre/ui/utils";
 
 export interface TimePickerProps {
   selected: Date | null;
@@ -17,18 +18,22 @@ export interface TimePickerProps {
   minTime?: Date;
   maxTime?: Date;
   className?: string;
+  /** Quando `true`, oculta o dropdown de horários pré-definidos — o campo continua editável via digitação. */
+  hidePredefinedTimes?: boolean;
 }
 
-const CustomInput = forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ value, onClick, placeholder, ...props }, ref) => (
+type CustomInputProps = React.ComponentProps<"input"> & { readOnly?: boolean };
+
+const CustomInput = forwardRef<HTMLInputElement, CustomInputProps>(
+  ({ value, onClick, placeholder, readOnly = true, ...props }, ref) => (
     <div className="relative w-full">
       <Input
         ref={ref}
         value={value}
         onClick={onClick}
         placeholder={placeholder}
-        readOnly
-        className="w-full cursor-pointer"
+        readOnly={readOnly}
+        className={cn("w-full", readOnly && "cursor-pointer")}
         {...props}
       />
       <ClockIcon className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 h-4 w-4 text-muted-foreground" />
@@ -46,6 +51,7 @@ export function TimePicker({
   minTime = new Date(new Date().setHours(7, 0, 0, 0)),
   maxTime = new Date(new Date().setHours(20, 0, 0, 0)),
   className,
+  hidePredefinedTimes = false,
 }: TimePickerProps) {
   return (
     <div className="lumiar-timepicker-wrapper">
@@ -63,7 +69,15 @@ export function TimePicker({
         minTime={minTime}
         maxTime={maxTime}
         className={className}
-        customInput={<InputMask component={CustomInput} mask="__:__" replacement={{ _: /\d/ }} />}
+        open={hidePredefinedTimes ? false : undefined}
+        customInput={
+          <InputMask
+            component={CustomInput}
+            mask="__:__"
+            replacement={{ _: /\d/ }}
+            readOnly={!hidePredefinedTimes}
+          />
+        }
         showTimeCaption={false}
       />
     </div>

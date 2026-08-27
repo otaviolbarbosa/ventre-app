@@ -355,7 +355,7 @@ export function EditPatientModal({
                   name="partner_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome do parceiro</FormLabel>
+                      <FormLabel>Nome da parceria</FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value ?? ""} />
                       </FormControl>

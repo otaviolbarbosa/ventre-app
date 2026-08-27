@@ -67,7 +67,9 @@ function LoginForm() {
         description:
           message === "Invalid login credentials"
             ? "Email ou senha incorretos"
-            : message || "Ocorreu um erro ao fazer login.",
+            : message === "Email not confirmed"
+              ? "Verifique seu email para confirmar o seu cadastro"
+              : message || "Ocorreu um erro ao fazer login.",
       });
       setIsLoading(false);
       return;
@@ -107,7 +109,7 @@ function LoginForm() {
                   <Input
                     type="email"
                     placeholder="seu@email.com"
-                    className="h-11 rounded-xl border-border/60 bg-muted/30"
+                    className="h-11 rounded-xl border-border/60 bg-muted"
                     {...field}
                   />
                 </FormControl>
@@ -134,7 +136,7 @@ function LoginForm() {
                     <Input
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="h-11 rounded-xl border-border/60 bg-muted/30 pr-10"
+                      className="h-11 rounded-xl border-border/60 bg-muted pr-10"
                       {...field}
                     />
                     <button

@@ -1,11 +1,19 @@
 "use client";
 
+import Avatar from "@/components/shared/avatar";
+import { Logo } from "@/components/shared/logo";
+import { useAuth } from "@/hooks/use-auth";
+import { isManager, isPatient, isStaff } from "@/lib/access-control";
+import { cn } from "@/lib/utils";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import { Button } from "@ventre/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@ventre/ui/tooltip";
 import {
   BriefcaseMedicalIcon,
   Calendar,
   CircleDollarSign,
+  Heart,
   Home,
   LogOut,
   Mail,
@@ -16,13 +24,6 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Avatar from "@/components/shared/avatar";
-import { Logo } from "@/components/shared/logo";
-import { useAuth } from "@/hooks/use-auth";
-import { isManager, isStaff } from "@/lib/access-control";
-import { cn } from "@/lib/utils";
-import type { ProfessionalType } from "@/types";
-import { professionalTypeLabels } from "@/utils/team";
 
 const navigationProfessionals = [
   { name: "Home", href: "/home", icon: Home },
@@ -45,6 +46,14 @@ const navigationManager = [
   { name: "Configurações", href: "/settings", icon: Settings },
 ];
 
+const navigationPatient = [
+  { name: "Início", href: "/home", icon: Home },
+  { name: "Cartão pré-natal", href: "/cartao-pre-natal", icon: Heart },
+  { name: "Agenda", href: "/agenda", icon: Calendar },
+  { name: "Financeiro", href: "/financeiro", icon: CircleDollarSign },
+  // { name: "Ferramentas", href: "/ferramentas", icon: Wrench },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { signOut, profile } = useAuth();
@@ -56,6 +65,9 @@ export function Sidebar() {
   }, []);
 
   const navigation = useMemo(() => {
+    if (!profile) return [];
+
+    if (isPatient(profile)) return navigationPatient;
     if (isManager(profile)) return navigationManager;
     if (isStaff(profile)) return navigationStaff;
     return navigationProfessionals;
@@ -79,22 +91,22 @@ export function Sidebar() {
     <TooltipProvider delayDuration={200}>
       <div
         className={cn(
-          "hidden h-full flex-col border-r bg-white transition-all duration-300 md:flex",
+          "relative hidden h-full flex-col border-r bg-primary transition-all duration-300 md:flex",
           isCollapsed ? "w-16" : "w-64",
         )}
       >
         {/* Logo + toggle */}
         <div
           className={cn(
-            "flex h-16 shrink-0 items-center border-b",
+            "flex h-16 shrink-0 items-center",
             isCollapsed ? "justify-center px-3" : "justify-between px-4",
           )}
         >
-          {!isCollapsed && <Logo href="/home" size="xl" />}
+          {!isCollapsed && <Logo bg href="/home" size="xl" />}
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 text-gray-500 hover:text-gray-800"
+            className="h-8 w-8 shrink-0 text-background hover:text-gray-800"
             onClick={toggleCollapsed}
             title={isCollapsed ? "Expandir menu" : "Recolher menu"}
           >
@@ -118,9 +130,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center rounded-lg px-3 py-2 font-medium text-sm transition-colors",
                   isCollapsed ? "justify-center gap-0 px-2" : "gap-3",
-                  isActive
-                    ? "bg-muted text-muted-foreground"
-                    : "text-gray-800 hover:bg-muted/40 hover:text-muted-foreground",
+                  isActive ? "bg-muted text-primary" : "text-background hover:bg-muted/40",
                 )}
                 prefetch
               >
@@ -141,7 +151,7 @@ export function Sidebar() {
         </nav>
 
         {/* User section */}
-        <div className={cn("border-t", isCollapsed ? "p-2" : "p-4")}>
+        <div className={cn("", isCollapsed ? "p-2" : "p-4")}>
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-2">
               <Tooltip>
@@ -157,7 +167,7 @@ export function Sidebar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-gray-600"
+                    className="h-8 w-8 text-background"
                     onClick={handleSignOut}
                   >
                     <LogOut className="h-4 w-4" />
@@ -171,15 +181,17 @@ export function Sidebar() {
               <Link href="/profile" className="mb-3 flex items-center gap-3" prefetch>
                 <Avatar src={profile?.avatar_url ?? ""} name={profile?.name ?? ""} size={10} />
                 <div className="flex-1 truncate">
-                  <p className="truncate font-medium text-gray-900 text-sm">{profile?.name}</p>
-                  <p className="truncate text-gray-500 text-xs">
-                    {professionalTypeLabels[profile?.professional_type as ProfessionalType]}
+                  <p className="truncate font-medium text-background text-sm">{profile?.name}</p>
+                  <p className="truncate text-background/70 text-xs">
+                    {isPatient(profile)
+                      ? "Gestante"
+                      : professionalTypeLabels[profile?.professional_type as ProfessionalType]}
                   </p>
                 </div>
               </Link>
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-2 text-gray-600"
+                className="w-full justify-start gap-2 text-background"
                 onClick={handleSignOut}
               >
                 <LogOut className="h-4 w-4" />

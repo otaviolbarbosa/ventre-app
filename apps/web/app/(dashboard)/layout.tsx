@@ -1,6 +1,8 @@
 import BottomNav from "@/components/layouts/bottom-nav";
+import { DashboardBackground } from "@/components/layouts/dashboard-background";
 import { MainContent } from "@/components/layouts/main-content";
 import { Sidebar } from "@/components/layouts/sidebar";
+import { BirthModeStatusBar } from "@/components/shared/birth-mode-status-bar";
 import { FlashMessage } from "@/components/shared/flash-message";
 import { NotificationPermissionPrompt } from "@/components/shared/notification-permission-prompt";
 import { ProfessionalDocumentsBanner } from "@/components/shared/professional-documents-banner";
@@ -18,11 +20,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex-1">
+      <DashboardBackground />
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
         <MainContent>{children}</MainContent>
       </div>
       <BottomNav />
+      <BirthModeStatusBar />
       <NotificationPermissionPrompt />
       {showProfessionalDocumentsBanner && <ProfessionalDocumentsBanner />}
       <Suspense>

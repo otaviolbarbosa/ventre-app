@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { isStaff } from "@/lib/access-control";
+import { isPatient, isProfessional } from "@/lib/access-control";
 import { EditProfileModal } from "@/modals/edit-profile-modal";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
@@ -85,7 +85,7 @@ function getInitials(name: string | null): string {
 export default function ProfileScreen({ profile, address }: ProfileScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signOut } = useAuth();
+  const { signOut, refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const [isUploading, setIsUploading] = useState(false);
@@ -131,6 +131,7 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
       }
 
       setAvatarUrl(data.avatar_url);
+      await refreshProfile();
       router.refresh();
     } catch (error) {
       console.error("Upload error:", error);
@@ -220,22 +221,24 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
             label="Configurações"
             href="/profile/settings"
           />
-          {!isStaff(profile) && (
+          {isProfessional(profile) && (
             <MenuItem
               icon={<FileText className="h-5 w-5" />}
               label="Modelos de Contrato"
               href="/profile/settings/contract"
             />
           )}
-          <MenuItem
-            icon={<CreditCard className="h-5 w-5" />}
-            label="Minha Assinatura"
-            href="/profile/subscription"
-          />
+          {!isPatient(profile) && (
+            <MenuItem
+              icon={<CreditCard className="h-5 w-5" />}
+              label="Minha Assinatura"
+              href="/profile/subscription"
+            />
+          )}
           <MenuItem
             icon={<Bell className="h-5 w-5" />}
-            label="Minhas Notificações"
-            href="/profile/notifications"
+            label="Notificações"
+            href="/notifications"
           />
         </div>
 

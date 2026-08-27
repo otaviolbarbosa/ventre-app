@@ -40,8 +40,12 @@ interface AuthContextType {
     metadata: { name: string },
   ) => Promise<{ data: unknown; error: unknown }>;
   signOut: () => Promise<{ error: unknown }>;
+  refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
-  signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>;
+  signInWithGoogle: (
+    redirectTo?: string,
+    intent?: { name: string; piid: string },
+  ) => Promise<{ data: unknown; error: unknown }>;
   connectGoogleCalendar: () => Promise<void>;
   isAuthenticated: boolean;
   isProfessional: boolean;
@@ -63,23 +67,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
-    if (error) {
-      console.error("[fetchProfile] erro ao buscar perfil:", error);
-      return;
+    // Erros de rede/timeout são transitórios — sem retry, um único blip deixa o profile
+    // travado em null pelo resto da sessão (TOKEN_REFRESHED não re-dispara o fetch).
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+      if (!error) {
+        setProfile(data);
+        return;
+      }
+      console.error(`[fetchProfile] tentativa ${attempt}/${maxAttempts} falhou:`, error);
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      }
     }
-    setProfile(data);
   }, []);
 
   useEffect(() => {
     const getUser = async () => {
       const {
         data: { user },
+        error,
       } = await supabase.auth.getUser();
 
-      setUser(user);
-      if (user) {
-        await fetchProfile(user.id);
+      // getUser() revalida a sessão contra o servidor da Auth — um blip de rede aqui
+      // derruba `user` para null mesmo com sessão local válida. getSession() é local
+      // (lê do storage, sem round-trip) e serve de fallback nesse caso.
+      if (error) {
+        console.error("[getUser] erro ao validar sessão, usando sessão local:", error);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        if (session?.user) await fetchProfile(session.user.id);
+      } else {
+        setUser(user);
+        if (user) await fetchProfile(user.id);
       }
       setLoading(false);
     };
@@ -146,6 +169,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    await fetchProfile(user.id);
+  }, [user, fetchProfile]);
+
   const resetPassword = async (email: string) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
@@ -153,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
-  const signInWithGoogle = async (redirectTo?: string) => {
+  const signInWithGoogle = async (redirectTo?: string, intent?: { name: string; piid: string }) => {
     if (isNativeBridge()) {
       try {
         // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
@@ -176,10 +204,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    const intentParams = intent ? `&intent=${intent.name}&piid=${intent.piid}` : "";
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo || "/home"}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo || "/home"}${intentParams}`,
       },
     });
     return { data, error };
@@ -211,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    refreshProfile,
     resetPassword,
     signInWithGoogle,
     connectGoogleCalendar,

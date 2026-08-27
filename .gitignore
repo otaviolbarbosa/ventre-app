@@ -37,5 +37,5 @@ yarn-error.log*
 .DS_Store
 *.pem
 
-# Superpowers subagent-driven-development scratch workspaces
+# Superpowers SDD workspace (ledgers, briefs, review packages — scratch, not source)
 .superpowers/
