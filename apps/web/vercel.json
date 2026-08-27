@@ -1,5 +1,6 @@
 {
   "ignoreCommand": "npx turbo-ignore",
+  "installCommand": "pnpm install --filter web...",
   "crons": [
     {
       "path": "/api/cron/billing-statuses",
