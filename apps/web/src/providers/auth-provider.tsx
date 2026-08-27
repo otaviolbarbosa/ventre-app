@@ -3,13 +3,31 @@
 import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
 import { unsubscribeNotificationsAction } from "@/actions/unsubscribe-notifications-action";
 import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
-import { NATIVE_PUSH_TOKEN_KEY, isNativeBridge } from "@/lib/native-bridge";
+import { NATIVE_PUSH_TOKEN_KEY, isNativeBridge, requestNative } from "@/lib/native-bridge";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@ventre/supabase";
 import type { Tables } from "@ventre/supabase/types";
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
 
 type UserProfile = Tables<"users">;
+
+type GoogleSignInResult =
+  | { access_token: string; refresh_token: string; error?: undefined }
+  | { error: string; access_token?: undefined; refresh_token?: undefined };
+
+// Códigos vindos de apps/mobile/src/lib/google-signin.ts (cancelled/unavailable/unknown) e do
+// handler nativo em apps/mobile/src/app/index.tsx (auth-failed) — mapeados para mensagens que o
+// toast em social-login-buttons.tsx pode exibir diretamente.
+const GOOGLE_SIGNIN_ERROR_MESSAGES: Record<string, string> = {
+  cancelled: "Login cancelado.",
+  unavailable: "Não foi possível abrir o seletor de contas do Google. Tente novamente.",
+  "auth-failed": "Não foi possível autenticar com o Google. Tente novamente.",
+  unknown: "Ocorreu um erro ao fazer login com o Google.",
+};
+
+function googleSignInErrorMessage(code: string) {
+  return GOOGLE_SIGNIN_ERROR_MESSAGES[code] ?? GOOGLE_SIGNIN_ERROR_MESSAGES.unknown;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -136,6 +154,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async (redirectTo?: string) => {
+    if (isNativeBridge()) {
+      try {
+        // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
+        // escolhendo uma conta no seletor nativo do Google, não só uma resposta automática.
+        const result = await requestNative<GoogleSignInResult>(
+          "google-signin-request",
+          {},
+          60_000,
+        );
+        if (result.error) {
+          return { data: null, error: new Error(googleSignInErrorMessage(result.error)) };
+        }
+        const { error } = await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token,
+        });
+        return { data: null, error };
+      } catch {
+        return { data: null, error: new Error(googleSignInErrorMessage("unknown")) };
+      }
+    }
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

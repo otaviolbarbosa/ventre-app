@@ -6,9 +6,11 @@ import {
 } from "@react-native-google-signin/google-signin";
 
 // client_type: 3 (Web) em apps/mobile/google-services/google-services.json — projeto Firebase de
-// dev (nascereapp-dev). TODO: alternar para o valor de prod (google-services/prod/google-services.json)
-// quando existir mecanismo de build por ambiente.
-const GOOGLE_WEB_CLIENT_ID = "585581972014-tphtalk0q1up33m2ussfi871dq40ro1o.apps.googleusercontent.com";
+// dev (nascereapp-dev). Regenerado ao habilitar o provedor Google em Firebase Auth (necessário
+// pra gerar o client Android/client_type:1 usado pelo Google Sign-In nativo).
+// TODO: alternar para o valor de prod (google-services/prod/google-services.json) quando existir
+// mecanismo de build por ambiente.
+const GOOGLE_WEB_CLIENT_ID = "585581972014-6fqvigc9sjtn4jq4tt6bl4nogttlr9rn.apps.googleusercontent.com";
 
 let configured = false;
 function ensureConfigured() {
