@@ -4,7 +4,7 @@ import { confirmInstallmentPaymentAction } from "@/actions/confirm-installment-p
 import { saveInstallmentLinkAction } from "@/actions/save-installment-link-action";
 import {
   type AppliedBillingFee,
-  computeNetAmountCents,
+  computeAmountCents,
   formatCurrency,
 } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
@@ -13,13 +13,14 @@ import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
 import {
   Check,
-  CheckCircle,
+  CircleDollarSign,
   ExternalLink,
   FileText,
   Image,
   LinkIcon,
   Loader2,
   Paperclip,
+  Pencil,
   X,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -132,25 +133,24 @@ export function InstallmentList({
       {installments
         .sort((a, b) => a.installment_number - b.installment_number)
         .map((installment) => {
-          const splitted = installment.splitted_installment as Record<string, number> | null;
-          const professionalGrossAmountCents =
-            !professionals && professionalId && splitted
-              ? (splitted[professionalId] ?? undefined)
-              : undefined;
-          const { netAmountCents, totalFeesCents } =
-            professionalGrossAmountCents !== undefined && professionalId
-              ? computeNetAmountCents(
-                  professionalGrossAmountCents,
-                  appliedBillingFees,
-                  professionalId,
-                )
-              : { netAmountCents: installment.amount, totalFeesCents: 0 };
-          const paidRatio =
-            installment.amount > 0 ? installment.paid_amount / installment.amount : 0;
-          const displayPaidAmount =
-            professionalGrossAmountCents !== undefined
-              ? Math.round(professionalGrossAmountCents * paidRatio)
-              : installment.paid_amount;
+          const shouldComputeProfessionalAmount = !professionals && !!professionalId;
+          const { totalAmountCents, totalFeesCents, totalPaidAmountCents, totalPaidFeesCents } =
+            computeAmountCents(
+              {
+                amount: installment.amount,
+                paid_amount: installment.paid_amount,
+                splitted_installment: installment.splitted_installment as Record<
+                  string,
+                  number
+                > | null,
+              },
+              shouldComputeProfessionalAmount ? appliedBillingFees : [],
+              shouldComputeProfessionalAmount ? professionalId : undefined,
+            );
+
+          const hasPaymentDate = !!installment.paid_at;
+          const hasPartialPayment = installment.status !== "pago" && !!installment.payments.length;
+          const isPaid = installment.status === "pago";
 
           return (
             <div
@@ -165,21 +165,33 @@ export function InstallmentList({
                   <div className="w-full space-y-1">
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
-                        <span className="font-medium">{formatCurrency(netAmountCents)}</span>
+                        <span className="font-medium">
+                          {formatCurrency(
+                            isPaid ? totalAmountCents : totalAmountCents - totalPaidAmountCents,
+                          )}
+                        </span>
                         {totalFeesCents > 0 && (
                           <span className="whitespace-nowrap text-muted-foreground text-xs">
-                            (−{formatCurrency(totalFeesCents)} taxas)
+                            {" "}
+                            (taxas:{" "}
+                            {formatCurrency(
+                              isPaid ? totalFeesCents : totalFeesCents - totalPaidFeesCents,
+                            )}
+                            )
                           </span>
                         )}
                       </div>
                       <StatusBadge status={installment.status} />
                     </div>
-                    <div className="text-muted-foreground text-xs">
-                      {installment.status !== "pago" && (
-                        <>Vencimento: {dayjs(installment.due_date).format("DD/MM/YYYY")}</>
+                    <div className="flex flex-col gap-1 text-muted-foreground text-xs sm:flex-row">
+                      {hasPartialPayment && (
+                        <span>Parcialmente pago: {formatCurrency(totalPaidAmountCents)}</span>
                       )}
-                      {displayPaidAmount > 0 && (
-                        <>Pago em: {dayjs(installment.paid_at).format("DD/MM/YYYY")}</>
+                      {installment.status !== "pago" && (
+                        <span>Vencimento: {dayjs(installment.due_date).format("DD/MM/YYYY")}</span>
+                      )}
+                      {hasPaymentDate && (
+                        <span>Pago em: {dayjs(installment.paid_at).format("DD/MM/YYYY")}</span>
                       )}
                     </div>
                   </div>
@@ -196,9 +208,9 @@ export function InstallmentList({
                             rel="noopener noreferrer"
                           >
                             {p.receipt_path?.endsWith(".pdf") ? (
-                              <FileText className="mr-1 h-4 w-4 text-red-500" />
+                              <FileText className="mr-1 h-4 w-4" />
                             ) : (
-                              <Image className="mr-1 h-4 w-4 text-blue-500" />
+                              <Image className="mr-1 h-4 w-4" />
                             )}
                             Abrir comprovante
                           </a>
@@ -235,7 +247,7 @@ export function InstallmentList({
                             ) : (
                               <Paperclip className="mr-1 h-4 w-4" />
                             )}
-                            Adicionar comprovante
+                            Anexar comprovante
                           </span>
                         </Button>
                       </label>
@@ -284,16 +296,26 @@ export function InstallmentList({
                     installment.status !== "em_analise" && (
                       <div className="flex w-full justify-between">
                         {installment.payment_link && editingId !== installment.id && (
-                          <Button variant="ghost" size="sm" asChild>
-                            <a
-                              href={installment.payment_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                          <div className="flex items-center">
+                            <Button variant="ghost" size="sm" asChild>
+                              <a
+                                href={installment.payment_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <ExternalLink className="mr-1 h-4 w-4" />
+                                Link
+                              </a>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="mr-2 h-8 w-8"
+                              onClick={() => handleEditLink(installment)}
                             >
-                              <ExternalLink className="mr-1 h-4 w-4" />
-                              Link
-                            </a>
-                          </Button>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                         {!installment.payment_link ? (
                           <Button
@@ -310,7 +332,7 @@ export function InstallmentList({
                           variant="outline"
                           onClick={() => onRecordPayment(installment)}
                         >
-                          <CheckCircle className="mr-1 h-4 w-4" />
+                          <CircleDollarSign className="mr-1 h-4 w-4" />
                           Registrar Pagamento
                         </Button>
                       </div>

@@ -1,8 +1,8 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
-import { authActionClient } from "@/lib/safe-action";
 import { dayjs } from "@/lib/dayjs";
+import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 
 export const confirmInstallmentPaymentAction = authActionClient
@@ -50,12 +50,21 @@ export const confirmInstallmentPaymentAction = authActionClient
     }
 
     if (parsedInput.decision === "confirm") {
+      const { data: payments } = await supabaseAdmin
+        .from("payments")
+        .select("paid_amount")
+        .eq("installment_id", parsedInput.installmentId);
+
+      const totalPaid = payments?.reduce((sum, p) => sum + p.paid_amount, 0) ?? 0;
+      const isFullyPaid = totalPaid >= installment.amount;
+      const isOverdue = dayjs(installment.due_date).isBefore(dayjs(), "day");
+
       const { error } = await supabaseAdmin
         .from("installments")
         .update({
-          status: "pago",
-          paid_at: new Date().toISOString(),
-          paid_amount: installment.amount,
+          status: isFullyPaid ? "pago" : isOverdue ? "atrasado" : "pendente",
+          paid_at: isFullyPaid ? new Date().toISOString() : null,
+          paid_amount: totalPaid,
         })
         .eq("id", parsedInput.installmentId);
 

@@ -1,7 +1,10 @@
 import { resolveRecipientPhone } from "@/lib/notifications/whatsapp-send";
-import { sendWhatsAppTemplateMessage } from "@/lib/whatsapp/client";
-import { normalizePhoneToE164 } from "@/lib/whatsapp/phone";
-import { getWhatsAppTemplate, type WhatsAppNotificationType } from "@/lib/whatsapp/templates";
+import {
+  getWhatsAppTemplate,
+  normalizePhoneToE164,
+  sendWhatsAppTemplateMessage,
+  type WhatsAppNotificationType,
+} from "@ventre/whatsapp";
 import type { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type WhatsAppQueueRecipient = {

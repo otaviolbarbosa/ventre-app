@@ -79,7 +79,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    const { data: updatedPayment, error: updateError } = await supabase
+    const { data: updatedPayment, error: updateError } = await supabaseAdmin
       .from("payments")
       .update({ receipt_path: receiptPath })
       .eq("id", paymentId)

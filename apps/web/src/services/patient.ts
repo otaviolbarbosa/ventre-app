@@ -21,6 +21,7 @@ export type PatientWithPregnancyFields = Patient & {
   delivery_method?: Enums<"delivery_method"> | null;
   observations?: string | null;
   address?: Record<string, string | null> | null;
+  avatar_url?: string | null;
 };
 
 type GetMyPatientsResult = {
@@ -67,7 +68,7 @@ export async function getMyPatients(
     let pregnanciesQuery = supabase
       .from("pregnancies")
       .select(
-        "due_date, dum, has_finished, born_at, observations, patients!inner(id, name, phone, email, date_of_birth, created_at, updated_at, created_by, user_id, addresses(street, number, complement, neighborhood, city, state, zipcode))",
+        "due_date, dum, has_finished, born_at, observations, patients!inner(id, name, phone, email, date_of_birth, created_at, updated_at, created_by, user_id, addresses(street, number, complement, neighborhood, city, state, zipcode), user:users!patients_user_id_fkey(avatar_url))",
       )
       .in("patient_id", patientIds)
       .eq("has_finished", false)
@@ -84,8 +85,9 @@ export async function getMyPatients(
     }
 
     rows = pregnanciesData.map((preg) => {
-      const { addresses: addrs, ...patient } = preg.patients as unknown as Patient & {
+      const { addresses: addrs, user, ...patient } = preg.patients as unknown as Patient & {
         addresses: unknown[];
+        user: { avatar_url: string | null } | null;
       };
       const address =
         Array.isArray(addrs) && addrs.length > 0 ? (addrs[0] as Record<string, string>) : null;
@@ -97,6 +99,7 @@ export async function getMyPatients(
         has_finished: preg.has_finished ?? false,
         born_at: preg.born_at ?? null,
         observations: preg.observations ?? null,
+        avatar_url: user?.avatar_url ?? null,
       };
     });
     totalCount = rows.length;

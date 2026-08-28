@@ -4,6 +4,7 @@ import { getActiveBirthModePregnancyAction } from "@/actions/get-active-birth-mo
 import { useAuth } from "@/hooks/use-auth";
 import { useBirthModeRealtime } from "@/hooks/use-birth-mode-realtime";
 import { usePathname, useRouter } from "next/navigation";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type ActiveBirthModePregnancy = NonNullable<
@@ -18,7 +19,9 @@ type PendingActivation = {
 const COUNTDOWN_SECONDS = 10;
 
 export function useBirthModeStatus() {
-  const { user, isProfessional } = useAuth();
+  const { user, isProfessional, isDoula } = useAuth();
+  const disableBirthModeForDoulas = useFeatureFlagEnabled("disable-birth-mode-for-doulas");
+  const birthModeDisabled = isDoula && !!disableBirthModeForDoulas;
   const pathname = usePathname();
   const router = useRouter();
   const { lastActivation } = useBirthModeRealtime();
@@ -43,14 +46,14 @@ export function useBirthModeStatus() {
 
   // Nova ativação vinda do canal Realtime -> dispara a contagem regressiva
   useEffect(() => {
-    if (!lastActivation || !user) return;
+    if (!lastActivation || !user || birthModeDisabled) return;
     if (seenActivationIds.current.has(lastActivation.id)) return;
     seenActivationIds.current.add(lastActivation.id);
     if (pathname?.startsWith("/modo-parto")) return;
 
     fetchActive();
     setPendingActivation({ pregnancyId: lastActivation.id, secondsLeft: COUNTDOWN_SECONDS });
-  }, [lastActivation, user, pathname, fetchActive]);
+  }, [lastActivation, user, pathname, fetchActive, birthModeDisabled]);
 
   // Tick da contagem regressiva — depende só do pregnancyId (não do objeto inteiro)
   // para não recriar o interval a cada decremento de secondsLeft.
@@ -82,7 +85,11 @@ export function useBirthModeStatus() {
     });
   }, [router]);
 
-  const showBar = isProfessional && activePregnancies.length > 0 && !pathname?.startsWith("/modo-parto");
+  const showBar =
+    isProfessional &&
+    !birthModeDisabled &&
+    activePregnancies.length > 0 &&
+    !pathname?.startsWith("/modo-parto");
 
   return { activePregnancies, pendingActivation, cancelRedirect, goNow, showBar };
 }

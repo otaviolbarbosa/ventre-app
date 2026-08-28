@@ -18,8 +18,7 @@ import {
 import { type NotificationType, sendNotificationToUser } from "@/lib/notifications/send";
 import { WHATSAPP_QUEUE_HANDLERS } from "@/lib/notifications/whatsapp-queue-handlers";
 import { sendWhatsAppTemplateFromQueue } from "@/lib/notifications/whatsapp-queue-send";
-import { WhatsAppApiError } from "@/lib/whatsapp/client";
-import type { WhatsAppNotificationType } from "@/lib/whatsapp/templates";
+import { WhatsAppApiError, type WhatsAppNotificationType } from "@ventre/whatsapp";
 import { sendPatientInvite } from "@/lib/emails/send-patient-invite";
 import { dayjs } from "@/lib/dayjs";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
