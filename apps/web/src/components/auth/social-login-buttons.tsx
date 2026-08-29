@@ -34,6 +34,9 @@ export function SocialLoginButtons({ redirectTo }: SocialLoginButtonsProps) {
       });
       setLoadingProvider(null);
     }
+    // No success-path navigation here: the browser OAuth path is still mid-redirect to
+    // Google at this point (only its *start* resolved without error), and the native-bridge
+    // path now navigates itself once its session is actually set (see auth-provider.tsx).
   };
 
   return (

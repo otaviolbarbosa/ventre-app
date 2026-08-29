@@ -17,6 +17,7 @@ import {
   FileText,
   Info,
   Loader2,
+  LoaderCircle,
   LogOut,
   Settings,
 } from "lucide-react";
@@ -45,14 +46,15 @@ type MenuItemProps = {
   icon: React.ReactNode;
   label: string;
   href?: string;
+  isLoading?: boolean;
   onClick?: () => void;
 };
 
-function MenuItem({ icon, label, href, onClick }: MenuItemProps) {
+function MenuItem({ icon, label, href, isLoading = false, onClick }: MenuItemProps) {
   const content = (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
-      className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-4 transition-colors hover:bg-muted/50"
+      className="opacity/60 flex cursor-pointer items-center justify-between rounded-lg px-2 py-4 transition-colors hover:bg-muted/50"
       onClick={onClick}
     >
       <div className="flex items-center gap-4">
@@ -61,7 +63,11 @@ function MenuItem({ icon, label, href, onClick }: MenuItemProps) {
         </div>
         <span className="font-medium">{label}</span>
       </div>
-      <ChevronRight className="size-5 text-muted-foreground" />
+      {isLoading ? (
+        <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
+      ) : (
+        <ChevronRight className="size-5 text-muted-foreground" />
+      )}
     </div>
   );
 
@@ -85,7 +91,7 @@ function getInitials(name: string | null): string {
 export default function ProfileScreen({ profile, address }: ProfileScreenProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signOut, refreshProfile } = useAuth();
+  const { signOut, refreshProfile, loading: isLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url);
   const [isUploading, setIsUploading] = useState(false);
@@ -246,7 +252,12 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
         <Separator />
         <div className="py-2">
           <MenuItem icon={<Info className="size-5" />} label="Informações" href="/info" />
-          <MenuItem icon={<LogOut className="size-5" />} label="Sair" onClick={handleLogout} />
+          <MenuItem
+            icon={<LogOut className="size-5" />}
+            label="Sair"
+            isLoading={isLoading}
+            onClick={handleLogout}
+          />
         </div>
       </div>
     </div>
