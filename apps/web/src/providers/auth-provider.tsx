@@ -200,6 +200,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           access_token: result.access_token,
           refresh_token: result.refresh_token,
         });
+        if (!error) {
+          // Unlike the browser OAuth path below (redirect to Google → /auth/callback does a
+          // server-side redirect on return), the native bridge sets the session in place with
+          // no page navigation. Hard nav for the same reason as the password login path
+          // (login/page.tsx onSubmit): router.push() → server redirect('/onboarding') for new
+          // users causes a Next.js Router hooks count mismatch.
+          window.location.href = redirectTo || "/home";
+        }
         return { data: null, error };
       } catch {
         return { data: null, error: new Error(googleSignInErrorMessage("unknown")) };
