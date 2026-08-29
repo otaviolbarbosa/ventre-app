@@ -44,7 +44,7 @@ const BIRTH_PARTOGRAPH_SESSIONS: {
   },
   {
     id: "contraction",
-    title: "Contrações",
+    title: "Dinâmica Uterina",
     configType: "contraction",
   },
   {

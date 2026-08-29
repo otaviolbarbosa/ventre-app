@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -497,6 +497,9 @@ export type Database = {
             | null
           id: string
           measured_at: string
+          pain_intensity:
+            | Database["public"]["Enums"]["birth_pain_intensity"]
+            | null
           patient_id: string
           pregnancy_id: string
           professional_id: string
@@ -509,6 +512,9 @@ export type Database = {
             | null
           id?: string
           measured_at?: string
+          pain_intensity?:
+            | Database["public"]["Enums"]["birth_pain_intensity"]
+            | null
           patient_id: string
           pregnancy_id: string
           professional_id: string
@@ -521,6 +527,9 @@ export type Database = {
             | null
           id?: string
           measured_at?: string
+          pain_intensity?:
+            | Database["public"]["Enums"]["birth_pain_intensity"]
+            | null
           patient_id?: string
           pregnancy_id?: string
           professional_id?: string
@@ -2013,6 +2022,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          is_active: boolean
           name: string
           slug: string
           type: Database["public"]["Enums"]["plan_type"]
@@ -2023,6 +2033,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_active?: boolean
           name: string
           slug: string
           type: Database["public"]["Enums"]["plan_type"]
@@ -2033,6 +2044,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          is_active?: boolean
           name?: string
           slug?: string
           type?: Database["public"]["Enums"]["plan_type"]
@@ -3058,6 +3070,12 @@ export type Database = {
       birth_membrane_rupture_type: "espontanea" | "artificial"
       birth_mode_induction_type: "balao" | "misoprostol" | "ocitocina"
       birth_mode_labour_type: "espontaneo" | "induzido"
+      birth_pain_intensity:
+        | "fraca"
+        | "fraca_media"
+        | "media"
+        | "media_forte"
+        | "forte"
       birth_urine_dipstick_level:
         | "ausente"
         | "tracos"
@@ -3290,6 +3308,13 @@ export const Constants = {
       birth_membrane_rupture_type: ["espontanea", "artificial"],
       birth_mode_induction_type: ["balao", "misoprostol", "ocitocina"],
       birth_mode_labour_type: ["espontaneo", "induzido"],
+      birth_pain_intensity: [
+        "fraca",
+        "fraca_media",
+        "media",
+        "media_forte",
+        "forte",
+      ],
       birth_urine_dipstick_level: [
         "ausente",
         "tracos",

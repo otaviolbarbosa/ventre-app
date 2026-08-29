@@ -42,13 +42,17 @@ export function BirthModeRegisterButtons({
       .filter((type) => events.some((event) => event.type === type)),
   );
 
+  // Líquido amniótico só é registrado após a bolsa rota.
+  const hasMembraneRupture = events.some((event) => event.type === "membrane_rupture");
+
   return (
     <>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {BIRTH_EVENT_TYPES.map(({ type }) => {
           const config = BIRTH_EVENT_CONFIG[type];
           const Icon = config.icon;
-          const isDisabled = registeredSingleTypes.has(type);
+          const isDisabled =
+            registeredSingleTypes.has(type) || (type === "amniotic_fluid" && !hasMembraneRupture);
           return (
             <Button
               key={type}
