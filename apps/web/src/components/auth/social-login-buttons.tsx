@@ -33,15 +33,10 @@ export function SocialLoginButtons({ redirectTo }: SocialLoginButtonsProps) {
         description: errorMessage,
       });
       setLoadingProvider(null);
-      return;
     }
-
-    // Hard navigation (see login/page.tsx onSubmit): router.push() → server redirect('/onboarding')
-    // for new users causes a Next.js Router hooks count mismatch. Full reload avoids this.
-    // The OAuth web flow gets this for free via /auth/callback's server-side redirect; the
-    // native-bridge flow sets the session in place with no page navigation, so it needs this
-    // explicitly — without it the spinner never clears.
-    window.location.href = redirectTo || "/home";
+    // No success-path navigation here: the browser OAuth path is still mid-redirect to
+    // Google at this point (only its *start* resolved without error), and the native-bridge
+    // path now navigates itself once its session is actually set (see auth-provider.tsx).
   };
 
   return (
