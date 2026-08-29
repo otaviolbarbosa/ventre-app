@@ -26,6 +26,7 @@ module.exports = ({ config }) => ({
   },
   android: {
     ...config.android,
+    package: isDev ? "app.ventre.mobile_dev" : config.android.package,
     adaptiveIcon: {
       ...config.android.adaptiveIcon,
       foregroundImage: isDev

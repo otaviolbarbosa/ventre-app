@@ -148,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    setLoading(true);
     if (isNativeBridge()) {
       const cachedToken = localStorage.getItem(NATIVE_PUSH_TOKEN_KEY);
       if (cachedToken) {
@@ -166,6 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // mantenha a sessão antiga após o logout.
       window.location.href = "/login";
     }
+
+    setLoading(false);
     return { error };
   };
 
@@ -186,11 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
         // escolhendo uma conta no seletor nativo do Google, não só uma resposta automática.
-        const result = await requestNative<GoogleSignInResult>(
-          "google-signin-request",
-          {},
-          60_000,
-        );
+        const result = await requestNative<GoogleSignInResult>("google-signin-request", {}, 60_000);
         if (result.error || !result.access_token || !result.refresh_token) {
           return {
             data: null,
