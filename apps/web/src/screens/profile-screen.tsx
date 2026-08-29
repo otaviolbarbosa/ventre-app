@@ -9,6 +9,7 @@ import type { Tables } from "@ventre/supabase/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
 import { Button } from "@ventre/ui/button";
 import { Separator } from "@ventre/ui/separator";
+import { cn } from "@ventre/ui/utils";
 import {
   Bell,
   Camera,
@@ -54,7 +55,10 @@ function MenuItem({ icon, label, href, isLoading = false, onClick }: MenuItemPro
   const content = (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
-      className="opacity/60 flex cursor-pointer items-center justify-between rounded-lg px-2 py-4 transition-colors hover:bg-muted/50"
+      className={cn(
+        "flex cursor-pointer items-center justify-between rounded-lg px-2 py-4 transition-colors hover:bg-muted/50",
+        isLoading && "opacity-50",
+      )}
       onClick={onClick}
     >
       <div className="flex items-center gap-4">
