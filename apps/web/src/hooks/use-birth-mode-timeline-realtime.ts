@@ -37,7 +37,7 @@ const TIME_COLUMN_BY_TABLE: Record<string, string> = {
 const PAYLOAD_KEYS_BY_TABLE: Record<string, string[]> = {
   // Nota: contractions_per_10min é derivado no fetch completo (getBirthModeTimelineAction) a
   // partir do histórico de contrações; eventos chegados via realtime não recalculam esse valor.
-  birth_contractions: ["duration_seconds", "effectiveness"],
+  birth_contractions: ["duration_seconds", "effectiveness", "pain_intensity"],
   birth_cervical_dilations: ["dilation_cm"],
   birth_fetal_stations: ["station_lee"],
   birth_fetal_heart_rates: ["bpm"],
