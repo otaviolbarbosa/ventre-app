@@ -121,6 +121,7 @@ export async function fetchBirthModeTimelineData(
       payload: {
         duration_seconds: row.duration_seconds,
         effectiveness: row.effectiveness,
+        pain_intensity: row.pain_intensity,
         contractions_per_10min: contractionsPer10MinById.get(row.id) ?? null,
       },
     });

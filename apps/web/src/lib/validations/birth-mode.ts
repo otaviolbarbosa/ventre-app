@@ -28,6 +28,9 @@ export const birthEventDateTimeSchema = {
 // ── Contração ────────────────────────────────────────────────────────────────
 export const birthContractionSchema = z.object({
   duration_seconds: z.coerce.number().int().positive("Duração deve ser maior que zero"),
+  pain_intensity: z.enum(["fraca", "fraca_media", "media", "media_forte", "forte"], {
+    message: "Selecione a intensidade da dor",
+  }),
   ...birthEventDateTimeSchema,
 });
 export type BirthContractionInput = z.infer<typeof birthContractionSchema>;

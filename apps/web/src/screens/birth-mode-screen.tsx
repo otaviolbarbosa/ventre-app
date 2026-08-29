@@ -17,6 +17,7 @@ import { Skeleton } from "@ventre/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ventre/ui/tabs";
 import { CheckCircle2, FileDown, HeartHandshake, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -96,11 +97,16 @@ export function BirthModeScreen({
     }
   }, [lastActivation, pregnancyId]);
 
+  const showAllEventsOnPartographTab = useFeatureFlagEnabled(
+    "show-all-events-on-partograph-tab",
+  );
+
   const partographEvents = useMemo(() => {
     if (!partographUnlockedAt) return [];
+    if (showAllEventsOnPartographTab) return events;
     const unlockedAtMs = new Date(partographUnlockedAt).getTime();
     return events.filter((event) => new Date(event.occurredAt).getTime() >= unlockedAtMs);
-  }, [events, partographUnlockedAt]);
+  }, [events, partographUnlockedAt, showAllEventsOnPartographTab]);
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const { execute: exportPdf } = useAction(exportPartographPdfAction, {
