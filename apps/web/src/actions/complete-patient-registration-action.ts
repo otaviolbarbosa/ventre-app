@@ -2,6 +2,7 @@
 
 import { actionClient } from "@/lib/safe-action";
 import { MARITAL_STATUS_OPTIONS, type CreatePatientInput, type MaritalStatus } from "@/lib/validations/patient";
+import { partnerSchema } from "@/lib/validations/partner";
 import { createPatientWithTeamAndBilling } from "@/services/patient-onboarding";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { z } from "zod";
@@ -24,6 +25,7 @@ const schema = z.object({
   dum: z.string().optional(),
   baby_name: z.string().optional(),
   observations: z.string().optional(),
+  partner: partnerSchema.optional(),
   address: z
     .object({
       street: z.string().optional(),
@@ -113,6 +115,7 @@ export const completePatientRegistrationAction = actionClient
         due_date: parsedInput.due_date,
         dum: parsedInput.dum,
         observations: parsedInput.observations,
+        partner: parsedInput.partner,
         address: parsedInput.address,
         professional_ids: metadata.professional_ids,
         backup_professional_ids: metadata.backup_professional_ids,

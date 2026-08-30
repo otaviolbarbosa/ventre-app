@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createBillingSchema } from "./billing";
+import { partnerSchema } from "./partner";
 
 export const MARITAL_STATUS_OPTIONS = [
   { value: "solteira", label: "Solteira" },
@@ -41,6 +42,7 @@ export const createPatientSchema = z.object({
     .optional(),
   baby_name: z.string().optional(),
   observations: z.string().optional(),
+  partner: partnerSchema.optional(),
   professional_ids: z
     .array(z.string().uuid())
     .min(1, "Selecione pelo menos uma profissional")

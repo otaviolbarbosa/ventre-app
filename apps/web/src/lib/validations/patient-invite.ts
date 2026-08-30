@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createBillingSchema } from "./billing";
 import { MARITAL_STATUS_OPTIONS, type MaritalStatus } from "./patient";
+import { partnerSchema } from "./partner";
 
 export const createPatientInviteSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -50,6 +51,7 @@ export const patientSelfRegistrationSchema = z.object({
     .optional(),
   baby_name: z.string().optional(),
   observations: z.string().optional(),
+  partner: partnerSchema.optional(),
 });
 
 export type PatientSelfRegistrationInput = z.infer<typeof patientSelfRegistrationSchema>;
