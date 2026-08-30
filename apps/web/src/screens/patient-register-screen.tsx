@@ -2,6 +2,7 @@
 
 import { completePatientRegistrationAction } from "@/actions/complete-patient-registration-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
+import { PartnerFormFields, type PartnerFormValues } from "@/components/shared/partner-form-fields";
 import { ESTADOS_BR } from "@/lib/constants";
 import { MARITAL_STATUS_OPTIONS } from "@/lib/validations/patient";
 import {
@@ -26,7 +27,7 @@ import { Camera, Check, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
 import { Fragment, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Control, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -45,7 +46,7 @@ type LinkedPatient = {
   phone: string;
 };
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 type DueDateCalcMethod = "gestational_age" | "dum" | "dpp" | "fiv";
 type FivTransferType = "D0" | "D3" | "D5" | "D6" | "D7";
@@ -94,9 +95,10 @@ function StepIndicator({ current, isNewPatient }: { current: Step; isNewPatient:
     ? [
         { n: 1, label: "Email e senha" },
         { n: 2, label: "Meus dados" },
-        { n: 3, label: "Contato" },
-        { n: 4, label: "Endereço" },
-        { n: 5, label: "Confirmação" },
+        { n: 3, label: "Parceria" },
+        { n: 4, label: "Contato" },
+        { n: 5, label: "Endereço" },
+        { n: 6, label: "Confirmação" },
       ]
     : [
         { n: 1, label: "Email e senha" },
@@ -191,7 +193,12 @@ export default function PatientRegisterScreen({
   });
 
   const selfRegForm = useForm<PatientSelfRegistrationInput>({
-    resolver: zodResolver(patientSelfRegistrationSchema),
+    // Cast the schema (not the resolver) to short-circuit zodResolver's structural
+    // inference over this many nested optional fields, which otherwise hits TS's
+    // "type instantiation is excessively deep" limit.
+    resolver: zodResolver(
+      patientSelfRegistrationSchema as unknown as z.ZodType<PatientSelfRegistrationInput>,
+    ),
     defaultValues: {
       password: "",
       name: invite.name ?? "",
@@ -202,6 +209,7 @@ export default function PatientRegisterScreen({
       due_date: "",
       dum: "",
       observations: "",
+      partner: {},
       address: {
         street: "",
         neighborhood: "",
@@ -312,7 +320,7 @@ export default function PatientRegisterScreen({
 
   const SELF_REG_STEP_FIELDS: Partial<Record<Step, (keyof PatientSelfRegistrationInput)[]>> = {
     2: ["name"],
-    3: ["phone"],
+    4: ["phone"],
   };
 
   async function goToNextSelfReg() {
@@ -321,11 +329,11 @@ export default function PatientRegisterScreen({
       return;
     }
 
-    if (step === 4) {
+    if (step === 5) {
       const valid = await selfRegForm.trigger();
       if (!valid) return;
       setDataValues(selfRegForm.getValues());
-      setStep(5);
+      setStep(6);
       return;
     }
 
@@ -334,7 +342,7 @@ export default function PatientRegisterScreen({
       const valid = await selfRegForm.trigger(fields);
       if (!valid) return;
     }
-    setStep((prev) => Math.min(prev + 1, 4) as Step);
+    setStep((prev) => Math.min(prev + 1, 5) as Step);
   }
 
   function goToPrevSelfReg() {
@@ -378,6 +386,7 @@ export default function PatientRegisterScreen({
         dum: selfRegValues?.dum,
         baby_name: selfRegValues?.baby_name,
         observations: selfRegValues?.observations,
+        partner: selfRegValues?.partner,
         address: selfRegValues?.address,
       });
 
@@ -528,8 +537,8 @@ export default function PatientRegisterScreen({
             </div>
           )}
 
-          {/* ── Steps 2-4: Meus dados / Contato / Endereço ── */}
-          {(step === 2 || step === 3 || step === 4) && isNewPatient && (
+          {/* ── Steps 2-5: Meus dados / Parceria / Contato / Endereço ── */}
+          {(step === 2 || step === 3 || step === 4 || step === 5) && isNewPatient && (
             <Form {...selfRegForm}>
               <form
                 onSubmit={(e) => e.preventDefault()}
@@ -933,8 +942,15 @@ export default function PatientRegisterScreen({
                   </>
                 )}
 
-                {/* ── Step 3: Contato ── */}
+                {/* ── Step 3: Parceria ── */}
                 {step === 3 && (
+                  <PartnerFormFields
+                    control={selfRegForm.control as unknown as Control<PartnerFormValues>}
+                  />
+                )}
+
+                {/* ── Step 4: Contato ── */}
+                {step === 4 && (
                   <>
                     <FormField
                       control={selfRegForm.control}
@@ -978,8 +994,8 @@ export default function PatientRegisterScreen({
                   </>
                 )}
 
-                {/* ── Step 4: Endereço ── */}
-                {step === 4 && (
+                {/* ── Step 5: Endereço ── */}
+                {step === 5 && (
                   <>
                     <FormField
                       control={selfRegForm.control}
@@ -1209,7 +1225,7 @@ export default function PatientRegisterScreen({
           )}
 
           {/* ── Confirmation ── */}
-          {step === (isNewPatient ? 5 : 3) && dataValues && (
+          {step === (isNewPatient ? 6 : 3) && dataValues && (
             <div className="space-y-5">
               <div className="flex flex-col items-center gap-2">
                 <Avatar className="h-20 w-20 shadow-md">
@@ -1280,7 +1296,7 @@ export default function PatientRegisterScreen({
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={() => setStep(isNewPatient ? 4 : 2)}
+                  onClick={() => setStep(isNewPatient ? 5 : 2)}
                   disabled={isFinishing}
                 >
                   Voltar

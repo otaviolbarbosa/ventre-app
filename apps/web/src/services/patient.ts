@@ -229,6 +229,18 @@ export async function createPatient(
     });
   }
 
+  if (data.partner && Object.values(data.partner).some((v) => v !== undefined && v !== "")) {
+    const { traditional_community_types, disability_types, ...partnerFields } = data.partner;
+    await supabaseAdmin.from("partner").insert({
+      patient_id: patient.id,
+      ...partnerFields,
+      traditional_community_types: traditional_community_types
+        ? traditional_community_types.split(",").filter(Boolean)
+        : null,
+      disability_types: disability_types ? disability_types.split(",").filter(Boolean) : null,
+    });
+  }
+
   // Create pregnancy record with due_date, dum, observations
   const { data: pregnancy, error: pregnancyError } = await supabaseAdmin
     .from("pregnancies")

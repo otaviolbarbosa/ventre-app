@@ -67,6 +67,7 @@ export function DatePicker({
         locale="pt-BR"
         className={className}
         open={hideCalendar ? false : undefined}
+        disabledKeyboardNavigation
         customInput={
           <InputMask component={CustomInput} mask="__/__/____" replacement={{ _: /\d/ }} />
         }

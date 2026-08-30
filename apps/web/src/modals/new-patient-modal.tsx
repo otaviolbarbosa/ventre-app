@@ -3,6 +3,7 @@ import { addPatientAction } from "@/actions/add-patient-action";
 import { createPatientInviteAction } from "@/actions/create-patient-invite-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
+import { PartnerFormFields, type PartnerFormValues } from "@/components/shared/partner-form-fields";
 import {
   calculateInstallmentDates,
   formatCurrency,
@@ -34,7 +35,8 @@ import dayjs from "dayjs";
 import { Check, Loader2, Pencil, RotateCcw, Shield, Users, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Control, useForm } from "react-hook-form";
+import type { z } from "zod";
 import { toast } from "sonner";
 
 type Professional = {
@@ -105,21 +107,22 @@ const FIV_DPP_OFFSET_DAYS: Record<FivTransferType, number> = {
   D7: 259,
 };
 
-type StepNumber = 1 | 2 | 3 | 4 | 5;
+type StepNumber = 1 | 2 | 3 | 4 | 5 | 6;
 
 function StepIndicator({
   current,
-  step4Label,
+  step5Label,
 }: {
   current: StepNumber;
-  step4Label: string;
+  step5Label: string;
 }) {
   const STEPS = [
     { n: 1 as StepNumber, label: "Gestante" },
-    { n: 2 as StepNumber, label: "Contato" },
-    { n: 3 as StepNumber, label: "Endereço" },
-    { n: 4 as StepNumber, label: step4Label },
-    { n: 5 as StepNumber, label: "Cobrança" },
+    { n: 2 as StepNumber, label: "Parceria" },
+    { n: 3 as StepNumber, label: "Contato" },
+    { n: 4 as StepNumber, label: "Endereço" },
+    { n: 5 as StepNumber, label: step5Label },
+    { n: 6 as StepNumber, label: "Cobrança" },
   ];
   return (
     <div className="mb-8 flex items-center justify-center">
@@ -271,12 +274,15 @@ export default function NewPatientModal({
   const isSubmitting = status === "executing" || inviteStatus === "executing";
   const showProfessionalSelector = professionalsOptions.length > 0;
   const showEnterpriseSelector = enterprises !== undefined && !showProfessionalSelector;
-  const step4Label = showEnterpriseSelector ? "Empresa" : "Equipe";
+  const step5Label = showEnterpriseSelector ? "Empresa" : "Equipe";
 
   const defaultProfessionalIds = professional?.id ? [professional.id] : undefined;
 
   const form = useForm<CreatePatientInput>({
-    resolver: zodResolver(createPatientSchema),
+    // Cast the schema (not the resolver) to short-circuit zodResolver's structural
+    // inference over this many nested optional fields, which otherwise hits TS's
+    // "type instantiation is excessively deep" limit.
+    resolver: zodResolver(createPatientSchema as unknown as z.ZodType<CreatePatientInput>),
     defaultValues: {
       name: "",
       email: "",
@@ -299,6 +305,7 @@ export default function NewPatientModal({
         zipcode: "",
       },
       observations: "",
+      partner: {},
       professional_ids: defaultProfessionalIds,
       enterprise_id: null,
     },
@@ -333,6 +340,7 @@ export default function NewPatientModal({
         zipcode: "",
       },
       observations: "",
+      partner: {},
       professional_ids: defaultProfessionalIds,
     });
     setDueDateCalcMethod(undefined);
@@ -557,8 +565,8 @@ export default function NewPatientModal({
 
   const STEP_FIELDS: Partial<Record<StepNumber, (keyof CreatePatientInput)[]>> = {
     1: isInviteMode ? ["name"] : ["name", "due_date", "dum"],
-    2: ["phone"],
-    4: showProfessionalSelector ? ["professional_ids"] : [],
+    3: ["phone"],
+    5: showProfessionalSelector ? ["professional_ids"] : [],
   };
 
   async function goToNext() {
@@ -573,10 +581,10 @@ export default function NewPatientModal({
     }
     setIsNavigating(true);
     setStep((prev) => {
-      let next = Math.min(prev + 1, 5) as StepNumber;
+      let next = Math.min(prev + 1, 6) as StepNumber;
       if (isInviteMode) {
-        while (next === 2 || next === 3) {
-          next = Math.min(next + 1, 5) as StepNumber;
+        while (next === 2 || next === 3 || next === 4) {
+          next = Math.min(next + 1, 6) as StepNumber;
         }
       }
       return next;
@@ -588,7 +596,7 @@ export default function NewPatientModal({
     setStep((prev) => {
       let next = Math.max(prev - 1, 1) as StepNumber;
       if (isInviteMode) {
-        while (next === 2 || next === 3) {
+        while (next === 2 || next === 3 || next === 4) {
           next = Math.max(next - 1, 1) as StepNumber;
         }
       }
@@ -752,11 +760,11 @@ export default function NewPatientModal({
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && step < 5) e.preventDefault();
+              if (e.key === "Enter" && step < 6) e.preventDefault();
             }}
             className="space-y-6"
           >
-            <StepIndicator current={step} step4Label={step4Label} />
+            <StepIndicator current={step} step5Label={step5Label} />
 
             <div className="min-h-[400px]">
               {/* ── Step 1: Dados da Gestante ── */}
@@ -1163,8 +1171,13 @@ export default function NewPatientModal({
                 </div>
               )}
 
-              {/* ── Step 2: Contato ── */}
+              {/* ── Step 2: Parceria ── */}
               {step === 2 && (
+                <PartnerFormFields control={form.control as unknown as Control<PartnerFormValues>} />
+              )}
+
+              {/* ── Step 3: Contato ── */}
+              {step === 3 && (
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
@@ -1202,8 +1215,8 @@ export default function NewPatientModal({
                 </div>
               )}
 
-              {/* ── Step 3: Endereço ── */}
-              {step === 3 && (
+              {/* ── Step 4: Endereço ── */}
+              {step === 4 && (
                 <div className="space-y-4">
                   <FormField
                     control={form.control}
@@ -1350,8 +1363,8 @@ export default function NewPatientModal({
                 </div>
               )}
 
-              {/* ── Step 4: Equipe / Empresa ── */}
-              {step === 4 && (
+              {/* ── Step 5: Equipe / Empresa ── */}
+              {step === 5 && (
                 <div className="space-y-4">
                   {showProfessionalSelector ? (
                     <FormField
@@ -1581,8 +1594,8 @@ export default function NewPatientModal({
                 </div>
               )}
 
-              {/* ── Step 5: Cobrança ── */}
-              {step === 5 && (
+              {/* ── Step 6: Cobrança ── */}
+              {step === 6 && (
                 <div className="space-y-4">
                   <button
                     type="button"
@@ -1999,7 +2012,7 @@ export default function NewPatientModal({
                 </Button>
               )}
 
-              {step < 5 ? (
+              {step < 6 ? (
                 <Button
                   type="button"
                   className="gradient-primary flex-1"

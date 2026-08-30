@@ -1650,6 +1650,80 @@ export type Database = {
           },
         ]
       }
+      partner: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          disability_other: string | null
+          disability_types: string[] | null
+          education_level: string | null
+          family_history_diabetes: boolean | null
+          family_history_hypertension: boolean | null
+          family_history_other: string | null
+          family_history_twin_pregnancy: boolean | null
+          full_name: string | null
+          gender_identity: string | null
+          has_disability: boolean | null
+          patient_id: string
+          preferred_name: string | null
+          race_color: string | null
+          traditional_community: boolean | null
+          traditional_community_other: string | null
+          traditional_community_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          disability_other?: string | null
+          disability_types?: string[] | null
+          education_level?: string | null
+          family_history_diabetes?: boolean | null
+          family_history_hypertension?: boolean | null
+          family_history_other?: string | null
+          family_history_twin_pregnancy?: boolean | null
+          full_name?: string | null
+          gender_identity?: string | null
+          has_disability?: boolean | null
+          patient_id: string
+          preferred_name?: string | null
+          race_color?: string | null
+          traditional_community?: boolean | null
+          traditional_community_other?: string | null
+          traditional_community_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          disability_other?: string | null
+          disability_types?: string[] | null
+          education_level?: string | null
+          family_history_diabetes?: boolean | null
+          family_history_hypertension?: boolean | null
+          family_history_other?: string | null
+          family_history_twin_pregnancy?: boolean | null
+          full_name?: string | null
+          gender_identity?: string | null
+          has_disability?: boolean | null
+          patient_id?: string
+          preferred_name?: string | null
+          race_color?: string | null
+          traditional_community?: boolean | null
+          traditional_community_other?: string | null
+          traditional_community_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: true
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_documents: {
         Row: {
           created_at: string | null
