@@ -1367,9 +1367,15 @@ type PrenatalCardProps = {
   patientId: string;
   pregnancyId: string | null | undefined;
   isEditable: boolean;
+  isGeneralEditable: boolean;
 };
 
-export default function PrenatalCard({ patientId, pregnancyId, isEditable }: PrenatalCardProps) {
+export default function PrenatalCard({
+  patientId,
+  pregnancyId,
+  isEditable,
+  isGeneralEditable,
+}: PrenatalCardProps) {
   const { execute: fetchData, result, isPending } = useAction(getPrenatalCardAction);
 
   const refresh = useCallback(() => {
@@ -1419,7 +1425,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
           patientId={patientId}
           pregnancyId={pregnancyId}
           data={data}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
@@ -1430,7 +1436,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
           pregnancyId={pregnancyId}
           history={data.obstetricHistory}
           pregnancy={data.pregnancy}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
@@ -1439,7 +1445,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
         <RiskFactorsSection
           pregnancyId={pregnancyId}
           riskFactors={data.riskFactors}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
@@ -1478,7 +1484,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
         <VaccinesSection
           pregnancyId={pregnancyId}
           vaccines={data.vaccines}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
