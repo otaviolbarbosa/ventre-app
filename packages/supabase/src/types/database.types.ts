@@ -924,6 +924,67 @@ export type Database = {
           },
         ]
       }
+      birth_uterine_activity: {
+        Row: {
+          contraction_count: number
+          created_at: string
+          du_notations: string[]
+          durations_seconds: number[]
+          id: string
+          interval_minutes: number
+          measured_at: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Insert: {
+          contraction_count: number
+          created_at?: string
+          du_notations: string[]
+          durations_seconds: number[]
+          id?: string
+          interval_minutes: number
+          measured_at?: string
+          patient_id: string
+          pregnancy_id: string
+          professional_id: string
+        }
+        Update: {
+          contraction_count?: number
+          created_at?: string
+          du_notations?: string[]
+          durations_seconds?: number[]
+          id?: string
+          interval_minutes?: number
+          measured_at?: string
+          patient_id?: string
+          pregnancy_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "birth_uterine_activity_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_uterine_activity_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "birth_uterine_activity_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_change_requests: {
         Row: {
           contract_id: string
