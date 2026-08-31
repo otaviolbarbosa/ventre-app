@@ -1,4 +1,8 @@
-import type { ObstetricHistoryInput, RiskFactorsInput } from "@/lib/validations/prenatal";
+import type {
+  EmotionalPrenatalInput,
+  ObstetricHistoryInput,
+  RiskFactorsInput,
+} from "@/lib/validations/prenatal";
 
 export const AMNIOTIC_FLUID_INDEX_LABELS: Record<string, string> = {
   severe_oligohydramnios: "Oligodrâmnio grave (< 2 cm)",
@@ -57,6 +61,29 @@ export const CLINICAL_FIELDS: { name: keyof ObstetricHistoryInput; label: string
 export const SURGICAL_FIELDS: { name: keyof ObstetricHistoryInput; label: string }[] = [
   { name: "pelvic_uterine_surgery", label: "Cirurgia pélvica/uterina" },
   { name: "prior_surgery", label: "Cirurgia prévia" },
+];
+
+export const EMOTIONAL_PRENATAL_INTRO =
+  "Aqui, você encontrará perguntas que ajudam a conhecer a história, identificar crenças, medos, expectativas, fortalezas e necessidades emocionais que podem influenciar a experiencia de parto dessa mulher. Permita que a conversa aconteça no tempo dela e utilize este roteiro como um guia, não como um questionário. O objetivo é construir um espaço de escuta, confiança e acolhimento, para que o cuidado seja verdadeiramente individualizado e centrado na mulher.";
+
+export const EMOTIONAL_PRENATAL_QUESTIONS: {
+  name: keyof EmotionalPrenatalInput;
+  question: string;
+}[] = [
+  { name: "birth_story", question: "Como você nasceu? Quais histórias você ouviu sobre seu nascimento?" },
+  { name: "coping_style", question: "Como você costuma lidar com situações desafiadoras?" },
+  { name: "safety_source", question: "O que faz você se sentir segura?" },
+  { name: "loss_of_control_feeling", question: "Como você se sente quando perde o controle da situação?" },
+  {
+    name: "birth_first_image",
+    question: "Quando você imagina o parto, qual é a primeira imagem que vem na sua cabeça?",
+  },
+  { name: "biggest_fear", question: "Qual o seu maior medo?" },
+  {
+    name: "preserve_if_different",
+    question: "Se algo sair diferente do esperado, o que você gostaria de preservar?",
+  },
+  { name: "woman_reminder", question: "Quem faz você se lembrar da mulher que é?" },
 ];
 
 export type RiskGroup = {
