@@ -127,3 +127,26 @@ export const birthUrineTestSchema = z.object({
   ...birthEventDateTimeSchema,
 });
 export type BirthUrineTestInput = z.infer<typeof birthUrineTestSchema>;
+
+// ── Dinâmica uterina (registro em lote) ──────────────────────────────────────
+export const birthUterineActivitySchema = z
+  .object({
+    interval_minutes: z.union([z.literal(10), z.literal(20), z.literal(30)], {
+      message: "Selecione o intervalo (10, 20 ou 30 minutos)",
+    }),
+    contraction_count: z.coerce.number().int().min(0, "Quantidade inválida"),
+    durations_seconds: z
+      .array(z.coerce.number().int().positive("Duração deve ser maior que zero"))
+      .min(1, "Informe ao menos uma duração"),
+    du_notations: z.array(z.string().min(1)).min(1, "Notação DU não calculada"),
+    ...birthEventDateTimeSchema,
+  })
+  .refine((v) => v.durations_seconds.length === v.contraction_count, {
+    message: "A quantidade de durações deve ser igual à quantidade de contrações",
+    path: ["durations_seconds"],
+  })
+  .refine((v) => v.contraction_count <= (v.interval_minutes / 10) * 6, {
+    message: "Quantidade de contrações acima do limite esperado para o intervalo",
+    path: ["contraction_count"],
+  });
+export type BirthUterineActivityInput = z.infer<typeof birthUterineActivitySchema>;

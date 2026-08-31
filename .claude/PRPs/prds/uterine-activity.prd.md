@@ -117,7 +117,7 @@ O conjunto completo definido acima — flag, tabela, modal, notação e gráfico
 | # | Phase | Description | Status | Parallel | Depends | PRP Plan |
 |---|-------|-------------|--------|----------|---------|----------|
 | 1 | Schema e migração | Criar tabela `birth_uterine_activity` + RLS + migração, `pnpm db:types` | complete | - | - | `.claude/PRPs/plans/completed/uterine-activity-schema-migration.plan.md` |
-| 2 | Server action e validação | `add-birth-uterine-activity-action.ts` + schema Zod (quantidade, intervalo, array de durações) | pending | - | 1 | - |
+| 2 | Server action e validação | `add-birth-uterine-activity-action.ts` + schema Zod (quantidade, intervalo, array de durações) | complete | - | 1 | `.claude/PRPs/plans/completed/uterine-activity-phase2-server-action.plan.md` |
 | 3 | Lógica de notação DU | Função pura de cálculo/decomposição da notação DU em sub-blocos de 10 min | pending | with 4 | 2 | - |
 | 4 | Modal de registro | `add-birth-uterine-activity-modal.tsx` com os 3 campos + notação em destaque | pending | with 3 | 2 | - |
 | 5 | Toggle da flag no botão de registro | `useFeatureFlagEnabled("show_uterine_activity")` alternando modal em `birth-mode-register-buttons.tsx` | pending | - | 3, 4 | - |
