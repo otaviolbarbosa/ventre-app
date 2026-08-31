@@ -14,7 +14,8 @@
     "format": "biome format . --write",
     "check": "biome check .",
     "check-types": "next typegen && tsc --noEmit",
-    "payment:wh-local": "stripe listen --forward-to localhost:3000/api/stripe/webhook"
+    "payment:wh-local": "stripe listen --forward-to localhost:3000/api/stripe/webhook",
+    "test": "vitest run"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",
@@ -39,8 +40,8 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
     "@ventre/supabase": "workspace:*",
-    "@ventre/whatsapp": "workspace:*",
     "@ventre/ui": "workspace:*",
+    "@ventre/whatsapp": "workspace:*",
     "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -82,6 +83,7 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.11"
   }
 }
