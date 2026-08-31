@@ -44,6 +44,7 @@ export default function PatientPrenatalPage() {
       pregnancyId={pregnancy?.id}
       isEditable={isObstetrician || isNurse}
       isGeneralEditable={isObstetrician || isNurse || isDoula}
+      isDoula={isDoula}
     />
   );
 }
