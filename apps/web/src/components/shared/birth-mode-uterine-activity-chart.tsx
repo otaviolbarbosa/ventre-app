@@ -44,7 +44,7 @@ export function BirthModeUterineActivityChart({ events }: BirthModeUterineActivi
               <div
                 // biome-ignore lint/suspicious/noArrayIndexKey: linhas são posições fixas 1-6
                 key={rowIndex}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded border border-border text-sm"
+                className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[0.125rem] border border-border text-sm"
               >
                 {cell?.symbol ?? ""}
               </div>

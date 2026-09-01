@@ -78,6 +78,17 @@ export const CONTRACTIONS_BAND: ColumnBand = {
   yBottom: 511,
 };
 
+// Blank row directly below the dilatação/descida chart's "hora 0, 1, 2...24" relative-hour
+// axis, labeled "hora do exame" on the template — meant to hold the real clock hour for
+// each column (unlike the axis above it, whose 1-24 labels are relative to t0, not a time
+// of day). Re-measured directly from the template: 408 is DILATION_BAND's own yBottom
+// (bottom border of the numbered axis row), 450 is the next gridline before CONTRACTIONS_BAND.
+export const EXAM_HOUR_ROW: ColumnBand = {
+  columnX: HOUR_COLUMN_X,
+  yTop: 408,
+  yBottom: 450,
+};
+
 // Ocitocina has two stacked sub-rows on the template ("U/L" on top, "gotas/min" below) —
 // split the same way the three urine sub-rows are, so each value stamps into its own row
 // instead of both stacking into the bottom sub-row. Boundaries re-measured directly from
@@ -110,17 +121,29 @@ export const MEDICATION_HALF_HOUR_X: number[] = HOUR_COLUMN_X.flatMap((center) =
   center + 5.3,
 ]);
 
+// The template's own printed grid in the L.A./Bolsa row is finer than the 24 hour-tick
+// positions (HOUR_COLUMN_X) — 48 columns, ~10.6px apart, one per 30 minutes — measured
+// directly off the template the same way as UTERINE_ACTIVITY_* in partograph-overlay-svg.ts
+// (prompts/017-partograph/partograma_vs_ok.png and apps/web/src/assets/partograph-template.png,
+// both 595x841px). HOUR_COLUMN_X only lines up with every other one of these.
+export const LA_BOLSA_COLUMN_X: number[] = [
+  51, 61.5, 72.25, 82.75, 93.5, 104, 114.5, 125.25, 135.75, 146.25, 156.75, 167.5, 178.25, 188.75,
+  199.25, 209.75, 220.5, 231, 241.5, 252.25, 262.75, 273.25, 283.75, 294.5, 305.25, 315.75, 326.25,
+  336.75, 347.5, 358.25, 368.75, 379.25, 389.75, 400.25, 410.75, 421.5, 432.25, 442.75, 453.25,
+  463.75, 474.5, 485.25, 495.75, 506.25, 516.75, 527.5, 538.25, 548.75,
+];
+
 // L.A. (liquido amniótico) and Bolsa are two stacked sub-rows on the template — split so
 // amniotic-fluid events and membrane-rupture events land in their own row instead of
 // overlapping in the same cell.
 export const LA_ROW: ColumnBand = {
-  columnX: HOUR_COLUMN_X,
+  columnX: LA_BOLSA_COLUMN_X,
   yTop: 150,
   yBottom: 172,
 };
 
 export const BOLSA_ROW: ColumnBand = {
-  columnX: HOUR_COLUMN_X,
+  columnX: LA_BOLSA_COLUMN_X,
   yTop: 172,
   yBottom: 193,
 };
