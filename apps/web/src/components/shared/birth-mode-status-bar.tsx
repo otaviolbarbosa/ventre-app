@@ -18,13 +18,16 @@ export function BirthModeStatusBar() {
   const patientName = (relevantPregnancy?.patient as { name: string } | null)?.name ?? "uma paciente";
 
   if (pendingActivation) {
+    const countdownMessage =
+      pendingActivation.reason === "inactivity"
+        ? `Você será redirecionada ao Modo Parto por inatividade em ${pendingActivation.secondsLeft}s`
+        : `Modo Parto ativado para ${patientName} — redirecionando em ${pendingActivation.secondsLeft}s`;
+
     return (
       <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 bg-primary px-4 py-3 text-primary-foreground shadow-lg">
         <div className="flex items-center gap-2">
           <HeartHandshake className="h-5 w-5 shrink-0" />
-          <p className="text-sm">
-            Modo Parto ativado para {patientName} — redirecionando em {pendingActivation.secondsLeft}s
-          </p>
+          <p className="text-sm">{countdownMessage}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button size="sm" variant="secondary" onClick={goNow}>
