@@ -21,6 +21,7 @@ export async function fetchBirthModeTimelineData(
   const [
     { data: pregnancy },
     { data: contractions },
+    { data: uterineActivityRecords },
     { data: cervicalDilations },
     { data: fetalStations },
     { data: fetalHeartRates },
@@ -40,6 +41,11 @@ export async function fetchBirthModeTimelineData(
       .single(),
     supabase
       .from("birth_contractions")
+      .select("*, professional:users(name)")
+      .eq("pregnancy_id", pregnancyId)
+      .order("measured_at", { ascending: true }),
+    supabase
+      .from("birth_uterine_activity")
       .select("*, professional:users(name)")
       .eq("pregnancy_id", pregnancyId)
       .order("measured_at", { ascending: true }),
@@ -123,6 +129,22 @@ export async function fetchBirthModeTimelineData(
         effectiveness: row.effectiveness,
         pain_intensity: row.pain_intensity,
         contractions_per_10min: contractionsPer10MinById.get(row.id) ?? null,
+      },
+    });
+  }
+
+  for (const row of uterineActivityRecords ?? []) {
+    events.push({
+      type: "uterine_activity",
+      id: row.id,
+      occurredAt: row.measured_at,
+      professionalId: row.professional_id,
+      professionalName: (row.professional as { name: string } | null)?.name ?? "Profissional",
+      payload: {
+        interval_minutes: row.interval_minutes,
+        contraction_count: row.contraction_count,
+        durations_seconds: row.durations_seconds,
+        du_notations: row.du_notations,
       },
     });
   }

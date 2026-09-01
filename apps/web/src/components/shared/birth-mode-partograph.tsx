@@ -9,8 +9,10 @@ import { BirthModeMedicationList } from "@/components/shared/birth-mode-medicati
 import { BirthModeMembraneRuptureSummary } from "@/components/shared/birth-mode-membrane-rupture-summary";
 import { BirthModeOxytocinChart } from "@/components/shared/birth-mode-oxytocin-chart";
 import { BirthModeUrineTestChart } from "@/components/shared/birth-mode-urine-test-chart";
+import { BirthModeUterineActivityChart } from "@/components/shared/birth-mode-uterine-activity-chart";
 import { BIRTH_EVENT_CONFIG, type BirthEventType } from "@/lib/birth-mode-constants";
 import { Card, CardContent, CardHeader, CardTitle } from "@ventre/ui/card";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 
 type PartographSessionId =
   | "dilation_station"
@@ -73,14 +75,22 @@ type BirthModePartographProps = {
   events: BirthModeTimelineEvent[];
 };
 
-function renderSessionContent(sessionId: PartographSessionId, events: BirthModeTimelineEvent[]) {
+function renderSessionContent(
+  sessionId: PartographSessionId,
+  events: BirthModeTimelineEvent[],
+  showUterineActivity: boolean | undefined,
+) {
   switch (sessionId) {
     case "dilation_station":
       return <BirthModeDilationStationChart events={events} />;
     case "fetal_heart_rate":
       return <BirthModeFetalHeartRateChart events={events} />;
     case "contraction":
-      return <BirthModeContractionChart events={events} />;
+      return showUterineActivity ? (
+        <BirthModeUterineActivityChart events={events} />
+      ) : (
+        <BirthModeContractionChart events={events} />
+      );
     case "oxytocin":
       return <BirthModeOxytocinChart events={events} />;
     case "medication":
@@ -95,6 +105,8 @@ function renderSessionContent(sessionId: PartographSessionId, events: BirthModeT
 }
 
 export function BirthModePartograph({ events }: BirthModePartographProps) {
+  const showUterineActivity = useFeatureFlagEnabled("show_uterine_activity");
+
   return (
     <div className="space-y-3">
       {BIRTH_PARTOGRAPH_SESSIONS.map((session) => {
@@ -110,7 +122,7 @@ export function BirthModePartograph({ events }: BirthModePartographProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0 pt-0 pb-4">
-              {renderSessionContent(session.id, events)}
+              {renderSessionContent(session.id, events, showUterineActivity)}
             </CardContent>
           </Card>
         );

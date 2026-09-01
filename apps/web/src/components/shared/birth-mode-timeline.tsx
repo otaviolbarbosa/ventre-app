@@ -28,10 +28,13 @@ function describeEvent(event: BirthModeTimelineEvent): string {
         };
       const label = effectiveness ? BIRTH_CONTRACTION_EFFECTIVENESS_LABELS[effectiveness] : null;
       const painLabel = pain_intensity ? BIRTH_PAIN_INTENSITY_LABELS[pain_intensity] : null;
-      const frequency =
-        contractions_per_10min != null ? ` - ${contractions_per_10min}x/10min` : "";
+      const frequency = contractions_per_10min != null ? ` - ${contractions_per_10min}x/10min` : "";
       const details = [label, painLabel].filter(Boolean).join(" - ");
       return `Contração de ${duration_seconds}s${frequency}${details ? ` (${details})` : ""}`;
+    }
+    case "uterine_activity": {
+      const { du_notations } = event.payload as { du_notations: string[] };
+      return `Dinâmica uterina em lote: ${du_notations.join(" ")}`;
     }
     case "cervical_dilation": {
       const { dilation_cm } = event.payload as { dilation_cm: number };

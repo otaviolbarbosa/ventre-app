@@ -3,7 +3,6 @@
 import { addBirthUterineActivityAction } from "@/actions/add-birth-uterine-activity-action";
 import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
 import { computeDuNotations } from "@/lib/birth-mode-uterine-activity-utils";
-import { dayjs } from "@/lib/dayjs";
 import {
   type BirthUterineActivityInput,
   birthUterineActivitySchema,
@@ -13,12 +12,10 @@ import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
-import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 const INTERVAL_OPTIONS = [10, 20, 30] as const;
@@ -59,9 +56,15 @@ export function AddBirthUterineActivityModal({
     }
   }, [open, form]);
 
-  const intervalMinutes = form.watch("interval_minutes");
-  const contractionCount = form.watch("contraction_count");
-  const durationsSeconds = form.watch("durations_seconds");
+  const intervalMinutes = useWatch({ control: form.control, name: "interval_minutes" });
+  const contractionCount = useWatch({ control: form.control, name: "contraction_count" });
+  // useWatch (não form.watch) é necessário aqui: durations_seconds tem elementos
+  // registrados individualmente via FormField/Controller (durations_seconds.${i}), e
+  // form.watch() chamado direto no corpo do render não reage de forma confiável a
+  // mudanças em elementos aninhados — só a reatribuições do array inteiro (ex.: o
+  // useEffect de resize abaixo, via setValue). useWatch cria uma subscription própria
+  // que cobre esse caso corretamente.
+  const durationsSeconds = useWatch({ control: form.control, name: "durations_seconds" });
 
   // Dimensiona durations_seconds a partir de contraction_count, preservando
   // valores já digitados por índice — mesmo padrão de new-billing-modal.tsx
@@ -74,9 +77,12 @@ export function AddBirthUterineActivityModal({
 
   const duNotations = useMemo(() => {
     if (!intervalMinutes) return [];
-    const validDurations = (durationsSeconds ?? []).filter(
-      (d): d is number => typeof d === "number" && Number.isFinite(d) && d > 0,
-    );
+    // Inputs nativos de número guardam o valor como string no form state do
+    // react-hook-form (sem valueAsNumber) — coagir antes de validar, ou todo
+    // valor digitado é descartado por um `typeof === "number"` estrito.
+    const validDurations = (durationsSeconds ?? [])
+      .map((d) => Number(d))
+      .filter((d) => Number.isFinite(d) && d > 0);
     if (validDurations.length === 0) return [];
     return computeDuNotations({
       interval_minutes: intervalMinutes,
@@ -87,6 +93,17 @@ export function AddBirthUterineActivityModal({
   useEffect(() => {
     form.setValue("du_notations", duNotations.length > 0 ? duNotations : []);
   }, [duNotations, form]);
+
+  async function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // du_notations é sincronizado ao form state via useEffect (roda após o render),
+    // então pode estar um tick atrasado em relação ao último valor digitado quando o
+    // usuário clica em Salvar logo em seguida. Sem nenhum FormField/FormMessage visível
+    // para esse campo, uma falha de validação nele bloqueia o submit silenciosamente
+    // (form.handleSubmit nunca chama onSubmit). Recalcular e sincronizar aqui, de forma
+    // síncrona, garante que a validação sempre veja o valor mais recente.
+    form.setValue("du_notations", duNotations, { shouldValidate: false });
+    return form.handleSubmit(onSubmit)(e);
+  }
 
   async function onSubmit(values: BirthUterineActivityInput) {
     const result = await addUterineActivity({ pregnancyId, data: values });
@@ -111,7 +128,7 @@ export function AddBirthUterineActivityModal({
       description="Informe a quantidade de contrações, o intervalo e as durações"
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           <FormField
             control={form.control}
             name="interval_minutes"
@@ -186,52 +203,10 @@ export function AddBirthUterineActivityModal({
             </div>
           )}
 
-          {duNotations.length > 0 && (
-            <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-center">
-              <p className="font-bold text-2xl text-primary">{duNotations.join("  ")}</p>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Data *</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) =>
-                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
-                      }
-                      placeholderText="Selecione a data"
-                      hideCalendar
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="time"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hora *</FormLabel>
-                  <FormControl>
-                    <TimePicker
-                      selected={field.value ? new Date(`1970-01-01T${field.value}:00`) : null}
-                      onChange={(date) => field.onChange(date ? dayjs(date).format("HH:mm") : "")}
-                      timeIntervals={1}
-                      hidePredefinedTimes
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-center">
+            <p className="font-bold text-2xl text-primary">
+              {duNotations.length > 0 ? duNotations.join(", ") : "DU —"}
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">

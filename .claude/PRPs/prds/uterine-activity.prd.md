@@ -120,10 +120,10 @@ O conjunto completo definido acima — flag, tabela, modal, notação e gráfico
 | 2 | Server action e validação | `add-birth-uterine-activity-action.ts` + schema Zod (quantidade, intervalo, array de durações) | complete | - | 1 | `.claude/PRPs/plans/completed/uterine-activity-phase2-server-action.plan.md` |
 | 3 | Lógica de notação DU | Função pura de cálculo/decomposição da notação DU em sub-blocos de 10 min | complete | with 4 | 2 | `.claude/PRPs/plans/completed/uterine-activity-phase3-du-notation-logic.plan.md` |
 | 4 | Modal de registro | `add-birth-uterine-activity-modal.tsx` com os 3 campos + notação em destaque | complete | with 3 | 2 | `.claude/PRPs/plans/completed/uterine-activity-phase4-registration-modal.plan.md` |
-| 5 | Toggle da flag no botão de registro | `useFeatureFlagEnabled("show_uterine_activity")` alternando modal em `birth-mode-register-buttons.tsx` | pending | - | 3, 4 | - |
-| 6 | Agregação na timeline | Incluir `birth_uterine_activity` em `birth-mode-timeline-data.ts` | pending | with 7 | 2 | - |
-| 7 | Componente de gráfico matriz | Novo componente de grade 6×n com ◢/■, preenchimento de baixo para cima | pending | with 6 | 3 | - |
-| 8 | Toggle da flag no gráfico | Alternar entre gráfico atual e nova matriz reativo à flag, na tela de partograma | pending | - | 6, 7 | - |
+| 5 | Toggle da flag no botão de registro | `useFeatureFlagEnabled("show_uterine_activity")` alternando modal em `birth-mode-register-buttons.tsx` | complete | - | 3, 4 | `.claude/PRPs/plans/completed/uterine-activity-phase5-flag-toggle.plan.md` |
+| 6 | Agregação na timeline | Incluir `birth_uterine_activity` em `birth-mode-timeline-data.ts` | complete | with 7 | 2 | `.claude/PRPs/plans/completed/uterine-activity-phase6-timeline-aggregation.plan.md` |
+| 7 | Componente de gráfico matriz | Novo componente de grade 6×n com ◢/■, preenchimento de baixo para cima | complete | with 6 | 3 | `.claude/PRPs/plans/completed/uterine-activity-phase7-matrix-chart.plan.md` |
+| 8 | Toggle da flag no gráfico | Alternar entre gráfico atual e nova matriz reativo à flag, na tela de partograma | complete | - | 6, 7 | `.claude/PRPs/plans/completed/uterine-activity-phase8-flag-toggle-chart.plan.md` |
 
 ### Phase Details
 

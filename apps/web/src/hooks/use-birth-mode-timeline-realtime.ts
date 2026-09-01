@@ -1,7 +1,7 @@
 "use client";
 
-import type { BirthEventType } from "@/lib/birth-mode-constants";
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
+import type { BirthEventType } from "@/lib/birth-mode-constants";
 import type { RealtimeChannel, RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 import { supabase } from "@ventre/supabase";
 import { useEffect } from "react";
@@ -10,6 +10,7 @@ const RECONNECT_STATUSES = new Set(["CHANNEL_ERROR", "TIMED_OUT", "CLOSED"]);
 
 const TABLE_TO_EVENT_TYPE: Record<string, BirthEventType> = {
   birth_contractions: "contraction",
+  birth_uterine_activity: "uterine_activity",
   birth_cervical_dilations: "cervical_dilation",
   birth_fetal_stations: "fetal_station",
   birth_fetal_heart_rates: "fetal_heart_rate",
@@ -23,6 +24,7 @@ const TABLE_TO_EVENT_TYPE: Record<string, BirthEventType> = {
 
 const TIME_COLUMN_BY_TABLE: Record<string, string> = {
   birth_contractions: "measured_at",
+  birth_uterine_activity: "measured_at",
   birth_cervical_dilations: "measured_at",
   birth_fetal_stations: "measured_at",
   birth_fetal_heart_rates: "measured_at",
@@ -38,6 +40,12 @@ const PAYLOAD_KEYS_BY_TABLE: Record<string, string[]> = {
   // Nota: contractions_per_10min é derivado no fetch completo (getBirthModeTimelineAction) a
   // partir do histórico de contrações; eventos chegados via realtime não recalculam esse valor.
   birth_contractions: ["duration_seconds", "effectiveness", "pain_intensity"],
+  birth_uterine_activity: [
+    "interval_minutes",
+    "contraction_count",
+    "durations_seconds",
+    "du_notations",
+  ],
   birth_cervical_dilations: ["dilation_cm"],
   birth_fetal_stations: ["station_lee"],
   birth_fetal_heart_rates: ["bpm"],

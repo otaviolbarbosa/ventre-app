@@ -5,7 +5,7 @@ export type UterineActivityInput = {
   durations_seconds: number[];
 };
 
-function splitIntoBlocks<T>(items: T[], blockCount: number): T[][] {
+export function splitIntoBlocks<T>(items: T[], blockCount: number): T[][] {
   const base = Math.floor(items.length / blockCount);
   const remainder = items.length % blockCount;
   const blocks: T[][] = [];

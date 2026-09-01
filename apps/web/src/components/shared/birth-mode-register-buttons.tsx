@@ -15,7 +15,9 @@ import { AddBirthMaternalVitalsModal } from "@/modals/add-birth-maternal-vitals-
 import { AddBirthMedicationAdministrationModal } from "@/modals/add-birth-medication-administration-modal";
 import { AddBirthMembraneRuptureModal } from "@/modals/add-birth-membrane-rupture-modal";
 import { AddBirthUrineTestModal } from "@/modals/add-birth-urine-test-modal";
+import { AddBirthUterineActivityModal } from "@/modals/add-birth-uterine-activity-modal";
 import { Button } from "@ventre/ui/button";
+import { useFeatureFlagEnabled } from "posthog-js/react";
 import { useState } from "react";
 
 type BirthModeRegisterButtonsProps = {
@@ -33,6 +35,7 @@ export function BirthModeRegisterButtons({
     BirthEventType,
     "start_monitoring" | "apgar"
   > | null>(null);
+  const showUterineActivity = useFeatureFlagEnabled("show_uterine_activity");
 
   // Eventos com cardinalidade "single" (ex: bolsa rota) só podem ser registrados uma
   // vez — desabilita o botão assim que já existir um evento desse tipo na timeline.
@@ -78,12 +81,21 @@ export function BirthModeRegisterButtons({
         })}
       </div>
 
-      <AddBirthContractionModal
-        open={activeModal === "contraction"}
-        onOpenChange={(open) => setActiveModal(open ? "contraction" : null)}
-        pregnancyId={pregnancyId}
-        onSuccess={onSuccess}
-      />
+      {showUterineActivity ? (
+        <AddBirthUterineActivityModal
+          open={activeModal === "contraction"}
+          onOpenChange={(open) => setActiveModal(open ? "contraction" : null)}
+          pregnancyId={pregnancyId}
+          onSuccess={onSuccess}
+        />
+      ) : (
+        <AddBirthContractionModal
+          open={activeModal === "contraction"}
+          onOpenChange={(open) => setActiveModal(open ? "contraction" : null)}
+          pregnancyId={pregnancyId}
+          onSuccess={onSuccess}
+        />
+      )}
       <AddBirthCervicalDilationModal
         open={activeModal === "cervical_dilation"}
         onOpenChange={(open) => setActiveModal(open ? "cervical_dilation" : null)}

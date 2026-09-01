@@ -69,6 +69,7 @@ export const BIRTH_URINE_DIPSTICK_LABELS: Record<string, string> = {
 export type BirthEventType =
   | "start_monitoring"
   | "contraction"
+  | "uterine_activity"
   | "cervical_dilation"
   | "fetal_station"
   | "fetal_heart_rate"
@@ -89,6 +90,11 @@ export const BIRTH_EVENT_CONFIG: Record<
     colorClass: "text-primary",
   },
   contraction: { label: "Dinâmica Uterina", icon: Activity, colorClass: "text-pink-500" },
+  uterine_activity: {
+    label: "Dinâmica Uterina (lote)",
+    icon: Activity,
+    colorClass: "text-pink-500",
+  },
   cervical_dilation: { label: "Dilatação cervical", icon: Ruler, colorClass: "text-purple-500" },
   fetal_station: {
     label: "Altura de apresentação (Lee)",
