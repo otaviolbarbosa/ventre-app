@@ -2460,6 +2460,69 @@ export type Database = {
           },
         ]
       }
+      prenatal_emotional_records: {
+        Row: {
+          biggest_fear: string | null
+          birth_first_image: string | null
+          birth_story: string | null
+          coping_style: string | null
+          created_at: string
+          id: string
+          loss_of_control_feeling: string | null
+          pregnancy_id: string
+          preserve_if_different: string | null
+          professional_id: string
+          safety_source: string | null
+          updated_at: string
+          woman_reminder: string | null
+        }
+        Insert: {
+          biggest_fear?: string | null
+          birth_first_image?: string | null
+          birth_story?: string | null
+          coping_style?: string | null
+          created_at?: string
+          id?: string
+          loss_of_control_feeling?: string | null
+          pregnancy_id: string
+          preserve_if_different?: string | null
+          professional_id: string
+          safety_source?: string | null
+          updated_at?: string
+          woman_reminder?: string | null
+        }
+        Update: {
+          biggest_fear?: string | null
+          birth_first_image?: string | null
+          birth_story?: string | null
+          coping_style?: string | null
+          created_at?: string
+          id?: string
+          loss_of_control_feeling?: string | null
+          pregnancy_id?: string
+          preserve_if_different?: string | null
+          professional_id?: string
+          safety_source?: string | null
+          updated_at?: string
+          woman_reminder?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prenatal_emotional_records_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prenatal_emotional_records_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           created_at: string
