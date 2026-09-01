@@ -155,7 +155,7 @@ export function EditPatientModal({
 
   const { executeAsync, isPending: isSaving } = useAction(updatePatientAction);
 
-  const form = useForm<UpdatePatientInput>({
+  const form = useForm({
     resolver: zodResolver(updatePatientSchema),
     defaultValues: {
       name: "",

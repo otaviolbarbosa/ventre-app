@@ -36,7 +36,7 @@ export function EditVaccineRecordModal({
 }: EditVaccineRecordModalProps) {
   const { executeAsync, isPending } = useAction(upsertVaccineRecordAction);
 
-  const form = useForm<VaccineRecordInput>({
+  const form = useForm({
     resolver: zodResolver(vaccineRecordSchema),
   });
 

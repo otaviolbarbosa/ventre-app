@@ -81,7 +81,7 @@ export default function NewBillingModal({
 
   const isSubmitting = status === "executing";
 
-  const form = useForm<CreateBillingInput>({
+  const form = useForm({
     resolver: zodResolver(createBillingSchema),
     defaultValues: {
       patient_id: patientId ?? "",
@@ -97,7 +97,7 @@ export default function NewBillingModal({
     },
   });
 
-  const installmentCount = form.watch("installment_count");
+  const installmentCount = form.watch("installment_count") ?? 1;
   const installmentInterval = form.watch("installment_interval");
   const firstDueDate = form.watch("first_due_date");
   const totalAmount = isStaff
@@ -154,7 +154,7 @@ export default function NewBillingModal({
   function switchToCustom(seedDates?: string[]) {
     const first = form.getValues("first_due_date") ?? "";
     const interval = form.getValues("installment_interval") ?? 1;
-    const count = form.getValues("installment_count");
+    const count = form.getValues("installment_count") ?? 1;
 
     const dates =
       seedDates ??

@@ -39,7 +39,7 @@ function EvolutionForm({
   onSubmit: (data: CreateEvolutionInput) => void;
   loading: boolean;
 }) {
-  const form = useForm<CreateEvolutionInput>({
+  const form = useForm({
     resolver: zodResolver(createEvolutionSchema),
     defaultValues: { content: "", is_public: true },
   });

@@ -141,12 +141,20 @@ export const birthUterineActivitySchema = z
     du_notations: z.array(z.string().min(1)).min(1, "Notação DU não calculada"),
     ...birthEventDateTimeSchema,
   })
-  .refine((v) => v.durations_seconds.length === v.contraction_count, {
-    message: "A quantidade de durações deve ser igual à quantidade de contrações",
-    path: ["durations_seconds"],
-  })
-  .refine((v) => v.contraction_count <= (v.interval_minutes / 10) * 6, {
-    message: "Quantidade de contrações acima do limite esperado para o intervalo",
-    path: ["contraction_count"],
+  .superRefine((v, ctx) => {
+    if (v.durations_seconds.length !== v.contraction_count) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A quantidade de durações deve ser igual à quantidade de contrações",
+        path: ["durations_seconds"],
+      });
+    }
+    if (v.contraction_count > (v.interval_minutes / 10) * 6) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Quantidade de contrações acima do limite esperado para o intervalo",
+        path: ["contraction_count"],
+      });
+    }
   });
 export type BirthUterineActivityInput = z.infer<typeof birthUterineActivitySchema>;
