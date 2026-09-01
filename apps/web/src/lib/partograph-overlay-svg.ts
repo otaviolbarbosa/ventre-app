@@ -370,7 +370,7 @@ function stampColumnText(band: ColumnBand, hoursSinceT0: number, lines: string[]
   return lines
     .map((line, index) => {
       const y = band.yBottom - index * lineHeight - 2;
-      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">${escapeXmlText(line)}</text>`;
+      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Lato">${escapeXmlText(line)}</text>`;
     })
     .join("");
 }
@@ -470,7 +470,7 @@ function stampGroupedByHalfHourColumn(
       return lines
         .map((line, index) => {
           const y = baselineY - index * 6;
-          return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">${escapeXmlText(line)}</text>`;
+          return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Lato">${escapeXmlText(line)}</text>`;
         })
         .join("");
     })
@@ -510,7 +510,7 @@ function buildMedicationElements(events: BirthModeTimelineEvent[], t0: number): 
       const text = labels.join(" / ");
       // Vertical text reading bottom-to-top within the slot, anchored near the row's
       // bottom edge so it grows upward into the tall blank medicamentos block.
-      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="start" font-family="Helvetica, Arial, sans-serif" transform="rotate(-90 ${x} ${y})">${escapeXmlText(text)}</text>`;
+      return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="start" font-family="Lato" transform="rotate(-90 ${x} ${y})">${escapeXmlText(text)}</text>`;
     })
     .join("");
 }
@@ -616,7 +616,7 @@ function buildExamHourElements(t0: number): string {
   return EXAM_HOUR_ROW.columnX
     .map((x, columnIndex) => {
       const hourLabel = (startHour + columnIndex) % 24;
-      return `<text x="${x + EXAM_HOUR_X_OFFSET}" y="${y}" font-size="8" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">${hourLabel}h</text>`;
+      return `<text x="${x + EXAM_HOUR_X_OFFSET}" y="${y}" font-size="8" text-anchor="middle" font-family="Lato">${hourLabel}h</text>`;
     })
     .join("");
 }
