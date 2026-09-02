@@ -9,6 +9,10 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbopack: {},
+  // sharp ships in Next's default serverExternalPackages list, so webpack never touches
+  // its native binary. @resvg/resvg-js doesn't, so without this webpack tries to parse
+  // its .node file as JS and fails the build ("Module parse failed: Unexpected character").
+  serverExternalPackages: ["@resvg/resvg-js"],
   experimental: {
     // withSerwist adds a custom `webpack()` fn to nextConfig, which disables Next's
     // default auto-enable of the build worker — without this, webpack compilation

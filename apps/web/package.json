@@ -36,6 +36,7 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@react-input/mask": "^2.0.4",
     "@react-pdf/renderer": "4.5.1",
+    "@resvg/resvg-js": "^2.6.2",
     "@stripe/stripe-js": "^8.8.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
