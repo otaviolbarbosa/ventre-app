@@ -78,6 +78,28 @@ const emptyForm: FormState = {
   amount: "",
 };
 
+// next-safe-action's default validation errors shape (no custom
+// handleValidationErrorsShape is configured in apps/admin/src/lib/safe-action.ts) is the
+// zod-`.format()`-style tree: `{ _errors: string[], <field>: { _errors: string[] }, ... }`.
+// Task 12's schema attaches its two business-rule refinements to specific fields
+// (`path: ["amount"]`, `path: ["total_subscriptions"]`) rather than the schema root, so the
+// message can live either at the root `_errors` or under a field key — walk both to find the
+// first message present.
+function firstValidationErrorMessage(validationErrors: unknown): string | undefined {
+  if (!validationErrors || typeof validationErrors !== "object") return undefined;
+
+  const rootErrors = (validationErrors as { _errors?: string[] })._errors;
+  if (rootErrors && rootErrors.length > 0) return rootErrors[0];
+
+  for (const [key, value] of Object.entries(validationErrors)) {
+    if (key === "_errors" || !value || typeof value !== "object") continue;
+    const fieldErrors = (value as { _errors?: string[] })._errors;
+    if (fieldErrors && fieldErrors.length > 0) return fieldErrors[0];
+  }
+
+  return undefined;
+}
+
 export function PlanPaymentLinksSection({ planId }: { planId: string }) {
   const [links, setLinks] = useState<PaymentLink[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -86,7 +108,12 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
 
   const { execute: loadLinks } = useAction(getPaymentLinksByPlanAction, {
     onSuccess: ({ data }) => setLinks((data ?? []) as PaymentLink[]),
-    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao carregar links de pagamento"),
+    onError: ({ error }) =>
+      toast.error(
+        firstValidationErrorMessage(error.validationErrors) ??
+          error.serverError ??
+          "Erro ao carregar links de pagamento",
+      ),
   });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: loadLinks identity changes every render; only planId should retrigger the fetch
@@ -100,7 +127,12 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
       setIsDialogOpen(false);
       loadLinks({ plan_id: planId });
     },
-    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao criar link de pagamento"),
+    onError: ({ error }) =>
+      toast.error(
+        firstValidationErrorMessage(error.validationErrors) ??
+          error.serverError ??
+          "Erro ao criar link de pagamento",
+      ),
   });
 
   const { execute: updateLink, isExecuting: isUpdating } = useAction(updatePaymentLinkAction, {
@@ -109,7 +141,12 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
       setIsDialogOpen(false);
       loadLinks({ plan_id: planId });
     },
-    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao atualizar link de pagamento"),
+    onError: ({ error }) =>
+      toast.error(
+        firstValidationErrorMessage(error.validationErrors) ??
+          error.serverError ??
+          "Erro ao atualizar link de pagamento",
+      ),
   });
 
   const { execute: deleteLink } = useAction(deletePaymentLinkAction, {
@@ -117,7 +154,12 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
       toast.success("Link de pagamento excluído!");
       loadLinks({ plan_id: planId });
     },
-    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao excluir link de pagamento"),
+    onError: ({ error }) =>
+      toast.error(
+        firstValidationErrorMessage(error.validationErrors) ??
+          error.serverError ??
+          "Erro ao excluir link de pagamento",
+      ),
   });
 
   function openCreateDialog() {
