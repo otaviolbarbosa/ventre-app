@@ -5,7 +5,9 @@ import { formatDate } from "@/lib/utils";
 import type { SubscriptionRow } from "@/types";
 import type { BadgeProps } from "@ventre/ui/badge";
 import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
 import { DataTable } from "@ventre/ui/shared/data-table";
+import { Pencil } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
@@ -134,12 +136,14 @@ export function SubscriptionsTable() {
         ],
         actions: [
           (sub) => (
-            <Link
-              href={`/subscriptions/${sub.id}`}
-              className="text-primary text-sm hover:underline"
-            >
-              Editar
-            </Link>
+            <Button variant="outline" size="icon-sm" asChild>
+              <Link
+                href={`/subscriptions/${sub.id}`}
+                className="text-primary text-sm hover:underline"
+              >
+                <Pencil />
+              </Link>
+            </Button>
           ),
           "delete",
         ],

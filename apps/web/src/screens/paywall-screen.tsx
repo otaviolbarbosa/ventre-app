@@ -6,18 +6,10 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@ventre/ui/dialog";
 import { Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // const NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -61,9 +53,8 @@ export default function PaywallScreen({
   yearPrice: number | null;
 }) {
   const [billing, setBilling] = useState<BillingCycle>("month");
-  const [isConfirmReplaceModalOpen, setIsConfirmReplaceModalOpen] = useState(false);
-  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const isAnnual = billing === "year";
@@ -71,6 +62,34 @@ export default function PaywallScreen({
   const { executeAsync: executeCreateStripeCheckoutSession } = useAction(
     createStripeCheckoutSessionAction,
   );
+
+  useEffect(() => {
+    if (!user?.id) {
+      setHasActiveSubscription(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          toast.error("Não foi possível verificar sua assinatura atual");
+          return;
+        }
+        setHasActiveSubscription(data != null);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const toggleBilling = () => setBilling((prev) => (prev === "month" ? "year" : "month"));
 
@@ -96,7 +115,7 @@ export default function PaywallScreen({
         return;
       }
 
-      window.location.assign(checkoutSessionUrl);
+      window.open(checkoutSessionUrl, "_blank", "noopener,noreferrer");
     } finally {
       setIsLoadingCheckout(false);
     }
@@ -108,34 +127,9 @@ export default function PaywallScreen({
       return;
     }
 
-    setIsLoadingCheckout(true);
-    const { data: activeSubscription, error } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
-    setIsLoadingCheckout(false);
-
-    if (error) {
-      toast.error("Não foi possível verificar sua assinatura atual");
-      return;
-    }
-
-    if (activeSubscription) {
-      setPendingPlan(plan);
-      setIsConfirmReplaceModalOpen(true);
-      return;
-    }
+    if (hasActiveSubscription) return;
 
     await proceedToCheckout(plan);
-  };
-
-  const handleConfirmReplace = async () => {
-    if (!pendingPlan) return;
-
-    setIsConfirmReplaceModalOpen(false);
-    await proceedToCheckout(pendingPlan);
   };
 
   return (
@@ -296,10 +290,14 @@ export default function PaywallScreen({
               <Button
                 className="gradient-primary mt-8 w-full"
                 onClick={() => handleSignPlan("plus-care")}
-                disabled={isLoadingCheckout || (isAnnual ? yearPrice == null : monthPrice == null)}
+                disabled={
+                  isLoadingCheckout ||
+                  hasActiveSubscription ||
+                  (isAnnual ? yearPrice == null : monthPrice == null)
+                }
               >
                 {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Assinar Mais Cuidado
+                {hasActiveSubscription ? "Sua assinatura já está ativa" : "Assinar Mais Cuidado"}
               </Button>
             </div>
           </div>
@@ -382,35 +380,6 @@ export default function PaywallScreen({
           </div>
         </div>
       </div>
-
-      <Dialog open={isConfirmReplaceModalOpen} onOpenChange={setIsConfirmReplaceModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Você já possui assinatura ativa</DialogTitle>
-            <DialogDescription>
-              Já identificamos uma assinatura ativa na sua conta. Se continuar, a assinatura atual
-              será substituída por uma nova.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsConfirmReplaceModalOpen(false)}
-              disabled={isLoadingCheckout}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="gradient-primary"
-              onClick={handleConfirmReplace}
-              disabled={isLoadingCheckout}
-            >
-              {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Continuar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
