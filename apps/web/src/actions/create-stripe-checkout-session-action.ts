@@ -35,10 +35,17 @@ export const createStripeCheckoutSessionAction = authActionClient
     }
 
     // biome-ignore lint/suspicious/noExplicitAny: get_active_payment_link rpc not yet in generated types — run pnpm db:types to fix
-    const { data: paymentLink } = await (supabase as any).rpc("get_active_payment_link", {
-      p_plan_id: plan.id,
-      p_frequence: parsedInput.frequence,
-    });
+    const { data: paymentLink, error: paymentLinkError } = await (supabase as any).rpc(
+      "get_active_payment_link",
+      {
+        p_plan_id: plan.id,
+        p_frequence: parsedInput.frequence,
+      },
+    );
+
+    if (paymentLinkError) {
+      throw new Error("Erro ao buscar link de pagamento");
+    }
 
     const activeLink =
       (paymentLink as { payment_link_url: string } | null | undefined) ?? null;
