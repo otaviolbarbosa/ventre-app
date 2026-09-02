@@ -3,6 +3,7 @@
 import { deletePlanAction, updatePlanAction } from "@/actions/plans";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
+import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
@@ -20,6 +21,7 @@ type Plan = {
   type: string;
   value: number | null;
   benefits: string[];
+  is_active: boolean;
 };
 
 export function PlanEditForm({ plan }: { plan: Plan }) {
@@ -30,6 +32,7 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
   const [type, setType] = useState(plan.type);
   const [value, setValue] = useState<string>(plan.value != null ? String(plan.value) : "");
   const [benefitsText, setBenefitsText] = useState(plan.benefits.join("\n"));
+  const [isActive, setIsActive] = useState(plan.is_active);
 
   const { execute: executeUpdate, isExecuting: isUpdating } = useAction(updatePlanAction, {
     onSuccess: () => {
@@ -66,6 +69,7 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
       type: type as "free" | "premium" | "enterprise",
       value: value !== "" ? Number(value) : null,
       benefits,
+      is_active: isActive,
     });
   }
 
@@ -118,7 +122,7 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
               </div>
 
               <div className="space-y-1">
-                <Label>Valor (R$)</Label>
+                <Label>Valor de fallback (R$)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -127,6 +131,9 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="0.00"
                 />
+                <p className="text-muted-foreground text-xs">
+                  Usado só quando não há link de pagamento ativo para o plano.
+                </p>
               </div>
             </div>
 
@@ -139,6 +146,15 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
                 className="resize-none font-mono text-xs"
                 placeholder={"Benefício 1\nBenefício 2\nBenefício 3"}
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="is-active"
+                checked={isActive}
+                onCheckedChange={(checked) => setIsActive(checked === true)}
+              />
+              <Label htmlFor="is-active">Plano ativo (visível no paywall)</Label>
             </div>
 
             <div className="flex items-center justify-between pt-2">

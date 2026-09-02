@@ -1,6 +1,7 @@
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { notFound } from "next/navigation";
 import { PlanEditForm } from "./_components/plan-edit-form";
+import { PlanPaymentLinksSection } from "./_components/plan-payment-links-section";
 
 type Params = Promise<{ id: string }>;
 
@@ -10,7 +11,7 @@ export default async function PlanDetailPage({ params }: { params: Params }) {
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("id, name, slug, description, type, value, benefits")
+    .select("id, name, slug, description, type, value, benefits, is_active")
     .eq("id", id)
     .single();
 
@@ -23,6 +24,7 @@ export default async function PlanDetailPage({ params }: { params: Params }) {
         <p className="mt-1 text-muted-foreground text-sm">{plan.name}</p>
       </div>
       <PlanEditForm plan={plan} />
+      <PlanPaymentLinksSection planId={id} />
     </div>
   );
 }

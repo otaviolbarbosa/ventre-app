@@ -1,4 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
+import { isSpoofedCheckoutEmail, resolveCheckoutSource } from "@/lib/webhook-checkout-source";
 import { type Database, createServerSupabaseAdmin } from "@ventre/supabase";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -58,13 +59,35 @@ export const POST = async (req: Request) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const enterpriseId = session.metadata?.enterprise_id as string | undefined;
-      const userId = session.metadata?.user_id as string | undefined;
-      const planId = session.metadata?.plan_id as string | undefined;
-      const frequence = session.metadata
-        ?.frequence as Database["public"]["Enums"]["subscription_frequence"];
 
-      if (!planId || !frequence) {
+      let paymentLinkPlan: { planId: string; frequence: string } | null = null;
+      if (session.payment_link) {
+        const paymentLinkId =
+          typeof session.payment_link === "string" ? session.payment_link : session.payment_link.id;
+
+        // biome-ignore lint/suspicious/noExplicitAny: stripe_payment_link table not yet in generated types — run pnpm db:types to fix
+        const { data: linkRow, error: linkError } = await (supabaseAdmin as any)
+          .from("stripe_payment_link")
+          .select("plan_id, frequence")
+          .eq("stripe_payment_link_id", paymentLinkId)
+          .maybeSingle();
+
+        if (linkError) throw new Error(`Failed to fetch payment link: ${linkError.message}`);
+        if (linkRow) paymentLinkPlan = { planId: linkRow.plan_id, frequence: linkRow.frequence };
+      }
+
+      const resolved = resolveCheckoutSource({
+        metadata: {
+          user_id: session.metadata?.user_id,
+          enterprise_id: session.metadata?.enterprise_id,
+          plan_id: session.metadata?.plan_id,
+          frequence: session.metadata?.frequence,
+        },
+        clientReferenceId: session.client_reference_id,
+        paymentLinkPlan,
+      });
+
+      if (!resolved) {
         return NextResponse.json(
           { error: "Checkout session metadata is missing plan_id or frequence." },
           { status: 400 },
@@ -74,7 +97,7 @@ export const POST = async (req: Request) => {
       const { data: plan, error: planError } = await supabaseAdmin
         .from("plans")
         .select("id")
-        .eq("id", planId)
+        .eq("id", resolved.planId)
         .maybeSingle();
       if (planError) throw new Error(`Failed to fetch plan: ${planError.message}`);
       if (!plan) {
@@ -95,23 +118,60 @@ export const POST = async (req: Request) => {
       const expiresAt = dayjs.unix(firstItem.current_period_end).toISOString();
       const status = session.payment_status === "paid" ? "active" : "pending";
 
-      if (enterpriseId) {
+      const { data: existingSubscription, error: existingSubscriptionError } = await supabaseAdmin
+        .from("subscriptions")
+        .select("id")
+        .eq("subscription_id", subscriptionId)
+        .maybeSingle();
+      if (existingSubscriptionError)
+        throw new Error(`Failed to check existing subscription: ${existingSubscriptionError.message}`);
+      const isNewSubscription = !existingSubscription;
+
+      if (paymentLinkPlan && resolved.userId) {
+        const { data: resolvedUser, error: resolvedUserError } = await supabaseAdmin
+          .from("users")
+          .select("email")
+          .eq("id", resolved.userId)
+          .maybeSingle();
+        if (resolvedUserError)
+          throw new Error(`Failed to fetch user for email verification: ${resolvedUserError.message}`);
+
+        const resolvedUserEmail = resolvedUser?.email;
+        const payingCustomerEmail = session.customer_details?.email;
+
+        if (isSpoofedCheckoutEmail({ resolvedUserEmail, payingCustomerEmail })) {
+          console.error(
+            "Stripe webhook: checkout customer email does not match the account referenced by client_reference_id.",
+            {
+              userId: resolved.userId,
+              resolvedUserEmail,
+              payingCustomerEmail,
+            },
+          );
+          return NextResponse.json(
+            { error: "Checkout customer email does not match the account referenced by this session." },
+            { status: 400 },
+          );
+        }
+      }
+
+      if (resolved.enterpriseId) {
         await handleEnterpriseSubscription({
           supabaseAdmin,
-          enterpriseId,
+          enterpriseId: resolved.enterpriseId,
           planId: plan.id,
-          frequence,
+          frequence: resolved.frequence as SubscriptionFrequence,
           subscriptionId,
           status,
           paidAt,
           expiresAt,
         });
-      } else if (userId) {
+      } else if (resolved.userId) {
         await handleIndividualSubscription({
           supabaseAdmin,
-          userId,
+          userId: resolved.userId,
           planId: plan.id,
-          frequence,
+          frequence: resolved.frequence as SubscriptionFrequence,
           subscriptionId,
           status,
           paidAt,
@@ -122,6 +182,30 @@ export const POST = async (req: Request) => {
           { error: "Checkout session metadata is missing enterprise_id or user_id." },
           { status: 400 },
         );
+      }
+
+      if (paymentLinkPlan && session.payment_link && isNewSubscription) {
+        const paymentLinkId =
+          typeof session.payment_link === "string" ? session.payment_link : session.payment_link.id;
+
+        // biome-ignore lint/suspicious/noExplicitAny: stripe_payment_link table not yet in generated types — run pnpm db:types to fix
+        const { data: linkRow, error: linkLookupError } = await (supabaseAdmin as any)
+          .from("stripe_payment_link")
+          .select("id")
+          .eq("stripe_payment_link_id", paymentLinkId)
+          .maybeSingle();
+        if (linkLookupError)
+          throw new Error(`Failed to look up payment link for usage sync: ${linkLookupError.message}`);
+
+        if (linkRow) {
+          // biome-ignore lint/suspicious/noExplicitAny: increment_payment_link_usage RPC not yet in generated types — run pnpm db:types to fix
+          const { error: incrementError } = await (supabaseAdmin as any).rpc(
+            "increment_payment_link_usage",
+            { p_payment_link_id: linkRow.id },
+          );
+          if (incrementError)
+            throw new Error(`Failed to increment payment link usage: ${incrementError.message}`);
+        }
       }
     }
 

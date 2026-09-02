@@ -3,6 +3,7 @@
 import { dayjs } from "@/lib/dayjs";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
+import { buildPaymentLinkRedirectUrl } from "@/lib/stripe-payment-link-redirect";
 import Stripe from "stripe";
 import { z } from "zod";
 
@@ -11,6 +12,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
 const schema = z.object({
   slug: z.string().min(1, "Escolha um plano para fazer assinatura"),
+  frequence: z.enum(["month", "year"]),
 });
 
 export const createStripeCheckoutSessionAction = authActionClient
@@ -24,23 +26,56 @@ export const createStripeCheckoutSessionAction = authActionClient
       .from("plans")
       .select()
       .eq("slug", parsedInput.slug)
+      // biome-ignore lint/suspicious/noExplicitAny: plans.is_active not yet in generated types — run pnpm db:types to fix
+      .eq("is_active" as any, true)
       .single();
 
     if (!plan || error) {
       throw new Error("Plano de assinatura não encontrado");
     }
 
-    const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2026-02-25.clover",
-    });
+    // biome-ignore lint/suspicious/noExplicitAny: get_active_payment_link rpc not yet in generated types — run pnpm db:types to fix
+    const { data: paymentLink, error: paymentLinkError } = await (supabase as any).rpc(
+      "get_active_payment_link",
+      {
+        p_plan_id: plan.id,
+        p_frequence: parsedInput.frequence,
+      },
+    );
 
-    if (!stripe) {
-      throw new Error("Erro ao inicializar o gateway de pagamento");
+    if (paymentLinkError) {
+      throw new Error("Erro ao buscar link de pagamento");
+    }
+
+    const activeLink =
+      (paymentLink as { payment_link_url: string } | null | undefined) ?? null;
+
+    if (activeLink) {
+      if (!user.email) {
+        throw new Error("E-mail do usuário não encontrado");
+      }
+
+      const redirectUrl = buildPaymentLinkRedirectUrl({
+        paymentLinkUrl: activeLink.payment_link_url,
+        userId: user.id,
+        email: user.email,
+      });
+
+      await captureServerEvent(user.id, "create_stripe_checkout_session", {
+        plan_id: plan.id,
+        source: "payment_link",
+      });
+
+      return redirectUrl;
     }
 
     if (plan.value === null) {
       throw new Error("Plano de assinatura inválido para pagamento");
     }
+
+    const stripe = new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: "2026-02-25.clover",
+    });
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       customer_email: user.email,
@@ -52,7 +87,7 @@ export const createStripeCheckoutSessionAction = authActionClient
       metadata: {
         date: dayjs().toISOString(),
         plan_id: plan.id,
-        frequence: "month",
+        frequence: parsedInput.frequence,
         user_id: user.id,
       },
       line_items: [
@@ -65,7 +100,7 @@ export const createStripeCheckoutSessionAction = authActionClient
               ...(plan.description ? { description: plan.description } : {}),
             },
             recurring: {
-              interval: "month",
+              interval: parsedInput.frequence === "year" ? "year" : "month",
             },
           },
           quantity: 1,
@@ -75,7 +110,10 @@ export const createStripeCheckoutSessionAction = authActionClient
 
     const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
 
-    await captureServerEvent(user.id, "create_stripe_checkout_session", { plan_id: plan.id });
+    await captureServerEvent(user.id, "create_stripe_checkout_session", {
+      plan_id: plan.id,
+      source: "dynamic_fallback",
+    });
 
     return checkoutSession.url;
   });
