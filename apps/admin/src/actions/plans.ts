@@ -34,6 +34,7 @@ const planSchema = z.object({
   type: z.enum(["free", "premium", "enterprise"]),
   value: z.number().min(0).nullable().optional(),
   benefits: z.array(z.string()).optional(),
+  is_active: z.boolean().default(true),
 });
 
 const updatePlanSchema = planSchema.extend({
