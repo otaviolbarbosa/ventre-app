@@ -49,7 +49,17 @@ const enterpriseFeatures = [
   "Relatórios qualitativos avançados",
 ];
 
-export default function PaywallScreen() {
+function formatBRL(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export default function PaywallScreen({
+  monthPrice,
+  yearPrice,
+}: {
+  monthPrice: number | null;
+  yearPrice: number | null;
+}) {
   const [billing, setBilling] = useState<BillingCycle>("month");
   const [isConfirmReplaceModalOpen, setIsConfirmReplaceModalOpen] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
@@ -72,7 +82,7 @@ export default function PaywallScreen() {
         serverError,
         validationErrors,
       } = await executeCreateStripeCheckoutSession({
-        slug: `${plan}-${billing}`,
+        slug: `${plan}-month`,
         frequence: billing,
       });
 
@@ -235,18 +245,31 @@ export default function PaywallScreen() {
 
               <div className="mb-6">
                 {isAnnual ? (
+                  yearPrice != null ? (
+                    <>
+                      <span className="font-bold font-poppins text-4xl text-primary">
+                        {formatBRL(yearPrice)}
+                      </span>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        por ano · {formatBRL(Math.round(yearPrice / 12))}/mês
+                      </p>
+                    </>
+                  ) : (
+                    <span className="font-poppins text-muted-foreground text-sm">
+                      Plano anual indisponível no momento
+                    </span>
+                  )
+                ) : monthPrice != null ? (
                   <>
-                    <span className="font-bold font-poppins text-4xl text-primary">R$799,00</span>
-                    <p className="mt-1 text-muted-foreground text-xs">por ano · R$66,58/mês</p>
-                    <p className="mt-0.5 font-medium text-green-600 text-xs">
-                      Economize R$159,80 no ano
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-bold font-poppins text-4xl text-primary">R$79,90</span>
+                    <span className="font-bold font-poppins text-4xl text-primary">
+                      {formatBRL(monthPrice)}
+                    </span>
                     <p className="mt-1 text-muted-foreground text-xs">por mês</p>
                   </>
+                ) : (
+                  <span className="font-poppins text-muted-foreground text-sm">
+                    Plano indisponível no momento
+                  </span>
                 )}
               </div>
 
@@ -268,7 +291,7 @@ export default function PaywallScreen() {
               <Button
                 className="gradient-primary mt-8 w-full"
                 onClick={() => handleSignPlan("plus-care")}
-                disabled={isLoadingCheckout}
+                disabled={isLoadingCheckout || (isAnnual ? yearPrice == null : monthPrice == null)}
               >
                 {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Assinar Mais Cuidado
