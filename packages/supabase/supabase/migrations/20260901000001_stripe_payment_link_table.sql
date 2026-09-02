@@ -38,7 +38,7 @@ CREATE POLICY "Anyone can view active payment links"
   ON public.stripe_payment_link
   FOR SELECT
   TO anon, authenticated
-  USING (true);
+  USING (is_active = true);
 
 CREATE POLICY "Service role has full access to payment links"
   ON public.stripe_payment_link
