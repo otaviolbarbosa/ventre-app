@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveCheckoutSource } from "./webhook-checkout-source";
+import { isSpoofedCheckoutEmail, resolveCheckoutSource } from "./webhook-checkout-source";
 
 describe("resolveCheckoutSource", () => {
   it("resolves plan/frequence from the payment link when session.payment_link matched one", () => {
@@ -61,5 +61,49 @@ describe("resolveCheckoutSource", () => {
     });
 
     expect(result).toBeNull();
+  });
+});
+
+describe("isSpoofedCheckoutEmail", () => {
+  it("returns false when both emails match (case-insensitive)", () => {
+    expect(
+      isSpoofedCheckoutEmail({
+        resolvedUserEmail: "Person@Example.com",
+        payingCustomerEmail: "person@example.com",
+      }),
+    ).toBe(false);
+  });
+
+  it("returns true when the paying customer's email differs from the resolved user's email", () => {
+    expect(
+      isSpoofedCheckoutEmail({
+        resolvedUserEmail: "victim@example.com",
+        payingCustomerEmail: "attacker@example.com",
+      }),
+    ).toBe(true);
+  });
+
+  it("returns false when the resolved user has no stored email", () => {
+    expect(
+      isSpoofedCheckoutEmail({
+        resolvedUserEmail: null,
+        payingCustomerEmail: "attacker@example.com",
+      }),
+    ).toBe(false);
+  });
+
+  it("returns false when Stripe did not record a customer email", () => {
+    expect(
+      isSpoofedCheckoutEmail({
+        resolvedUserEmail: "victim@example.com",
+        payingCustomerEmail: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("returns false when both emails are missing", () => {
+    expect(isSpoofedCheckoutEmail({ resolvedUserEmail: null, payingCustomerEmail: null })).toBe(
+      false,
+    );
   });
 });

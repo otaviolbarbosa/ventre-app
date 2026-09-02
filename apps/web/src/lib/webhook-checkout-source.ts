@@ -31,3 +31,22 @@ export function resolveCheckoutSource({
     frequence: frequence as SubscriptionFrequence,
   };
 }
+
+/**
+ * Detects a client_reference_id spoofing attempt: the payment-link checkout path trusts a
+ * plain, client-editable URL query parameter as the userId, so a user could pay with their
+ * own card but attribute the subscription to someone else's account. Compares the resolved
+ * user's stored email against the email Stripe recorded for the person who actually paid.
+ * Returns false (no mismatch) whenever either email is unavailable — this is a mitigation for
+ * the common case, not a hard block when data is missing.
+ */
+export function isSpoofedCheckoutEmail({
+  resolvedUserEmail,
+  payingCustomerEmail,
+}: {
+  resolvedUserEmail?: string | null;
+  payingCustomerEmail?: string | null;
+}): boolean {
+  if (!resolvedUserEmail || !payingCustomerEmail) return false;
+  return resolvedUserEmail.toLowerCase() !== payingCustomerEmail.toLowerCase();
+}

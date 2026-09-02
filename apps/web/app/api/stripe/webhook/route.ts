@@ -1,5 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
-import { resolveCheckoutSource } from "@/lib/webhook-checkout-source";
+import { isSpoofedCheckoutEmail, resolveCheckoutSource } from "@/lib/webhook-checkout-source";
 import { type Database, createServerSupabaseAdmin } from "@ventre/supabase";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -126,6 +126,34 @@ export const POST = async (req: Request) => {
       if (existingSubscriptionError)
         throw new Error(`Failed to check existing subscription: ${existingSubscriptionError.message}`);
       const isNewSubscription = !existingSubscription;
+
+      if (paymentLinkPlan && resolved.userId) {
+        const { data: resolvedUser, error: resolvedUserError } = await supabaseAdmin
+          .from("users")
+          .select("email")
+          .eq("id", resolved.userId)
+          .maybeSingle();
+        if (resolvedUserError)
+          throw new Error(`Failed to fetch user for email verification: ${resolvedUserError.message}`);
+
+        const resolvedUserEmail = resolvedUser?.email;
+        const payingCustomerEmail = session.customer_details?.email;
+
+        if (isSpoofedCheckoutEmail({ resolvedUserEmail, payingCustomerEmail })) {
+          console.error(
+            "Stripe webhook: checkout customer email does not match the account referenced by client_reference_id.",
+            {
+              userId: resolved.userId,
+              resolvedUserEmail,
+              payingCustomerEmail,
+            },
+          );
+          return NextResponse.json(
+            { error: "Checkout customer email does not match the account referenced by this session." },
+            { status: 400 },
+          );
+        }
+      }
 
       if (resolved.enterpriseId) {
         await handleEnterpriseSubscription({
