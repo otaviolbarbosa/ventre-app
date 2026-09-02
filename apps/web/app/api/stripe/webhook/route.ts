@@ -118,11 +118,13 @@ export const POST = async (req: Request) => {
       const expiresAt = dayjs.unix(firstItem.current_period_end).toISOString();
       const status = session.payment_status === "paid" ? "active" : "pending";
 
-      const { data: existingSubscription } = await supabaseAdmin
+      const { data: existingSubscription, error: existingSubscriptionError } = await supabaseAdmin
         .from("subscriptions")
         .select("id")
         .eq("subscription_id", subscriptionId)
         .maybeSingle();
+      if (existingSubscriptionError)
+        throw new Error(`Failed to check existing subscription: ${existingSubscriptionError.message}`);
       const isNewSubscription = !existingSubscription;
 
       if (resolved.enterpriseId) {
