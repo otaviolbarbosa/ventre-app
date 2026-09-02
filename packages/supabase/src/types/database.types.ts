@@ -2615,6 +2615,65 @@ export type Database = {
           },
         ]
       }
+      stripe_payment_link: {
+        Row: {
+          amount: number | null
+          created_at: string
+          frequence: Database["public"]["Enums"]["subscription_frequence"]
+          id: string
+          is_active: boolean
+          is_limited: boolean
+          is_primary: boolean
+          is_priority: boolean
+          payment_link_url: string
+          plan_id: string
+          stripe_payment_link_id: string
+          total_subscriptions: number | null
+          updated_at: string
+          used_subscription: number
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          frequence: Database["public"]["Enums"]["subscription_frequence"]
+          id?: string
+          is_active?: boolean
+          is_limited?: boolean
+          is_primary?: boolean
+          is_priority?: boolean
+          payment_link_url: string
+          plan_id: string
+          stripe_payment_link_id: string
+          total_subscriptions?: number | null
+          updated_at?: string
+          used_subscription?: number
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          frequence?: Database["public"]["Enums"]["subscription_frequence"]
+          id?: string
+          is_active?: boolean
+          is_limited?: boolean
+          is_primary?: boolean
+          is_priority?: boolean
+          payment_link_url?: string
+          plan_id?: string
+          stripe_payment_link_id?: string
+          total_subscriptions?: number | null
+          updated_at?: string
+          used_subscription?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_payment_link_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           cancelation_reason: string | null
@@ -3080,6 +3139,34 @@ export type Database = {
         Returns: number
       }
       gestational_weeks: { Args: { dum: string }; Returns: number }
+      get_active_payment_link: {
+        Args: {
+          p_frequence: Database["public"]["Enums"]["subscription_frequence"]
+          p_plan_id: string
+        }
+        Returns: {
+          amount: number | null
+          created_at: string
+          frequence: Database["public"]["Enums"]["subscription_frequence"]
+          id: string
+          is_active: boolean
+          is_limited: boolean
+          is_primary: boolean
+          is_priority: boolean
+          payment_link_url: string
+          plan_id: string
+          stripe_payment_link_id: string
+          total_subscriptions: number | null
+          updated_at: string
+          used_subscription: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "stripe_payment_link"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_filtered_patients: {
         Args: {
           filter_type?: string
@@ -3126,6 +3213,10 @@ export type Database = {
         Returns: Json
       }
       get_staff_enterprise_ids: { Args: never; Returns: string[] }
+      increment_payment_link_usage: {
+        Args: { p_payment_link_id: string }
+        Returns: undefined
+      }
       is_enterprise_patient: {
         Args: { p_patient_id: string }
         Returns: boolean
@@ -3289,12 +3380,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3318,11 +3409,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3343,11 +3434,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3368,11 +3459,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3385,11 +3476,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

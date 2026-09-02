@@ -82,7 +82,7 @@ export default function PaywallScreen({
         serverError,
         validationErrors,
       } = await executeCreateStripeCheckoutSession({
-        slug: `${plan}-month`,
+        slug: plan,
         frequence: billing,
       });
 
@@ -253,6 +253,11 @@ export default function PaywallScreen({
                       <p className="mt-1 text-muted-foreground text-xs">
                         por ano · {formatBRL(Math.round(yearPrice / 12))}/mês
                       </p>
+                      {monthPrice && yearPrice && (
+                        <p className="text-green-600 text-xs">
+                          Economize {formatBRL(Math.round((monthPrice ?? 0) * 12 - yearPrice))}
+                        </p>
+                      )}
                     </>
                   ) : (
                     <span className="font-poppins text-muted-foreground text-sm">

@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from "@ventre/supabase/server";
 import PaywallScreen from "@/screens/paywall-screen";
 
-const PREMIUM_PLAN_SLUG = "plus-care-month";
+const PREMIUM_PLAN_SLUG = "plus-care";
 
 export default async function PaywallPage() {
   const supabase = await createServerSupabaseClient();
