@@ -78,6 +78,15 @@ export function PlansTable() {
             ),
           },
           {
+            label: "Ativo",
+            name: "is_active",
+            callback: (plan) => (
+              <Badge variant={plan.is_active ? "default" : "outline"}>
+                {plan.is_active ? "Ativo" : "Inativo"}
+              </Badge>
+            ),
+          },
+          {
             label: "Valor",
             name: "value",
             callback: (plan) => (
