@@ -73,6 +73,7 @@ export default function PaywallScreen() {
         validationErrors,
       } = await executeCreateStripeCheckoutSession({
         slug: `${plan}-${billing}`,
+        frequence: billing,
       });
 
       if (validationErrors) {
