@@ -16,6 +16,14 @@ npx biome lint --write --unsafe <file>
 
 After writing migrations, always run `pnpm db:types` to keep `database.types.ts` in sync.
 
+## Testing
+
+Tests live in `apps/web` (Vitest — `pnpm test` from repo root runs `turbo run test`). CI runs them via `.github/workflows/test.yml` on push to `main` and on every PR.
+
+- **Touching a file with no tests** — add unit tests (and integration tests where the change crosses a boundary, e.g. a server action hitting Supabase) covering the code you changed, not just the new lines.
+- **Implementing a new feature** — ship it with unit and integration tests as part of the same change, not as a follow-up.
+- **Pre-existing tests break from your changes** — do not silently fix the test or the implementation. Stop and report the broken test(s) to the developer with your analysis of the scenario (is the test asserting stale/wrong behavior, or is it catching a real regression?) so they can decide how to proceed.
+
 ## Architecture
 
 **Monorepo** managed by Turborepo + pnpm workspaces:
@@ -83,6 +91,10 @@ Outbound push/email/WhatsApp notifications go through Postgres queues (`pgmq`-st
 ### Birth mode / Partograph
 
 Labor-tracking feature (`app/(dashboard)/modo-parto`) activated per-pregnancy, with a realtime activation bar shown to professionals (`use-birth-mode-status.ts`, `use-birth-mode-realtime.ts`) and gated per-flag for doulas (see Feature flags above). The partograph PDF is composed by overlaying an SVG (FCF, dilatação/descida, pulso/PA, contrações bands) onto a template PNG via `sharp`, then uploaded to a dedicated Supabase Storage bucket with team-member RLS (`partograph_storage_rls_text_compare.sql` — RLS compares storage object names as text, not uuid).
+
+### Payments — Stripe Payment Links
+
+Plan checkout redirects to Stripe-managed Payment Links (via `get_active_payment_link(plan_id, frequence)`, precedence: active → priority → not exhausted → primary → most recent), falling back to a dynamic Checkout Session using `plans.value` only when no active link exists. `stripe_payment_link` tracks usage (`used_subscription`, incremented idempotently from the webhook). Because `client_reference_id` is client-editable, the webhook cross-checks the paying customer's email against the resolved account's email to catch account-attribution spoofing (mitigation, not a full guarantee). Admin CRUD lives under `apps/admin/.../plans/[id]/_components/plan-payment-links-section.tsx`.
 
 ### Scheduled jobs — two mechanisms
 
