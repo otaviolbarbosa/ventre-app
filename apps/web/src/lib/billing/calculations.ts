@@ -301,14 +301,22 @@ type StatusConfig = {
   variant: "default" | "success" | "warning" | "destructive" | "secondary";
 };
 
-const statusConfigs: Record<BillingStatus | InstallmentStatus, StatusConfig> = {
+type StatusSlug = BillingStatus | InstallmentStatus | "pagar";
+
+const statusConfigs: Record<StatusSlug, StatusConfig> = {
   pendente: { label: "A Receber", variant: "warning" },
+  pagar: { label: "A Pagar", variant: "warning" },
   pago: { label: "Pago", variant: "success" },
   atrasado: { label: "Vencida", variant: "destructive" },
   cancelado: { label: "Cancelado", variant: "secondary" },
   em_analise: { label: "Em Análise", variant: "default" },
 };
 
-export function getStatusConfig(status: BillingStatus | InstallmentStatus): StatusConfig {
-  return statusConfigs[status] || statusConfigs.pendente;
+export function getStatusConfig(
+  status: BillingStatus | InstallmentStatus,
+  isPatient?: boolean,
+): StatusConfig {
+  return isPatient && status === "pendente"
+    ? statusConfigs.pagar
+    : statusConfigs[status] || statusConfigs.pendente;
 }

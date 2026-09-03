@@ -5,7 +5,10 @@ import { Badge } from "@ventre/ui/badge";
 type BillingStatus = Database["public"]["Enums"]["billing_status"];
 type InstallmentStatus = Database["public"]["Enums"]["installment_status"];
 
-export function StatusBadge({ status }: { status: BillingStatus | InstallmentStatus }) {
-  const config = getStatusConfig(status);
+export function StatusBadge({
+  status,
+  isPatient,
+}: { status: BillingStatus | InstallmentStatus; isPatient?: boolean }) {
+  const config = getStatusConfig(status, isPatient);
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }
