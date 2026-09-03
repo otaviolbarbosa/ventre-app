@@ -196,7 +196,7 @@ const EXAM_HOUR_X_OFFSET = 3;
 function examHourText(hourLabel: number, columnIndex: number): string {
   const x = columnX(CONTRACTIONS_BAND, columnIndex) + EXAM_HOUR_X_OFFSET;
   const y = (EXAM_HOUR_ROW.yTop + EXAM_HOUR_ROW.yBottom) / 2 + 3;
-  return `<text x="${x}" y="${y}" font-size="8" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">${hourLabel}h</text>`;
+  return `<text x="${x}" y="${y}" font-size="8" text-anchor="middle" font-family="Lato">${hourLabel}h</text>`;
 }
 
 describe("buildPartographOverlaySvg — hora do exame row", () => {
@@ -226,13 +226,13 @@ describe("buildPartographOverlaySvg — hora do exame row", () => {
 function laText(code: string, columnIndex: number): string {
   const x = LA_ROW.columnX[columnIndex];
   const y = LA_ROW.yBottom - 2;
-  return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">${code}</text>`;
+  return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Lato">${code}</text>`;
 }
 
 function bolsaText(columnIndex: number): string {
   const x = BOLSA_ROW.columnX[columnIndex];
   const y = BOLSA_ROW.yTop + 7;
-  return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif">R</text>`;
+  return `<text x="${x}" y="${y}" font-size="5.5" text-anchor="middle" font-family="Lato">R</text>`;
 }
 
 describe("buildPartographOverlaySvg — L.A./Bolsa row", () => {
