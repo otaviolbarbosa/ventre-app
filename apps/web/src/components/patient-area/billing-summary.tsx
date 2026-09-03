@@ -109,7 +109,7 @@ export default function BillingSummary({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex flex-1 flex-col items-start gap-2 sm:flex-row sm:items-center">
                   <h3 className="font-medium">{billing.description}</h3>
-                  <StatusBadge status={billing.status} />
+                  <StatusBadge status={billing.status} isPatient />
                 </div>
                 <p className="text-muted-foreground text-sm">
                   <TotalAmount amount={billing.total_amount} />
@@ -185,7 +185,7 @@ export default function BillingSummary({
                       <div className="flex flex-col items-end space-y-2">
                         {/* <div className="flex flex-col items-start gap-3 sm:flex-row"> */}
 
-                        <StatusBadge status={installment.status} />
+                        <StatusBadge status={installment.status} isPatient />
                         {/* </div> */}
                       </div>
                     </div>

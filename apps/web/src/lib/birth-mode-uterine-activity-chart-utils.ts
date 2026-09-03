@@ -48,7 +48,7 @@ export function computeUterineActivityChartColumns(
       columns.push(blockToColumn(block));
     }
   }
-  // O gráfico deve sempre mostrar pelo menos 10 colunas (mesmo sem dados suficientes
+  // O gráfico deve sempre mostrar pelo menos 14 colunas (mesmo sem dados suficientes
   // para preenchê-las), completando com colunas vazias à direita.
   while (columns.length < MIN_COLUMNS) {
     columns.push({ cells: [] });

@@ -3,7 +3,7 @@
 import { createStripeCheckoutSessionAction } from "@/actions/create-stripe-checkout-session-action";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { supabase } from "@ventre/supabase";
+import { type Tables, supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
@@ -23,16 +23,16 @@ type BillingCycle = "month" | "year";
 //   "Cartão pré-natal",
 // ];
 
-const premiumFeatures = [
-  "Gerenciamento de consultas e encontros",
-  "Participação em equipes multidisciplinares",
-  "Perfil completo da gestante",
-  "Ferramentas de acompanhamento (sinais vitais, contador de contrações, diário da gestante e mais)",
-  "Gestão financeira",
-  "Compartilhamento de documentos",
-  "Gerenciamento de contratos",
-  "Relatórios detalhados",
-];
+// const premiumFeatures = [
+//   "Gerenciamento de consultas e encontros",
+//   "Participação em equipes multidisciplinares",
+//   "Perfil completo da gestante",
+//   "Ferramentas de acompanhamento (sinais vitais, contador de contrações, diário da gestante e mais)",
+//   "Gestão financeira",
+//   "Compartilhamento de documentos",
+//   "Gerenciamento de contratos",
+//   "Relatórios detalhados",
+// ];
 
 const enterpriseFeatures = [
   "Perfis de gestora e secretária",
@@ -46,9 +46,11 @@ function formatBRL(cents: number): string {
 }
 
 export default function PaywallScreen({
+  plan,
   monthPrice,
   yearPrice,
 }: {
+  plan: Tables<"plans">;
   monthPrice: number | null;
   yearPrice: number | null;
 }) {
@@ -233,8 +235,8 @@ export default function PaywallScreen({
 
             <div className="flex h-full flex-col rounded-xl p-6">
               <div className="mb-2">
-                <p className="font-poppins font-semibold text-xl">Mais Cuidado</p>
-                <p className="text-muted-foreground text-sm">Para profissionais dedicados</p>
+                <p className="font-poppins font-semibold text-xl">{plan.name}</p>
+                <p className="text-muted-foreground text-sm">{plan.description}</p>
               </div>
 
               <div className="mb-6">
@@ -277,7 +279,7 @@ export default function PaywallScreen({
               </p> */}
 
               <div className="flex-1 space-y-2.5">
-                {premiumFeatures.map((text) => (
+                {plan.benefits.map((text) => (
                   <div key={text} className="flex items-center gap-3">
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
                       <Check className="h-3 w-3 text-primary" />
