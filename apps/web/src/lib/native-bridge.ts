@@ -53,6 +53,23 @@ if (typeof window !== "undefined") {
   document.addEventListener("message", handleNativeResponse as EventListener);
 }
 
+// Android's WebView can silently ignore a direct `window.location.href = url`
+// assignment made right after the WebView regains focus from a covering native
+// Activity (e.g. the Google account picker) — see
+// https://github.com/react-native-community/react-native-webview/issues/1129.
+// Routing through a real, clicked <a> goes through the WebView's normal
+// link-navigation path instead, which Android does pick up reliably. iOS
+// isn't affected, but the anchor click works there too, so this is safe to
+// use unconditionally for native-bridge hard navigations.
+export function hardNavigate(url: string) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 // Sends `{ type, requestId, ...payload }` to the native app and resolves
 // with its correlated `{ type, requestId, ... }` response, or rejects on
 // timeout. There's no origin/targetOrigin concept for

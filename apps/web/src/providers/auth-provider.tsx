@@ -3,7 +3,12 @@
 import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
 import { unsubscribeNotificationsAction } from "@/actions/unsubscribe-notifications-action";
 import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
-import { NATIVE_PUSH_TOKEN_KEY, isNativeBridge, requestNative } from "@/lib/native-bridge";
+import {
+  NATIVE_PUSH_TOKEN_KEY,
+  hardNavigate,
+  isNativeBridge,
+  requestNative,
+} from "@/lib/native-bridge";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@ventre/supabase";
 import type { Tables } from "@ventre/supabase/types";
@@ -27,6 +32,30 @@ const GOOGLE_SIGNIN_ERROR_MESSAGES: Record<string, string> = {
 
 function googleSignInErrorMessage(code: string) {
   return GOOGLE_SIGNIN_ERROR_MESSAGES[code] ?? GOOGLE_SIGNIN_ERROR_MESSAGES.unknown;
+}
+
+// supabase.auth.setSession() (and even getSession() called right after it)
+// have been observed to hang indefinitely — never resolving nor rejecting —
+// specifically inside this WebView right after the native Google picker
+// Activity returns focus, reproducing identically even from a freshly
+// force-quit app (so it isn't leftover state from a previous attempt).
+// Extensive diagnostics ruled out the network (a raw fetch to the same
+// endpoint, same token, resolves in ms) and confirmed it's internal to
+// supabase-js's browser-side client in this specific environment. Setting the
+// session server-side instead — a plain Node.js request handler, never
+// running supabase-js's browser code — sidesteps whatever that is entirely.
+async function setNativeSessionServerSide(
+  accessToken: string,
+  refreshToken: string,
+): Promise<Error | null> {
+  const response = await fetch("/api/auth/native-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken }),
+  });
+  if (response.ok) return null;
+  const { error } = await response.json().catch(() => ({ error: undefined }));
+  return new Error(typeof error === "string" ? error : "Falha ao estabelecer a sessão.");
 }
 
 interface AuthContextType {
@@ -196,17 +225,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             error: new Error(googleSignInErrorMessage(result.error ?? "unknown")),
           };
         }
-        const { error } = await supabase.auth.setSession({
-          access_token: result.access_token,
-          refresh_token: result.refresh_token,
-        });
+
+        const error = await setNativeSessionServerSide(result.access_token, result.refresh_token);
         if (!error) {
           // Unlike the browser OAuth path below (redirect to Google → /auth/callback does a
           // server-side redirect on return), the native bridge sets the session in place with
           // no page navigation. Hard nav for the same reason as the password login path
           // (login/page.tsx onSubmit): router.push() → server redirect('/onboarding') for new
-          // users causes a Next.js Router hooks count mismatch.
-          window.location.href = redirectTo || "/home";
+          // users causes a Next.js Router hooks count mismatch. hardNavigate() (not a direct
+          // `window.location.href =`) because this runs right after the WebView regains focus
+          // from the native Google account picker, where Android silently drops that assignment.
+          hardNavigate(redirectTo || "/home");
         }
         return { data: null, error };
       } catch {

@@ -1,7 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 import { signInWithGoogleNatively } from "@/lib/google-signin";
 import {
   getInitialDeepLinkUrl,
@@ -12,6 +8,11 @@ import {
   subscribeToTokenRefresh,
 } from "@/lib/push-notifications";
 import { supabase } from "@/lib/supabase";
+import { useObserve } from "expo-observe";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 
 const WEB_BASE_URL = process.env.EXPO_PUBLIC_WEB_BASE_URL;
 const LANDING_URI = `${WEB_BASE_URL}/landing`;
@@ -28,6 +29,13 @@ export default function Index() {
   const webViewRef = useRef<WebView>(null);
   const isAuthenticatedRef = useRef(false);
   const lastTokenRef = useRef<string | null>(null);
+  const { markInteractive } = useObserve();
+
+  // Only the first call per session is recorded, so it's safe to fire on every
+  // load (including client-side navigations inside the WebView).
+  const handleLoadEnd = useCallback(() => {
+    markInteractive();
+  }, [markInteractive]);
 
   const handleNavigationStateChange = useCallback((navState: WebViewNavigation) => {
     const pathname = getPathname(navState.url);
@@ -156,6 +164,7 @@ export default function Index() {
         source={{ uri: webViewUri }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={handleMessage}
+        onLoadEnd={handleLoadEnd}
         startInLoadingState
         renderLoading={() => <View style={[styles.container, styles.topSafeArea]} />}
       />

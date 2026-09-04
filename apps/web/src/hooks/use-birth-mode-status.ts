@@ -89,6 +89,7 @@ export function useBirthModeStatus() {
   const hasCheckedInitialRedirect = useRef(false);
 
   // Checagem no mount — equivale a "abrir o app com parto já ativo"
+  // biome-ignore lint/correctness/useExhaustiveDependencies: checagem única por mount — só `user` deve disparar; pathname/isProfessional/birthModeDisabled são lidos no momento da resolução via closure, não devem reexecutar o fetch inicial
   useEffect(() => {
     if (hasCheckedInitialRedirect.current) return;
     if (!user) return;
@@ -112,7 +113,6 @@ export function useBirthModeStatus() {
     return () => {
       cancelled = true;
     };
-    // biome-ignore lint/correctness/useExhaustiveDependencies: checagem única por mount — só `user` deve disparar; pathname/isProfessional/birthModeDisabled são lidos no momento da resolução via closure, não devem reexecutar o fetch inicial
   }, [user]);
 
   // Retorno do background — visibilitychange + pageshow como fallback (bug conhecido do Safari/iOS)
