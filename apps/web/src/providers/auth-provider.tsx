@@ -34,46 +34,28 @@ function googleSignInErrorMessage(code: string) {
   return GOOGLE_SIGNIN_ERROR_MESSAGES[code] ?? GOOGLE_SIGNIN_ERROR_MESSAGES.unknown;
 }
 
-const SET_SESSION_TIMEOUT_MS = 8_000;
-
-// supabase.auth.setSession() has been observed to hang indefinitely (never
-// resolving nor rejecting) specifically right after the native Google picker
-// Activity returns focus to the WebView — confirmed via diagnostics that the
-// underlying token-validation request itself succeeds instantly, so the hang
-// is inside supabase-js's own post-request handling, not the network. Racing
-// it against a timeout and falling back to an independent getSession() read
-// (unaffected by whatever's stuck) works around it: the session write
-// already lands in storage even when the promise itself never settles.
-async function setSessionWithTimeout(
+// supabase.auth.setSession() (and even getSession() called right after it)
+// have been observed to hang indefinitely — never resolving nor rejecting —
+// specifically inside this WebView right after the native Google picker
+// Activity returns focus, reproducing identically even from a freshly
+// force-quit app (so it isn't leftover state from a previous attempt).
+// Extensive diagnostics ruled out the network (a raw fetch to the same
+// endpoint, same token, resolves in ms) and confirmed it's internal to
+// supabase-js's browser-side client in this specific environment. Setting the
+// session server-side instead — a plain Node.js request handler, never
+// running supabase-js's browser code — sidesteps whatever that is entirely.
+async function setNativeSessionServerSide(
   accessToken: string,
   refreshToken: string,
 ): Promise<Error | null> {
-  let timedOut = false;
-  const timeout = new Promise<{ error: null }>((resolve) => {
-    setTimeout(() => {
-      timedOut = true;
-      resolve({ error: null });
-    }, SET_SESSION_TIMEOUT_MS);
+  const response = await fetch("/api/auth/native-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken }),
   });
-
-  alert("[diag2] setSessionWithTimeout: about to race setSession vs timeout");
-  const { error } = await Promise.race([
-    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
-    timeout,
-  ]);
-  alert(`[diag2] race settled, timedOut=${timedOut}, error=${error ? error.message : "none"}`);
-  if (!timedOut) return error;
-
-  alert("[diag2] timed out — calling getSession() as fallback");
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  alert(
-    `[diag2] getSession returned, hasSession=${!!session}, tokenMatches=${session?.access_token === accessToken}`,
-  );
-  return session?.access_token === accessToken
-    ? null
-    : new Error("Tempo esgotado ao estabelecer a sessão.");
+  if (response.ok) return null;
+  const { error } = await response.json().catch(() => ({ error: undefined }));
+  return new Error(typeof error === "string" ? error : "Falha ao estabelecer a sessão.");
 }
 
 interface AuthContextType {
@@ -237,7 +219,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
         // escolhendo uma conta no seletor nativo do Google, não só uma resposta automática.
         const result = await requestNative<GoogleSignInResult>("google-signin-request", {}, 60_000);
-        alert(`[diag2] requestNative resolved, hasError=${!!result.error}`);
         if (result.error || !result.access_token || !result.refresh_token) {
           return {
             data: null,
@@ -245,17 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        // supabase.auth.setSession() can hang indefinitely right after the native
-        // Google picker Activity returns focus to this WebView — confirmed via
-        // extensive diagnostics that the underlying token validation call itself
-        // succeeds instantly (a raw fetch to the same endpoint resolves fine),
-        // so the hang is inside supabase-js's own post-request handling, not the
-        // network. Racing it against a timeout and falling back to an
-        // independent getSession() check (unaffected by the hang) works around
-        // it without guessing at supabase-js's internals.
-        alert("[diag2] about to call setSessionWithTimeout");
-        const error = await setSessionWithTimeout(result.access_token, result.refresh_token);
-        alert(`[diag2] setSessionWithTimeout returned, error=${error ? error.message : "none"}`);
+        const error = await setNativeSessionServerSide(result.access_token, result.refresh_token);
         if (!error) {
           // Unlike the browser OAuth path below (redirect to Google → /auth/callback does a
           // server-side redirect on return), the native bridge sets the session in place with
