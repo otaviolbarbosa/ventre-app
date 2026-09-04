@@ -56,15 +56,21 @@ async function setSessionWithTimeout(
     }, SET_SESSION_TIMEOUT_MS);
   });
 
+  alert("[diag2] setSessionWithTimeout: about to race setSession vs timeout");
   const { error } = await Promise.race([
     supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
     timeout,
   ]);
+  alert(`[diag2] race settled, timedOut=${timedOut}, error=${error ? error.message : "none"}`);
   if (!timedOut) return error;
 
+  alert("[diag2] timed out — calling getSession() as fallback");
   const {
     data: { session },
   } = await supabase.auth.getSession();
+  alert(
+    `[diag2] getSession returned, hasSession=${!!session}, tokenMatches=${session?.access_token === accessToken}`,
+  );
   return session?.access_token === accessToken
     ? null
     : new Error("Tempo esgotado ao estabelecer a sessão.");
@@ -231,6 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
         // escolhendo uma conta no seletor nativo do Google, não só uma resposta automática.
         const result = await requestNative<GoogleSignInResult>("google-signin-request", {}, 60_000);
+        alert(`[diag2] requestNative resolved, hasError=${!!result.error}`);
         if (result.error || !result.access_token || !result.refresh_token) {
           return {
             data: null,
@@ -246,7 +253,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // network. Racing it against a timeout and falling back to an
         // independent getSession() check (unaffected by the hang) works around
         // it without guessing at supabase-js's internals.
+        alert("[diag2] about to call setSessionWithTimeout");
         const error = await setSessionWithTimeout(result.access_token, result.refresh_token);
+        alert(`[diag2] setSessionWithTimeout returned, error=${error ? error.message : "none"}`);
         if (!error) {
           // Unlike the browser OAuth path below (redirect to Google → /auth/callback does a
           // server-side redirect on return), the native bridge sets the session in place with
