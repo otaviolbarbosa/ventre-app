@@ -35,7 +35,7 @@
       "env": {
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_WEB_BASE_URL": "https://ventre.app",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1074052440136-4u3j7iptjnsnvssvu7t8v0u86abi1cel.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1074052440136-f09ajfdvb7gd4da81rqr9pveprrvqmhh.apps.googleusercontent.com"
       }
     }
   },

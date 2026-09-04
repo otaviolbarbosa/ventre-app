@@ -3,7 +3,12 @@
 import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
 import { unsubscribeNotificationsAction } from "@/actions/unsubscribe-notifications-action";
 import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
-import { NATIVE_PUSH_TOKEN_KEY, isNativeBridge, requestNative } from "@/lib/native-bridge";
+import {
+  NATIVE_PUSH_TOKEN_KEY,
+  hardNavigate,
+  isNativeBridge,
+  requestNative,
+} from "@/lib/native-bridge";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@ventre/supabase";
 import type { Tables } from "@ventre/supabase/types";
@@ -205,8 +210,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // server-side redirect on return), the native bridge sets the session in place with
           // no page navigation. Hard nav for the same reason as the password login path
           // (login/page.tsx onSubmit): router.push() → server redirect('/onboarding') for new
-          // users causes a Next.js Router hooks count mismatch.
-          window.location.href = redirectTo || "/home";
+          // users causes a Next.js Router hooks count mismatch. hardNavigate() (not a direct
+          // `window.location.href =`) because this runs right after the WebView regains focus
+          // from the native Google account picker, where Android silently drops that assignment.
+          hardNavigate(redirectTo || "/home");
         }
         return { data: null, error };
       } catch {

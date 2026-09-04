@@ -1,8 +1,9 @@
+import { ObserveRoot } from 'expo-observe';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <SafeAreaProvider>
       {/* Icon color only — Android is edge-to-edge as of SDK 57, so the actual
@@ -13,3 +14,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+export default ObserveRoot.wrap(RootLayout);

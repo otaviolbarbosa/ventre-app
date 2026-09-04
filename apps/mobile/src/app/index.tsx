@@ -1,3 +1,4 @@
+import { useObserve } from "expo-observe";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,6 +29,13 @@ export default function Index() {
   const webViewRef = useRef<WebView>(null);
   const isAuthenticatedRef = useRef(false);
   const lastTokenRef = useRef<string | null>(null);
+  const { markInteractive } = useObserve();
+
+  // Only the first call per session is recorded, so it's safe to fire on every
+  // load (including client-side navigations inside the WebView).
+  const handleLoadEnd = useCallback(() => {
+    markInteractive();
+  }, [markInteractive]);
 
   const handleNavigationStateChange = useCallback((navState: WebViewNavigation) => {
     const pathname = getPathname(navState.url);
@@ -156,6 +164,7 @@ export default function Index() {
         source={{ uri: webViewUri }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={handleMessage}
+        onLoadEnd={handleLoadEnd}
         startInLoadingState
         renderLoading={() => <View style={[styles.container, styles.topSafeArea]} />}
       />
