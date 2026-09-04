@@ -93,12 +93,7 @@ export default function Index() {
       case "google-signin-request": {
         const { requestId } = message;
         (async () => {
-          console.log("[google-signin] starting native sign-in…");
           const { idToken, error: signInError } = await signInWithGoogleNatively();
-          console.log("[google-signin] signInWithGoogleNatively:", {
-            hasIdToken: !!idToken,
-            signInError,
-          });
           if (!idToken) {
             webViewRef.current?.postMessage(
               JSON.stringify({ type: "google-signin-result", requestId, error: signInError }),
@@ -110,10 +105,6 @@ export default function Index() {
             provider: "google",
             token: idToken,
           });
-          console.log("[google-signin] signInWithIdToken:", {
-            hasSession: !!data.session,
-            authError,
-          });
 
           if (authError || !data.session) {
             webViewRef.current?.postMessage(
@@ -122,7 +113,6 @@ export default function Index() {
             return;
           }
 
-          console.log("[google-signin] posting result back to WebView, requestId:", requestId);
           webViewRef.current?.postMessage(
             JSON.stringify({
               type: "google-signin-result",
@@ -131,7 +121,6 @@ export default function Index() {
               refresh_token: data.session.refresh_token,
             }),
           );
-          console.log("[google-signin] postMessage call returned");
         })();
         break;
       }

@@ -34,6 +34,42 @@ function googleSignInErrorMessage(code: string) {
   return GOOGLE_SIGNIN_ERROR_MESSAGES[code] ?? GOOGLE_SIGNIN_ERROR_MESSAGES.unknown;
 }
 
+const SET_SESSION_TIMEOUT_MS = 8_000;
+
+// supabase.auth.setSession() has been observed to hang indefinitely (never
+// resolving nor rejecting) specifically right after the native Google picker
+// Activity returns focus to the WebView — confirmed via diagnostics that the
+// underlying token-validation request itself succeeds instantly, so the hang
+// is inside supabase-js's own post-request handling, not the network. Racing
+// it against a timeout and falling back to an independent getSession() read
+// (unaffected by whatever's stuck) works around it: the session write
+// already lands in storage even when the promise itself never settles.
+async function setSessionWithTimeout(
+  accessToken: string,
+  refreshToken: string,
+): Promise<Error | null> {
+  let timedOut = false;
+  const timeout = new Promise<{ error: null }>((resolve) => {
+    setTimeout(() => {
+      timedOut = true;
+      resolve({ error: null });
+    }, SET_SESSION_TIMEOUT_MS);
+  });
+
+  const { error } = await Promise.race([
+    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }),
+    timeout,
+  ]);
+  if (!timedOut) return error;
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token === accessToken
+    ? null
+    : new Error("Tempo esgotado ao estabelecer a sessão.");
+}
+
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
@@ -195,77 +231,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
         // escolhendo uma conta no seletor nativo do Google, não só uma resposta automática.
         const result = await requestNative<GoogleSignInResult>("google-signin-request", {}, 60_000);
-        alert(
-          `[signInWithGoogle] requestNative resolved. hasError=${!!result.error} hasAccessToken=${!!result.access_token}`,
-        );
         if (result.error || !result.access_token || !result.refresh_token) {
           return {
             data: null,
             error: new Error(googleSignInErrorMessage(result.error ?? "unknown")),
           };
         }
-        // TEMP diagnostic: raw fetch to the same Auth API endpoint setSession()
-        // calls internally, bypassing supabase-js entirely — isolates whether
-        // the hang is in the network/fetch layer itself or in supabase-js's
-        // own handling around setSession.
-        try {
-          alert("[diag] about to raw-fetch /auth/v1/user");
-          const rawResp = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
-            headers: {
-              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-              Authorization: `Bearer ${result.access_token}`,
-            },
-          });
-          alert(`[diag] raw fetch resolved, status=${rawResp.status}`);
-        } catch (rawErr) {
-          alert(
-            `[diag] raw fetch threw: ${rawErr instanceof Error ? rawErr.message : String(rawErr)}`,
-          );
-        }
 
-        // TEMP diagnostic: setSession() internally picks between validating the
-        // existing token (GET /auth/v1/user, which we just proved works) or
-        // refreshing it (POST /auth/v1/token) depending on whether the JWT
-        // looks expired. We've only tested the GET path — decode the JWT here
-        // to see which branch setSession is actually about to take, and test
-        // the POST path directly too in case that's the one that hangs.
-        try {
-          const payloadB64 = result.access_token.split(".")[1] ?? "";
-          const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
-          const nowSec = Date.now() / 1000;
-          alert(
-            `[diag] jwt exp=${payload.exp} now=${nowSec.toFixed(0)} hasExpired=${payload.exp <= nowSec}`,
-          );
-        } catch (decodeErr) {
-          alert(
-            `[diag] jwt decode threw: ${decodeErr instanceof Error ? decodeErr.message : String(decodeErr)}`,
-          );
-        }
-        try {
-          alert("[diag] about to raw-fetch POST /auth/v1/token?grant_type=refresh_token");
-          const rawRefreshResp = await fetch(
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
-            {
-              method: "POST",
-              headers: {
-                apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ refresh_token: result.refresh_token }),
-            },
-          );
-          alert(`[diag] raw refresh fetch resolved, status=${rawRefreshResp.status}`);
-        } catch (rawRefreshErr) {
-          alert(
-            `[diag] raw refresh fetch threw: ${rawRefreshErr instanceof Error ? rawRefreshErr.message : String(rawRefreshErr)}`,
-          );
-        }
-
-        const { error } = await supabase.auth.setSession({
-          access_token: result.access_token,
-          refresh_token: result.refresh_token,
-        });
-        alert(`[signInWithGoogle] setSession resolved. error=${error ? error.message : "none"}`);
+        // supabase.auth.setSession() can hang indefinitely right after the native
+        // Google picker Activity returns focus to this WebView — confirmed via
+        // extensive diagnostics that the underlying token validation call itself
+        // succeeds instantly (a raw fetch to the same endpoint resolves fine),
+        // so the hang is inside supabase-js's own post-request handling, not the
+        // network. Racing it against a timeout and falling back to an
+        // independent getSession() check (unaffected by the hang) works around
+        // it without guessing at supabase-js's internals.
+        const error = await setSessionWithTimeout(result.access_token, result.refresh_token);
         if (!error) {
           // Unlike the browser OAuth path below (redirect to Google → /auth/callback does a
           // server-side redirect on return), the native bridge sets the session in place with
@@ -274,13 +255,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // users causes a Next.js Router hooks count mismatch. hardNavigate() (not a direct
           // `window.location.href =`) because this runs right after the WebView regains focus
           // from the native Google account picker, where Android silently drops that assignment.
-          alert(`[signInWithGoogle] about to call hardNavigate(${redirectTo || "/home"})`);
           hardNavigate(redirectTo || "/home");
-          alert("[signInWithGoogle] hardNavigate() returned without throwing");
         }
         return { data: null, error };
-      } catch (err) {
-        alert(`[signInWithGoogle] threw: ${err instanceof Error ? err.message : String(err)}`);
+      } catch {
         return { data: null, error: new Error(googleSignInErrorMessage("unknown")) };
       }
     }

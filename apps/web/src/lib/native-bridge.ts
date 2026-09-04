@@ -35,21 +35,15 @@ function handleNativeResponse(event: MessageEvent) {
   try {
     parsed = JSON.parse(event.data);
   } catch {
-    alert("[native-bridge] JSON.parse of event.data threw");
     return;
   }
-  if (!isNativeResponse(parsed)) {
-    alert(`[native-bridge] message did not match isNativeResponse shape: ${event.data}`);
-    return;
-  }
+  if (!isNativeResponse(parsed)) return;
 
   const pending = pendingRequests.get(parsed.requestId);
-  alert(`[native-bridge] parsed ok, pending found=${!!pending}, requestId=${parsed.requestId}`);
   if (!pending) return;
 
   pendingRequests.delete(parsed.requestId);
   pending.resolve(parsed);
-  alert("[native-bridge] pending.resolve() returned");
 }
 
 // Android WebView fires "message" on `document`, iOS on `window` — same
