@@ -33,7 +33,6 @@ export function EditEmotionalPrenatalModal({
   const { executeAsync, isPending } = useAction(upsertEmotionalPrenatalAction);
   const [answer, setAnswer] = useState("");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on open
   useEffect(() => {
     if (open) {
       setAnswer(currentValue ?? "");
