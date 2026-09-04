@@ -1,8 +1,3 @@
-import { useObserve } from "expo-observe";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 import { signInWithGoogleNatively } from "@/lib/google-signin";
 import {
   getInitialDeepLinkUrl,
@@ -13,6 +8,11 @@ import {
   subscribeToTokenRefresh,
 } from "@/lib/push-notifications";
 import { supabase } from "@/lib/supabase";
+import { useObserve } from "expo-observe";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 
 const WEB_BASE_URL = process.env.EXPO_PUBLIC_WEB_BASE_URL;
 const LANDING_URI = `${WEB_BASE_URL}/landing`;
@@ -93,7 +93,12 @@ export default function Index() {
       case "google-signin-request": {
         const { requestId } = message;
         (async () => {
+          console.log("[google-signin] starting native sign-in…");
           const { idToken, error: signInError } = await signInWithGoogleNatively();
+          console.log("[google-signin] signInWithGoogleNatively:", {
+            hasIdToken: !!idToken,
+            signInError,
+          });
           if (!idToken) {
             webViewRef.current?.postMessage(
               JSON.stringify({ type: "google-signin-result", requestId, error: signInError }),
@@ -105,6 +110,10 @@ export default function Index() {
             provider: "google",
             token: idToken,
           });
+          console.log("[google-signin] signInWithIdToken:", {
+            hasSession: !!data.session,
+            authError,
+          });
 
           if (authError || !data.session) {
             webViewRef.current?.postMessage(
@@ -113,6 +122,7 @@ export default function Index() {
             return;
           }
 
+          console.log("[google-signin] posting result back to WebView, requestId:", requestId);
           webViewRef.current?.postMessage(
             JSON.stringify({
               type: "google-signin-result",
@@ -121,6 +131,7 @@ export default function Index() {
               refresh_token: data.session.refresh_token,
             }),
           );
+          console.log("[google-signin] postMessage call returned");
         })();
         break;
       }

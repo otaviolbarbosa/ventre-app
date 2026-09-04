@@ -194,7 +194,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // 60s em vez do timeout padrão de requestNative (10s) — esse round-trip inclui a usuária
         // escolhendo uma conta no seletor nativo do Google, não só uma resposta automática.
+        console.error("[signInWithGoogle] requesting native sign-in…");
         const result = await requestNative<GoogleSignInResult>("google-signin-request", {}, 60_000);
+        console.error("[signInWithGoogle] native responded:", {
+          hasError: !!result.error,
+          hasAccessToken: !!result.access_token,
+          hasRefreshToken: !!result.refresh_token,
+        });
         if (result.error || !result.access_token || !result.refresh_token) {
           return {
             data: null,
@@ -205,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           access_token: result.access_token,
           refresh_token: result.refresh_token,
         });
+        console.error("[signInWithGoogle] setSession result:", { error });
         if (!error) {
           // Unlike the browser OAuth path below (redirect to Google → /auth/callback does a
           // server-side redirect on return), the native bridge sets the session in place with
@@ -213,10 +220,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // users causes a Next.js Router hooks count mismatch. hardNavigate() (not a direct
           // `window.location.href =`) because this runs right after the WebView regains focus
           // from the native Google account picker, where Android silently drops that assignment.
+          console.error("[signInWithGoogle] calling hardNavigate to", redirectTo || "/home");
           hardNavigate(redirectTo || "/home");
+          console.error("[signInWithGoogle] hardNavigate returned without throwing");
         }
         return { data: null, error };
-      } catch {
+      } catch (err) {
+        console.error("[signInWithGoogle] threw:", err);
         return { data: null, error: new Error(googleSignInErrorMessage("unknown")) };
       }
     }

@@ -38,9 +38,13 @@ function handleNativeResponse(event: MessageEvent) {
     return;
   }
   if (!isNativeResponse(parsed)) return;
+  console.error("[native-bridge] received native message:", parsed);
 
   const pending = pendingRequests.get(parsed.requestId);
-  if (!pending) return;
+  if (!pending) {
+    console.error("[native-bridge] no pending request for requestId:", parsed.requestId);
+    return;
+  }
 
   pendingRequests.delete(parsed.requestId);
   pending.resolve(parsed);
