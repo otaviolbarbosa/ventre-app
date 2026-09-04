@@ -29,30 +29,27 @@ function isNativeResponse(value: unknown): value is { requestId: string } {
 }
 
 function handleNativeResponse(event: MessageEvent) {
-  // TEMP diagnostic: alert() doesn't need any devtools/inspector setup to see —
-  // if this never fires, the "message" event from native is never reaching this
-  // WebView's window/document at all.
-  alert(`[native-bridge] message event fired, typeof data=${typeof event.data}`);
-
   if (typeof event.data !== "string") return;
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(event.data);
   } catch {
+    alert("[native-bridge] JSON.parse of event.data threw");
     return;
   }
-  if (!isNativeResponse(parsed)) return;
-  console.error("[native-bridge] received native message:", parsed);
+  if (!isNativeResponse(parsed)) {
+    alert(`[native-bridge] message did not match isNativeResponse shape: ${event.data}`);
+    return;
+  }
 
   const pending = pendingRequests.get(parsed.requestId);
-  if (!pending) {
-    console.error("[native-bridge] no pending request for requestId:", parsed.requestId);
-    return;
-  }
+  alert(`[native-bridge] parsed ok, pending found=${!!pending}, requestId=${parsed.requestId}`);
+  if (!pending) return;
 
   pendingRequests.delete(parsed.requestId);
   pending.resolve(parsed);
+  alert("[native-bridge] pending.resolve() returned");
 }
 
 // Android WebView fires "message" on `document`, iOS on `window` — same
