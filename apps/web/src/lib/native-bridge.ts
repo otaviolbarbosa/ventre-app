@@ -29,6 +29,11 @@ function isNativeResponse(value: unknown): value is { requestId: string } {
 }
 
 function handleNativeResponse(event: MessageEvent) {
+  // TEMP diagnostic: alert() doesn't need any devtools/inspector setup to see —
+  // if this never fires, the "message" event from native is never reaching this
+  // WebView's window/document at all.
+  alert(`[native-bridge] message event fired, typeof data=${typeof event.data}`);
+
   if (typeof event.data !== "string") return;
 
   let parsed: unknown;
