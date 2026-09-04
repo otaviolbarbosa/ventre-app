@@ -204,6 +204,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             error: new Error(googleSignInErrorMessage(result.error ?? "unknown")),
           };
         }
+        // TEMP diagnostic: raw fetch to the same Auth API endpoint setSession()
+        // calls internally, bypassing supabase-js entirely — isolates whether
+        // the hang is in the network/fetch layer itself or in supabase-js's
+        // own handling around setSession.
+        try {
+          alert("[diag] about to raw-fetch /auth/v1/user");
+          const rawResp = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
+            headers: {
+              apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+              Authorization: `Bearer ${result.access_token}`,
+            },
+          });
+          alert(`[diag] raw fetch resolved, status=${rawResp.status}`);
+        } catch (rawErr) {
+          alert(
+            `[diag] raw fetch threw: ${rawErr instanceof Error ? rawErr.message : String(rawErr)}`,
+          );
+        }
+
         const { error } = await supabase.auth.setSession({
           access_token: result.access_token,
           refresh_token: result.refresh_token,
