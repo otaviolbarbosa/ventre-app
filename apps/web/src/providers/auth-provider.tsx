@@ -223,6 +223,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           );
         }
 
+        // TEMP diagnostic: setSession() internally picks between validating the
+        // existing token (GET /auth/v1/user, which we just proved works) or
+        // refreshing it (POST /auth/v1/token) depending on whether the JWT
+        // looks expired. We've only tested the GET path — decode the JWT here
+        // to see which branch setSession is actually about to take, and test
+        // the POST path directly too in case that's the one that hangs.
+        try {
+          const payloadB64 = result.access_token.split(".")[1] ?? "";
+          const payload = JSON.parse(atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")));
+          const nowSec = Date.now() / 1000;
+          alert(
+            `[diag] jwt exp=${payload.exp} now=${nowSec.toFixed(0)} hasExpired=${payload.exp <= nowSec}`,
+          );
+        } catch (decodeErr) {
+          alert(
+            `[diag] jwt decode threw: ${decodeErr instanceof Error ? decodeErr.message : String(decodeErr)}`,
+          );
+        }
+        try {
+          alert("[diag] about to raw-fetch POST /auth/v1/token?grant_type=refresh_token");
+          const rawRefreshResp = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`,
+            {
+              method: "POST",
+              headers: {
+                apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ refresh_token: result.refresh_token }),
+            },
+          );
+          alert(`[diag] raw refresh fetch resolved, status=${rawRefreshResp.status}`);
+        } catch (rawRefreshErr) {
+          alert(
+            `[diag] raw refresh fetch threw: ${rawRefreshErr instanceof Error ? rawRefreshErr.message : String(rawRefreshErr)}`,
+          );
+        }
+
         const { error } = await supabase.auth.setSession({
           access_token: result.access_token,
           refresh_token: result.refresh_token,
