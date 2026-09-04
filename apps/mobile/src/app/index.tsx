@@ -1,8 +1,3 @@
-import { useObserve } from "expo-observe";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 import { signInWithGoogleNatively } from "@/lib/google-signin";
 import {
   getInitialDeepLinkUrl,
@@ -13,6 +8,11 @@ import {
   subscribeToTokenRefresh,
 } from "@/lib/push-notifications";
 import { supabase } from "@/lib/supabase";
+import { useObserve } from "expo-observe";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView, type WebViewMessageEvent, type WebViewNavigation } from "react-native-webview";
 
 const WEB_BASE_URL = process.env.EXPO_PUBLIC_WEB_BASE_URL;
 const LANDING_URI = `${WEB_BASE_URL}/landing`;
