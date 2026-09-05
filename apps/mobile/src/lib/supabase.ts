@@ -4,13 +4,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@ventre/supabase/types";
 
-// TODO: apps/mobile não tem hoje nenhum mecanismo de variável de ambiente
-// (sem .env, sem app.config.ts). Hardcoded para o ambiente de dev, mesma
-// prática já usada para o webClientId do Google em google-signin.ts — a
-// publishable key é pública por design (mesmo projeto Supabase de apps/web,
-// obtido via MCP get_project_url/get_publishable_keys).
-const SUPABASE_URL = "https://osnpmadayhignmkpoevr.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_-TLz93IDr7gNagHTN3YyvQ_nwEp1PFo";
+// EXPO_PUBLIC_SUPABASE_URL/ANON_KEY set per profile in eas.json — same pattern
+// already used for EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID. Falls back to the dev
+// project (ventre-db-dev) for local runs with no EAS profile involved (plain
+// `expo run:ios`/`expo run:android`), same reasoning as APP_VARIANT in
+// app.config.js: a stray unset var should never silently talk to prod. The
+// publishable key is public by design.
+const SUPABASE_URL =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ?? "https://osnpmadayhignmkpoevr.supabase.co";
+const SUPABASE_ANON_KEY =
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "sb_publishable_-TLz93IDr7gNagHTN3YyvQ_nwEp1PFo";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
