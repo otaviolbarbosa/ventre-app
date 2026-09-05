@@ -138,9 +138,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     getUser();
 
+    // supabase-js awaits onAuthStateChange callbacks in order before dispatching the next
+    // event, and (on the @supabase/supabase-js@2.91.x this app pins, pre-lockless-coordination)
+    // serializes ALL auth calls — getUser(), getSession(), signOut() included — behind the same
+    // internal lock held while a callback runs. The previous callback here was `async` and
+    // awaited fetchProfile (with up to 3 retries) directly, so a slow/retrying profile fetch
+    // stalled that lock and froze unrelated auth calls elsewhere in the app (sidebar, logout,
+    // birth-mode banner) — a network blip made this worse, not better, since retries only
+    // prolonged the stall. Per Supabase's docs, the callback must stay synchronous; deferring
+    // the async work with setTimeout lets it run outside the lock instead of holding it.
+    // https://supabase.com/docs/reference/javascript/auth-onauthstatechange
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser((prev) => {
         if (prev?.id === session?.user?.id) return prev;
         return session?.user ?? null;
@@ -148,8 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_OUT") {
         setProfile(null);
-      } else if (event !== "TOKEN_REFRESHED" && session?.user) {
-        await fetchProfile(session.user.id);
+      } else if (event !== "TOKEN_REFRESHED" && event !== "INITIAL_SESSION" && session?.user) {
+        // INITIAL_SESSION is already handled by getUser() above — skipping it here avoids
+        // firing two concurrent fetchProfile calls for the same user on first load.
+        setTimeout(() => fetchProfile(session.user.id), 0);
       }
     });
 
