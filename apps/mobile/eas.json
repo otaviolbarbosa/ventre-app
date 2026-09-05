@@ -13,7 +13,9 @@
       "env": {
         "APP_VARIANT": "development",
         "EXPO_PUBLIC_WEB_BASE_URL": "https://ventre-web-dev.vercel.app",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "585581972014-6fqvigc9sjtn4jq4tt6bl4nogttlr9rn.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "585581972014-6fqvigc9sjtn4jq4tt6bl4nogttlr9rn.apps.googleusercontent.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://osnpmadayhignmkpoevr.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-TLz93IDr7gNagHTN3YyvQ_nwEp1PFo"
       }
     },
     "preview": {
@@ -24,7 +26,9 @@
       "env": {
         "APP_VARIANT": "development",
         "EXPO_PUBLIC_WEB_BASE_URL": "https://ventre-web-dev.vercel.app",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "585581972014-6fqvigc9sjtn4jq4tt6bl4nogttlr9rn.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "585581972014-6fqvigc9sjtn4jq4tt6bl4nogttlr9rn.apps.googleusercontent.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://osnpmadayhignmkpoevr.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-TLz93IDr7gNagHTN3YyvQ_nwEp1PFo"
       }
     },
     "production": {
@@ -35,7 +39,9 @@
       "env": {
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_WEB_BASE_URL": "https://ventre.app",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1074052440136-f09ajfdvb7gd4da81rqr9pveprrvqmhh.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "1074052440136-f09ajfdvb7gd4da81rqr9pveprrvqmhh.apps.googleusercontent.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://ggpuywxwjaaodzcjtxqb.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_Z7qdFg_EhI_fXvdIoczsmQ_WA-MOF--"
       }
     }
   },
