@@ -85,7 +85,7 @@
     "@ventre/typescript-config": "workspace:*",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.4.20",
-    "jsdom": "^30.0.1",
+    "happy-dom": "^20.14.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
