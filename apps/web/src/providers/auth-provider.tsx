@@ -68,9 +68,10 @@ interface AuthContextType {
     password: string,
     metadata: { name: string },
   ) => Promise<{ data: unknown; error: unknown }>;
-  signOut: () => Promise<{ error: unknown }>;
+  signOut: (redirectTo?: string) => Promise<{ error: unknown }>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
+  updatePassword: (password: string) => Promise<{ data: unknown; error: unknown }>;
   signInWithGoogle: (
     redirectTo?: string,
     intent?: { name: string; piid: string },
@@ -188,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
-  const signOut = async () => {
+  const signOut = async (redirectTo = "/login") => {
     setLoading(true);
     if (isNativeBridge()) {
       const cachedToken = localStorage.getItem(NATIVE_PUSH_TOKEN_KEY);
@@ -206,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Hard navigation forces the server to re-read the session from scratch,
       // evitando que o cache de server components do Next.js App Router
       // mantenha a sessão antiga após o logout.
-      window.location.href = "/login";
+      window.location.href = redirectTo;
     }
 
     setLoading(false);
@@ -222,6 +223,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     });
+    return { data, error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { data, error } = await supabase.auth.updateUser({ password });
     return { data, error };
   };
 
@@ -293,6 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     refreshProfile,
     resetPassword,
+    updatePassword,
     signInWithGoogle,
     connectGoogleCalendar,
     isAuthenticated: !!user,
