@@ -1,20 +1,20 @@
 "use client";
 
-import { Badge } from "@ventre/ui/badge";
-import { Button } from "@ventre/ui/button";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { UserAvatar } from "@ventre/ui/shared/user-avatar";
-import { Clock, MapPin, Pencil, Stethoscope, UserPlus } from "lucide-react";
-import Link from "next/link";
-import { useAction } from "next-safe-action/hooks";
-import { useState } from "react";
-import { toast } from "sonner";
 import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
 import { useAuth } from "@/hooks/use-auth";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { Appointment, PatientWithGestationalInfo, User } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
+import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
+import { Clock, MapPin, Pencil, Stethoscope, UserPlus } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 import { EditAppointmentModal } from "./edit-appointment-modal";
 
 const typeLabels: Record<string, string> = {

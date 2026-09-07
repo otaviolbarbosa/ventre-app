@@ -1,8 +1,8 @@
 import { type ContractHeaderBlocks, buildContractHeaderBlocks } from "@/lib/contract-header-text";
 import type { ProfileWithEnterprise } from "@/lib/safe-action";
 import {
-  personalDocumentsSchema,
   type PersonalDocumentsInput,
+  personalDocumentsSchema,
 } from "@/lib/validations/personal-documents";
 import { type ContratadaAddress, getTeamMembersDetails } from "@/services/base-contract";
 import type {

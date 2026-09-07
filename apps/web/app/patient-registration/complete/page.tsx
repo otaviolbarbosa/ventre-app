@@ -1,6 +1,6 @@
+import { getServerAuth } from "@/lib/server-auth";
 import PatientRegisterCompleteScreen from "@/screens/patient-register-complete-screen";
 import RegistrationCompleteNotice from "@/screens/registration-complete-notice-screen";
-import { getServerAuth } from "@/lib/server-auth";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { redirect } from "next/navigation";
 

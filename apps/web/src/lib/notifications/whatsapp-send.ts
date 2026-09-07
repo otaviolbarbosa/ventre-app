@@ -1,11 +1,11 @@
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import {
+  WhatsAppApiError,
+  type WhatsAppNotificationType,
   getWhatsAppTemplate,
   normalizePhoneToE164,
   sendWhatsAppTemplateMessage,
-  WhatsAppApiError,
-  type WhatsAppNotificationType,
 } from "@ventre/whatsapp";
-import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type WhatsAppRecipient =
   | { recipientType: "patient"; recipientId: string }

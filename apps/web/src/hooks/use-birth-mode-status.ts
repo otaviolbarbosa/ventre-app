@@ -103,7 +103,12 @@ export function useBirthModeStatus() {
       setActivePregnancies(pregnancies);
       const ids = pregnancies.map((p) => p.id);
       if (
-        canConsiderAutoRedirect({ isProfessional, birthModeDisabled, pathname, activePregnancyIds: ids })
+        canConsiderAutoRedirect({
+          isProfessional,
+          birthModeDisabled,
+          pathname,
+          activePregnancyIds: ids,
+        })
       ) {
         const id = resolveAutoRedirectPregnancyId(ids);
         if (id) router.push(`/modo-parto?pregnancyId=${id}`);
@@ -125,7 +130,12 @@ export function useBirthModeStatus() {
       setActivePregnancies(pregnancies);
       const ids = pregnancies.map((p) => p.id);
       if (
-        canConsiderAutoRedirect({ isProfessional, birthModeDisabled, pathname, activePregnancyIds: ids })
+        canConsiderAutoRedirect({
+          isProfessional,
+          birthModeDisabled,
+          pathname,
+          activePregnancyIds: ids,
+        })
       ) {
         const id = resolveAutoRedirectPregnancyId(ids);
         if (id) router.push(`/modo-parto?pregnancyId=${id}`);
@@ -177,7 +187,12 @@ export function useBirthModeStatus() {
       }, INACTIVITY_TIMEOUT_MS - COUNTDOWN_MS);
     }
 
-    const activityEvents: (keyof WindowEventMap)[] = ["mousedown", "keydown", "touchstart", "scroll"];
+    const activityEvents: (keyof WindowEventMap)[] = [
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+    ];
     for (const event of activityEvents) {
       window.addEventListener(event, scheduleInactivityRedirect, { passive: true });
     }

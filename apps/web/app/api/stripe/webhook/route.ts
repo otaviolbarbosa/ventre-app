@@ -124,7 +124,9 @@ export const POST = async (req: Request) => {
         .eq("subscription_id", subscriptionId)
         .maybeSingle();
       if (existingSubscriptionError)
-        throw new Error(`Failed to check existing subscription: ${existingSubscriptionError.message}`);
+        throw new Error(
+          `Failed to check existing subscription: ${existingSubscriptionError.message}`,
+        );
       const isNewSubscription = !existingSubscription;
 
       if (paymentLinkPlan && resolved.userId) {
@@ -134,7 +136,9 @@ export const POST = async (req: Request) => {
           .eq("id", resolved.userId)
           .maybeSingle();
         if (resolvedUserError)
-          throw new Error(`Failed to fetch user for email verification: ${resolvedUserError.message}`);
+          throw new Error(
+            `Failed to fetch user for email verification: ${resolvedUserError.message}`,
+          );
 
         const resolvedUserEmail = resolvedUser?.email;
         const payingCustomerEmail = session.customer_details?.email;
@@ -149,7 +153,10 @@ export const POST = async (req: Request) => {
             },
           );
           return NextResponse.json(
-            { error: "Checkout customer email does not match the account referenced by this session." },
+            {
+              error:
+                "Checkout customer email does not match the account referenced by this session.",
+            },
             { status: 400 },
           );
         }
@@ -195,7 +202,9 @@ export const POST = async (req: Request) => {
           .eq("stripe_payment_link_id", paymentLinkId)
           .maybeSingle();
         if (linkLookupError)
-          throw new Error(`Failed to look up payment link for usage sync: ${linkLookupError.message}`);
+          throw new Error(
+            `Failed to look up payment link for usage sync: ${linkLookupError.message}`,
+          );
 
         if (linkRow) {
           // biome-ignore lint/suspicious/noExplicitAny: increment_payment_link_usage RPC not yet in generated types — run pnpm db:types to fix

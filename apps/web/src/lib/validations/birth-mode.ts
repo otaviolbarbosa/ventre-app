@@ -6,10 +6,7 @@ export const activateBirthModeSchema = z
     birth_mode_labour_type: z.enum(["espontaneo", "induzido"], {
       message: "Selecione o tipo de trabalho de parto",
     }),
-    birth_mode_induction_type: z
-      .enum(["balao", "misoprostol", "ocitocina"])
-      .optional()
-      .nullable(),
+    birth_mode_induction_type: z.enum(["balao", "misoprostol", "ocitocina"]).optional().nullable(),
     labour_start_description: z.string().optional().nullable(),
   })
   .refine((v) => v.birth_mode_labour_type !== "induzido" || !!v.birth_mode_induction_type, {
@@ -84,8 +81,7 @@ export const birthMedicationAdministrationSchema = z
   .refine(
     (v) =>
       v.medication_type !== "ocitocina" ||
-      (v.oxytocin_drip_rate_gtt_per_min !== undefined &&
-        v.oxytocin_drip_rate_gtt_per_min !== null),
+      (v.oxytocin_drip_rate_gtt_per_min !== undefined && v.oxytocin_drip_rate_gtt_per_min !== null),
     {
       message: "Informe o gotejamento da ocitocina",
       path: ["oxytocin_drip_rate_gtt_per_min"],

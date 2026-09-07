@@ -1,9 +1,9 @@
 "use server";
 
-import { z } from "zod";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { createInviteForPatientTeamMember } from "@/services/invite";
+import { z } from "zod";
 
 const schema = z.object({
   patientId: z.string().uuid("ID do paciente inválido"),

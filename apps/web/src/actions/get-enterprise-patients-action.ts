@@ -115,7 +115,11 @@ export async function getEnterprisePatients(
 
     rows = (patientsData ?? [])
       .map((p) => {
-        const { addresses: addrs, user, ...patientData } = p as typeof p & {
+        const {
+          addresses: addrs,
+          user,
+          ...patientData
+        } = p as typeof p & {
           addresses: unknown[];
           user: { avatar_url: string | null } | null;
         };
