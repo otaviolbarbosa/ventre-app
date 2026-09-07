@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { canConsiderAutoRedirect, resolveAutoRedirectPregnancyId } from "./birth-mode-redirect-utils";
+import {
+  canConsiderAutoRedirect,
+  resolveAutoRedirectPregnancyId,
+} from "./birth-mode-redirect-utils";
 
 describe("canConsiderAutoRedirect", () => {
   const baseInput = {
@@ -30,9 +33,9 @@ describe("canConsiderAutoRedirect", () => {
   });
 
   it("retorna false quando já está em /modo-parto?pregnancyId=x", () => {
-    expect(
-      canConsiderAutoRedirect({ ...baseInput, pathname: "/modo-parto?pregnancyId=x" }),
-    ).toBe(false);
+    expect(canConsiderAutoRedirect({ ...baseInput, pathname: "/modo-parto?pregnancyId=x" })).toBe(
+      false,
+    );
   });
 });
 

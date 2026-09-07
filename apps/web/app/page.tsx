@@ -1,11 +1,11 @@
-import { Button } from "@ventre/ui/button";
-import { ArrowRight, Baby, Calendar, CheckCircle2, Heart, Shield, Users } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
 import heroBG from "@/assets/hero-bg-3.png";
 import { PublicFooter } from "@/components/shared/public-footer";
 import { PublicHeader } from "@/components/shared/public-header";
 import { RotatingHeroWord } from "@/components/shared/rotating-hero-word";
+import { Button } from "@ventre/ui/button";
+import { ArrowRight, Baby, Calendar, CheckCircle2, Heart, Shield, Users } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export default async function HomePage() {
   const features = [

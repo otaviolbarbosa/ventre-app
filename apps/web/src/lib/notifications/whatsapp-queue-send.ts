@@ -1,11 +1,11 @@
 import { resolveRecipientPhone } from "@/lib/notifications/whatsapp-send";
+import type { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import {
+  type WhatsAppNotificationType,
   getWhatsAppTemplate,
   normalizePhoneToE164,
   sendWhatsAppTemplateMessage,
-  type WhatsAppNotificationType,
 } from "@ventre/whatsapp";
-import type { createServerSupabaseAdmin } from "@ventre/supabase/server";
 
 export type WhatsAppQueueRecipient = {
   recipientType: "patient" | "user" | "invite";

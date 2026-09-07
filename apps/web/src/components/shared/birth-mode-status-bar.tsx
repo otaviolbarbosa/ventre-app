@@ -15,7 +15,8 @@ export function BirthModeStatusBar() {
   const relevantPregnancy = activePregnancies.find(
     (p) => p.id === (pendingActivation?.pregnancyId ?? activePregnancies[0]?.id),
   );
-  const patientName = (relevantPregnancy?.patient as { name: string } | null)?.name ?? "uma paciente";
+  const patientName =
+    (relevantPregnancy?.patient as { name: string } | null)?.name ?? "uma paciente";
 
   if (pendingActivation) {
     const countdownMessage =

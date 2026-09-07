@@ -70,10 +70,16 @@ export const EMOTIONAL_PRENATAL_QUESTIONS: {
   name: keyof EmotionalPrenatalInput;
   question: string;
 }[] = [
-  { name: "birth_story", question: "Como você nasceu? Quais histórias você ouviu sobre seu nascimento?" },
+  {
+    name: "birth_story",
+    question: "Como você nasceu? Quais histórias você ouviu sobre seu nascimento?",
+  },
   { name: "coping_style", question: "Como você costuma lidar com situações desafiadoras?" },
   { name: "safety_source", question: "O que faz você se sentir segura?" },
-  { name: "loss_of_control_feeling", question: "Como você se sente quando perde o controle da situação?" },
+  {
+    name: "loss_of_control_feeling",
+    question: "Como você se sente quando perde o controle da situação?",
+  },
   {
     name: "birth_first_image",
     question: "Quando você imagina o parto, qual é a primeira imagem que vem na sua cabeça?",

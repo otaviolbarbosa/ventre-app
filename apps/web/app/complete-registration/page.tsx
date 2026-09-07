@@ -1,8 +1,8 @@
+import ventreLogo from "@/assets/ventre.png";
+import CompleteRegistrationScreen from "@/screens/complete-registration-screen";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import Image from "next/image";
 import Link from "next/link";
-import ventreLogo from "@/assets/ventre.png";
-import CompleteRegistrationScreen from "@/screens/complete-registration-screen";
 
 type PageProps = { searchParams: Promise<{ riid?: string }> };
 

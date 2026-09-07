@@ -63,12 +63,7 @@ export function EditEmotionalPrenatalModal({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label>{question}</Label>
-          <Textarea
-            rows={5}
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            autoFocus
-          />
+          <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} autoFocus />
         </div>
 
         <div className="flex justify-end gap-2 pt-2">

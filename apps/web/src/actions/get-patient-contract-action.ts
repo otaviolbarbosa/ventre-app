@@ -10,8 +10,8 @@ import {
 import { authActionClient } from "@/lib/safe-action";
 import { getPatientContractSchema } from "@/lib/validations/contract";
 import {
-  personalDocumentsSchema,
   type PersonalDocumentsInput,
+  personalDocumentsSchema,
 } from "@/lib/validations/personal-documents";
 import { type ContratadaAddress, getTeamMembersDetails } from "@/services/base-contract";
 
@@ -179,7 +179,12 @@ export const getPatientContractAction = authActionClient
       if (patient) {
         const patientParty: ContractParty | null = isPatientDataComplete(patient, pregnancy)
           ? null
-          : { type: "patient", id: patientId, name: patient.name ?? "Gestante", isCurrentUser: false };
+          : {
+              type: "patient",
+              id: patientId,
+              name: patient.name ?? "Gestante",
+              isCurrentUser: false,
+            };
 
         const incompleteTeamMembers: ContractParty[] = teamMembers
           .filter((m) => !isPersonDataComplete(m))
@@ -233,7 +238,9 @@ export const getPatientContractAction = authActionClient
             email: profile.email,
             phone: profile.phone ?? null,
             professional_type: profile.professional_type ?? null,
-            personal_documents: personalDocumentsResult.success ? personalDocumentsResult.data : null,
+            personal_documents: personalDocumentsResult.success
+              ? personalDocumentsResult.data
+              : null,
             address: professionalAddress ?? null,
           };
 

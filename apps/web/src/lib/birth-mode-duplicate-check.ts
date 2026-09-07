@@ -21,7 +21,10 @@ export function toDuplicateWarning(
 ): DuplicateWarning {
   if (!row || row.professional_id === currentUserId || !occurredAtIso) return null;
 
-  const minutesAgo = Math.max(1, Math.round((Date.now() - new Date(occurredAtIso).getTime()) / 60000));
+  const minutesAgo = Math.max(
+    1,
+    Math.round((Date.now() - new Date(occurredAtIso).getTime()) / 60000),
+  );
 
   return {
     minutesAgo,

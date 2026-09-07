@@ -1,8 +1,8 @@
 "use client";
 
+import { PwaInstallBanner } from "@/components/shared/pwa-install-banner";
 import { ConfirmationModalProvider } from "@ventre/ui/contexts/confirmation-modal-provider";
 import { Toaster } from "@ventre/ui/sonner";
-import { PwaInstallBanner } from "@/components/shared/pwa-install-banner";
 import { AuthProvider } from "./auth-provider";
 import { BirthModeRealtimeProvider } from "./birth-mode-realtime-provider";
 import { NotificationsProvider } from "./notifications-provider";

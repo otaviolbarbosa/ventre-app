@@ -1,6 +1,6 @@
 import {
-  PartographPdfDocument,
   type PartographPdfData,
+  PartographPdfDocument,
 } from "@/components/shared/partograph-pdf-document";
 import { type DocumentProps, renderToBuffer } from "@react-pdf/renderer";
 import React from "react";

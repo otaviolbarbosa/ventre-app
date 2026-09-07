@@ -2,13 +2,13 @@
 
 import { completePatientRegistrationPostOAuthAction } from "@/actions/complete-patient-registration-post-oauth-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
+import { ESTADOS_BR } from "@/lib/constants";
 import {
   type LinkExistingPatientRegistrationInput,
-  linkExistingPatientRegistrationSchema,
   type PatientSelfRegistrationInput,
+  linkExistingPatientRegistrationSchema,
   patientSelfRegistrationSchema,
 } from "@/lib/validations/patient-invite";
-import { ESTADOS_BR } from "@/lib/constants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { Button } from "@ventre/ui/button";

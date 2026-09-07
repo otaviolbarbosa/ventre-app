@@ -15,7 +15,9 @@ export const resolveContractChangeRequestAction = authActionClient
     }) => {
       if (profile.enterprise_id) {
         if (!isStaff(profile)) {
-          throw new Error("Apenas gestores ou secretárias podem resolver solicitações de alteração.");
+          throw new Error(
+            "Apenas gestores ou secretárias podem resolver solicitações de alteração.",
+          );
         }
       } else {
         const { data: patientRow } = await supabase
