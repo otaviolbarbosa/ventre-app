@@ -126,7 +126,11 @@ async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePat
     if (error) throw new Error(error.message);
 
     rawPatients = (data ?? []).map((p) => {
-      const { addresses: addrs, user, ...patientData } = p as typeof p & {
+      const {
+        addresses: addrs,
+        user,
+        ...patientData
+      } = p as typeof p & {
         addresses: unknown[];
         user: { avatar_url: string | null } | null;
       };

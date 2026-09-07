@@ -1,8 +1,8 @@
+import ventreLogoWhite from "@/assets/ventre-light.png";
+import ventreLogo from "@/assets/ventre.png";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import ventreLogo from "@/assets/ventre.png";
-import ventreLogoWhite from "@/assets/ventre-light.png";
-import { cn } from "@/lib/utils";
 
 type LogoProps = {
   href?: string;

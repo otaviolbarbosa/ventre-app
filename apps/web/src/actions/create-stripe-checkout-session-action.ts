@@ -47,8 +47,7 @@ export const createStripeCheckoutSessionAction = authActionClient
       throw new Error("Erro ao buscar link de pagamento");
     }
 
-    const activeLink =
-      (paymentLink as { payment_link_url: string } | null | undefined) ?? null;
+    const activeLink = (paymentLink as { payment_link_url: string } | null | undefined) ?? null;
 
     if (activeLink) {
       if (!user.email) {

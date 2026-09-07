@@ -1,8 +1,8 @@
 // Server-only module: imports sharp. Never import from client components.
 import path from "node:path";
-import { Resvg } from "@resvg/resvg-js";
 import type { BirthModeTimelineEvent } from "@/actions/get-birth-mode-timeline-action";
 import { buildPartographOverlaySvg } from "@/lib/partograph-overlay-svg";
+import { Resvg } from "@resvg/resvg-js";
 import sharp from "sharp";
 
 const TEMPLATE_PATH = path.join(process.cwd(), "src/assets/partograph-template.png");

@@ -2,8 +2,8 @@
 import { dayjs } from "@/lib/dayjs";
 import type { DequeuedNotification } from "@/lib/notifications/queue";
 import type { WhatsAppQueueRecipient } from "@/lib/notifications/whatsapp-queue-send";
-import type { getWhatsAppTemplate, WhatsAppNotificationType } from "@ventre/whatsapp";
 import type { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import type { WhatsAppNotificationType, getWhatsAppTemplate } from "@ventre/whatsapp";
 
 type SupabaseAdmin = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 type WhatsAppTemplateParams = Parameters<typeof getWhatsAppTemplate>[1];

@@ -2,9 +2,9 @@
 
 import { createLinkExistingPatientInviteAction } from "@/actions/create-link-existing-patient-invite-action";
 import PatientInviteShareModal from "@/modals/patient-invite-share-modal";
-import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { Button } from "@ventre/ui/button";
 import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Loader2, UserPlus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";

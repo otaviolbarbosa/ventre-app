@@ -1,5 +1,11 @@
 "use client";
 
+import { updateAppointmentAction } from "@/actions/update-appointment-action";
+import {
+  type UpdateAppointmentInput,
+  updateAppointmentSchema,
+} from "@/lib/validations/appointment";
+import type { Appointment, PatientWithGestationalInfo, User } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
@@ -14,12 +20,6 @@ import { useAction } from "next-safe-action/hooks";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { updateAppointmentAction } from "@/actions/update-appointment-action";
-import {
-  type UpdateAppointmentInput,
-  updateAppointmentSchema,
-} from "@/lib/validations/appointment";
-import type { Appointment, PatientWithGestationalInfo, User } from "@/types";
 
 const DURATION_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
 

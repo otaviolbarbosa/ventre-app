@@ -97,9 +97,7 @@ export function BirthModeScreen({
     }
   }, [lastActivation, pregnancyId]);
 
-  const showAllEventsOnPartographTab = useFeatureFlagEnabled(
-    "show-all-events-on-partograph-tab",
-  );
+  const showAllEventsOnPartographTab = useFeatureFlagEnabled("show-all-events-on-partograph-tab");
 
   const partographEvents = useMemo(() => {
     if (!partographUnlockedAt) return [];

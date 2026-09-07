@@ -30,12 +30,32 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Refresh the session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() gives the same server-verified trust as getUser() (it falls back to
+  // getUser() internally when the project uses symmetric signing keys) plus the decoded
+  // JWT claims, which is how we detect a password-recovery session below.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  const user = claims ? { id: claims.sub } : null;
 
   const { pathname } = request.nextUrl;
+
+  // A session minted from a password-recovery email link carries amr: [{ method: "recovery" }]
+  // — Supabase's documented signal for this exact case (https://supabase.com/docs/guides/auth/jwt-fields).
+  // Clicking that link authenticates the browser immediately, before a new password is set, so
+  // without this gate anyone with the (single-use, ~1h) link could browse the whole app as the
+  // user instead of only reaching the reset-password form. Confine the session to that route
+  // until a new password replaces it; reset-password/page.tsx signs the session out on success
+  // (updateUser() doesn't clear this amr entry from the current session's token).
+  const isRecoverySession =
+    claims?.amr?.some(
+      (entry) => (typeof entry === "string" ? entry : entry.method) === "recovery",
+    ) ?? false;
+  if (isRecoverySession && pathname !== "/reset-password") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/reset-password";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -50,6 +70,7 @@ export async function proxy(request: NextRequest) {
     "/policies",
     "/check/",
     "/auth/callback",
+    "/reset-password",
     "/patient-registration",
     "/api/stripe/webhook",
     "/api/check/",

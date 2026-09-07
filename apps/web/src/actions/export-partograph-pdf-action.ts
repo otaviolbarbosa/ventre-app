@@ -34,7 +34,11 @@ export const exportPartographPdfAction = authActionClient
       }
     }
 
-    const buffer = await renderPartographPdfBuffer({ headerInfo, imageBuffer, exceedsTemplateWindow });
+    const buffer = await renderPartographPdfBuffer({
+      headerInfo,
+      imageBuffer,
+      exceedsTemplateWindow,
+    });
     return {
       pdfBase64: buffer.toString("base64"),
       fileName: buildPartographPdfFileName(headerInfo.patientName),

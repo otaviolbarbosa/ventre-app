@@ -1,10 +1,10 @@
 "use client";
 
 import { confirmAppointmentAttendanceAction } from "@/actions/confirm-appointment-attendance-action";
+import type { AppointmentWithProfessional } from "@/services/patient-self";
 import { professionalTypeLabels } from "@/utils/team";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import type { AppointmentWithProfessional } from "@/services/patient-self";
 import dayjs from "dayjs";
 import { Check, Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";

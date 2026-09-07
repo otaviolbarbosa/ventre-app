@@ -1,9 +1,9 @@
 "use client";
 
+import { usePwa } from "@/providers/pwa-provider";
 import { Button } from "@ventre/ui/button";
 import { Download, X } from "lucide-react";
 import { useState } from "react";
-import { usePwa } from "@/providers/pwa-provider";
 
 export function PwaInstallBanner() {
   const { isInstallable, isInstalled, promptInstall } = usePwa();

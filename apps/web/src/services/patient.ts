@@ -85,7 +85,11 @@ export async function getMyPatients(
     }
 
     rows = pregnanciesData.map((preg) => {
-      const { addresses: addrs, user, ...patient } = preg.patients as unknown as Patient & {
+      const {
+        addresses: addrs,
+        user,
+        ...patient
+      } = preg.patients as unknown as Patient & {
         addresses: unknown[];
         user: { avatar_url: string | null } | null;
       };
