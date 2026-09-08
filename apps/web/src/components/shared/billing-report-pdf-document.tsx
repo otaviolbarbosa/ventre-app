@@ -36,12 +36,13 @@ const styles = StyleSheet.create({
   colDueDate: { width: "11%" },
   colPaidDate: { width: "11%" },
   colGross: { width: "12%", textAlign: "right" },
-  colDiscounts: { width: "14%", paddingLeft: 4 },
+  colDiscounts: { width: "14%", paddingLeft: 4, textAlign: "right" },
   colNet: { width: "11%", textAlign: "right" },
   headerCellText: { fontSize: 7, fontWeight: "bold", color: "#6b7280" },
   cellText: { fontSize: 8 },
   cellTextBold: { fontSize: 8, fontWeight: "bold" },
-  discountLine: { fontSize: 6.5, color: "#6b7280" },
+  discountDetailsContainer: { marginTop: 2 },
+  discountLine: { fontSize: 6, color: "#6b7280" },
   subtotalRow: { flexDirection: "row", paddingVertical: 4, borderTop: "1 solid #d1d5db" },
   subtotalLabel: {
     fontSize: 8,
@@ -142,11 +143,13 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
                         <Text style={styles.cellText}>
                           {formatNegativeMoney(sumDiscountCents(row.discounts))}
                         </Text>
-                        {row.discounts.map((discount) => (
-                          <Text key={discount.fee_id} style={styles.discountLine}>
-                            {formatDiscountLine(discount)}
-                          </Text>
-                        ))}
+                        <View style={styles.discountDetailsContainer}>
+                          {row.discounts.map((discount) => (
+                            <Text key={discount.fee_id} style={styles.discountLine}>
+                              {formatDiscountLine(discount)}
+                            </Text>
+                          ))}
+                        </View>
                       </>
                     )}
                   </View>
