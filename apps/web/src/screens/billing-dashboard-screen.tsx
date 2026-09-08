@@ -8,6 +8,7 @@ import { BillingListSkeleton } from "@/components/billing/billing-list-skeleton"
 import { BillingTable } from "@/components/billing/billing-table";
 import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
+import { StatusBadge } from "@/components/billing/status-badge";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/hooks/use-auth";
@@ -148,7 +149,8 @@ export default function BillingDashboardScreen({
                     section.billings.length > 0 && (
                       <div key={section.key}>
                         <h3 className="mb-3 font-medium text-muted-foreground text-sm">
-                          {section.label} ({section.billings.length})
+                          <StatusBadge status={section.key} amount={section.billings.length} />
+                          {/* {section.label} ({section.billings.length}) */}
                         </h3>
                         {viewMode === "expanded" ? (
                           <div className="flex flex-col gap-3">

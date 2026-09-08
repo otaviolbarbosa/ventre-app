@@ -6,7 +6,6 @@ import { dayjs } from "@/lib/dayjs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@ventre/ui/table";
 import { useRouter } from "next/navigation";
 import { ProfessionalNetAmount } from "./professional-net-amount";
-import { StatusBadge } from "./status-badge";
 import { TotalAmount } from "./total-amount";
 
 type BillingTableProps = {
@@ -33,7 +32,7 @@ export function BillingTable({ billings, professionals, professionalId }: Billin
             <TableHead>Descrição</TableHead>
             <TableHead>Parcela</TableHead>
             <TableHead>Data</TableHead>
-            <TableHead>Status</TableHead>
+            {/* <TableHead>Status</TableHead> */}
             <TableHead className="text-right">Valor</TableHead>
           </TableRow>
         </TableHeader>
@@ -68,9 +67,9 @@ export function BillingTable({ billings, professionals, professionalId }: Billin
                     <>Venc. {dayjs(installment.due_date).format("DD/MM/YYYY")}</>
                   )}
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <StatusBadge status={installment.status} />
-                </TableCell>
+                </TableCell> */}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex w-full flex-col items-end">
                     <TotalAmount amount={monthlyAmount} />

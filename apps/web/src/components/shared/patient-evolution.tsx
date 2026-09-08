@@ -192,7 +192,7 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
           {evolutions.map((evolution) => (
             <div
               key={evolution.id}
-              className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+              className="divide-y rounded-lg border p-4 transition-colors hover:bg-muted/50"
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="whitespace-pre-wrap text-sm">{evolution.content}</p>
@@ -208,7 +208,7 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
                   </Button>
                 )}
               </div>
-              <div className="mt-3 flex items-start justify-between gap-2">
+              <div className="mt-3 flex items-center justify-between gap-2 pt-3">
                 <div className="flex items-center gap-2">
                   <UserAvatar
                     user={{
@@ -224,8 +224,7 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
                     <p>{dayjs(evolution.created_at).format("DD/MM/YYYY [às] HH:mm")}</p>
                     {evolution.hasUpdatedContent && (
                       <p>
-                        Última edição em{" "}
-                        {dayjs(evolution.updated_at).format("DD/MM/YYYY [às] HH:mm")}
+                        Última edição: {dayjs(evolution.updated_at).format("DD/MM/YYYY [às] HH:mm")}
                       </p>
                     )}
                   </div>
