@@ -42,6 +42,7 @@ describe("renderBillingReportPdfBuffer", () => {
                 paidAt: null,
                 grossAmountCents: 10000,
                 netAmountCents: 9000,
+                discounts: [],
               },
             ],
             subtotalGrossCents: 10000,
@@ -53,5 +54,51 @@ describe("renderBillingReportPdfBuffer", () => {
       }),
     );
     expect(buffer.length).toBeGreaterThan(0);
+  });
+
+  it("renders a non-empty PDF buffer for a row with fixed and percentage discounts", async () => {
+    const buffer = await renderBillingReportPdfBuffer(
+      makeReportData({
+        sections: [
+          {
+            key: "pendente",
+            label: "A Receber",
+            rows: [
+              {
+                patientName: "Maria Silva",
+                description: "Pré-natal",
+                installmentLabel: "1/3",
+                dueDate: "2026-09-15",
+                paidAt: null,
+                grossAmountCents: 10099,
+                netAmountCents: 0,
+                discounts: [
+                  {
+                    fee_id: "fee-1",
+                    name: "INSS",
+                    fee_type: "fixed",
+                    value: 9999,
+                    amountCents: 9999,
+                  },
+                  {
+                    fee_id: "fee-2",
+                    name: "taxa de serviço",
+                    fee_type: "percentage",
+                    value: 1,
+                    amountCents: 100,
+                  },
+                ],
+              },
+            ],
+            subtotalGrossCents: 10099,
+            subtotalNetCents: 0,
+          },
+        ],
+        totalGrossCents: 10099,
+        totalNetCents: 0,
+      }),
+    );
+    expect(buffer.length).toBeGreaterThan(0);
+    expect(buffer.subarray(0, 4).toString("ascii")).toBe("%PDF");
   });
 });

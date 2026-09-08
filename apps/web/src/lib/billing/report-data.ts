@@ -1,5 +1,6 @@
 import {
   type AppliedBillingFee,
+  type AppliedFeeLineItem,
   computeAmountCents,
   getStatusConfig,
 } from "@/lib/billing/calculations";
@@ -25,6 +26,7 @@ export type ReportInstallmentRow = {
   paidAt: string | null;
   grossAmountCents: number;
   netAmountCents: number;
+  discounts: AppliedFeeLineItem[];
 };
 
 export type ReportSection = {
@@ -76,14 +78,11 @@ export async function getBillingReportData(params: {
       billing.filteredInstallments.map((installment) => {
         const appliedFees = (installment.applied_installment_fees ??
           []) as unknown as AppliedBillingFee[];
-        const { totalAmountCents, netAmountCents } = computeAmountCents(
+        const { totalAmountCents, netAmountCents, feeLineItems } = computeAmountCents(
           {
             amount: installment.amount,
             paid_amount: installment.paid_amount,
-            splitted_installment: installment.splitted_installment as Record<
-              string,
-              number
-            > | null,
+            splitted_installment: installment.splitted_installment as Record<string, number> | null,
           },
           appliedFees,
           professionalId,
@@ -97,6 +96,7 @@ export async function getBillingReportData(params: {
           paidAt: installment.paid_at,
           grossAmountCents: totalAmountCents,
           netAmountCents,
+          discounts: feeLineItems,
         };
       }),
     );

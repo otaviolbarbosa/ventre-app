@@ -128,6 +128,28 @@ describe("getBillingReportData", () => {
     const row = result.sections.find((s) => s.key === "pendente")?.rows[0];
     expect(row?.grossAmountCents).toBe(10000);
     expect(row?.netAmountCents).toBe(9000);
+    expect(row?.discounts).toEqual([
+      {
+        fee_id: "fee-1",
+        name: "Taxa da clínica",
+        fee_type: "percentage",
+        value: 10,
+        amountCents: 1000,
+      },
+    ]);
+  });
+
+  it("returns an empty discounts array when no fees are applied", async () => {
+    billingsResult.billings = [makeBilling()];
+
+    const result = await getBillingReportData({
+      professionalId: "prof-1",
+      professionalName: "Dra. Ana",
+      month: "2026-09",
+    });
+
+    const row = result.sections.find((s) => s.key === "pendente")?.rows[0];
+    expect(row?.discounts).toEqual([]);
   });
 });
 

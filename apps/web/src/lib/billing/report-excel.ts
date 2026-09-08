@@ -5,7 +5,8 @@ import type { BillingReportData } from "./report-data";
 
 const CURRENCY_NUM_FMT = '"R$" #,##0.00';
 const GROSS_COLUMN = 7;
-const NET_COLUMN = 8;
+const DISCOUNTS_COLUMN = 8;
+const NET_COLUMN = 9;
 
 const COLUMN_HEADERS = [
   "Gestante",
@@ -15,8 +16,17 @@ const COLUMN_HEADERS = [
   "Data de Vencimento",
   "Data de Pagamento",
   "Valor Bruto",
+  "Descontos",
   "Valor Líquido",
 ];
+
+function sumDiscountCents(rows: BillingReportData["sections"][number]["rows"]): number {
+  return rows.reduce(
+    (sum, row) =>
+      sum + row.discounts.reduce((rowSum, discount) => rowSum + discount.amountCents, 0),
+    0,
+  );
+}
 
 export async function buildBillingReportExcel(data: BillingReportData): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
@@ -30,6 +40,11 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
   titleCell.value = `Ventre - Relatório Financeiro de ${monthUpper}/${year}`;
   titleCell.font = { bold: true, size: 14 };
 
+  sheet.mergeCells(2, 1, 2, COLUMN_HEADERS.length);
+  const professionalCell = sheet.getCell(2, 1);
+  professionalCell.value = `Profissional: ${data.professionalName}`;
+  professionalCell.font = { size: 11 };
+
   const HEADER_ROW = 3;
   sheet.getRow(HEADER_ROW).values = COLUMN_HEADERS;
   sheet.getRow(HEADER_ROW).font = { bold: true };
@@ -40,6 +55,7 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
     if (section.rows.length === 0) continue;
 
     for (const row of section.rows) {
+      const discountCents = sumDiscountCents([row]);
       sheet.getRow(currentRow).values = [
         row.patientName,
         row.description,
@@ -48,13 +64,16 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
         dayjs(row.dueDate).format("DD/MM/YYYY"),
         row.paidAt ? formatSaoPauloDateTime(row.paidAt, "DD/MM/YYYY") : "",
         row.grossAmountCents / 100,
+        discountCents > 0 ? -discountCents / 100 : 0,
         row.netAmountCents / 100,
       ];
       sheet.getCell(currentRow, GROSS_COLUMN).numFmt = CURRENCY_NUM_FMT;
+      sheet.getCell(currentRow, DISCOUNTS_COLUMN).numFmt = CURRENCY_NUM_FMT;
       sheet.getCell(currentRow, NET_COLUMN).numFmt = CURRENCY_NUM_FMT;
       currentRow++;
     }
 
+    const sectionDiscountCents = sumDiscountCents(section.rows);
     sheet.getRow(currentRow).values = [
       "",
       "",
@@ -63,14 +82,17 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
       "",
       "",
       section.subtotalGrossCents / 100,
+      sectionDiscountCents > 0 ? -sectionDiscountCents / 100 : 0,
       section.subtotalNetCents / 100,
     ];
     sheet.getRow(currentRow).font = { bold: true };
     sheet.getCell(currentRow, GROSS_COLUMN).numFmt = CURRENCY_NUM_FMT;
+    sheet.getCell(currentRow, DISCOUNTS_COLUMN).numFmt = CURRENCY_NUM_FMT;
     sheet.getCell(currentRow, NET_COLUMN).numFmt = CURRENCY_NUM_FMT;
     currentRow++;
   }
 
+  const totalDiscountCents = sumDiscountCents(data.sections.flatMap((section) => section.rows));
   sheet.getRow(currentRow).values = [
     "",
     "",
@@ -79,10 +101,12 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
     "",
     "",
     data.totalGrossCents / 100,
+    totalDiscountCents > 0 ? -totalDiscountCents / 100 : 0,
     data.totalNetCents / 100,
   ];
   sheet.getRow(currentRow).font = { bold: true };
   sheet.getCell(currentRow, GROSS_COLUMN).numFmt = CURRENCY_NUM_FMT;
+  sheet.getCell(currentRow, DISCOUNTS_COLUMN).numFmt = CURRENCY_NUM_FMT;
   sheet.getCell(currentRow, NET_COLUMN).numFmt = CURRENCY_NUM_FMT;
 
   const arrayBuffer = await workbook.xlsx.writeBuffer();

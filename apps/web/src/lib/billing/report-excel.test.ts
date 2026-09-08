@@ -24,6 +24,7 @@ function makeReportData(): BillingReportData {
             paidAt: null,
             grossAmountCents: 10000,
             netAmountCents: 9000,
+            discounts: [],
           },
         ],
         subtotalGrossCents: 10000,
@@ -36,7 +37,7 @@ function makeReportData(): BillingReportData {
 }
 
 describe("buildBillingReportExcel", () => {
-  it("writes the title row, header row, data row, subtotal and total", async () => {
+  it("writes the title row, professional name row, header row, data row, subtotal and total", async () => {
     const buffer = await buildBillingReportExcel(makeReportData());
     const workbook = new ExcelJS.Workbook();
     // biome-ignore lint/suspicious/noExplicitAny: ExcelJS types are loose
@@ -46,6 +47,8 @@ describe("buildBillingReportExcel", () => {
     if (!sheet) throw new Error("No worksheet found");
 
     expect(sheet.getCell(1, 1).value).toBe("Ventre - Relatório Financeiro de SETEMBRO/2026");
+    expect(sheet.getCell(2, 1).value).toBe("Profissional: Dra. Ana");
+
     const headerValues = sheet.getRow(3).values;
     expect(Array.isArray(headerValues) ? headerValues.slice(1) : []).toEqual([
       "Gestante",
@@ -55,6 +58,7 @@ describe("buildBillingReportExcel", () => {
       "Data de Vencimento",
       "Data de Pagamento",
       "Valor Bruto",
+      "Descontos",
       "Valor Líquido",
     ]);
 
@@ -91,6 +95,7 @@ describe("buildBillingReportExcel", () => {
               paidAt: null,
               grossAmountCents: 10000,
               netAmountCents: 9000,
+              discounts: [],
             },
           ],
           subtotalGrossCents: 10000,
@@ -161,6 +166,7 @@ describe("buildBillingReportExcel", () => {
               paidAt: null,
               grossAmountCents: 10000,
               netAmountCents: 9000,
+              discounts: [],
             },
             {
               patientName: "João Santos",
@@ -170,6 +176,7 @@ describe("buildBillingReportExcel", () => {
               paidAt: null,
               grossAmountCents: 50000,
               netAmountCents: 45000,
+              discounts: [],
             },
           ],
           subtotalGrossCents: 60000,
@@ -187,6 +194,7 @@ describe("buildBillingReportExcel", () => {
               paidAt: null,
               grossAmountCents: 20000,
               netAmountCents: 18000,
+              discounts: [],
             },
           ],
           subtotalGrossCents: 20000,
@@ -256,7 +264,7 @@ describe("buildBillingReportExcel", () => {
       return Array.isArray(values) ? (values as any[]) : [];
     };
 
-    // Column 7 (index 7) = Valor Bruto, Column 8 (index 8) = Valor Líquido
+    // Column 7 = Valor Bruto, column 8 = Descontos, column 9 = Valor Líquido
     const grossAmountCents = 10000;
     const netAmountCents = 9000;
     const expectedGross = grossAmountCents / 100;
@@ -265,23 +273,62 @@ describe("buildBillingReportExcel", () => {
     // Row 4: data row with numeric currency values
     const dataRow = getRowAsArray(4);
     expect(dataRow[7]).toBe(expectedGross);
-    expect(dataRow[8]).toBe(expectedNet);
+    expect(dataRow[8]).toBe(0);
+    expect(dataRow[9]).toBe(expectedNet);
     expect(sheet.getCell(4, 7).numFmt).toBe(CURRENCY_NUM_FMT);
     expect(sheet.getCell(4, 8).numFmt).toBe(CURRENCY_NUM_FMT);
+    expect(sheet.getCell(4, 9).numFmt).toBe(CURRENCY_NUM_FMT);
 
     // Row 5: subtotal row with numeric currency values
     const subtotalRow = getRowAsArray(5);
     expect(subtotalRow[7]).toBe(expectedGross);
-    expect(subtotalRow[8]).toBe(expectedNet);
+    expect(subtotalRow[8]).toBe(0);
+    expect(subtotalRow[9]).toBe(expectedNet);
     expect(sheet.getCell(5, 7).numFmt).toBe(CURRENCY_NUM_FMT);
     expect(sheet.getCell(5, 8).numFmt).toBe(CURRENCY_NUM_FMT);
+    expect(sheet.getCell(5, 9).numFmt).toBe(CURRENCY_NUM_FMT);
 
     // Row 6: grand total with numeric currency values
     const totalRow = getRowAsArray(6);
     expect(totalRow[7]).toBe(expectedGross);
-    expect(totalRow[8]).toBe(expectedNet);
+    expect(totalRow[8]).toBe(0);
+    expect(totalRow[9]).toBe(expectedNet);
     expect(sheet.getCell(6, 7).numFmt).toBe(CURRENCY_NUM_FMT);
     expect(sheet.getCell(6, 8).numFmt).toBe(CURRENCY_NUM_FMT);
+    expect(sheet.getCell(6, 9).numFmt).toBe(CURRENCY_NUM_FMT);
+  });
+
+  it("condenses multiple discounts into a single negative numeric value with a currency numFmt", async () => {
+    const data = makeReportData();
+    const section = data.sections[0];
+    const row = section?.rows[0];
+    if (!section || !row) throw new Error("Expected a section with a row in fixture data");
+    row.discounts = [
+      { fee_id: "fee-1", name: "INSS", fee_type: "fixed", value: 9999, amountCents: 9999 },
+      {
+        fee_id: "fee-2",
+        name: "Taxa de serviço",
+        fee_type: "percentage",
+        value: 1,
+        amountCents: 100,
+      },
+    ];
+    section.subtotalNetCents -= 9999 + 100;
+    data.totalNetCents -= 9999 + 100;
+
+    const buffer = await buildBillingReportExcel(data);
+    const workbook = new ExcelJS.Workbook();
+    // biome-ignore lint/suspicious/noExplicitAny: ExcelJS types are loose
+    await workbook.xlsx.load(buffer as any);
+    const sheet = workbook.worksheets[0];
+    if (!sheet) throw new Error("No worksheet found");
+
+    // Total discount: 9999 + 100 = 10099 cents = R$ 100.99, shown as a single negative number.
+    expect(sheet.getCell(4, 8).value).toBe(-100.99);
+    expect(sheet.getCell(4, 8).numFmt).toBe(CURRENCY_NUM_FMT);
+    // Subtotal row (5) and grand total row (6) also carry the summed discount.
+    expect(sheet.getCell(5, 8).value).toBe(-100.99);
+    expect(sheet.getCell(6, 8).value).toBe(-100.99);
   });
 
   it("formats a paidAt near a UTC day boundary using the São Paulo-local date", async () => {

@@ -6,7 +6,10 @@ const { authUser, profileRow, ueRow, reportData } = vi.hoisted(() => ({
     data: { id: "prof-1", name: "Dra. Ana" } as Record<string, unknown> | null,
     error: null as { message: string } | null,
   },
-  ueRow: { data: null as { enterprise_id: string } | null, error: null as { message: string } | null },
+  ueRow: {
+    data: null as { enterprise_id: string } | null,
+    error: null as { message: string } | null,
+  },
   reportData: {
     professionalName: "Dra. Ana",
     month: "2026-09",
@@ -88,7 +91,7 @@ describe("exportBillingReportAction", () => {
     expect(res?.data?.mimeType).toBe("text/csv;charset=utf-8");
     const csv = Buffer.from(res?.data?.fileBase64 ?? "", "base64").toString("utf-8");
     expect(csv.replace(/^﻿/, "").trim()).toBe(
-      "Gestante,Descrição,Parcela,Status,Data de Vencimento,Data de Pagamento,Valor Bruto,Valor Líquido",
+      "Gestante,Descrição,Parcela,Status,Data de Vencimento,Data de Pagamento,Valor Bruto,Descontos,Valor Líquido",
     );
   });
 

@@ -1,4 +1,5 @@
 import path from "node:path";
+import type { AppliedFeeLineItem } from "@/lib/billing/calculations";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { formatSaoPauloDateTime } from "@/lib/billing/report-data";
 import type { BillingReportData } from "@/lib/billing/report-data";
@@ -16,7 +17,8 @@ const styles = StyleSheet.create({
     paddingRight: 40,
   },
   header: { marginBottom: 16, paddingBottom: 12, borderBottom: "1 solid #e5e7eb" },
-  logo: { width: 100, height: 27, marginBottom: 12 },
+  // Real asset is 1438x452 (ratio ~3.181) — height derived from width to avoid stretching.
+  logo: { width: 100, height: 31.4, marginBottom: 12 },
   headerRow: { flexDirection: "row", justifyContent: "space-between" },
   headerLabel: { fontSize: 8, color: "#6b7280" },
   headerValue: { fontSize: 10, fontWeight: "bold" },
@@ -28,26 +30,37 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   tableRow: { flexDirection: "row", borderBottom: "1 solid #f3f4f6", paddingVertical: 4 },
-  colPatient: { width: "20%" },
-  colDescription: { width: "19%" },
-  colInstallment: { width: "8%" },
-  colDueDate: { width: "13%" },
-  colPaidDate: { width: "13%" },
-  colGross: { width: "13.5%", textAlign: "right" },
-  colNet: { width: "13.5%", textAlign: "right" },
+  colPatient: { width: "18%" },
+  colDescription: { width: "16%" },
+  colInstallment: { width: "7%" },
+  colDueDate: { width: "11%" },
+  colPaidDate: { width: "11%" },
+  colGross: { width: "12%", textAlign: "right" },
+  colDiscounts: { width: "14%", paddingLeft: 4 },
+  colNet: { width: "11%", textAlign: "right" },
   headerCellText: { fontSize: 7, fontWeight: "bold", color: "#6b7280" },
   cellText: { fontSize: 8 },
   cellTextBold: { fontSize: 8, fontWeight: "bold" },
+  discountLine: { fontSize: 6.5, color: "#6b7280" },
   subtotalRow: { flexDirection: "row", paddingVertical: 4, borderTop: "1 solid #d1d5db" },
   subtotalLabel: {
     fontSize: 8,
     fontWeight: "bold",
-    width: "73%",
+    width: "63%",
     textAlign: "right",
     paddingRight: 8,
   },
   totalSection: { marginTop: 16, paddingTop: 8, borderTop: "1 solid #111827" },
 });
+
+function formatDiscountLine(fee: AppliedFeeLineItem): string {
+  const amount = (fee.amountCents / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const label = fee.fee_type === "percentage" ? `${fee.value}% de ${fee.name}` : fee.name;
+  return `R$ -${amount} (${label})`;
+}
 
 function TableHeader() {
   return (
@@ -58,6 +71,7 @@ function TableHeader() {
       <Text style={[styles.headerCellText, styles.colDueDate]}>Vencimento</Text>
       <Text style={[styles.headerCellText, styles.colPaidDate]}>Pagamento</Text>
       <Text style={[styles.headerCellText, styles.colGross]}>Bruto</Text>
+      <Text style={[styles.headerCellText, styles.colDiscounts]}>Descontos</Text>
       <Text style={[styles.headerCellText, styles.colNet]}>Líquido</Text>
     </View>
   );
@@ -90,7 +104,7 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
         </View>
 
         {visibleSections.length === 0 ? (
-          <Text style={styles.cellText}>Nenhuma cobrança encontrada neste mês.</Text>
+          <Text style={styles.cellText}>Nenhuma cobrança lançada neste mês.</Text>
         ) : (
           visibleSections.map((section) => (
             <View key={section.key}>
@@ -112,6 +126,17 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
                   <Text style={[styles.cellText, styles.colGross]}>
                     {formatCurrency(row.grossAmountCents)}
                   </Text>
+                  <View style={styles.colDiscounts}>
+                    {row.discounts.length === 0 ? (
+                      <Text style={styles.cellText}>-</Text>
+                    ) : (
+                      row.discounts.map((discount) => (
+                        <Text key={discount.fee_id} style={styles.discountLine}>
+                          {formatDiscountLine(discount)}
+                        </Text>
+                      ))
+                    )}
+                  </View>
                   <Text style={[styles.cellText, styles.colNet]}>
                     {formatCurrency(row.netAmountCents)}
                   </Text>
@@ -122,6 +147,7 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
                 <Text style={[styles.cellTextBold, styles.colGross]}>
                   {formatCurrency(section.subtotalGrossCents)}
                 </Text>
+                <View style={styles.colDiscounts} />
                 <Text style={[styles.cellTextBold, styles.colNet]}>
                   {formatCurrency(section.subtotalNetCents)}
                 </Text>
@@ -136,6 +162,7 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
             <Text style={[styles.cellTextBold, styles.colGross]}>
               {formatCurrency(data.totalGrossCents)}
             </Text>
+            <View style={styles.colDiscounts} />
             <Text style={[styles.cellTextBold, styles.colNet]}>
               {formatCurrency(data.totalNetCents)}
             </Text>
