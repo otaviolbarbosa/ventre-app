@@ -7,8 +7,14 @@ type InstallmentStatus = Database["public"]["Enums"]["installment_status"];
 
 export function StatusBadge({
   status,
+  amount,
   isPatient,
-}: { status: BillingStatus | InstallmentStatus; isPatient?: boolean }) {
+}: { status: BillingStatus | InstallmentStatus; amount?: number; isPatient?: boolean }) {
   const config = getStatusConfig(status, isPatient);
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+  return (
+    <Badge variant={config.variant}>
+      {config.label}
+      {amount ? ` (${amount})` : ""}
+    </Badge>
+  );
 }

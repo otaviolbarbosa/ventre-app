@@ -91,10 +91,10 @@ describe("PatientEvolution", () => {
     render(<PatientEvolution patientId="patient-1" />);
 
     const editedFormatted = dayjs(ownEvolution.updated_at).format("DD/MM/YYYY [às] HH:mm");
-    expect(screen.getByText(`Última edição em ${editedFormatted}`)).toBeInTheDocument();
+    expect(screen.getByText(`Última edição: ${editedFormatted}`)).toBeInTheDocument();
 
     const notEditedFormatted = dayjs(otherEvolution.updated_at).format("DD/MM/YYYY [às] HH:mm");
-    expect(screen.queryByText(`Última edição em ${notEditedFormatted}`)).not.toBeInTheDocument();
+    expect(screen.queryByText(`Última edição: ${notEditedFormatted}`)).not.toBeInTheDocument();
   });
 
   it("opens the edit form pre-filled and submits the update", async () => {
