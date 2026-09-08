@@ -139,7 +139,7 @@ export default function InviteProfessionalModal({
     }
 
     const inviteUrl = getInviteUrl();
-    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${result.data.invite.id}`;
+    const message = `Olá! Estou te convidando para participar da equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${result.data.invite.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   }
 
@@ -228,7 +228,8 @@ export default function InviteProfessionalModal({
         <div className="text-center text-muted-foreground text-sm">OU</div>
 
         <p className="text-muted-foreground text-sm">
-          Compartilhe o link de convite diretamente com outra profissional.
+          Compartilhe o link diretamente com uma profissional que ainda não está cadastrada no
+          ventre.
         </p>
         <div className="flex gap-2">
           <Button

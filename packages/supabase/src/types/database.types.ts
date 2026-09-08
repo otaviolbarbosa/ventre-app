@@ -1766,26 +1766,32 @@ export type Database = {
         Row: {
           content: string
           created_at: string | null
+          edited_content: Json[]
           id: string
           is_public: boolean
           patient_id: string
           professional_id: string
+          updated_at: string
         }
         Insert: {
           content: string
           created_at?: string | null
+          edited_content?: Json[]
           id?: string
           is_public?: boolean
           patient_id: string
           professional_id: string
+          updated_at?: string
         }
         Update: {
           content?: string
           created_at?: string | null
+          edited_content?: Json[]
           id?: string
           is_public?: boolean
           patient_id?: string
           professional_id?: string
+          updated_at?: string
         }
         Relationships: [
           {

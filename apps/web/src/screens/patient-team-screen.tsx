@@ -224,7 +224,9 @@ export default function PatientTeamScreen() {
                         onClick={() => setIsBackupOpen(true)}
                         className={cn(
                           "flex items-center justify-center gap-2 rounded-2xl border border-dashed text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary",
-                          backups.length > 0 ? "w-10 shrink-0 self-stretch" : "min-h-[72px] w-full",
+                          backups.length > 0
+                            ? "w-10 shrink-0 self-stretch"
+                            : "h-full min-h-[72px] w-full",
                         )}
                       >
                         <UserPlus className="h-4 w-4 shrink-0" />

@@ -4,7 +4,7 @@ export function TotalAmount({ amount }: { amount: number }) {
     String(Math.abs(amount % 100)).padStart(2, "0"),
   ];
   return (
-    <div className="flex items-start gap-0.5 font-poppins">
+    <div className="flex items-start gap-0.5 whitespace-nowrap font-poppins">
       <span className="font-medium text-2xl">R$ {number}</span>
       <span className="pt-0.5 text-sm">{fraction}</span>
     </div>

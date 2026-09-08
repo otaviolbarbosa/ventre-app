@@ -42,7 +42,7 @@ export default function ResendTeamInviteModal({
   }
 
   function handleShareWhatsApp() {
-    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patientName} no VentreApp. Acesse o link para ver o convite: ${getInviteUrl()}`;
+    const message = `Olá! Estou te convidando para participar da equipe de cuidado de ${patientName} no VentreApp. Acesse o link para ver o convite: ${getInviteUrl()}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   }
 

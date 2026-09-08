@@ -44,7 +44,7 @@ export function BillingGroupCard({
         <div className="flex justify-between">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="truncate font-medium">{billing.patient.name}</h3>
+              <h3 className="font-medium">{billing.patient.name}</h3>
               <p className="text-muted-foreground text-sm">{billing.description}</p>
             </div>
           </div>
@@ -69,30 +69,32 @@ export function BillingGroupCard({
               href={`/patients/${billing.patient_id}/billing/${billing.id}`}
               className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-muted/50"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex gap-3">
                 {totalCount > 1 && (
                   <span className="text-muted-foreground">
                     {installment.installment_number}/{totalCount}
                   </span>
                 )}
-                <StatusBadge status={installment.status} />
-                <span className="truncate text-muted-foreground text-xs">
-                  {installment.paid_at ? (
-                    <>
-                      Pago em:{" "}
-                      <span className="font-medium text-foreground text-sm">
-                        {dayjs(installment.paid_at).format("DD/MM/YY")}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      Venc.:{" "}
-                      <span className="font-medium text-foreground text-sm">
-                        {dayjs(installment.due_date).format("DD/MM/YY")}
-                      </span>
-                    </>
-                  )}
-                </span>
+                <div className="flex flex-col items-start gap-2 sm:flex-row">
+                  <StatusBadge status={installment.status} />
+                  <span className="truncate text-muted-foreground text-xs">
+                    {installment.paid_at ? (
+                      <>
+                        Pago em:{" "}
+                        <span className="font-semibold text-foreground">
+                          {dayjs(installment.paid_at).format("DD/MM/YY")}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        Venc.:{" "}
+                        <span className="font-semibold text-foreground">
+                          {dayjs(installment.due_date).format("DD/MM/YY")}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </div>
               </div>
               <ProfessionalNetAmount
                 key={installment.id}
