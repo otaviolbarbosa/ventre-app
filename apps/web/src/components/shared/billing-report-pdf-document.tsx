@@ -53,13 +53,21 @@ const styles = StyleSheet.create({
   totalSection: { marginTop: 16, paddingTop: 8, borderTop: "1 solid #111827" },
 });
 
-function formatDiscountLine(fee: AppliedFeeLineItem): string {
-  const amount = (fee.amountCents / 100).toLocaleString("pt-BR", {
+function formatNegativeMoney(cents: number): string {
+  const amount = (cents / 100).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  return `-R$ ${amount}`;
+}
+
+function formatDiscountLine(fee: AppliedFeeLineItem): string {
   const label = fee.fee_type === "percentage" ? `${fee.value}% de ${fee.name}` : fee.name;
-  return `R$ -${amount} (${label})`;
+  return `${formatNegativeMoney(fee.amountCents)} (${label})`;
+}
+
+function sumDiscountCents(discounts: AppliedFeeLineItem[]): number {
+  return discounts.reduce((sum, discount) => sum + discount.amountCents, 0);
 }
 
 function TableHeader() {
@@ -130,11 +138,16 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
                     {row.discounts.length === 0 ? (
                       <Text style={styles.cellText}>-</Text>
                     ) : (
-                      row.discounts.map((discount) => (
-                        <Text key={discount.fee_id} style={styles.discountLine}>
-                          {formatDiscountLine(discount)}
+                      <>
+                        <Text style={styles.cellText}>
+                          {formatNegativeMoney(sumDiscountCents(row.discounts))}
                         </Text>
-                      ))
+                        {row.discounts.map((discount) => (
+                          <Text key={discount.fee_id} style={styles.discountLine}>
+                            {formatDiscountLine(discount)}
+                          </Text>
+                        ))}
+                      </>
                     )}
                   </View>
                   <Text style={[styles.cellText, styles.colNet]}>
