@@ -1521,53 +1521,63 @@ export default function PrenatalCard({
         />
       </SectionCard>
 
-      <SectionCard>
-        <EvolutionsSection
-          pregnancyId={pregnancyId}
-          evolutions={data.evolutions}
-          dum={data.pregnancy?.dum}
-          initialWeightKg={data.pregnancy?.initial_weight_kg}
-          initialBmi={data.pregnancy?.initial_bmi}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.evolutions.length) ? (
+        <SectionCard>
+          <EvolutionsSection
+            pregnancyId={pregnancyId}
+            evolutions={data.evolutions}
+            dum={data.pregnancy?.dum}
+            initialWeightKg={data.pregnancy?.initial_weight_kg}
+            initialBmi={data.pregnancy?.initial_bmi}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <UltrasoundsSection
-          pregnancyId={pregnancyId}
-          ultrasounds={data.ultrasounds}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.ultrasounds.length) ? (
+        <SectionCard>
+          <UltrasoundsSection
+            pregnancyId={pregnancyId}
+            ultrasounds={data.ultrasounds}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <LabExamsSection
-          pregnancyId={pregnancyId}
-          labExams={data.labExams}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.labExams.length) ? (
+        <SectionCard>
+          <LabExamsSection
+            pregnancyId={pregnancyId}
+            labExams={data.labExams}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <VaccinesSection
-          pregnancyId={pregnancyId}
-          vaccines={data.vaccines}
-          isEditable={isGeneralEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.vaccines.length) ? (
+        <SectionCard>
+          <VaccinesSection
+            pregnancyId={pregnancyId}
+            vaccines={data.vaccines}
+            isEditable={isGeneralEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <OtherExamsSection
-          pregnancyId={pregnancyId}
-          otherExams={data.otherExams}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.otherExams.length) ? (
+        <SectionCard>
+          <OtherExamsSection
+            pregnancyId={pregnancyId}
+            otherExams={data.otherExams}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
       {isDoula && (
         <SectionCard>
