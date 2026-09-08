@@ -1,7 +1,11 @@
-import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import ExcelJS from "exceljs";
+import { formatSaoPauloDateTime } from "./report-data";
 import type { BillingReportData } from "./report-data";
+
+const CURRENCY_NUM_FMT = '"R$" #,##0.00';
+const GROSS_COLUMN = 7;
+const NET_COLUMN = 8;
 
 const COLUMN_HEADERS = [
   "Gestante",
@@ -42,10 +46,12 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
         row.installmentLabel,
         section.label,
         dayjs(row.dueDate).format("DD/MM/YYYY"),
-        row.paidAt ? dayjs(row.paidAt).format("DD/MM/YYYY") : "",
-        formatCurrency(row.grossAmountCents),
-        formatCurrency(row.netAmountCents),
+        row.paidAt ? formatSaoPauloDateTime(row.paidAt, "DD/MM/YYYY") : "",
+        row.grossAmountCents / 100,
+        row.netAmountCents / 100,
       ];
+      sheet.getCell(currentRow, GROSS_COLUMN).numFmt = CURRENCY_NUM_FMT;
+      sheet.getCell(currentRow, NET_COLUMN).numFmt = CURRENCY_NUM_FMT;
       currentRow++;
     }
 
@@ -56,10 +62,12 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
       `Subtotal ${section.label}`,
       "",
       "",
-      formatCurrency(section.subtotalGrossCents),
-      formatCurrency(section.subtotalNetCents),
+      section.subtotalGrossCents / 100,
+      section.subtotalNetCents / 100,
     ];
     sheet.getRow(currentRow).font = { bold: true };
+    sheet.getCell(currentRow, GROSS_COLUMN).numFmt = CURRENCY_NUM_FMT;
+    sheet.getCell(currentRow, NET_COLUMN).numFmt = CURRENCY_NUM_FMT;
     currentRow++;
   }
 
@@ -70,10 +78,12 @@ export async function buildBillingReportExcel(data: BillingReportData): Promise<
     "Total Geral",
     "",
     "",
-    formatCurrency(data.totalGrossCents),
-    formatCurrency(data.totalNetCents),
+    data.totalGrossCents / 100,
+    data.totalNetCents / 100,
   ];
   sheet.getRow(currentRow).font = { bold: true };
+  sheet.getCell(currentRow, GROSS_COLUMN).numFmt = CURRENCY_NUM_FMT;
+  sheet.getCell(currentRow, NET_COLUMN).numFmt = CURRENCY_NUM_FMT;
 
   const arrayBuffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);

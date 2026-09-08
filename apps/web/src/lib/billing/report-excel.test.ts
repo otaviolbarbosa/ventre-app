@@ -1,8 +1,9 @@
 import ExcelJS from "exceljs";
 import { describe, expect, it } from "vitest";
-import { formatCurrency } from "./calculations";
 import type { BillingReportData } from "./report-data";
 import { buildBillingReportExcel } from "./report-excel";
+
+const CURRENCY_NUM_FMT = '"R$" #,##0.00';
 
 function makeReportData(): BillingReportData {
   return {
@@ -239,7 +240,7 @@ describe("buildBillingReportExcel", () => {
     expect(row9[4]).toBe("Total Geral");
   });
 
-  it("formats currency values correctly in Valor Bruto and Valor Líquido cells", async () => {
+  it("writes Valor Bruto and Valor Líquido as numeric cells with a currency numFmt", async () => {
     const buffer = await buildBillingReportExcel(makeReportData());
     const workbook = new ExcelJS.Workbook();
     // biome-ignore lint/suspicious/noExplicitAny: ExcelJS types are loose
@@ -258,22 +259,47 @@ describe("buildBillingReportExcel", () => {
     // Column 7 (index 7) = Valor Bruto, Column 8 (index 8) = Valor Líquido
     const grossAmountCents = 10000;
     const netAmountCents = 9000;
-    const expectedGross = formatCurrency(grossAmountCents);
-    const expectedNet = formatCurrency(netAmountCents);
+    const expectedGross = grossAmountCents / 100;
+    const expectedNet = netAmountCents / 100;
 
-    // Row 4: data row with currency values
+    // Row 4: data row with numeric currency values
     const dataRow = getRowAsArray(4);
     expect(dataRow[7]).toBe(expectedGross);
     expect(dataRow[8]).toBe(expectedNet);
+    expect(sheet.getCell(4, 7).numFmt).toBe(CURRENCY_NUM_FMT);
+    expect(sheet.getCell(4, 8).numFmt).toBe(CURRENCY_NUM_FMT);
 
-    // Row 5: subtotal row with currency values
+    // Row 5: subtotal row with numeric currency values
     const subtotalRow = getRowAsArray(5);
     expect(subtotalRow[7]).toBe(expectedGross);
     expect(subtotalRow[8]).toBe(expectedNet);
+    expect(sheet.getCell(5, 7).numFmt).toBe(CURRENCY_NUM_FMT);
+    expect(sheet.getCell(5, 8).numFmt).toBe(CURRENCY_NUM_FMT);
 
-    // Row 6: grand total with currency values
+    // Row 6: grand total with numeric currency values
     const totalRow = getRowAsArray(6);
     expect(totalRow[7]).toBe(expectedGross);
     expect(totalRow[8]).toBe(expectedNet);
+    expect(sheet.getCell(6, 7).numFmt).toBe(CURRENCY_NUM_FMT);
+    expect(sheet.getCell(6, 8).numFmt).toBe(CURRENCY_NUM_FMT);
+  });
+
+  it("formats a paidAt near a UTC day boundary using the São Paulo-local date", async () => {
+    const data = makeReportData();
+    const row = data.sections[0]?.rows[0];
+    if (!row) throw new Error("Expected a row in fixture data");
+    // 01:30 UTC is 22:30 the previous day in São Paulo (UTC-3).
+    row.paidAt = "2026-09-16T01:30:00.000Z";
+
+    const buffer = await buildBillingReportExcel(data);
+    const workbook = new ExcelJS.Workbook();
+    // biome-ignore lint/suspicious/noExplicitAny: ExcelJS types are loose
+    await workbook.xlsx.load(buffer as any);
+    const sheet = workbook.worksheets[0];
+    if (!sheet) throw new Error("No worksheet found");
+
+    const dataRowValues = sheet.getRow(4).values;
+    const dataRow = Array.isArray(dataRowValues) ? dataRowValues : [];
+    expect(dataRow[6]).toBe("15/09/2026");
   });
 });

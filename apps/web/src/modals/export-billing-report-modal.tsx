@@ -52,8 +52,8 @@ export function ExportBillingReportModal({
       URL.revokeObjectURL(url);
       onOpenChange(false);
     },
-    onError: ({ error }) => {
-      toast.error(error.serverError ?? "Não foi possível gerar o relatório. Tente novamente.");
+    onError: () => {
+      toast.error("Não foi possível gerar o relatório. Tente novamente.");
     },
   });
 

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { formatCurrency } from "@/lib/billing/calculations";
+import { formatSaoPauloDateTime } from "@/lib/billing/report-data";
 import type { BillingReportData } from "@/lib/billing/report-data";
 import { PDF_FONT_FAMILY } from "@/lib/contract-pdf-fonts";
 import { dayjs } from "@/lib/dayjs";
@@ -41,7 +42,7 @@ const styles = StyleSheet.create({
   subtotalLabel: {
     fontSize: 8,
     fontWeight: "bold",
-    width: "60%",
+    width: "73%",
     textAlign: "right",
     paddingRight: 8,
   },
@@ -82,7 +83,7 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
             <View>
               <Text style={styles.headerLabel}>Gerado em</Text>
               <Text style={styles.headerValue}>
-                {dayjs(data.generatedAt).format("DD/MM/YYYY [às] HH:mm")}
+                {formatSaoPauloDateTime(data.generatedAt, "DD/MM/YYYY [às] HH:mm")}
               </Text>
             </View>
           </View>
@@ -106,7 +107,7 @@ export function BillingReportPdfDocument({ data }: { data: BillingReportData }) 
                     {dayjs(row.dueDate).format("DD/MM/YYYY")}
                   </Text>
                   <Text style={[styles.cellText, styles.colPaidDate]}>
-                    {row.paidAt ? dayjs(row.paidAt).format("DD/MM/YYYY") : "-"}
+                    {row.paidAt ? formatSaoPauloDateTime(row.paidAt, "DD/MM/YYYY") : "-"}
                   </Text>
                   <Text style={[styles.cellText, styles.colGross]}>
                     {formatCurrency(row.grossAmountCents)}

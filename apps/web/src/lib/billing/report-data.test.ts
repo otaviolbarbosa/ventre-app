@@ -8,7 +8,7 @@ vi.mock("@/services/billing", () => ({
   getBillings: vi.fn(async () => billingsResult),
 }));
 
-import { getBillingReportData } from "./report-data";
+import { formatSaoPauloDateTime, getBillingReportData } from "./report-data";
 
 function makeInstallment(overrides: Record<string, unknown> = {}) {
   return {
@@ -128,5 +128,20 @@ describe("getBillingReportData", () => {
     const row = result.sections.find((s) => s.key === "pendente")?.rows[0];
     expect(row?.grossAmountCents).toBe(10000);
     expect(row?.netAmountCents).toBe(9000);
+  });
+});
+
+describe("formatSaoPauloDateTime", () => {
+  it("formats a UTC instant near a day boundary using the São Paulo-local calendar date", () => {
+    // 2026-09-16T01:30:00.000Z is 2026-09-15 22:30 in São Paulo (UTC-3). Formatting the raw
+    // UTC instant would incorrectly yield "16/09/2026" — the professional's dashboard (which
+    // formats client-side, in their own local timezone) shows "15/09/2026".
+    const result = formatSaoPauloDateTime("2026-09-16T01:30:00.000Z", "DD/MM/YYYY");
+    expect(result).toBe("15/09/2026");
+  });
+
+  it("preserves the time-of-day pattern alongside the São Paulo-local date", () => {
+    const result = formatSaoPauloDateTime("2026-09-16T01:30:00.000Z", "DD/MM/YYYY [às] HH:mm");
+    expect(result).toBe("15/09/2026 às 22:30");
   });
 });

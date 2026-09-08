@@ -49,9 +49,13 @@ vi.mock("@ventre/supabase/server", () => ({
   })),
 }));
 
-vi.mock("@/lib/billing/report-data", () => ({
-  getBillingReportData: vi.fn(async () => reportData),
-}));
+vi.mock("@/lib/billing/report-data", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/billing/report-data")>();
+  return {
+    ...actual,
+    getBillingReportData: vi.fn(async () => reportData),
+  };
+});
 
 import { exportBillingReportAction } from "./export-billing-report-action";
 

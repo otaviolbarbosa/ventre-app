@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
+import { formatSaoPauloDateTime } from "./report-data";
 import type { BillingReportData } from "./report-data";
 
 const CSV_BOM = "﻿";
@@ -34,7 +35,7 @@ export function buildBillingReportCsv(data: BillingReportData): Buffer {
           row.installmentLabel,
           section.label,
           dayjs(row.dueDate).format("DD/MM/YYYY"),
-          row.paidAt ? dayjs(row.paidAt).format("DD/MM/YYYY") : "",
+          row.paidAt ? formatSaoPauloDateTime(row.paidAt, "DD/MM/YYYY") : "",
           formatCurrency(row.grossAmountCents),
           formatCurrency(row.netAmountCents),
         ]
