@@ -529,6 +529,7 @@ vi.mock("@/lib/notifications/whatsapp-send", () => ({ sendWhatsAppToUser: vi.fn(
 vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
 vi.mock("@/lib/access-control", () => ({ isStaff: vi.fn(() => false) }));
 vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Map()) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { signPatientContractAction } from "./sign-patient-contract-action";
 
@@ -781,6 +782,7 @@ vi.mock("@ventre/supabase/server", () => ({
   })),
 }));
 vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { deactivatePatientContractAction } from "./deactivate-patient-contract-action";
 
@@ -884,6 +886,7 @@ vi.mock("@ventre/supabase/server", () => ({
 }));
 vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
 vi.mock("@/lib/access-control", () => ({ isStaff: vi.fn(() => false) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { revokeContractAction } from "./revoke-contract-action";
 
@@ -999,6 +1002,7 @@ vi.mock("@ventre/supabase/server", () => ({
 }));
 vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
 vi.mock("@/lib/access-control", () => ({ isStaff: vi.fn(() => false) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { revokeContractSignaturesAction } from "./revoke-contract-signatures-action";
 
@@ -1217,6 +1221,7 @@ vi.mock("@ventre/supabase/server", () => ({
 vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
 vi.mock("@/lib/notifications/queue", () => ({ enqueueNotification: vi.fn(async () => {}) }));
 vi.mock("@/lib/notifications/whatsapp-send", () => ({ sendWhatsAppToUser: vi.fn(async () => {}) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { createContractChangeRequestAction } from "./create-contract-change-request-action";
 
@@ -1329,6 +1334,7 @@ vi.mock("@/lib/contract-header-text", () => ({ hasUnfilledFields: vi.fn(() => fa
 vi.mock("@/lib/contract-finalization", () => ({ generateFinalizedContractPdf: vi.fn(async () => {}) }));
 vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
 vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Map()) }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { signContractAsPatientAction } from "./sign-contract-as-patient-action";
 
