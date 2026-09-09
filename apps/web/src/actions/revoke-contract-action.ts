@@ -19,7 +19,7 @@ export const revokeContractAction = authActionClient
         .eq("id", contractId)
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
-        .eq("is_active", true)
+        .eq("status", "active")
         .maybeSingle();
 
       if (!existing) throw new Error("Contrato não encontrado.");
@@ -58,7 +58,7 @@ export const revokeContractAction = authActionClient
       const { error } = await supabase
         .from("contracts")
         .update({
-          is_active: false,
+          status: "revoked",
           revoked_at: new Date().toISOString(),
           revoked_by: user.id,
         })
