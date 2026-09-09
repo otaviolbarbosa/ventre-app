@@ -10,6 +10,7 @@ import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action"
 import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
 import { revokeContractAction } from "@/actions/revoke-contract-action";
 import { revokeContractSignaturesAction } from "@/actions/revoke-contract-signatures-action";
+import { saveContractDraftAction } from "@/actions/save-contract-draft-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
 import { useAuth } from "@/hooks/use-auth";
 import { ESTADOS_BR } from "@/lib/constants";
@@ -139,6 +140,7 @@ export default function PatientContract({
   const [originalDocumentId, setOriginalDocumentId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [contractExists, setContractExists] = useState(false);
+  const [contractStatus, setContractStatus] = useState<"draft" | "active" | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPdfBase64, setPreviewPdfBase64] = useState<string | null>(null);
   const [readonlyPdfSource, setReadonlyPdfSource] = useState<
@@ -223,6 +225,7 @@ export default function PatientContract({
           setClausesHtml(data.contract.clauses_html);
           setCity(data.contract.city ?? "");
           setState(data.contract.state ?? "");
+          setContractStatus(data.contract.status as "draft" | "active");
           if (data.savedParties) setSavedParties(data.savedParties);
           setOriginalDocumentId(data.contract.original_document_id);
           setSignatureInfo(
@@ -240,6 +243,7 @@ export default function PatientContract({
           setMode("readonly");
         } else {
           setOriginalDocumentId(null);
+          setContractStatus(null);
           setMode("select");
         }
         setChangeRequests(data?.changeRequests ?? []);
@@ -280,6 +284,25 @@ export default function PatientContract({
     },
   );
 
+  const { execute: saveDraft, isExecuting: isSavingDraft } = useAction(saveContractDraftAction, {
+    onSuccess: () => {
+      toast.success("Rascunho salvo. A gestante já pode visualizá-lo.");
+      fetchContract({ patientId });
+    },
+    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao salvar rascunho"),
+  });
+
+  const handleSaveDraft = () => {
+    saveDraft({
+      patientId,
+      pregnancyId: pregnancyId ?? null,
+      title,
+      clauses_html: clausesHtml,
+      city,
+      state,
+    });
+  };
+
   const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
 
   const { executeAsync: previewContractPdfAsync, isExecuting: isLoadingPreviewPdf } =
@@ -295,6 +318,7 @@ export default function PatientContract({
         setSavedParties(null);
         setOriginalDocumentId(null);
         setSignatureInfo(null);
+        setContractStatus(null);
         setIsDeleteConfirmOpen(false);
         setMode("select");
       },
@@ -310,6 +334,7 @@ export default function PatientContract({
       setSavedParties(null);
       setOriginalDocumentId(null);
       setSignatureInfo(null);
+      setContractStatus(null);
       setFullySignedAt(null);
       setIsRevokeConfirmOpen(false);
       setMode("select");
@@ -659,6 +684,11 @@ export default function PatientContract({
               </span>
             </div>
           )} */}
+          {contractStatus === "draft" && (
+            <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+              <span>Rascunho — visível para a gestante, mas ainda não pode ser assinado.</span>
+            </div>
+          )}
           {changeRequests.length > 0 && (
             <div className="space-y-2">
               <p className="font-medium text-sm">Solicitações de alteração</p>
@@ -710,7 +740,7 @@ export default function PatientContract({
                 onClick={() => setIsDeleteConfirmOpen(true)}
               >
                 <Trash2 className="size-4" />
-                Excluir contrato
+                {contractStatus === "draft" ? "Descartar rascunho" : "Excluir contrato"}
               </Button>
             )}
             <div className="flex flex-1 gap-2 sm:flex-none">
@@ -738,7 +768,7 @@ export default function PatientContract({
                 <Download className="size-4" />
                 {isExporting ? "Gerando PDF..." : "Baixar contrato"}
               </Button>
-              {!signatureInfo && !fullySignedAt && (
+              {!signatureInfo && !fullySignedAt && contractStatus !== "draft" && (
                 <Button className="gradient-primary" onClick={() => setIsSignConfirmOpen(true)}>
                   Assinar digitalmente
                 </Button>
@@ -931,6 +961,9 @@ export default function PatientContract({
           <p className="text-destructive text-sm">{fieldErrors.clausesHtml}</p>
         )}
         <div className="flex justify-end gap-2">
+          <Button variant="outline" disabled={isSavingDraft} onClick={handleSaveDraft}>
+            {isSavingDraft ? "Salvando..." : "Salvar rascunho"}
+          </Button>
           <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>
             Cancelar
           </Button>
