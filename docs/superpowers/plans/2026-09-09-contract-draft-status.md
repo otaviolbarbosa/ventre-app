@@ -19,6 +19,7 @@
 - No new `canceled` status — "excluir"/"revogar" both write `status='revoked'`, distinguished by `revoked_at` exactly as `is_active=false` was today.
 - All new/changed server code must ship with tests per this repo's convention (`apps/web`, Vitest, mocks for `@ventre/supabase/server`).
 - Run `npx biome check --write <file>` and `cd apps/web && npx tsc --noEmit -p .` after each task before committing.
+- Never modify `apps/web/src/lib/safe-action.ts` (`actionClient`/`authActionClient`) as part of any task in this plan — it is shared by every action in the app, out of scope here. When a test asserts on a thrown business error, assert `expect(res?.serverError).toBeTruthy()` (and `expect(res?.data).toBeUndefined()`), never a specific message string — this repo's `createSafeActionClient()` has no custom `handleServerError`, so `next-safe-action`'s default always returns a generic message to the client regardless of what the action throws (confirmed by reading `next-safe-action@8.1.4`'s `dist/index.mjs`). This matches the existing test convention already used in `create-evolution-action.test.ts`.
 
 ---
 
@@ -255,7 +256,7 @@ describe("saveContractDraftAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("já foi gerado");
+    expect(res?.serverError).toBeTruthy();
   });
 
   it("surfaces a friendly error on a unique-constraint race", async () => {
@@ -272,7 +273,7 @@ describe("saveContractDraftAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("Já existe um contrato");
+    expect(res?.serverError).toBeTruthy();
   });
 });
 ```
@@ -918,7 +919,7 @@ describe("revokeContractAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("assinados por ambas as partes");
+    expect(res?.serverError).toBeTruthy();
   });
 });
 ```
@@ -1257,7 +1258,7 @@ describe("createContractChangeRequestAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("Nenhum contrato encontrado");
+    expect(res?.serverError).toBeTruthy();
   });
 });
 ```
@@ -1388,7 +1389,7 @@ describe("signContractAsPatientAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("rascunho");
+    expect(res?.serverError).toBeTruthy();
   });
 });
 ```
