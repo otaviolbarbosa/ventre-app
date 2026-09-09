@@ -4,7 +4,12 @@ import { createSafeActionClient } from "next-safe-action";
 
 export type ProfileWithEnterprise = Tables<"users"> & { enterprise_id: string | null };
 
-export const actionClient = createSafeActionClient();
+export const actionClient = createSafeActionClient({
+  handleServerError: (e) => {
+    if (e instanceof Error) return e.message;
+    return "Algo deu errado. Tente novamente.";
+  },
+});
 
 export const authActionClient = actionClient.use(async ({ next }) => {
   const supabase = await createServerSupabaseClient();
