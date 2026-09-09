@@ -9,6 +9,9 @@ const {
   insertResult,
   updateResult,
   patientRow,
+  updateCalls,
+  insertCalls,
+  inCalls,
 } = vi.hoisted(() => ({
   authUser: { id: "professional-1" },
   profileRow: {
@@ -42,15 +45,27 @@ const {
     data: { created_by: "professional-1" } as { created_by: string } | null,
     error: null as unknown,
   },
+  updateCalls: [] as unknown[],
+  insertCalls: [] as unknown[],
+  inCalls: [] as unknown[][],
 }));
 
 function makeContractsBuilder() {
   const builder = {
     select: vi.fn(() => builder),
-    insert: vi.fn(() => builder),
-    update: vi.fn(() => builder),
+    insert: vi.fn((payload: unknown) => {
+      insertCalls.push(payload);
+      return builder;
+    }),
+    update: vi.fn((payload: unknown) => {
+      updateCalls.push(payload);
+      return builder;
+    }),
     eq: vi.fn(() => builder),
-    in: vi.fn(() => builder),
+    in: vi.fn((...args: unknown[]) => {
+      inCalls.push(args);
+      return builder;
+    }),
     is: vi.fn(() => builder),
     maybeSingle: vi.fn(() => Promise.resolve(existingContract)),
     single: vi.fn(() => Promise.resolve(insertResult)),
@@ -128,6 +143,9 @@ const PATIENT_ID = "11111111-1111-1111-1111-111111111111";
 
 describe("signPatientContractAction — draft finalization", () => {
   beforeEach(() => {
+    updateCalls.length = 0;
+    insertCalls.length = 0;
+    inCalls.length = 0;
     ueRow.data = null;
     existingContract.data = null;
     signatureRows.data = [];
@@ -160,6 +178,8 @@ describe("signPatientContractAction — draft finalization", () => {
 
     expect(res?.serverError).toBeUndefined();
     expect(res?.data?.success).toBe(true);
+    expect(inCalls[0]).toEqual(["status", ["draft", "active"]]);
+    expect(updateCalls[0]).toMatchObject({ status: "active" });
   });
 
   it("creates a fresh active contract when there is no existing draft", async () => {
@@ -175,5 +195,6 @@ describe("signPatientContractAction — draft finalization", () => {
 
     expect(res?.serverError).toBeUndefined();
     expect(res?.data?.success).toBe(true);
+    expect(insertCalls[0]).toMatchObject({ status: "active" });
   });
 });
