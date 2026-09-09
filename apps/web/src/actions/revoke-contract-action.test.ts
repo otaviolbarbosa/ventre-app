@@ -120,6 +120,8 @@ describe("revokeContractAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toBeTruthy();
+    expect(res?.serverError).toBe(
+      "Só é possível revogar contratos assinados por ambas as partes.",
+    );
   });
 });
