@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
 const { authUser, profileRow, ueRow, existingContract, insertResult, updateResult } = vi.hoisted(
   () => ({
     authUser: { id: "professional-1" },
