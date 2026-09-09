@@ -45,6 +45,7 @@ export default function ContractDetail({
   const isFullySigned = !!contract.fully_signed_at;
   const isPartiallySigned = !isFullySigned && (contract.is_signed || contract.patientSigned);
   const hasPendingChangeRequest = changeRequests.length > 0;
+  const isDraft = contract.status === "draft";
 
   const { execute, isExecuting } = useAction(signContractAsPatientAction, {
     onSuccess: () => {
@@ -81,6 +82,10 @@ export default function ContractDetail({
 
     async function loadPdf() {
       setPdfError(null);
+
+      // A draft never has a PDF (no header/parties snapshot yet) — it's rendered
+      // as raw clauses HTML below instead.
+      if (isDraft) return;
 
       // Fully signed: always show the finalized document (both parties' stamps +
       // authentication certificate) — never the professional-only original.
@@ -135,7 +140,7 @@ export default function ContractDetail({
     // down fresh props, but contract.id itself never changes — so the PDF to display
     // (original vs finalized vs live preview) is re-evaluated whenever any of the
     // fields that decision depends on changes, not just when the contract itself does.
-  }, [contract.id, isFullySigned, contract.finalized_document_id, contract.original_document_id]);
+  }, [contract.id, isFullySigned, contract.finalized_document_id, contract.original_document_id, isDraft]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -178,7 +183,24 @@ export default function ContractDetail({
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {pdfSource ? (
+        {isDraft ? (
+          <div className="rounded-2xl bg-white p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
+              <Clock className="size-4 shrink-0" />
+              <span>
+                Sua profissional está preparando o contrato. Você já pode revisar o texto e
+                enviar comentários, mas a assinatura só estará disponível quando o contrato for
+                finalizado.
+              </span>
+            </div>
+            <h2 className="mb-2 font-semibold text-[#433831]">{contract.title}</h2>
+            <div
+              className="prose-sm"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizado via sanitizeMessageHtml
+              dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(contract.clauses_html) }}
+            />
+          </div>
+        ) : pdfSource ? (
           <PdfViewer source={pdfSource} />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
@@ -207,13 +229,15 @@ export default function ContractDetail({
       {!isFullySigned && !hasPendingChangeRequest && !contract.patientSigned && (
         <div className="flex shrink-0 flex-row justify-end gap-2">
           <RequestContractChangeDialog patientId={contract.patient_id as string} />
-          <Button
-            disabled={isExecuting}
-            className="flex-1 sm:flex-none"
-            onClick={() => setIsSignConfirmOpen(true)}
-          >
-            Assinar contrato
-          </Button>
+          {!isDraft && (
+            <Button
+              disabled={isExecuting}
+              className="flex-1 sm:flex-none"
+              onClick={() => setIsSignConfirmOpen(true)}
+            >
+              Assinar contrato
+            </Button>
+          )}
         </div>
       )}
 
