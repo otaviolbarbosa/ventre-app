@@ -8,6 +8,8 @@ const {
   signaturesListResult,
   signatureByIdResult,
   changeRequestsResult,
+  inCalls,
+  eqCalls,
 } = vi.hoisted(() => ({
   authUser: { id: "patient-user-1" } as { id: string } | null,
   patientRow: { data: { id: "patient-1" } as { id: string } | null, error: null as unknown },
@@ -16,6 +18,8 @@ const {
   signaturesListResult: { data: [] as { contract_id: string }[], error: null as unknown },
   signatureByIdResult: { data: null as { id: string } | null, error: null as unknown },
   changeRequestsResult: { data: [] as unknown[], error: null as unknown },
+  inCalls: [] as unknown[][],
+  eqCalls: [] as unknown[][],
 }));
 
 function makeQueryBuilder(listResult: { data: unknown; error: unknown }, singleResult?: {
@@ -24,8 +28,14 @@ function makeQueryBuilder(listResult: { data: unknown; error: unknown }, singleR
 }) {
   const builder = {
     select: vi.fn(() => builder),
-    eq: vi.fn(() => builder),
-    in: vi.fn(() => builder),
+    eq: vi.fn((...args: unknown[]) => {
+      eqCalls.push(args);
+      return builder;
+    }),
+    in: vi.fn((...args: unknown[]) => {
+      inCalls.push(args);
+      return builder;
+    }),
     order: vi.fn(() => builder),
     maybeSingle: vi.fn(() => Promise.resolve(singleResult ?? listResult)),
     // biome-ignore lint/suspicious/noThenProperty: mock must be thenable to emulate Supabase's awaitable query builder
@@ -55,6 +65,8 @@ import { getMyContractById, getMyContracts } from "./patient-self";
 
 describe("getMyContracts", () => {
   beforeEach(() => {
+    inCalls.length = 0;
+    eqCalls.length = 0;
     patientRow.data = { id: "patient-1" };
     contractsResult.data = [];
     signaturesListResult.data = [];
@@ -70,6 +82,18 @@ describe("getMyContracts", () => {
 
     expect(res.contracts).toHaveLength(2);
     expect(res.contracts.map((c) => c.status)).toEqual(["draft", "active"]);
+    expect(
+      inCalls.some(
+        (call) =>
+          call[0] === "status" &&
+          Array.isArray(call[1]) &&
+          (call[1] as string[]).includes("draft") &&
+          (call[1] as string[]).includes("active"),
+      ),
+    ).toBe(true);
+    expect(
+      eqCalls.some((call) => call[0] === "is_base_contract" && call[1] === false),
+    ).toBe(true);
   });
 
   it("derives patientSigned from contract_signatures", async () => {
@@ -93,6 +117,8 @@ describe("getMyContracts", () => {
 
 describe("getMyContractById", () => {
   beforeEach(() => {
+    inCalls.length = 0;
+    eqCalls.length = 0;
     patientRow.data = { id: "patient-1" };
     contractByIdResult.data = null;
     signatureByIdResult.data = null;
@@ -106,6 +132,18 @@ describe("getMyContractById", () => {
 
     expect(res.contract?.status).toBe("draft");
     expect(res.error).toBeUndefined();
+    expect(
+      inCalls.some(
+        (call) =>
+          call[0] === "status" &&
+          Array.isArray(call[1]) &&
+          (call[1] as string[]).includes("draft") &&
+          (call[1] as string[]).includes("active"),
+      ),
+    ).toBe(true);
+    expect(
+      eqCalls.some((call) => call[0] === "is_base_contract" && call[1] === false),
+    ).toBe(true);
   });
 
   it("returns an error when no matching draft/active contract exists", async () => {
