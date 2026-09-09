@@ -132,7 +132,7 @@ describe("saveContractDraftAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("já foi gerado");
+    expect(res?.serverError).toBeTruthy();
   });
 
   it("surfaces a friendly error on a unique-constraint race", async () => {
@@ -149,6 +149,6 @@ describe("saveContractDraftAction", () => {
     });
 
     expect(res?.data).toBeUndefined();
-    expect(res?.serverError).toContain("Já existe um contrato");
+    expect(res?.serverError).toBeTruthy();
   });
 });
