@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-const { authUser, profileRow, ueRow, existingContract, insertResult, updateResult } = vi.hoisted(
-  () => ({
+const { authUser, profileRow, ueRow, existingContract, insertResult, updateResult, insertCalls } =
+  vi.hoisted(() => ({
     authUser: { id: "professional-1" },
     profileRow: {
       data: { id: "professional-1", name: "Dra. Ana", enterprise_id: null } as Record<
@@ -28,13 +28,16 @@ const { authUser, profileRow, ueRow, existingContract, insertResult, updateResul
       data: null as unknown,
       error: null as { message: string } | null,
     },
-  }),
-);
+    insertCalls: [] as unknown[],
+  }));
 
 function makeContractsBuilder() {
   const builder = {
     select: vi.fn(() => builder),
-    insert: vi.fn(() => builder),
+    insert: vi.fn((payload: unknown) => {
+      insertCalls.push(payload);
+      return builder;
+    }),
     update: vi.fn(() => builder),
     eq: vi.fn(() => builder),
     in: vi.fn(() => builder),
@@ -79,6 +82,7 @@ const PATIENT_ID = "11111111-1111-1111-1111-111111111111";
 
 describe("saveContractDraftAction", () => {
   beforeEach(() => {
+    insertCalls.length = 0;
     ueRow.data = null;
     ueRow.error = null;
     existingContract.data = null;
@@ -101,6 +105,22 @@ describe("saveContractDraftAction", () => {
 
     expect(res?.data?.contractId).toBe("new-contract-1");
     expect(res?.serverError).toBeUndefined();
+  });
+
+  it("uses enterprise_id (not the user's own id) when the professional is enterprise-affiliated", async () => {
+    ueRow.data = { enterprise_id: "enterprise-1" };
+
+    const res = await saveContractDraftAction({
+      patientId: PATIENT_ID,
+      pregnancyId: null,
+      title: "CONTRATO DE PRESTAÇÃO DE SERVIÇOS",
+      clauses_html: "<p>Cláusula 1</p>",
+      city: "",
+      state: "",
+    });
+
+    expect(res?.data?.contractId).toBe("new-contract-1");
+    expect(insertCalls[0]).toMatchObject({ enterprise_id: "enterprise-1", user_id: null });
   });
 
   it("updates an existing draft in place", async () => {
