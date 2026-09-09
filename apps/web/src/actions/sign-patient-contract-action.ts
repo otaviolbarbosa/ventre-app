@@ -35,7 +35,7 @@ export const signPatientContractAction = authActionClient
         .select("id, is_signed, fully_signed_at, title, clauses_html, city, state")
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
-        .eq("is_active", true)
+        .in("status", ["draft", "active"])
         .maybeSingle();
 
       if (existing?.fully_signed_at) {
@@ -115,7 +115,7 @@ export const signPatientContractAction = authActionClient
         const { error: revokeError } = await supabase
           .from("contracts")
           .update({
-            is_active: false,
+            status: "revoked",
             revoked_at: new Date().toISOString(),
             revoked_by: user.id,
           })
@@ -145,7 +145,7 @@ export const signPatientContractAction = authActionClient
           .from("contracts")
           .insert({
             is_base_contract: false,
-            is_active: true,
+            status: "active",
             title,
             clauses_html,
             parties_details,
@@ -164,6 +164,7 @@ export const signPatientContractAction = authActionClient
         const { error } = await supabase
           .from("contracts")
           .update({
+            status: "active",
             title,
             clauses_html,
             parties_details,
@@ -178,7 +179,7 @@ export const signPatientContractAction = authActionClient
           .from("contracts")
           .insert({
             is_base_contract: false,
-            is_active: true,
+            status: "active",
             title,
             clauses_html,
             parties_details,
