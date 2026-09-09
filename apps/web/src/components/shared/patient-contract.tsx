@@ -841,6 +841,19 @@ export default function PatientContract({
   return (
     <>
       <div className="space-y-3 px-1 pt-2">
+        {activeIncompleteParties.length > 0 && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+            <span>Há dados incompletos que impedirão a geração do contrato.</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0 border-amber-300"
+              onClick={() => setIsIncompleteDataModalOpen(true)}
+            >
+              Ver detalhes
+            </Button>
+          </div>
+        )}
         <div className="mb-6 space-y-2">
           <label htmlFor="contract-title" className="font-medium text-sm">
             Título do contrato
