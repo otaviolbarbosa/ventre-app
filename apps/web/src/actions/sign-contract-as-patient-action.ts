@@ -29,14 +29,17 @@ export const signContractAsPatientAction = authActionClient
       const { data: existing } = await supabase
         .from("contracts")
         .select(
-          "id, is_signed, verification_code, parties_details, title, clauses_html, city, state, enterprise_id, signed_at, signed_by, content_hash, original_document_id",
+          "id, status, is_signed, verification_code, parties_details, title, clauses_html, city, state, enterprise_id, signed_at, signed_by, content_hash, original_document_id",
         )
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
-        .eq("is_active", true)
+        .in("status", ["draft", "active"])
         .maybeSingle();
 
       if (!existing) throw new Error("Nenhum contrato encontrado para assinar.");
+      if (existing.status === "draft") {
+        throw new Error("Este contrato ainda é um rascunho e não pode ser assinado.");
+      }
       // The professional does not need to have signed first — either party can sign
       // in either order. The contract_signatures completion trigger sets
       // fully_signed_at once both rows exist, regardless of which one lands second.
