@@ -164,7 +164,7 @@ export async function getMyContracts(): Promise<{
     .select("*")
     .eq("patient_id", patientId)
     .eq("is_base_contract", false)
-    .eq("is_active", true)
+    .in("status", ["draft", "active"])
     .order("created_at", { ascending: false });
 
   const contracts = data ?? [];
@@ -207,7 +207,7 @@ export async function getMyContractById(contractId: string): Promise<{
     .eq("id", contractId)
     .eq("patient_id", patientId)
     .eq("is_base_contract", false)
-    .eq("is_active", true)
+    .in("status", ["draft", "active"])
     .maybeSingle();
 
   if (!contract) {

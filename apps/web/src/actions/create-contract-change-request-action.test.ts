@@ -35,6 +35,7 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }, table?: str
     limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
+    // biome-ignore lint/suspicious/noThenProperty: mock must be thenable to emulate Supabase's awaitable query builder
     then: (resolve: (v: unknown) => unknown) => resolve(result),
   };
   return builder;
@@ -58,9 +59,9 @@ vi.mock("@ventre/supabase/server", () => ({
     }),
   })),
 }));
-vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
-vi.mock("@/lib/notifications/queue", () => ({ enqueueNotification: vi.fn(async () => {}) }));
-vi.mock("@/lib/notifications/whatsapp-send", () => ({ sendWhatsAppToUser: vi.fn(async () => {}) }));
+vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/notifications/queue", () => ({ enqueueNotification: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/notifications/whatsapp-send", () => ({ sendWhatsAppToUser: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { createContractChangeRequestAction } from "./create-contract-change-request-action";

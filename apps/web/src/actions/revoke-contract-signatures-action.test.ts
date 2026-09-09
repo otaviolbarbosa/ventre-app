@@ -55,6 +55,7 @@ function makeContractsBuilder() {
     is: vi.fn(() => builder),
     maybeSingle: vi.fn(() => Promise.resolve(existingContract)),
     single: vi.fn(() => Promise.resolve(insertResult)),
+    // biome-ignore lint/suspicious/noThenProperty: mock must be thenable to emulate Supabase's awaitable query builder
     then: (resolve: (v: unknown) => unknown) => resolve(updateResult),
   };
   return builder;
@@ -68,6 +69,7 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
     limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
+    // biome-ignore lint/suspicious/noThenProperty: mock must be thenable to emulate Supabase's awaitable query builder
     then: (resolve: (v: unknown) => unknown) => resolve(result),
   };
   return builder;
@@ -91,7 +93,7 @@ vi.mock("@ventre/supabase/server", () => ({
     }),
   })),
 }));
-vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn(async () => {}) }));
+vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/access-control", () => ({ isStaff: vi.fn(() => false) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 

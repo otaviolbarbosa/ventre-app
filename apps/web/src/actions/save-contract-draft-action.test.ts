@@ -43,6 +43,7 @@ function makeContractsBuilder() {
     in: vi.fn(() => builder),
     maybeSingle: vi.fn(() => Promise.resolve(existingContract)),
     single: vi.fn(() => Promise.resolve(insertResult)),
+    // biome-ignore lint/suspicious/noThenProperty: mock must be thenable to emulate Supabase's awaitable query builder
     then: (resolve: (v: unknown) => unknown) => resolve(updateResult),
   };
   return builder;
