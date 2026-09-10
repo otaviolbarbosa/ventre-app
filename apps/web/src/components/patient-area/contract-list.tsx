@@ -85,14 +85,20 @@ export default function ContractList({
                       Alteração solicitada
                     </Badge>
                   )}
-                  <div className="flex flex-col items-end gap-1.5">
-                    <span className="pr-2 font-medium text-sm">Assinaturas</span>
-                    <SignatureStatusBadge label="Minha" signed={contract.patientSigned} />
-                    <SignatureStatusBadge
-                      label="Empresa/Profissional"
-                      signed={contract.is_signed}
-                    />
-                  </div>
+                  {contract.status === "draft" ? (
+                    <Badge variant="warning" className="w-fit">
+                      Rascunho
+                    </Badge>
+                  ) : (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="pr-2 font-medium text-sm">Assinaturas</span>
+                      <SignatureStatusBadge label="Minha" signed={contract.patientSigned} />
+                      <SignatureStatusBadge
+                        label="Empresa/Profissional"
+                        signed={contract.is_signed}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>

@@ -39,3 +39,4 @@ yarn-error.log*
 
 # Superpowers SDD workspace (ledgers, briefs, review packages — scratch, not source)
 .superpowers/
+.worktrees/
