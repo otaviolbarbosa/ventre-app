@@ -764,10 +764,12 @@ export default function PatientContract({
                   Editar contrato
                 </Button>
               )}
-              <Button disabled={isExporting} onClick={handleExportPdf}>
-                <Download className="size-4" />
-                {isExporting ? "Gerando PDF..." : "Baixar contrato"}
-              </Button>
+              {contractStatus !== "draft" && (
+                <Button disabled={isExporting} onClick={handleExportPdf}>
+                  <Download className="size-4" />
+                  {isExporting ? "Gerando PDF..." : "Baixar contrato"}
+                </Button>
+              )}
               {!signatureInfo && !fullySignedAt && contractStatus !== "draft" && (
                 <Button className="gradient-primary" onClick={() => setIsSignConfirmOpen(true)}>
                   Assinar digitalmente
@@ -961,7 +963,11 @@ export default function PatientContract({
           <p className="text-destructive text-sm">{fieldErrors.clausesHtml}</p>
         )}
         <div className="flex justify-end gap-2">
-          <Button variant="outline" disabled={isSavingDraft} onClick={handleSaveDraft}>
+          <Button
+            variant="outline"
+            disabled={isSavingDraft || contractStatus === "active"}
+            onClick={handleSaveDraft}
+          >
             {isSavingDraft ? "Salvando..." : "Salvar rascunho"}
           </Button>
           <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>

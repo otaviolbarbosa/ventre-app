@@ -86,10 +86,7 @@ export default function ContractList({
                     </Badge>
                   )}
                   {contract.status === "draft" ? (
-                    <Badge
-                      variant="outline"
-                      className="w-fit border-amber-500 bg-amber-500 text-white"
-                    >
+                    <Badge variant="warning" className="w-fit">
                       Rascunho
                     </Badge>
                   ) : (
