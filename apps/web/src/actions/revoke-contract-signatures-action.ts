@@ -21,7 +21,7 @@ export const revokeContractSignaturesAction = authActionClient
         .eq("id", contractId)
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
-        .eq("is_active", true)
+        .eq("status", "active")
         .maybeSingle();
 
       if (!existing) throw new Error("Contrato não encontrado.");
@@ -60,7 +60,7 @@ export const revokeContractSignaturesAction = authActionClient
       const { error: revokeError } = await supabase
         .from("contracts")
         .update({
-          is_active: false,
+          status: "revoked",
           revoked_at: new Date().toISOString(),
           revoked_by: user.id,
         })
@@ -90,7 +90,7 @@ export const revokeContractSignaturesAction = authActionClient
         .from("contracts")
         .insert({
           is_base_contract: false,
-          is_active: true,
+          status: "active",
           title: existing.title,
           clauses_html: existing.clauses_html,
           parties_details: existing.parties_details,

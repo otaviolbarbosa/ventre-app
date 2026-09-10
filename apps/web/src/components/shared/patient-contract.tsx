@@ -10,10 +10,12 @@ import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action"
 import { resolveContractChangeRequestAction } from "@/actions/resolve-contract-change-request-action";
 import { revokeContractAction } from "@/actions/revoke-contract-action";
 import { revokeContractSignaturesAction } from "@/actions/revoke-contract-signatures-action";
+import { saveContractDraftAction } from "@/actions/save-contract-draft-action";
 import { signPatientContractAction } from "@/actions/sign-patient-contract-action";
 import { useAuth } from "@/hooks/use-auth";
 import { ESTADOS_BR } from "@/lib/constants";
 import type { ContractHeaderBlocks, ContractParty } from "@/lib/contract-header-text";
+import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import { patientContractFormSchema } from "@/lib/validations/contract";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
@@ -21,7 +23,14 @@ import { EditProfileModal } from "@/modals/edit-profile-modal";
 import type { PatientAddress, ProfessionalType } from "@/types";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
+import { ButtonGroup } from "@ventre/ui/button-group";
 import { Checkbox } from "@ventre/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@ventre/ui/dropdown-menu";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
@@ -30,10 +39,21 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { RichEditor } from "@ventre/ui/shared/rich-editor";
 import { Skeleton } from "@ventre/ui/skeleton";
 import DOMPurify from "isomorphic-dompurify";
-import { Download, Eye, LoaderCircle, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDown,
+  Download,
+  Eye,
+  LoaderCircle,
+  NotebookPen,
+  Pencil,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ContractSelector } from "./contract-selector";
 
@@ -139,6 +159,7 @@ export default function PatientContract({
   const [originalDocumentId, setOriginalDocumentId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [contractExists, setContractExists] = useState(false);
+  const [contractStatus, setContractStatus] = useState<"draft" | "active" | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPdfBase64, setPreviewPdfBase64] = useState<string | null>(null);
   const [readonlyPdfSource, setReadonlyPdfSource] = useState<
@@ -164,6 +185,12 @@ export default function PatientContract({
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isFetchingAddressForEdit, setIsFetchingAddressForEdit] = useState(false);
   const clausesContainerRef = useRef<HTMLDivElement>(null);
+  // Guards against out-of-order responses: fetchContract is re-triggered after
+  // almost every mutation (save draft, resolve change request, sign, ...), so two
+  // calls can be in flight at once. Without this, a slower/older request landing
+  // after a newer one would overwrite fresh state (e.g. reverting `mode` back to
+  // "select" after the contract was already created).
+  const fetchContractRequestIdRef = useRef(0);
   const { profile } = useAuth();
 
   const headerBlocks =
@@ -200,52 +227,67 @@ export default function PatientContract({
     element?.focus();
   };
 
-  const { execute: fetchContract, isExecuting: isLoadingFetchContract } = useAction(
-    getPatientContractAction,
-    {
-      onSuccess: ({ data }) => {
-        if (data?.headerBlocks) {
-          setEnterpriseHeaderBlocks(data.headerBlocks);
-          setActiveHeaderVariant((prev) => prev ?? "enterprise");
-        }
-        if (data?.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
-        setHeaderIncompleteParties(data?.headerIncompleteParties ?? []);
-        setPersonalIncompleteParties(data?.personalHeaderIncompleteParties ?? []);
-        setPatientName(data?.patientName ?? null);
-        setContratadaName(data?.contratadaName ?? null);
+  const { executeAsync: fetchContractAsync, isExecuting: isLoadingFetchContract } =
+    useAction(getPatientContractAction);
 
-        setEnterpriseOptions(data?.enterpriseBaseOptions ?? []);
-        setPersonalOptions(data?.personalBaseOptions ?? []);
+  const fetchContract = useCallback(
+    async (input: { patientId: string }) => {
+      const requestId = ++fetchContractRequestIdRef.current;
+      const result = await fetchContractAsync(input);
 
-        if (data?.contract) {
-          setContractId(data.contract.id);
-          setTitle(data.contract.title);
-          setClausesHtml(data.contract.clauses_html);
-          setCity(data.contract.city ?? "");
-          setState(data.contract.state ?? "");
-          if (data.savedParties) setSavedParties(data.savedParties);
-          setOriginalDocumentId(data.contract.original_document_id);
-          setSignatureInfo(
-            data.contract.is_signed
-              ? {
-                  signedAt: data.contract.signed_at,
-                  verificationCode: data.contract.verification_code,
-                  finalizedDocumentId: data.contract.finalized_document_id,
-                  signedByName: data.signedByName ?? null,
-                }
-              : null,
-          );
-          setFullySignedAt(data.contract.fully_signed_at ?? null);
-          setContractExists(true);
-          setMode("readonly");
-        } else {
-          setOriginalDocumentId(null);
-          setMode("select");
-        }
-        setChangeRequests(data?.changeRequests ?? []);
-      },
-      onError: () => setMode("select"),
+      // A newer fetchContract call may have already landed and updated state by the
+      // time this one resolves — discard this stale response instead of reverting.
+      if (requestId !== fetchContractRequestIdRef.current) return;
+
+      const data = result?.data;
+      if (!data) {
+        setMode("select");
+        return;
+      }
+
+      if (data.headerBlocks) {
+        setEnterpriseHeaderBlocks(data.headerBlocks);
+        setActiveHeaderVariant((prev) => prev ?? "enterprise");
+      }
+      if (data.personalHeaderBlocks) setPersonalHeaderBlocks(data.personalHeaderBlocks);
+      setHeaderIncompleteParties(data.headerIncompleteParties ?? []);
+      setPersonalIncompleteParties(data.personalHeaderIncompleteParties ?? []);
+      setPatientName(data.patientName ?? null);
+      setContratadaName(data.contratadaName ?? null);
+
+      setEnterpriseOptions(data.enterpriseBaseOptions ?? []);
+      setPersonalOptions(data.personalBaseOptions ?? []);
+
+      if (data.contract) {
+        setContractId(data.contract.id);
+        setTitle(data.contract.title);
+        setClausesHtml(data.contract.clauses_html);
+        setCity(data.contract.city ?? "");
+        setState(data.contract.state ?? "");
+        setContractStatus(data.contract.status as "draft" | "active");
+        if (data.savedParties) setSavedParties(data.savedParties);
+        setOriginalDocumentId(data.contract.original_document_id);
+        setSignatureInfo(
+          data.contract.is_signed
+            ? {
+                signedAt: data.contract.signed_at,
+                verificationCode: data.contract.verification_code,
+                finalizedDocumentId: data.contract.finalized_document_id,
+                signedByName: data.signedByName ?? null,
+              }
+            : null,
+        );
+        setFullySignedAt(data.contract.fully_signed_at ?? null);
+        setContractExists(true);
+        setMode("readonly");
+      } else {
+        setOriginalDocumentId(null);
+        setContractStatus(null);
+        setMode("select");
+      }
+      setChangeRequests(data.changeRequests ?? []);
     },
+    [fetchContractAsync],
   );
 
   const { execute: resolveChangeRequest, isExecuting: isResolvingChangeRequest } = useAction(
@@ -280,6 +322,25 @@ export default function PatientContract({
     },
   );
 
+  const { execute: saveDraft, isExecuting: isSavingDraft } = useAction(saveContractDraftAction, {
+    onSuccess: () => {
+      toast.success("Rascunho salvo. A gestante já pode visualizá-lo.");
+      fetchContract({ patientId });
+    },
+    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao salvar rascunho"),
+  });
+
+  const handleSaveDraft = () => {
+    saveDraft({
+      patientId,
+      pregnancyId: pregnancyId ?? null,
+      title,
+      clauses_html: clausesHtml,
+      city,
+      state,
+    });
+  };
+
   const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
 
   const { executeAsync: previewContractPdfAsync, isExecuting: isLoadingPreviewPdf } =
@@ -295,6 +356,7 @@ export default function PatientContract({
         setSavedParties(null);
         setOriginalDocumentId(null);
         setSignatureInfo(null);
+        setContractStatus(null);
         setIsDeleteConfirmOpen(false);
         setMode("select");
       },
@@ -310,6 +372,7 @@ export default function PatientContract({
       setSavedParties(null);
       setOriginalDocumentId(null);
       setSignatureInfo(null);
+      setContractStatus(null);
       setFullySignedAt(null);
       setIsRevokeConfirmOpen(false);
       setMode("select");
@@ -645,41 +708,71 @@ export default function PatientContract({
     return (
       <>
         <div className="space-y-3 pt-2">
-          {/* {signatureInfo && (
+          {fullySignedAt && (
             <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
-              <BadgeCheck className="size-4 shrink-0" />
+              <CheckCircle className="size-4 shrink-0" />
               <span>
-                Assinado eletronicamente
-                {signatureInfo.signedAt
-                  ? ` em ${new Date(signatureInfo.signedAt).toLocaleDateString("pt-BR")}`
-                  : ""}
-                {signatureInfo.verificationCode
+                Assinado eletronicamente por ambas as partes em{" "}
+                {new Date(fullySignedAt).toLocaleDateString("pt-BR")}
+                {signatureInfo?.verificationCode
                   ? ` · Código ${signatureInfo.verificationCode}`
                   : ""}
               </span>
             </div>
-          )} */}
+          )}
+          {signatureInfo && !fullySignedAt && (
+            <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
+              <CheckCircle className="size-4 shrink-0" />
+              <span>
+                Assinado eletronicamente pela profissional
+                {signatureInfo.signedAt
+                  ? ` em ${new Date(signatureInfo.signedAt).toLocaleDateString("pt-BR")}`
+                  : ""}
+                {" — aguardando assinatura da gestante para finalizar."}
+              </span>
+            </div>
+          )}
+          {contractStatus === "draft" && (
+            <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+              <span>Rascunho — visível para a gestante, mas ainda não pode ser assinado.</span>
+            </div>
+          )}
           {changeRequests.length > 0 && (
             <div className="space-y-2">
               <p className="font-medium text-sm">Solicitações de alteração</p>
               {changeRequests.map((request) => (
                 <div
                   key={request.id}
-                  className="space-y-2 rounded-md border border-border bg-muted/30 px-3 py-2 text-sm"
+                  className="flex flex-col items-start gap-2 rounded-md border border-border bg-muted/30 p-3 text-sm sm:flex-row"
                 >
-                  <div
-                    className="prose-sm"
-                    // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify with a tight allowlist above
-                    dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(request.message_html) }}
-                  />
-                  {request.status === "resolved" ? (
-                    <p className="text-muted-foreground text-xs">
-                      Resolvida em{" "}
-                      {request.resolved_at
-                        ? new Date(request.resolved_at).toLocaleDateString("pt-BR")
-                        : ""}
-                    </p>
-                  ) : (
+                  <div className="w-full flex-1 space-y-2">
+                    <div
+                      className="prose-sm"
+                      // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via DOMPurify with a tight allowlist above
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeMessageHtml(request.message_html),
+                      }}
+                    />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1">
+                        <NotebookPen className="size-3" />
+                        <p className="text-muted-foreground text-xs">
+                          Registrada em {new Date(request.created_at).toLocaleDateString("pt-BR")}{" "}
+                          às {dayjs(request.created_at).format("HH:mm")}
+                        </p>
+                      </div>
+                      {request.status === "resolved" && request.resolved_at ? (
+                        <div className="flex items-center gap-1">
+                          <CheckCircle className="size-3 text-green-600" />
+                          <p className="text-muted-foreground text-xs ">
+                            Resolvida em {new Date(request.resolved_at).toLocaleDateString("pt-BR")}
+                            às {dayjs(request.resolved_at).format("HH:mm")}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  {request.status === "resolved" && request.resolved_at ? null : (
                     <Button
                       size="sm"
                       variant="outline"
@@ -703,17 +796,21 @@ export default function PatientContract({
             </p>
           )}
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-            {!fullySignedAt && (
-              <Button
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                onClick={() => setIsDeleteConfirmOpen(true)}
-              >
-                <Trash2 className="size-4" />
-                Excluir contrato
-              </Button>
+            {!fullySignedAt ? (
+              <div className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setIsDeleteConfirmOpen(true)}
+                >
+                  <Trash2 className="size-4" />
+                  {contractStatus === "draft" ? "Descartar rascunho" : "Excluir contrato"}
+                </Button>
+              </div>
+            ) : (
+              <div />
             )}
-            <div className="flex flex-1 gap-2 sm:flex-none">
+            <div className="flex flex-1 justify-end gap-2 sm:flex-none">
               {fullySignedAt && (
                 <Button variant="outline" onClick={() => setIsRevokeConfirmOpen(true)}>
                   Revogar e redigir novo
@@ -734,11 +831,27 @@ export default function PatientContract({
                   Editar contrato
                 </Button>
               )}
-              <Button disabled={isExporting} onClick={handleExportPdf}>
-                <Download className="size-4" />
-                {isExporting ? "Gerando PDF..." : "Baixar contrato"}
-              </Button>
-              {!signatureInfo && !fullySignedAt && (
+              {contractStatus === "draft" && (
+                <Button
+                  variant="outline"
+                  disabled={isLoadingPreviewPdf}
+                  onClick={handleOpenPreview}
+                >
+                  {isLoadingPreviewPdf ? (
+                    <LoaderCircle className="size-4 animate-spin" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                  {isLoadingPreviewPdf ? "Gerando pré-visualização..." : "Pré-visualizar"}
+                </Button>
+              )}
+              {contractStatus !== "draft" && (
+                <Button disabled={isExporting} onClick={handleExportPdf}>
+                  <Download className="size-4" />
+                  {isExporting ? "Gerando PDF..." : "Baixar contrato"}
+                </Button>
+              )}
+              {!signatureInfo && !fullySignedAt && contractStatus !== "draft" && (
                 <Button className="gradient-primary" onClick={() => setIsSignConfirmOpen(true)}>
                   Assinar digitalmente
                 </Button>
@@ -841,6 +954,19 @@ export default function PatientContract({
   return (
     <>
       <div className="space-y-3 px-1 pt-2">
+        {activeIncompleteParties.length > 0 && (
+          <div className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+            <span>Há dados incompletos que impedirão a geração do contrato.</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0 border-amber-300"
+              onClick={() => setIsIncompleteDataModalOpen(true)}
+            >
+              Ver detalhes
+            </Button>
+          </div>
+        )}
         <div className="mb-6 space-y-2">
           <label htmlFor="contract-title" className="font-medium text-sm">
             Título do contrato
@@ -917,7 +1043,7 @@ export default function PatientContract({
         {fieldErrors.clausesHtml && (
           <p className="text-destructive text-sm">{fieldErrors.clausesHtml}</p>
         )}
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button variant="ghost" disabled={isSigning} onClick={handleCancelContractForm}>
             Cancelar
           </Button>
@@ -925,7 +1051,6 @@ export default function PatientContract({
             variant="outline"
             disabled={isSigning || isLoadingPreviewPdf}
             onClick={handleOpenPreview}
-            className="hidden sm:flex"
           >
             {isLoadingPreviewPdf ? (
               <LoaderCircle className="size-4 animate-spin" />
@@ -934,30 +1059,44 @@ export default function PatientContract({
             )}
             {isLoadingPreviewPdf ? "Gerando pré-visualização..." : "Pré-visualizar"}
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            disabled={isSigning || isLoadingPreviewPdf}
-            onClick={handleOpenPreview}
-            className="block flex justify-center sm:hidden"
-          >
-            <Eye className="size-4" />
-          </Button>
-          <Button
-            className="gradient-primary"
-            disabled={isSigning || isExporting}
-            onClick={() => {
-              if (!validateForm()) return;
-              if (activeIncompleteParties.length > 0) {
-                setIsIncompleteDataModalOpen(true);
-                return;
-              }
-              setIsGenerateModalOpen(true);
-            }}
-          >
-            <Plus className="size-4" />
-            {isSigning ? "Gerando contrato..." : "Gerar contrato"}
-          </Button>
+          <ButtonGroup>
+            <Button
+              className="gradient-primary"
+              disabled={isSigning || isExporting}
+              onClick={() => {
+                if (!validateForm()) return;
+                if (activeIncompleteParties.length > 0) {
+                  setIsIncompleteDataModalOpen(true);
+                  return;
+                }
+                setIsGenerateModalOpen(true);
+              }}
+            >
+              <Plus className="size-4" />
+              {isSigning ? "Gerando contrato..." : "Gerar contrato"}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="gradient-primary"
+                  size="icon"
+                  disabled={isSigning || isExporting}
+                  aria-label="Mais opções"
+                >
+                  <ChevronDown className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  disabled={isSavingDraft || contractStatus === "active"}
+                  onClick={handleSaveDraft}
+                >
+                  <Save className="size-4" />
+                  {isSavingDraft ? "Salvando..." : "Salvar rascunho"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
         </div>
       </div>
 

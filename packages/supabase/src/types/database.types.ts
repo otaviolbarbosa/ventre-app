@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activity_logs: {
@@ -1112,7 +1137,6 @@ export type Database = {
           finalized_document_id: string | null
           fully_signed_at: string | null
           id: string
-          is_active: boolean | null
           is_base_contract: boolean
           is_signed: boolean
           name: string | null
@@ -1127,6 +1151,7 @@ export type Database = {
           signed_ip: string | null
           signed_user_agent: string | null
           state: string | null
+          status: string | null
           title: string
           updated_at: string
           user_id: string | null
@@ -1142,7 +1167,6 @@ export type Database = {
           finalized_document_id?: string | null
           fully_signed_at?: string | null
           id?: string
-          is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
           name?: string | null
@@ -1157,6 +1181,7 @@ export type Database = {
           signed_ip?: string | null
           signed_user_agent?: string | null
           state?: string | null
+          status?: string | null
           title?: string
           updated_at?: string
           user_id?: string | null
@@ -1172,7 +1197,6 @@ export type Database = {
           finalized_document_id?: string | null
           fully_signed_at?: string | null
           id?: string
-          is_active?: boolean | null
           is_base_contract?: boolean
           is_signed?: boolean
           name?: string | null
@@ -1187,6 +1211,7 @@ export type Database = {
           signed_ip?: string | null
           signed_user_agent?: string | null
           state?: string | null
+          status?: string | null
           title?: string
           updated_at?: string
           user_id?: string | null
@@ -3496,6 +3521,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       amniotic_fluid_index: [

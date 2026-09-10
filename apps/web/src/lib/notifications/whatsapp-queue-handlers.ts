@@ -386,13 +386,13 @@ async function handlePrenatalFollowupGap(
   };
 }
 
-async function handleContractPendingSignature(
+export async function handleContractPendingSignature(
   supabaseAdmin: SupabaseAdmin,
   notification: DequeuedNotification,
 ): Promise<WhatsAppQueueHandlerResult> {
   const { data: contract, error } = await supabaseAdmin
     .from("contracts")
-    .select("is_signed, is_active, created_at, patient:patients(name, created_by)")
+    .select("is_signed, status, created_at, patient:patients(name, created_by)")
     .eq("id", notification.referenceId)
     .maybeSingle();
   if (error)
@@ -400,7 +400,7 @@ async function handleContractPendingSignature(
   if (
     !contract ||
     contract.is_signed ||
-    !contract.is_active ||
+    contract.status !== "active" ||
     dayjs().diff(dayjs(contract.created_at), "day") < 3
   ) {
     return { action: "skip" };

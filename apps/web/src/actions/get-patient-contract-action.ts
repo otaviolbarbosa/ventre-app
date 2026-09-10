@@ -35,7 +35,7 @@ export const getPatientContractAction = authActionClient
           .select("*")
           .eq("patient_id", patientId)
           .eq("is_base_contract", false)
-          .eq("is_active", true)
+          .in("status", ["draft", "active"])
           .maybeSingle(),
         supabase
           .from("patients")
