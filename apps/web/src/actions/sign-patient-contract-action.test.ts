@@ -104,7 +104,8 @@ vi.mock("@ventre/supabase/server", () => ({
     from: vi.fn((table: string) => {
       if (table === "user_enterprises") return makeQueryBuilder(ueRow);
       if (table === "contracts") return makeQueryBuilder({ data: null, error: null });
-      if (table === "contract_change_requests") return makeQueryBuilder({ data: null, error: null });
+      if (table === "contract_change_requests")
+        return makeQueryBuilder({ data: null, error: null });
       throw new Error(`unexpected admin table: ${table}`);
     }),
   })),
@@ -130,11 +131,19 @@ vi.mock("@/lib/contract-pdf", () => ({
 vi.mock("@/lib/contract-signature-text", () => ({
   buildSignatureLocalityLine: vi.fn(() => "São Paulo, 09 de setembro de 2026"),
 }));
-vi.mock("@/lib/contract-finalization", () => ({ generateFinalizedContractPdf: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/contract-finalization", () => ({
+  generateFinalizedContractPdf: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/lib/verification-code", () => ({ generateVerificationCode: vi.fn(() => "ABC123") }));
-vi.mock("@/lib/notifications/queue", () => ({ enqueueNotification: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/notifications/whatsapp-send", () => ({ sendWhatsAppToUser: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/notifications/queue", () => ({
+  enqueueNotification: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/notifications/whatsapp-send", () => ({
+  sendWhatsAppToUser: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/posthog/server", () => ({
+  captureServerEvent: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/lib/access-control", () => ({ isStaff: vi.fn(() => false) }));
 vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Map()) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));

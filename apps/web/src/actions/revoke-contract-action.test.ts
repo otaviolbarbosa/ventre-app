@@ -22,7 +22,10 @@ const {
     } | null,
     error: null as unknown,
   },
-  patientRow: { data: { created_by: "professional-1" } as { created_by: string } | null, error: null },
+  patientRow: {
+    data: { created_by: "professional-1" } as { created_by: string } | null,
+    error: null,
+  },
   updateResult: { data: null as unknown, error: null as { message: string } | null },
   contractUpdateCalls: [] as unknown[],
 }));
@@ -71,12 +74,15 @@ vi.mock("@ventre/supabase/server", () => ({
   createServerSupabaseAdmin: vi.fn(async () => ({
     from: vi.fn((table: string) => {
       if (table === "user_enterprises") return makeQueryBuilder(ueRow);
-      if (table === "contract_change_requests") return makeQueryBuilder({ data: null, error: null });
+      if (table === "contract_change_requests")
+        return makeQueryBuilder({ data: null, error: null });
       throw new Error(`unexpected admin table: ${table}`);
     }),
   })),
 }));
-vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/posthog/server", () => ({
+  captureServerEvent: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("@/lib/access-control", () => ({ isStaff: vi.fn(() => false) }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 

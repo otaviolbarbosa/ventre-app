@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import { dayjs } from "@/lib/dayjs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { contractRow } = vi.hoisted(() => ({
   contractRow: {
@@ -28,8 +28,7 @@ describe("handleContractPendingSignature", () => {
   const supabaseAdmin = {
     from: vi.fn((table: string) => {
       if (table === "contracts") return makeQueryBuilder(contractRow);
-      if (table === "users")
-        return makeQueryBuilder({ data: { name: "Dra. Ana" }, error: null });
+      if (table === "users") return makeQueryBuilder({ data: { name: "Dra. Ana" }, error: null });
       throw new Error(`unexpected table: ${table}`);
     }),
   } as unknown as Parameters<typeof handleContractPendingSignature>[0];
@@ -47,7 +46,10 @@ describe("handleContractPendingSignature", () => {
   });
 
   it("skips a draft contract even if old and unsigned", async () => {
-    contractRow.data = { ...(contractRow.data as NonNullable<typeof contractRow.data>), status: "draft" };
+    contractRow.data = {
+      ...(contractRow.data as NonNullable<typeof contractRow.data>),
+      status: "draft",
+    };
 
     const result = await handleContractPendingSignature(supabaseAdmin, {
       referenceId: "contract-1",

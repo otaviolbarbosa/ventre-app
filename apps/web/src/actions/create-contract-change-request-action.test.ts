@@ -45,7 +45,8 @@ vi.mock("@ventre/supabase/server", () => ({
   createServerSupabaseClient: vi.fn(async () => ({
     auth: { getUser: vi.fn(async () => ({ data: { user: authUser } })) },
     from: vi.fn((table: string) => {
-      if (table === "users") return makeQueryBuilder({ data: { user_type: "patient" }, error: null });
+      if (table === "users")
+        return makeQueryBuilder({ data: { user_type: "patient" }, error: null });
       if (table === "patients") return makeQueryBuilder(patientRow);
       if (table === "contracts") return makeQueryBuilder(existingContract, "contracts");
       if (table === "contract_change_requests") return makeQueryBuilder(insertResult);
@@ -59,9 +60,15 @@ vi.mock("@ventre/supabase/server", () => ({
     }),
   })),
 }));
-vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/notifications/queue", () => ({ enqueueNotification: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("@/lib/notifications/whatsapp-send", () => ({ sendWhatsAppToUser: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/posthog/server", () => ({
+  captureServerEvent: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/notifications/queue", () => ({
+  enqueueNotification: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/notifications/whatsapp-send", () => ({
+  sendWhatsAppToUser: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { createContractChangeRequestAction } from "./create-contract-change-request-action";

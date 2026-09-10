@@ -140,7 +140,13 @@ export default function ContractDetail({
     // down fresh props, but contract.id itself never changes — so the PDF to display
     // (original vs finalized vs live preview) is re-evaluated whenever any of the
     // fields that decision depends on changes, not just when the contract itself does.
-  }, [contract.id, isFullySigned, contract.finalized_document_id, contract.original_document_id, isDraft]);
+  }, [
+    contract.id,
+    isFullySigned,
+    contract.finalized_document_id,
+    contract.original_document_id,
+    isDraft,
+  ]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -188,9 +194,8 @@ export default function ContractDetail({
             <div className="mb-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
               <Clock className="size-4 shrink-0" />
               <span>
-                Sua profissional está preparando o contrato. Você já pode revisar o texto e
-                enviar comentários, mas a assinatura só estará disponível quando o contrato for
-                finalizado.
+                Sua profissional está preparando o contrato. Você já pode revisar o texto e enviar
+                comentários, mas a assinatura só estará disponível quando o contrato for finalizado.
               </span>
             </div>
             <h2 className="mb-2 font-semibold text-[#433831]">{contract.title}</h2>

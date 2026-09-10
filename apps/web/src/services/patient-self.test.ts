@@ -22,10 +22,13 @@ const {
   eqCalls: [] as unknown[][],
 }));
 
-function makeQueryBuilder(listResult: { data: unknown; error: unknown }, singleResult?: {
-  data: unknown;
-  error: unknown;
-}) {
+function makeQueryBuilder(
+  listResult: { data: unknown; error: unknown },
+  singleResult?: {
+    data: unknown;
+    error: unknown;
+  },
+) {
   const builder = {
     select: vi.fn(() => builder),
     eq: vi.fn((...args: unknown[]) => {
@@ -49,8 +52,7 @@ vi.mock("@/lib/server-auth", () => ({
     supabase: {
       from: vi.fn((table: string) => {
         if (table === "patients") return makeQueryBuilder(patientRow, patientRow);
-        if (table === "contracts")
-          return makeQueryBuilder(contractsResult, contractByIdResult);
+        if (table === "contracts") return makeQueryBuilder(contractsResult, contractByIdResult);
         if (table === "contract_signatures")
           return makeQueryBuilder(signaturesListResult, signatureByIdResult);
         if (table === "contract_change_requests") return makeQueryBuilder(changeRequestsResult);
@@ -91,9 +93,7 @@ describe("getMyContracts", () => {
           (call[1] as string[]).includes("active"),
       ),
     ).toBe(true);
-    expect(
-      eqCalls.some((call) => call[0] === "is_base_contract" && call[1] === false),
-    ).toBe(true);
+    expect(eqCalls.some((call) => call[0] === "is_base_contract" && call[1] === false)).toBe(true);
   });
 
   it("derives patientSigned from contract_signatures", async () => {
@@ -141,9 +141,7 @@ describe("getMyContractById", () => {
           (call[1] as string[]).includes("active"),
       ),
     ).toBe(true);
-    expect(
-      eqCalls.some((call) => call[0] === "is_base_contract" && call[1] === false),
-    ).toBe(true);
+    expect(eqCalls.some((call) => call[0] === "is_base_contract" && call[1] === false)).toBe(true);
   });
 
   it("returns an error when no matching draft/active contract exists", async () => {

@@ -176,7 +176,10 @@ describe("saveContractDraftAction", () => {
 
   it("surfaces a friendly error on a unique-constraint race", async () => {
     insertResult.data = null;
-    insertResult.error = { message: "duplicate key value violates unique constraint", code: "23505" };
+    insertResult.error = {
+      message: "duplicate key value violates unique constraint",
+      code: "23505",
+    };
 
     const res = await saveContractDraftAction({
       patientId: PATIENT_ID,

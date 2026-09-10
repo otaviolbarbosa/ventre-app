@@ -41,7 +41,9 @@ vi.mock("@ventre/supabase/server", () => ({
     }),
   })),
 }));
-vi.mock("@/lib/posthog/server", () => ({ captureServerEvent: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/posthog/server", () => ({
+  captureServerEvent: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 import { deactivatePatientContractAction } from "./deactivate-patient-contract-action";
