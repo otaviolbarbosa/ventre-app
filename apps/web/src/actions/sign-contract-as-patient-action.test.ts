@@ -35,11 +35,20 @@ const { authUser, patientRow, existingContract, signatureRows } = vi.hoisted(() 
 }));
 
 const contractQueryCalls: { method: string; args: unknown[] }[] = [];
+const signatureInsertCalls: unknown[] = [];
 
 function makeQueryBuilder(result: { data: unknown; error: unknown }, table?: string) {
   const builder = {
     select: vi.fn(() => builder),
-    insert: vi.fn(() => builder),
+    insert: vi.fn((payload: unknown) => {
+      if (table === "contracts") contractQueryCalls.push({ method: "insert", args: [payload] });
+      if (table === "contract_signatures") signatureInsertCalls.push(payload);
+      return builder;
+    }),
+    update: vi.fn((payload: unknown) => {
+      if (table === "contracts") contractQueryCalls.push({ method: "update", args: [payload] });
+      return builder;
+    }),
     eq: vi.fn((...args: unknown[]) => {
       if (table === "contracts") contractQueryCalls.push({ method: "eq", args });
       return builder;
@@ -65,7 +74,8 @@ vi.mock("@ventre/supabase/server", () => ({
         return makeQueryBuilder({ data: { user_type: "patient" }, error: null });
       if (table === "patients") return makeQueryBuilder(patientRow);
       if (table === "contracts") return makeQueryBuilder(existingContract, "contracts");
-      if (table === "contract_signatures") return makeQueryBuilder(signatureRows);
+      if (table === "contract_signatures")
+        return makeQueryBuilder(signatureRows, "contract_signatures");
       throw new Error(`unexpected table: ${table}`);
     }),
   })),
@@ -79,6 +89,29 @@ vi.mock("@ventre/supabase/server", () => ({
 vi.mock("@/lib/contract-header-text", () => ({ hasUnfilledFields: vi.fn(() => false) }));
 vi.mock("@/lib/contract-finalization", () => ({
   generateFinalizedContractPdf: vi.fn().mockResolvedValue(undefined),
+}));
+const { renderCalls, uploadCalls } = vi.hoisted(() => ({
+  renderCalls: [] as unknown[],
+  uploadCalls: [] as unknown[],
+}));
+vi.mock("@/lib/contract-pdf", () => ({
+  buildContractPdfFileName: vi.fn(() => "contrato.pdf"),
+  renderContractPdfBuffer: vi.fn(async (args: unknown) => {
+    renderCalls.push(args);
+    return Buffer.from("pdf");
+  }),
+  sanitizeClausesHtml: vi.fn((html: string) => html),
+  uploadContractPdf: vi.fn(async (args: unknown) => {
+    uploadCalls.push(args);
+    return { document: { id: "new-original-doc" }, storagePath: "path/new-original-doc" };
+  }),
+}));
+vi.mock("@/lib/contract-signature-text", () => ({
+  buildSignatureLocalityLine: vi.fn(() => "São Paulo, 09 de setembro de 2026"),
+  formatAuditTimestamp: vi.fn(() => "09/09/2026, 10:00:00"),
+}));
+vi.mock("@/services/base-contract", () => ({
+  getContratadaNameForContract: vi.fn(async () => "Dra. Ana"),
 }));
 vi.mock("@/lib/posthog/server", () => ({
   captureServerEvent: vi.fn().mockResolvedValue(undefined),
@@ -115,6 +148,9 @@ describe("signContractAsPatientAction", () => {
     };
     signatureRows.data = null;
     contractQueryCalls.length = 0;
+    signatureInsertCalls.length = 0;
+    renderCalls.length = 0;
+    uploadCalls.length = 0;
   });
 
   it("signs an active contract", async () => {
@@ -143,5 +179,44 @@ describe("signContractAsPatientAction", () => {
 
     expect(res?.data).toBeUndefined();
     expect(res?.serverError).toBeTruthy();
+  });
+
+  it("regenerates the original PDF with the patient's stamp when the professional hasn't signed yet", async () => {
+    existingContract.data = {
+      ...(existingContract.data as Record<string, unknown>),
+      is_signed: false,
+      signed_by: null,
+      content_hash: null,
+      verification_code: null,
+    };
+
+    const res = await signContractAsPatientAction({
+      patientId: "11111111-1111-1111-1111-111111111111",
+      consent: true,
+    });
+
+    expect(res?.serverError).toBeUndefined();
+    expect(res?.data?.success).toBe(true);
+
+    expect(signatureInsertCalls[0]).toMatchObject({ signer_role: "patient" });
+    expect(renderCalls).toHaveLength(1);
+    const render = renderCalls[0] as { signature: { contratanteStamp?: { signatureId: string } } };
+    expect(render.signature.contratanteStamp?.signatureId).toBe(
+      (signatureInsertCalls[0] as { id: string }).id,
+    );
+    expect(uploadCalls).toHaveLength(1);
+    const updateCall = contractQueryCalls.find((c) => c.method === "update");
+    expect(updateCall?.args[0]).toMatchObject({ original_document_id: "new-original-doc" });
+  });
+
+  it("does not regenerate the original PDF once the professional has already signed", async () => {
+    const res = await signContractAsPatientAction({
+      patientId: "11111111-1111-1111-1111-111111111111",
+      consent: true,
+    });
+
+    expect(res?.serverError).toBeUndefined();
+    expect(renderCalls).toHaveLength(0);
+    expect(uploadCalls).toHaveLength(0);
   });
 });

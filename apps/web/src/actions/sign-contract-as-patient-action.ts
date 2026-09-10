@@ -1,10 +1,20 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import type { SignatureStamp } from "@/components/shared/contract-pdf-document";
 import { generateFinalizedContractPdf } from "@/lib/contract-finalization";
 import { type ContractHeaderBlocks, hasUnfilledFields } from "@/lib/contract-header-text";
+import {
+  buildContractPdfFileName,
+  renderContractPdfBuffer,
+  sanitizeClausesHtml,
+  uploadContractPdf,
+} from "@/lib/contract-pdf";
+import { buildSignatureLocalityLine, formatAuditTimestamp } from "@/lib/contract-signature-text";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { signContractAsPatientSchema } from "@/lib/validations/contract";
+import { getContratadaNameForContract } from "@/services/base-contract";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
@@ -29,7 +39,7 @@ export const signContractAsPatientAction = authActionClient
       const { data: existing } = await supabase
         .from("contracts")
         .select(
-          "id, status, is_signed, verification_code, parties_details, title, clauses_html, city, state, enterprise_id, signed_at, signed_by, content_hash, original_document_id",
+          "id, status, is_signed, verification_code, parties_details, title, clauses_html, city, state, enterprise_id, user_id, signed_at, signed_by, content_hash, original_document_id",
         )
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
@@ -63,10 +73,17 @@ export const signContractAsPatientAction = authActionClient
         h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? null;
       const signedUserAgent = h.get("user-agent") ?? null;
 
+      const signedAt = new Date().toISOString();
+      // Pre-generated so the id can be burned into the PDF stamp below before the row
+      // referencing it actually exists.
+      const patientSignatureId = randomUUID();
+
       const { error: signatureInsertError } = await supabase.from("contract_signatures").insert({
+        id: patientSignatureId,
         contract_id: existing.id,
         signer_role: "patient",
         signer_id: user.id,
+        signed_at: signedAt,
         signed_ip: signedIp,
         signed_user_agent: signedUserAgent,
         verification_code: existing.verification_code,
@@ -74,6 +91,63 @@ export const signContractAsPatientAction = authActionClient
 
       if (signatureInsertError) {
         throw new Error("Erro ao assinar contrato. Tente novamente.");
+      }
+
+      // The professional hasn't signed yet — the contract row is still mutable, so
+      // regenerate the "original" PDF now to carry the patient's own stamp (otherwise
+      // this signature would stay invisible in the document until the professional
+      // signs and generateFinalizedContractPdf runs below). Once the professional has
+      // signed, the row is immutable and original_document_id already has whichever
+      // stamps existed when it was rendered — best-effort, never blocks the signature
+      // that's already been recorded.
+      if (!existing.is_signed) {
+        try {
+          const contratanteStamp: SignatureStamp = {
+            signedByName: patientRow.name,
+            signedAtLabel: formatAuditTimestamp(signedAt),
+            signatureId: patientSignatureId,
+          };
+          const contratadaName = await getContratadaNameForContract({
+            enterpriseId: existing.enterprise_id,
+            professionalUserId: existing.user_id,
+          });
+
+          const buffer = await renderContractPdfBuffer({
+            headerBlocks: partiesDetails,
+            title: existing.title,
+            clausesHtml: sanitizeClausesHtml(existing.clauses_html),
+            signature: {
+              localityLine: buildSignatureLocalityLine(
+                existing.city,
+                existing.state,
+                new Date(signedAt),
+              ),
+              contratanteName: patientRow.name,
+              contratadaName: contratadaName ?? "Profissional",
+              contratanteStamp,
+            },
+          });
+
+          const { document } = await uploadContractPdf({
+            supabase,
+            supabaseAdmin,
+            patientId,
+            userId: user.id,
+            fileName: buildContractPdfFileName(patientRow.name),
+            buffer,
+            isImmutable: false,
+          });
+
+          await supabase
+            .from("contracts")
+            .update({ original_document_id: document.id })
+            .eq("id", existing.id);
+        } catch (err) {
+          console.error(
+            "[signContractAsPatientAction] failed to regenerate original PDF with patient stamp",
+            err,
+          );
+        }
       }
 
       revalidatePath(`/patients/${patientId}/profile`);

@@ -1,6 +1,7 @@
 "use client";
 
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { getMyDraftContractHeaderAction } from "@/actions/get-my-draft-contract-header-action";
 import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action";
 import { signContractAsPatientAction } from "@/actions/sign-contract-as-patient-action";
 import { RequestContractChangeDialog } from "@/components/shared/request-contract-change-dialog";
@@ -60,6 +61,7 @@ export default function ContractDetail({
 
   const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
   const { executeAsync: previewContractPdfAsync } = useAction(previewContractPdfAction);
+  const { executeAsync: getDraftHeaderAsync } = useAction(getMyDraftContractHeaderAction);
 
   const handleDownload = async () => {
     if (!contract.finalized_document_id) return;
@@ -83,9 +85,36 @@ export default function ContractDetail({
     async function loadPdf() {
       setPdfError(null);
 
-      // A draft never has a PDF (no header/parties snapshot yet) — it's rendered
-      // as raw clauses HTML below instead.
-      if (isDraft) return;
+      // A draft never has a `parties_details` snapshot (that's only taken when the
+      // contract is generated) — so the header blocks are built live from the
+      // contratada identity stored on the draft row, then rendered the same way as
+      // any other preview, matching the professional's own draft view.
+      if (isDraft) {
+        const headerRes = await getDraftHeaderAsync({ patientId: contract.patient_id as string });
+        if (cancelled) return;
+        if (!headerRes?.data?.headerBlocks) {
+          setPdfError(headerRes?.serverError ?? "Erro ao carregar contrato");
+          return;
+        }
+        const res = await previewContractPdfAsync({
+          headerBlocks: headerRes.data.headerBlocks,
+          title: contract.title,
+          clausesHtml: contract.clauses_html,
+          signaturePreview: {
+            city: contract.city ?? null,
+            state: contract.state ?? null,
+            contratanteName: headerRes.data.patientName,
+            contratadaName: headerRes.data.contratadaName,
+          },
+        });
+        if (cancelled) return;
+        if (res?.data?.pdfBase64) {
+          setPdfSource({ base64: res.data.pdfBase64 });
+        } else {
+          setPdfError(res?.serverError ?? "Erro ao gerar pré-visualização do contrato");
+        }
+        return;
+      }
 
       // Fully signed: always show the finalized document (both parties' stamps +
       // authentication certificate) — never the professional-only original.
@@ -150,6 +179,15 @@ export default function ContractDetail({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
+      {isDraft && (
+        <div className="flex shrink-0 items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+          <span>
+            Rascunho — sua profissional ainda está preparando o contrato. A assinatura só estará
+            disponível quando ele for finalizado.
+          </span>
+        </div>
+      )}
+
       {isFullySigned && (
         <div className="flex shrink-0 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
           <Check className="size-4 shrink-0" />
@@ -189,23 +227,7 @@ export default function ContractDetail({
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {isDraft ? (
-          <div className="rounded-2xl bg-white p-4 shadow-sm">
-            <div className="mb-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
-              <Clock className="size-4 shrink-0" />
-              <span>
-                Sua profissional está preparando o contrato. Você já pode revisar o texto e enviar
-                comentários, mas a assinatura só estará disponível quando o contrato for finalizado.
-              </span>
-            </div>
-            <h2 className="mb-2 font-semibold text-[#433831]">{contract.title}</h2>
-            <div
-              className="prose-sm"
-              // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitizado via sanitizeMessageHtml
-              dangerouslySetInnerHTML={{ __html: sanitizeMessageHtml(contract.clauses_html) }}
-            />
-          </div>
-        ) : pdfSource ? (
+        {pdfSource ? (
           <PdfViewer source={pdfSource} />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
