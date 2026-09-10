@@ -126,6 +126,7 @@ describe("saveContractDraftAction", () => {
 
   it("updates an existing draft in place", async () => {
     existingContract.data = { id: "draft-1", status: "draft" };
+    updateResult.data = [{ id: "draft-1" }];
 
     const res = await saveContractDraftAction({
       patientId: PATIENT_ID,
@@ -138,6 +139,23 @@ describe("saveContractDraftAction", () => {
 
     expect(res?.data?.contractId).toBe("draft-1");
     expect(res?.serverError).toBeUndefined();
+  });
+
+  it("rejects the update when the draft was concurrently finalized (zero rows updated)", async () => {
+    existingContract.data = { id: "draft-1", status: "draft" };
+    updateResult.data = [];
+
+    const res = await saveContractDraftAction({
+      patientId: PATIENT_ID,
+      pregnancyId: null,
+      title: "Título atualizado",
+      clauses_html: "<p>Cláusula editada</p>",
+      city: "",
+      state: "",
+    });
+
+    expect(res?.data).toBeUndefined();
+    expect(res?.serverError).toBeTruthy();
   });
 
   it("rejects saving a draft over an already-generated contract", async () => {

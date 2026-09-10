@@ -28,11 +28,18 @@ export const saveContractDraftAction = authActionClient
       let contractId: string;
 
       if (existing?.id) {
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from("contracts")
           .update({ title, clauses_html, city: city ?? null, state: state ?? null })
-          .eq("id", existing.id);
+          .eq("id", existing.id)
+          .eq("status", "draft")
+          .select("id");
         if (error) throw new Error("Erro ao salvar rascunho. Tente novamente.");
+        if (!updated || updated.length === 0) {
+          throw new Error(
+            "Este contrato já foi gerado — use 'Editar contrato' em vez de salvar rascunho.",
+          );
+        }
         contractId = existing.id;
       } else {
         const { data: inserted, error } = await supabase
