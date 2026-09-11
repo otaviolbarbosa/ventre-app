@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { useAuth } from "@/hooks/use-auth";
+import { translateAuthError } from "@/lib/auth-error-messages";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
@@ -36,10 +37,7 @@ export default function ForgotPasswordPage() {
 
     if (error) {
       toast.error("Erro ao enviar email", {
-        description:
-          typeof error === "object" && error !== null && "message" in error
-            ? String((error as { message?: unknown }).message)
-            : "Ocorreu um erro desconhecido",
+        description: translateAuthError(error, "Ocorreu um erro desconhecido. Tente novamente."),
       });
       setIsLoading(false);
       return;

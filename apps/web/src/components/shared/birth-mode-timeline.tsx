@@ -8,6 +8,7 @@ import {
   BIRTH_EVENT_CONFIG,
   BIRTH_MEDICATION_TYPE_LABELS,
   BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS,
+  BIRTH_PAIN_INTENSITY_LABELS,
   BIRTH_URINE_DIPSTICK_LABELS,
 } from "@/lib/birth-mode-constants";
 import { dayjs } from "@/lib/dayjs";
@@ -18,15 +19,22 @@ function describeEvent(event: BirthModeTimelineEvent): string {
     case "start_monitoring":
       return "Início do acompanhamento registrado";
     case "contraction": {
-      const { duration_seconds, effectiveness, contractions_per_10min } = event.payload as {
-        duration_seconds: number;
-        effectiveness: string | null;
-        contractions_per_10min: number | null;
-      };
+      const { duration_seconds, effectiveness, contractions_per_10min, pain_intensity } =
+        event.payload as {
+          duration_seconds: number;
+          effectiveness: string | null;
+          contractions_per_10min: number | null;
+          pain_intensity: string | null;
+        };
       const label = effectiveness ? BIRTH_CONTRACTION_EFFECTIVENESS_LABELS[effectiveness] : null;
-      const frequency =
-        contractions_per_10min != null ? ` - ${contractions_per_10min}x/10min` : "";
-      return `Contração de ${duration_seconds}s${frequency}${label ? ` (${label})` : ""}`;
+      const painLabel = pain_intensity ? BIRTH_PAIN_INTENSITY_LABELS[pain_intensity] : null;
+      const frequency = contractions_per_10min != null ? ` - ${contractions_per_10min}x/10min` : "";
+      const details = [label, painLabel].filter(Boolean).join(" - ");
+      return `Contração de ${duration_seconds}s${frequency}${details ? ` (${details})` : ""}`;
+    }
+    case "uterine_activity": {
+      const { du_notations } = event.payload as { du_notations: string[] };
+      return `Dinâmica uterina em lote: ${du_notations.join(" ")}`;
     }
     case "cervical_dilation": {
       const { dilation_cm } = event.payload as { dilation_cm: number };

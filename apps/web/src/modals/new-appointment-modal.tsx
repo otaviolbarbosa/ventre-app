@@ -1,4 +1,11 @@
 "use client";
+import { addAppointmentAction } from "@/actions/add-appointment-action";
+import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
+import {
+  type CreateAppointmentInput,
+  createAppointmentSchema,
+} from "@/lib/validations/appointment";
+import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import type { Tables } from "@ventre/supabase";
@@ -17,13 +24,6 @@ import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { type DefaultValues, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { addAppointmentAction } from "@/actions/add-appointment-action";
-import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
-import {
-  type CreateAppointmentInput,
-  createAppointmentSchema,
-} from "@/lib/validations/appointment";
-import type { AppointmentWithPatient } from "@/services/appointment";
 
 type Patient = Tables<"patients">;
 

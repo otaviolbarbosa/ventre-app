@@ -114,28 +114,28 @@ export default function PatientProfilePage() {
           {!patient.has_finished &&
             pregnancy?.id &&
             (isObstetrician || isNurse || (isDoula && !disableBirthModeForDoulas)) && (
-            <div className="flex justify-end">
-              {patient.birth_mode_active ? (
-                <Button
-                  variant="outline"
-                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
-                  onClick={() => router.push(`/modo-parto?pregnancyId=${pregnancy.id}`)}
-                >
-                  <HeartPulse className="mr-2 h-4 w-4" />
-                  Abrir Modo Parto
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
-                  onClick={() => setShowStartLabourModal(true)}
-                >
-                  <HeartPulse className="mr-2 h-4 w-4" />
-                  Modo Parto
-                </Button>
-              )}
-            </div>
-          )}
+              <div className="flex justify-end">
+                {patient.birth_mode_active ? (
+                  <Button
+                    variant="outline"
+                    className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                    onClick={() => router.push(`/modo-parto?pregnancyId=${pregnancy.id}`)}
+                  >
+                    <HeartPulse className="mr-2 h-4 w-4" />
+                    Abrir Modo Parto
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full border-red-500 text-red-600 hover:bg-red-50 hover:text-red-700 sm:w-auto"
+                    onClick={() => setShowStartLabourModal(true)}
+                  >
+                    <HeartPulse className="mr-2 h-4 w-4" />
+                    Modo Parto
+                  </Button>
+                )}
+              </div>
+            )}
 
           {patient.has_finished &&
             pregnancy?.id &&

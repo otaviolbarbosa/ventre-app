@@ -1,28 +1,27 @@
-import {
-  classifyEmailError,
-  classifyPushError,
-  classifyWhatsAppError,
-} from "@/lib/notifications/errors";
-import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { dayjs } from "@/lib/dayjs";
+import { sendPatientInvite } from "@/lib/emails/send-patient-invite";
 import {
   EMAIL_QUEUE_HANDLERS,
   type EmailNotificationType,
 } from "@/lib/notifications/email-queue-handlers";
 import {
+  classifyEmailError,
+  classifyPushError,
+  classifyWhatsAppError,
+} from "@/lib/notifications/errors";
+import {
+  type DequeuedNotification,
   ackNotification,
   deadLetterNotification,
   dequeueNotifications,
   requeueWithBackoff,
-  type DequeuedNotification,
 } from "@/lib/notifications/queue";
 import { type NotificationType, sendNotificationToUser } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { WHATSAPP_QUEUE_HANDLERS } from "@/lib/notifications/whatsapp-queue-handlers";
 import { sendWhatsAppTemplateFromQueue } from "@/lib/notifications/whatsapp-queue-send";
-import { WhatsAppApiError } from "@/lib/whatsapp/client";
-import type { WhatsAppNotificationType } from "@/lib/whatsapp/templates";
-import { sendPatientInvite } from "@/lib/emails/send-patient-invite";
-import { dayjs } from "@/lib/dayjs";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import { WhatsAppApiError, type WhatsAppNotificationType } from "@ventre/whatsapp";
 import { NextResponse } from "next/server";
 
 export const maxDuration = 60;
@@ -192,7 +191,9 @@ async function resolvePushRecipientAndTemplate(
       .maybeSingle();
 
     if (patientError) {
-      throw new Error(`Falha ao buscar gestante ${notification.recipientId}: ${patientError.message}`);
+      throw new Error(
+        `Falha ao buscar gestante ${notification.recipientId}: ${patientError.message}`,
+      );
     }
 
     if (!patient?.user_id) return null;

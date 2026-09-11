@@ -37,6 +37,9 @@ export function SentPatientInviteCard({
                 patient={
                   {
                     name: invite.patient?.name ?? invite.name ?? "—",
+                    avatar_url: invite.patient?.user?.avatar_url,
+                    due_date: invite.patient?.pregnancies[0]?.due_date,
+                    dum: invite.patient?.pregnancies[0]?.dum,
                   } as unknown as PatientWithGestationalInfo
                 }
                 extra={

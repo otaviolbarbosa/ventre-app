@@ -1,0 +1,31 @@
+{
+  "fill": {
+    "automatic-gradient": "extended-srgb:0.47059,0.07451,0.03922,1.00000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "ventre-logo.png",
+          "name": "ventre-logo",
+          "position": {
+            "scale": 2.27,
+            "translation-in-points": [0, 0]
+          }
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
+      }
+    }
+  ],
+  "supported-platforms": {
+    "circles": ["watchOS"],
+    "squares": "shared"
+  }
+}

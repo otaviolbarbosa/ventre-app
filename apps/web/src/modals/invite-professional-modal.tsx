@@ -1,5 +1,11 @@
 "use client";
 
+import { createTeamMemberInviteAction } from "@/actions/create-invite-action";
+import { inviteProfessionalDirectAction } from "@/actions/invite-professional-direct-action";
+import { searchUsersAction } from "@/actions/search-users-action";
+import CustomIcon from "@/components/shared/custom-icon";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
@@ -9,12 +15,6 @@ import { Check, Copy, Loader2, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { createTeamMemberInviteAction } from "@/actions/create-invite-action";
-import { inviteProfessionalDirectAction } from "@/actions/invite-professional-direct-action";
-import { searchUsersAction } from "@/actions/search-users-action";
-import CustomIcon from "@/components/shared/custom-icon";
-import type { ProfessionalType } from "@/types";
-import { professionalTypeLabels } from "@/utils/team";
 
 type SearchedUser = {
   id: string;
@@ -139,7 +139,7 @@ export default function InviteProfessionalModal({
     }
 
     const inviteUrl = getInviteUrl();
-    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${result.data.invite.id}`;
+    const message = `Olá! Estou te convidando para participar da equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${result.data.invite.id}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   }
 
@@ -228,7 +228,8 @@ export default function InviteProfessionalModal({
         <div className="text-center text-muted-foreground text-sm">OU</div>
 
         <p className="text-muted-foreground text-sm">
-          Compartilhe o link de convite diretamente com outra profissional.
+          Compartilhe o link diretamente com uma profissional que ainda não está cadastrada no
+          ventre.
         </p>
         <div className="flex gap-2">
           <Button

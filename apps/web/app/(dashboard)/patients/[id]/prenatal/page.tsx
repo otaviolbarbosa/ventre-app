@@ -11,7 +11,7 @@ import { useEffect } from "react";
 
 export default function PatientPrenatalPage() {
   const params = useParams();
-  const { isObstetrician, isNurse } = useAuth();
+  const { isObstetrician, isNurse, isDoula } = useAuth();
 
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
@@ -43,6 +43,8 @@ export default function PatientPrenatalPage() {
       patientId={patient.id}
       pregnancyId={pregnancy?.id}
       isEditable={isObstetrician || isNurse}
+      isGeneralEditable={isObstetrician || isNurse || isDoula}
+      isDoula={isDoula}
     />
   );
 }

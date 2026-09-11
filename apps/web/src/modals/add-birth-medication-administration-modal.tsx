@@ -141,7 +141,13 @@ export function AddBirthMedicationAdministrationModal({
                   <FormItem className="flex-1">
                     <FormLabel>Concentração (U/L) *</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.1" min="0" {...field} value={field.value ?? ""} />
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        {...field}
+                        value={field.value ?? ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -23,7 +23,11 @@ export default function LoginPage() {
   const router = useRouter();
 
   const form = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+    // zodResolver's generic inference hits TS2589 (excessively deep) under this app's
+    // tsconfig; casting the schema input to `any` short-circuits it. useForm<LoginForm>'s
+    // own generic still keeps the rest of the form (register/handleSubmit/errors) typed.
+    // biome-ignore lint/suspicious/noExplicitAny: see comment above
+    resolver: zodResolver(loginSchema as any),
     defaultValues: { email: "", password: "" },
   });
 

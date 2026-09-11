@@ -3,21 +3,13 @@
 import { createStripeCheckoutSessionAction } from "@/actions/create-stripe-checkout-session-action";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { supabase } from "@ventre/supabase";
+import { type Tables, supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@ventre/ui/dialog";
 import { Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // const NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -31,16 +23,16 @@ type BillingCycle = "month" | "year";
 //   "Cartão pré-natal",
 // ];
 
-const premiumFeatures = [
-  "Gerenciamento de consultas e encontros",
-  "Participação em equipes multidisciplinares",
-  "Perfil completo da gestante",
-  "Ferramentas de acompanhamento (sinais vitais, contador de contrações, diário da gestante e mais)",
-  "Gestão financeira",
-  "Compartilhamento de documentos",
-  "Gerenciamento de contratos",
-  "Relatórios detalhados",
-];
+// const premiumFeatures = [
+//   "Gerenciamento de consultas e encontros",
+//   "Participação em equipes multidisciplinares",
+//   "Perfil completo da gestante",
+//   "Ferramentas de acompanhamento (sinais vitais, contador de contrações, diário da gestante e mais)",
+//   "Gestão financeira",
+//   "Compartilhamento de documentos",
+//   "Gerenciamento de contratos",
+//   "Relatórios detalhados",
+// ];
 
 const enterpriseFeatures = [
   "Perfis de gestora e secretária",
@@ -49,11 +41,22 @@ const enterpriseFeatures = [
   "Relatórios qualitativos avançados",
 ];
 
-export default function PaywallScreen() {
+function formatBRL(cents: number): string {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export default function PaywallScreen({
+  plan,
+  monthPrice,
+  yearPrice,
+}: {
+  plan: Tables<"plans">;
+  monthPrice: number | null;
+  yearPrice: number | null;
+}) {
   const [billing, setBilling] = useState<BillingCycle>("month");
-  const [isConfirmReplaceModalOpen, setIsConfirmReplaceModalOpen] = useState(false);
-  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
   const isAnnual = billing === "year";
@@ -61,6 +64,34 @@ export default function PaywallScreen() {
   const { executeAsync: executeCreateStripeCheckoutSession } = useAction(
     createStripeCheckoutSessionAction,
   );
+
+  useEffect(() => {
+    if (!user?.id) {
+      setHasActiveSubscription(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          toast.error("Não foi possível verificar sua assinatura atual");
+          return;
+        }
+        setHasActiveSubscription(data != null);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   const toggleBilling = () => setBilling((prev) => (prev === "month" ? "year" : "month"));
 
@@ -72,7 +103,8 @@ export default function PaywallScreen() {
         serverError,
         validationErrors,
       } = await executeCreateStripeCheckoutSession({
-        slug: `${plan}-${billing}`,
+        slug: plan,
+        frequence: billing,
       });
 
       if (validationErrors) {
@@ -85,7 +117,7 @@ export default function PaywallScreen() {
         return;
       }
 
-      window.location.assign(checkoutSessionUrl);
+      window.open(checkoutSessionUrl, "_blank", "noopener,noreferrer");
     } finally {
       setIsLoadingCheckout(false);
     }
@@ -97,34 +129,9 @@ export default function PaywallScreen() {
       return;
     }
 
-    setIsLoadingCheckout(true);
-    const { data: activeSubscription, error } = await supabase
-      .from("subscriptions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .maybeSingle();
-    setIsLoadingCheckout(false);
-
-    if (error) {
-      toast.error("Não foi possível verificar sua assinatura atual");
-      return;
-    }
-
-    if (activeSubscription) {
-      setPendingPlan(plan);
-      setIsConfirmReplaceModalOpen(true);
-      return;
-    }
+    if (hasActiveSubscription) return;
 
     await proceedToCheckout(plan);
-  };
-
-  const handleConfirmReplace = async () => {
-    if (!pendingPlan) return;
-
-    setIsConfirmReplaceModalOpen(false);
-    await proceedToCheckout(pendingPlan);
   };
 
   return (
@@ -228,24 +235,42 @@ export default function PaywallScreen() {
 
             <div className="flex h-full flex-col rounded-xl p-6">
               <div className="mb-2">
-                <p className="font-poppins font-semibold text-xl">Mais Cuidado</p>
-                <p className="text-muted-foreground text-sm">Para profissionais dedicados</p>
+                <p className="font-poppins font-semibold text-xl">{plan.name}</p>
+                <p className="text-muted-foreground text-sm">{plan.description}</p>
               </div>
 
               <div className="mb-6">
                 {isAnnual ? (
+                  yearPrice != null ? (
+                    <>
+                      <span className="font-bold font-poppins text-4xl text-primary">
+                        {formatBRL(yearPrice)}
+                      </span>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        por ano · {formatBRL(Math.round(yearPrice / 12))}/mês
+                      </p>
+                      {monthPrice && yearPrice && (
+                        <p className="text-green-600 text-xs">
+                          Economize {formatBRL(Math.round((monthPrice ?? 0) * 12 - yearPrice))}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-poppins text-muted-foreground text-sm">
+                      Plano anual indisponível no momento
+                    </span>
+                  )
+                ) : monthPrice != null ? (
                   <>
-                    <span className="font-bold font-poppins text-4xl text-primary">R$799,00</span>
-                    <p className="mt-1 text-muted-foreground text-xs">por ano · R$66,58/mês</p>
-                    <p className="mt-0.5 font-medium text-green-600 text-xs">
-                      Economize R$159,80 no ano
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-bold font-poppins text-4xl text-primary">R$79,90</span>
+                    <span className="font-bold font-poppins text-4xl text-primary">
+                      {formatBRL(monthPrice)}
+                    </span>
                     <p className="mt-1 text-muted-foreground text-xs">por mês</p>
                   </>
+                ) : (
+                  <span className="font-poppins text-muted-foreground text-sm">
+                    Plano indisponível no momento
+                  </span>
                 )}
               </div>
 
@@ -254,7 +279,7 @@ export default function PaywallScreen() {
               </p> */}
 
               <div className="flex-1 space-y-2.5">
-                {premiumFeatures.map((text) => (
+                {plan.benefits.map((text) => (
                   <div key={text} className="flex items-center gap-3">
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
                       <Check className="h-3 w-3 text-primary" />
@@ -267,10 +292,14 @@ export default function PaywallScreen() {
               <Button
                 className="gradient-primary mt-8 w-full"
                 onClick={() => handleSignPlan("plus-care")}
-                disabled={isLoadingCheckout}
+                disabled={
+                  isLoadingCheckout ||
+                  hasActiveSubscription ||
+                  (isAnnual ? yearPrice == null : monthPrice == null)
+                }
               >
                 {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Assinar Mais Cuidado
+                {hasActiveSubscription ? "Sua assinatura já está ativa" : "Assinar Mais Cuidado"}
               </Button>
             </div>
           </div>
@@ -353,35 +382,6 @@ export default function PaywallScreen() {
           </div>
         </div>
       </div>
-
-      <Dialog open={isConfirmReplaceModalOpen} onOpenChange={setIsConfirmReplaceModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Você já possui assinatura ativa</DialogTitle>
-            <DialogDescription>
-              Já identificamos uma assinatura ativa na sua conta. Se continuar, a assinatura atual
-              será substituída por uma nova.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsConfirmReplaceModalOpen(false)}
-              disabled={isLoadingCheckout}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="gradient-primary"
-              onClick={handleConfirmReplace}
-              disabled={isLoadingCheckout}
-            >
-              {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Continuar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

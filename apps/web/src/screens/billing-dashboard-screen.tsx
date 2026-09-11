@@ -8,6 +8,7 @@ import { BillingListSkeleton } from "@/components/billing/billing-list-skeleton"
 import { BillingTable } from "@/components/billing/billing-table";
 import { BillingViewSwitcher } from "@/components/billing/billing-view-switcher";
 import { DashboardMetrics } from "@/components/billing/dashboard-metrics";
+import { StatusBadge } from "@/components/billing/status-badge";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useAuth } from "@/hooks/use-auth";
@@ -15,13 +16,21 @@ import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
 import { useBillingViewMode } from "@/hooks/use-billing-view-mode";
 import { getMonthRange } from "@/lib/billing/period-range";
 import { dayjs } from "@/lib/dayjs";
+import { ExportBillingReportModal, type ExportFormat } from "@/modals/export-billing-report-modal";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type {
   BillingWithInstallments,
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
 import { Button } from "@ventre/ui/button";
-import { Plus, Receipt } from "lucide-react";
+import { ButtonGroup, ButtonGroupSeparator } from "@ventre/ui/button-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@ventre/ui/dropdown-menu";
+import { ChevronDown, Download, Plus, Receipt } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -90,6 +99,14 @@ export default function BillingDashboardScreen({
   const hasBillings = statusSections.some((section) => section.billings.length > 0);
 
   const [showNewBillingModal, setShowNewBillingModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFormat | null>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  const handleExport = useCallback((format: ExportFormat) => {
+    setExportFormat(format);
+    setShowExportModal(true);
+  }, []);
+
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
 
   const handleOpenNewBilling = useCallback(() => {
@@ -105,6 +122,28 @@ export default function BillingDashboardScreen({
           <div className="flex items-center justify-between gap-2">
             <div />
             <div className="flex items-center gap-2">
+              <ButtonGroup>
+                <Button size="sm" variant="outline" onClick={() => handleExport("pdf")}>
+                  <Download className="mr-1 h-4 w-4" />
+                  Exportar em PDF
+                </Button>
+                <ButtonGroupSeparator />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="px-2">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                      Exportar para Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("csv")}>
+                      Exportar para CSV
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </ButtonGroup>
               <Button size="sm" className="gradient-primary" onClick={handleOpenNewBilling}>
                 <Plus className="mr-1 h-4 w-4" />
                 Nova Cobrança
@@ -148,7 +187,8 @@ export default function BillingDashboardScreen({
                     section.billings.length > 0 && (
                       <div key={section.key}>
                         <h3 className="mb-3 font-medium text-muted-foreground text-sm">
-                          {section.label} ({section.billings.length})
+                          <StatusBadge status={section.key} amount={section.billings.length} />
+                          {/* {section.label} ({section.billings.length}) */}
                         </h3>
                         {viewMode === "expanded" ? (
                           <div className="flex flex-col gap-3">
@@ -192,6 +232,13 @@ export default function BillingDashboardScreen({
         showModal={showNewBillingModal}
         setShowModal={setShowNewBillingModal}
         callback={() => fetchData(currentMonth)}
+      />
+
+      <ExportBillingReportModal
+        open={showExportModal}
+        onOpenChange={setShowExportModal}
+        format={exportFormat}
+        defaultMonth={activeMonthForHook}
       />
     </>
   );

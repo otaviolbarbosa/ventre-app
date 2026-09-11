@@ -122,7 +122,7 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
               </div>
 
               <div className="space-y-1">
-                <Label>Valor (R$)</Label>
+                <Label>Valor de fallback (R$)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -131,6 +131,9 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="0.00"
                 />
+                <p className="text-muted-foreground text-xs">
+                  Usado só quando não há link de pagamento ativo para o plano.
+                </p>
               </div>
             </div>
 

@@ -10,7 +10,7 @@ const schema = z.object({
 
 export const getPrenatalCardAction = authActionClient
   .inputSchema(schema)
-  .action(async ({ parsedInput, ctx: { supabase } }) => {
+  .action(async ({ parsedInput, ctx: { supabase, user } }) => {
     const { patientId, pregnancyId } = parsedInput;
 
     const [
@@ -23,6 +23,7 @@ export const getPrenatalCardAction = authActionClient
       { data: labExams },
       { data: vaccines },
       { data: otherExams },
+      { data: emotionalRecord },
     ] = await Promise.all([
       supabase
         .from("patients")
@@ -73,6 +74,12 @@ export const getPrenatalCardAction = authActionClient
         .select("*")
         .eq("pregnancy_id", pregnancyId)
         .order("exam_date", { ascending: true }),
+      supabase
+        .from("prenatal_emotional_records")
+        .select("*")
+        .eq("pregnancy_id", pregnancyId)
+        .eq("professional_id", user.id)
+        .maybeSingle(),
     ]);
 
     return {
@@ -85,5 +92,6 @@ export const getPrenatalCardAction = authActionClient
       labExams: labExams ?? [],
       vaccines: vaccines ?? [],
       otherExams: otherExams ?? [],
+      emotionalRecord: emotionalRecord ?? null,
     };
   });

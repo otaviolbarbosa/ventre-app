@@ -1,12 +1,14 @@
 "use client";
 
-import { deleteSubscriptionAction, updateSubscriptionAction } from "@/actions/subscriptions";
+import { cancelSubscriptionAction, updateSubscriptionAction } from "@/actions/subscriptions";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
+import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { Textarea } from "@ventre/ui/textarea";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
@@ -33,7 +35,9 @@ export function SubscriptionEditForm({ subscription }: { subscription: Subscript
   const [status, setStatus] = useState(subscription.status);
   const [expiresAt, setExpiresAt] = useState(subscription.expires_at?.split("T")[0] ?? "");
   const [paidAt, setPaidAt] = useState(subscription.paid_at?.split("T")[0] ?? "");
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelationReason, setCancelationReason] = useState(subscription.cancelation_reason ?? "");
+  const [refundLastPayment, setRefundLastPayment] = useState(false);
 
   const { execute: executeUpdate, isExecuting: isUpdating } = useAction(updateSubscriptionAction, {
     onSuccess: () => {
@@ -45,13 +49,14 @@ export function SubscriptionEditForm({ subscription }: { subscription: Subscript
     },
   });
 
-  const { execute: executeDelete, isExecuting: isDeleting } = useAction(deleteSubscriptionAction, {
+  const { execute: executeCancel, isExecuting: isCanceling } = useAction(cancelSubscriptionAction, {
     onSuccess: () => {
-      toast.success("Assinatura excluída com sucesso!");
+      toast.success("Assinatura cancelada com sucesso!");
+      setIsCancelModalOpen(false);
       router.push("/subscriptions");
     },
     onError: ({ error }) => {
-      toast.error(error.serverError ?? "Erro ao excluir assinatura");
+      toast.error(error.serverError ?? "Erro ao cancelar assinatura");
     },
   });
 
@@ -69,13 +74,15 @@ export function SubscriptionEditForm({ subscription }: { subscription: Subscript
         | "replaced",
       expires_at: expiresAt || null,
       paid_at: paidAt || null,
-      cancelation_reason: cancelationReason || null,
     });
   }
 
-  function handleDelete() {
-    if (!window.confirm("Tem certeza que deseja excluir esta assinatura?")) return;
-    executeDelete({ id: subscription.id });
+  function handleConfirmCancel() {
+    executeCancel({
+      id: subscription.id,
+      cancelation_reason: cancelationReason || null,
+      refund_last_payment: refundLastPayment,
+    });
   }
 
   return (
@@ -140,31 +147,21 @@ export function SubscriptionEditForm({ subscription }: { subscription: Subscript
               </div>
             </div>
 
-            <div className="space-y-1">
-              <Label>Motivo do cancelamento</Label>
-              <Textarea
-                value={cancelationReason}
-                onChange={(e) => setCancelationReason(e.target.value)}
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-
             <div className="flex items-center justify-between pt-2">
               <Button
                 type="button"
                 variant="destructive-outline"
-                onClick={handleDelete}
-                disabled={isDeleting || isUpdating}
+                onClick={() => setIsCancelModalOpen(true)}
+                disabled={isUpdating}
               >
-                {isDeleting ? "Excluindo..." : "Excluir assinatura"}
+                Cancelar assinatura
               </Button>
 
               <div className="flex gap-3">
                 <Button type="button" variant="outline" asChild>
                   <a href="/subscriptions">Cancelar</a>
                 </Button>
-                <Button type="submit" disabled={isUpdating || isDeleting}>
+                <Button type="submit" disabled={isUpdating}>
                   {isUpdating ? "Salvando..." : "Salvar alterações"}
                 </Button>
               </div>
@@ -172,6 +169,57 @@ export function SubscriptionEditForm({ subscription }: { subscription: Subscript
           </CardContent>
         </Card>
       </form>
+
+      <ContentModal
+        open={isCancelModalOpen}
+        onOpenChange={setIsCancelModalOpen}
+        title="Cancelar assinatura"
+        description={
+          refundLastPayment
+            ? "A assinatura será cancelada imediatamente e o último pagamento será reembolsado."
+            : "A assinatura será cancelada ao final do período já pago, no Stripe e no banco de dados."
+        }
+      >
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label>Motivo do cancelamento</Label>
+            <Textarea
+              value={cancelationReason}
+              onChange={(e) => setCancelationReason(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="refund-last-payment"
+              checked={refundLastPayment}
+              onCheckedChange={(c) => setRefundLastPayment(c === true)}
+            />
+            <Label htmlFor="refund-last-payment">Reembolsar último pagamento</Label>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsCancelModalOpen(false)}
+              disabled={isCanceling}
+            >
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive-outline"
+              onClick={handleConfirmCancel}
+              disabled={isCanceling}
+            >
+              {isCanceling ? "Cancelando..." : "Confirmar cancelamento"}
+            </Button>
+          </div>
+        </div>
+      </ContentModal>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { getMyDraftContractHeaderAction } from "@/actions/get-my-draft-contract-header-action";
 import { previewContractPdfAction } from "@/actions/preview-contract-pdf-action";
 import { signContractAsPatientAction } from "@/actions/sign-contract-as-patient-action";
 import { RequestContractChangeDialog } from "@/components/shared/request-contract-change-dialog";
@@ -45,6 +46,7 @@ export default function ContractDetail({
   const isFullySigned = !!contract.fully_signed_at;
   const isPartiallySigned = !isFullySigned && (contract.is_signed || contract.patientSigned);
   const hasPendingChangeRequest = changeRequests.length > 0;
+  const isDraft = contract.status === "draft";
 
   const { execute, isExecuting } = useAction(signContractAsPatientAction, {
     onSuccess: () => {
@@ -59,6 +61,7 @@ export default function ContractDetail({
 
   const { executeAsync: getDownloadUrl } = useAction(getDocumentDownloadUrlAction);
   const { executeAsync: previewContractPdfAsync } = useAction(previewContractPdfAction);
+  const { executeAsync: getDraftHeaderAsync } = useAction(getMyDraftContractHeaderAction);
 
   const handleDownload = async () => {
     if (!contract.finalized_document_id) return;
@@ -81,6 +84,37 @@ export default function ContractDetail({
 
     async function loadPdf() {
       setPdfError(null);
+
+      // A draft never has a `parties_details` snapshot (that's only taken when the
+      // contract is generated) — so the header blocks are built live from the
+      // contratada identity stored on the draft row, then rendered the same way as
+      // any other preview, matching the professional's own draft view.
+      if (isDraft) {
+        const headerRes = await getDraftHeaderAsync({ patientId: contract.patient_id as string });
+        if (cancelled) return;
+        if (!headerRes?.data?.headerBlocks) {
+          setPdfError(headerRes?.serverError ?? "Erro ao carregar contrato");
+          return;
+        }
+        const res = await previewContractPdfAsync({
+          headerBlocks: headerRes.data.headerBlocks,
+          title: contract.title,
+          clausesHtml: contract.clauses_html,
+          signaturePreview: {
+            city: contract.city ?? null,
+            state: contract.state ?? null,
+            contratanteName: headerRes.data.patientName,
+            contratadaName: headerRes.data.contratadaName,
+          },
+        });
+        if (cancelled) return;
+        if (res?.data?.pdfBase64) {
+          setPdfSource({ base64: res.data.pdfBase64 });
+        } else {
+          setPdfError(res?.serverError ?? "Erro ao gerar pré-visualização do contrato");
+        }
+        return;
+      }
 
       // Fully signed: always show the finalized document (both parties' stamps +
       // authentication certificate) — never the professional-only original.
@@ -135,10 +169,25 @@ export default function ContractDetail({
     // down fresh props, but contract.id itself never changes — so the PDF to display
     // (original vs finalized vs live preview) is re-evaluated whenever any of the
     // fields that decision depends on changes, not just when the contract itself does.
-  }, [contract.id, isFullySigned, contract.finalized_document_id, contract.original_document_id]);
+  }, [
+    contract.id,
+    isFullySigned,
+    contract.finalized_document_id,
+    contract.original_document_id,
+    isDraft,
+  ]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
+      {isDraft && (
+        <div className="flex shrink-0 items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+          <span>
+            Rascunho — sua profissional ainda está preparando o contrato. A assinatura só estará
+            disponível quando ele for finalizado.
+          </span>
+        </div>
+      )}
+
       {isFullySigned && (
         <div className="flex shrink-0 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 text-sm">
           <Check className="size-4 shrink-0" />
@@ -207,13 +256,15 @@ export default function ContractDetail({
       {!isFullySigned && !hasPendingChangeRequest && !contract.patientSigned && (
         <div className="flex shrink-0 flex-row justify-end gap-2">
           <RequestContractChangeDialog patientId={contract.patient_id as string} />
-          <Button
-            disabled={isExecuting}
-            className="flex-1 sm:flex-none"
-            onClick={() => setIsSignConfirmOpen(true)}
-          >
-            Assinar contrato
-          </Button>
+          {!isDraft && (
+            <Button
+              disabled={isExecuting}
+              className="flex-1 sm:flex-none"
+              onClick={() => setIsSignConfirmOpen(true)}
+            >
+              Assinar contrato
+            </Button>
+          )}
         </div>
       )}
 

@@ -6,6 +6,40 @@ import {
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import type { Tables } from "@ventre/supabase/types";
 
+// Resolves the CONTRATADA display name straight from the identity already stored on
+// a contract row (enterprise_id / user_id) — used when re-rendering a contract's PDF
+// outside the professional's own request context (e.g. the patient signing action),
+// where there's no `profile` for the professional to read the name off of.
+export async function getContratadaNameForContract({
+  enterpriseId,
+  professionalUserId,
+}: {
+  enterpriseId: string | null;
+  professionalUserId: string | null;
+}): Promise<string | null> {
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  if (enterpriseId) {
+    const { data } = await supabaseAdmin
+      .from("enterprises")
+      .select("name, legal_name")
+      .eq("id", enterpriseId)
+      .maybeSingle();
+    return data?.legal_name ?? data?.name ?? null;
+  }
+
+  if (professionalUserId) {
+    const { data } = await supabaseAdmin
+      .from("users")
+      .select("name")
+      .eq("id", professionalUserId)
+      .maybeSingle();
+    return data?.name ?? null;
+  }
+
+  return null;
+}
+
 export async function getPersonalBaseContract(): Promise<Tables<"contracts"> | null> {
   const { user } = await getServerAuth();
   if (!user) return null;

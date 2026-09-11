@@ -45,7 +45,7 @@ export function FinishCareModal({
   const router = useRouter();
   const { executeAsync, isPending } = useAction(finishPatientCareAction);
 
-  const form = useForm<BirthOutcomeInput>({
+  const form = useForm({
     resolver: zodResolver(birthOutcomeSchema),
     defaultValues: {
       addBornAt: false,
@@ -165,11 +165,7 @@ export function FinishCareModal({
                       <FormItem>
                         <FormControl>
                           <TimePicker
-                            selected={
-                              field.value
-                                ? new Date(`1970-01-01T${field.value}:00`)
-                                : null
-                            }
+                            selected={field.value ? new Date(`1970-01-01T${field.value}:00`) : null}
                             onChange={(date) =>
                               field.onChange(date ? dayjs(date).format("HH:mm") : "")
                             }
@@ -268,9 +264,7 @@ export function FinishCareModal({
                             step={1}
                             placeholder="Ex: 3200"
                             value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(e.target.value.replace(/\D/g, ""))
-                            }
+                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))}
                             onKeyDown={(e) => {
                               if (["e", "E", "+", "-", "."].includes(e.key)) {
                                 e.preventDefault();
@@ -289,10 +283,7 @@ export function FinishCareModal({
                     control={form.control}
                     name="addApgar"
                     render={({ field }) => (
-                      <label
-                        htmlFor="addApgar"
-                        className="flex cursor-pointer items-center gap-2"
-                      >
+                      <label htmlFor="addApgar" className="flex cursor-pointer items-center gap-2">
                         <input
                           id="addApgar"
                           type="checkbox"

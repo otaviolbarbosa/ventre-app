@@ -1,14 +1,14 @@
 import {
-  updateNotificationLogStatusByExternalId,
   findNotificationLogByExternalId,
+  updateNotificationLogStatusByExternalId,
 } from "@/lib/notifications/notification-log";
 import { WHATSAPP_INBOUND_BUTTON_HANDLERS } from "@/lib/notifications/whatsapp-inbound-handlers";
-import { verifyWhatsAppSignature } from "@/lib/whatsapp/webhook-signature";
 import {
   extractButtonReplies,
   extractStatusUpdates,
   whatsappWebhookPayloadSchema,
 } from "@/lib/whatsapp/webhook-schemas";
+import { verifyWhatsAppSignature } from "@/lib/whatsapp/webhook-signature";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -62,6 +62,8 @@ export async function POST(request: Request) {
     const payload = parseResult.data;
 
     for (const statusUpdate of extractStatusUpdates(payload)) {
+      // DEBUG TEMPORÁRIO — remover após diagnosticar o teste manual de WhatsApp no admin.
+      console.log("[whatsapp-webhook][debug] status recebido:", statusUpdate);
       if (statusUpdate.status === "sent") continue; // já gravado como "sent" no envio (worker)
       await updateNotificationLogStatusByExternalId(
         supabaseAdmin,

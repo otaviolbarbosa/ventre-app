@@ -1,8 +1,10 @@
 "use client";
 
 import { createEvolutionAction } from "@/actions/create-evolution-action";
+import { editEvolutionAction } from "@/actions/edit-evolution-action";
 import { getPatientEvolutionsAction } from "@/actions/get-patient-evolutions-action";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useAuth } from "@/hooks/use-auth";
 import { dayjs } from "@/lib/dayjs";
 import { type CreateEvolutionInput, createEvolutionSchema } from "@/lib/validations/evolution";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,9 +12,10 @@ import { Button } from "@ventre/ui/button";
 import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
 import { Skeleton } from "@ventre/ui/skeleton";
 import { Textarea } from "@ventre/ui/textarea";
-import { ClipboardList, Loader2, Lock, Plus } from "lucide-react";
+import { ClipboardList, Loader2, Lock, Pencil, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -24,8 +27,10 @@ type Evolution = {
   professional_id: string;
   content: string;
   created_at: string;
+  updated_at: string;
   is_public: boolean;
-  professional: { id: string; name: string } | null;
+  hasUpdatedContent: boolean;
+  professional: { id: string; name: string; avatar_url: string | null } | null;
 };
 
 type PatientEvolutionProps = {
@@ -35,13 +40,15 @@ type PatientEvolutionProps = {
 function EvolutionForm({
   onSubmit,
   loading,
+  defaultValues,
 }: {
   onSubmit: (data: CreateEvolutionInput) => void;
   loading: boolean;
+  defaultValues?: CreateEvolutionInput;
 }) {
-  const form = useForm<CreateEvolutionInput>({
+  const form = useForm({
     resolver: zodResolver(createEvolutionSchema),
-    defaultValues: { content: "", is_public: true },
+    defaultValues: defaultValues ?? { content: "", is_public: true },
   });
 
   return (
@@ -89,16 +96,24 @@ function EvolutionForm({
 }
 
 export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
+  const [editingEvolution, setEditingEvolution] = useState<Evolution | null>(null);
 
   const { execute: fetchEvolutions, result, isPending } = useAction(getPatientEvolutionsAction);
   const { executeAsync: submitEvolution, isPending: submitting } = useAction(createEvolutionAction);
+  const { executeAsync: submitEdit, isPending: editSubmitting } = useAction(editEvolutionAction);
 
   useEffect(() => {
     fetchEvolutions({ patientId });
   }, [fetchEvolutions, patientId]);
 
   const evolutions = (result.data?.evolutions ?? []) as Evolution[];
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingEvolution(null);
+  };
 
   const handleSubmit = async (data: CreateEvolutionInput) => {
     const res = await submitEvolution({ patientId, data });
@@ -109,8 +124,23 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
     }
 
     fetchEvolutions({ patientId });
-    setShowModal(false);
+    closeModal();
     toast.success("Evolução registrada com sucesso");
+  };
+
+  const handleEditSubmit = async (data: CreateEvolutionInput) => {
+    if (!editingEvolution) return;
+
+    const res = await submitEdit({ evolutionId: editingEvolution.id, data });
+
+    if (res?.serverError) {
+      toast.error(res.serverError);
+      return;
+    }
+
+    fetchEvolutions({ patientId });
+    closeModal();
+    toast.success("Evolução atualizada com sucesso");
   };
 
   if (isPending && evolutions.length === 0) {
@@ -162,14 +192,43 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
           {evolutions.map((evolution) => (
             <div
               key={evolution.id}
-              className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
+              className="divide-y rounded-lg border p-4 transition-colors hover:bg-muted/50"
             >
-              <p className="whitespace-pre-wrap text-sm">{evolution.content}</p>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <p className="text-muted-foreground text-xs">
-                  Registro adicionado por: {evolution.professional?.name || "Desconhecido"}, em{" "}
-                  {dayjs(evolution.created_at).format("DD/MM/YYYY [às] HH:mm")}
-                </p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="whitespace-pre-wrap text-sm">{evolution.content}</p>
+                {evolution.professional_id === user?.id && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    aria-label="Editar evolução"
+                    onClick={() => setEditingEvolution(evolution)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-2 pt-3">
+                <div className="flex items-center gap-2">
+                  <UserAvatar
+                    user={{
+                      name: evolution.professional?.name || "Desconhecido",
+                      avatar_url: evolution.professional?.avatar_url,
+                    }}
+                    size={6}
+                  />
+                  <div className="text-muted-foreground text-xs">
+                    <p className="font-medium text-foreground">
+                      {evolution.professional?.name || "Desconhecido"}
+                    </p>
+                    <p>{dayjs(evolution.created_at).format("DD/MM/YYYY [às] HH:mm")}</p>
+                    {evolution.hasUpdatedContent && (
+                      <p>
+                        Última edição: {dayjs(evolution.updated_at).format("DD/MM/YYYY [às] HH:mm")}
+                      </p>
+                    )}
+                  </div>
+                </div>
                 {!evolution.is_public && (
                   <span className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
                     <Lock className="h-3 w-3" />
@@ -184,11 +243,30 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
 
       <ContentModal
         open={showModal}
-        onOpenChange={setShowModal}
+        onOpenChange={(open) => (open ? setShowModal(true) : closeModal())}
         title="Nova Evolução"
         description="Registre a evolução da paciente."
       >
         <EvolutionForm onSubmit={handleSubmit} loading={submitting} />
+      </ContentModal>
+
+      <ContentModal
+        open={editingEvolution !== null}
+        onOpenChange={(open) => (open ? undefined : closeModal())}
+        title="Editar Evolução"
+        description="Atualize a evolução da paciente."
+      >
+        {editingEvolution && (
+          <EvolutionForm
+            key={editingEvolution.id}
+            onSubmit={handleEditSubmit}
+            loading={editSubmitting}
+            defaultValues={{
+              content: editingEvolution.content,
+              is_public: editingEvolution.is_public,
+            }}
+          />
+        )}
       </ContentModal>
     </div>
   );

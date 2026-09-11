@@ -21,7 +21,10 @@ export function toDuplicateWarning(
 ): DuplicateWarning {
   if (!row || row.professional_id === currentUserId || !occurredAtIso) return null;
 
-  const minutesAgo = Math.max(1, Math.round((Date.now() - new Date(occurredAtIso).getTime()) / 60000));
+  const minutesAgo = Math.max(
+    1,
+    Math.round((Date.now() - new Date(occurredAtIso).getTime()) / 60000),
+  );
 
   return {
     minutesAgo,
@@ -29,8 +32,11 @@ export function toDuplicateWarning(
   };
 }
 
+/** Brazil has observed a fixed UTC-3 offset (no DST) nationwide since 2019. Appending it
+ * explicitly avoids `new Date()` silently parsing the naive string as the server runtime's
+ * local time zone (UTC on Vercel), which previously shifted every stored instant 3h off. */
 export function combineDateAndTime(date: string, time: string): string {
-  return new Date(`${date}T${time}:00`).toISOString();
+  return new Date(`${date}T${time}:00-03:00`).toISOString();
 }
 
 /** Date/time defaults pre-filled in birth-event modals — current moment, editable by the professional. */

@@ -140,6 +140,19 @@ export const vaccineRecordSchema = z.object({
 });
 export type VaccineRecordInput = z.infer<typeof vaccineRecordSchema>;
 
+// ── Emotional Prenatal (doula) ──────────────────────────────────────────────
+export const emotionalPrenatalSchema = z.object({
+  birth_story: z.string().optional(),
+  coping_style: z.string().optional(),
+  safety_source: z.string().optional(),
+  loss_of_control_feeling: z.string().optional(),
+  birth_first_image: z.string().optional(),
+  biggest_fear: z.string().optional(),
+  preserve_if_different: z.string().optional(),
+  woman_reminder: z.string().optional(),
+});
+export type EmotionalPrenatalInput = z.infer<typeof emotionalPrenatalSchema>;
+
 // ── Other Exam ───────────────────────────────────────────────────────────────
 export const otherExamSchema = z.object({
   exam_date: z.string().min(1, "Data do exame obrigatória"),

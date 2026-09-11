@@ -14,8 +14,21 @@ export const resolveContractChangeRequestAction = authActionClient
       ctx: { supabase, supabaseAdmin, user, profile },
     }) => {
       if (profile.enterprise_id) {
-        if (!isStaff(profile)) {
-          throw new Error("Apenas gestores ou secretárias podem resolver solicitações de alteração.");
+        const isManagerOrSecretary = isStaff(profile);
+        let isTeamMember = false;
+        if (!isManagerOrSecretary) {
+          const { data: teamRow } = await supabase
+            .from("team_members")
+            .select("id")
+            .eq("patient_id", patientId)
+            .eq("professional_id", user.id)
+            .maybeSingle();
+          isTeamMember = !!teamRow;
+        }
+        if (!isManagerOrSecretary && !isTeamMember) {
+          throw new Error(
+            "Apenas gestores, secretárias ou membros da equipe de cuidado podem resolver solicitações de alteração.",
+          );
         }
       } else {
         const { data: patientRow } = await supabase

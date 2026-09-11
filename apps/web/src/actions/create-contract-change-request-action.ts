@@ -29,7 +29,7 @@ export const createContractChangeRequestAction = authActionClient
       .select("id")
       .eq("patient_id", patientId)
       .eq("is_base_contract", false)
-      .eq("is_active", true)
+      .in("status", ["draft", "active"])
       .maybeSingle();
 
     if (!existing) throw new Error("Nenhum contrato encontrado.");

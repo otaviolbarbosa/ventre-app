@@ -10,7 +10,7 @@ export const deactivatePatientContractAction = authActionClient
   .action(async ({ parsedInput: { contractId, patientId }, ctx: { supabase, user } }) => {
     const { error } = await supabase
       .from("contracts")
-      .update({ is_active: false })
+      .update({ status: "revoked" })
       .eq("id", contractId)
       .eq("is_base_contract", false);
 

@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "npx turbo-ignore",
   "framework": null,
   "outputDirectory": "storybook-static"
 }

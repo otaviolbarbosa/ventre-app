@@ -11,6 +11,7 @@ import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
 import { Input } from "@ventre/ui/input";
+import { ConfirmModal } from "@ventre/ui/shared/confirm-modal";
 import {
   Check,
   CircleDollarSign,
@@ -54,6 +55,10 @@ export function InstallmentList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [linkValue, setLinkValue] = useState("");
   const [uploadingPaymentId, setUploadingPaymentId] = useState<string | null>(null);
+  const [pendingDecision, setPendingDecision] = useState<{
+    installmentId: string;
+    decision: "confirm" | "reject";
+  } | null>(null);
 
   const { executeAsync: saveLink, isPending: saving } = useAction(saveInstallmentLinkAction);
   const {
@@ -67,6 +72,9 @@ export function InstallmentList({
     },
     onError: ({ error }) => {
       toast.error(error.serverError ?? "Erro ao atualizar pagamento");
+    },
+    onSettled: () => {
+      setPendingDecision(null);
     },
   });
 
@@ -197,7 +205,7 @@ export function InstallmentList({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {installment.status === "pago" &&
+                  {["pago", "em_analise"].includes(installment.status) &&
                     installment.payments
                       .filter((p) => p.receipt_url)
                       .map((p) => (
@@ -262,7 +270,7 @@ export function InstallmentList({
                           confirmInput?.installmentId === installment.id
                         }
                         onClick={() =>
-                          confirmPayment({ installmentId: installment.id, decision: "reject" })
+                          setPendingDecision({ installmentId: installment.id, decision: "reject" })
                         }
                       >
                         {confirmStatus === "executing" &&
@@ -279,7 +287,7 @@ export function InstallmentList({
                           confirmInput?.installmentId === installment.id
                         }
                         onClick={() =>
-                          confirmPayment({ installmentId: installment.id, decision: "confirm" })
+                          setPendingDecision({ installmentId: installment.id, decision: "confirm" })
                         }
                       >
                         {confirmStatus === "executing" &&
@@ -287,7 +295,8 @@ export function InstallmentList({
                           confirmInput.decision === "confirm" && (
                             <Loader2 className="mr-1 h-4 w-4 animate-spin" />
                           )}
-                        Confirmar pagamento
+                        <span className="inline sm:hidden">Confirmar</span>
+                        <span className="hidden sm:inline">Confirmar pagamento</span>
                       </Button>
                     </div>
                   )}
@@ -383,6 +392,26 @@ export function InstallmentList({
             </div>
           );
         })}
+      <ConfirmModal
+        open={!!pendingDecision}
+        onOpenChange={(open) => {
+          if (!open) setPendingDecision(null);
+        }}
+        title={
+          pendingDecision?.decision === "reject" ? "Rejeitar pagamento" : "Confirmar pagamento"
+        }
+        description={
+          pendingDecision?.decision === "reject"
+            ? "Tem certeza que deseja rejeitar este pagamento? Essa ação não pode ser desfeita."
+            : "Tem certeza que deseja confirmar este pagamento?"
+        }
+        confirmLabel={pendingDecision?.decision === "reject" ? "Rejeitar" : "Confirmar"}
+        variant={pendingDecision?.decision === "reject" ? "destructive" : "default"}
+        loading={confirmStatus === "executing"}
+        onConfirm={() => {
+          if (pendingDecision) confirmPayment(pendingDecision);
+        }}
+      />
     </div>
   );
 }

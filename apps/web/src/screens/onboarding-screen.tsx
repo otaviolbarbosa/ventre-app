@@ -161,7 +161,7 @@ export default function OnboardingScreen() {
   const [whatsappSameAsPhone, setWhatsappSameAsPhone] = useState(true);
   const [addressVisible, setAddressVisible] = useState(false);
 
-  const enterpriseForm = useForm<RequestEnterpriseInput>({
+  const enterpriseForm = useForm({
     resolver: zodResolver(requestEnterpriseSchema),
     defaultValues: {
       name: "",

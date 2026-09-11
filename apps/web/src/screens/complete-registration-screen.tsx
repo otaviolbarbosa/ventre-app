@@ -1,5 +1,8 @@
 "use client";
 
+import { completeRegistrationAction } from "@/actions/complete-registration-action";
+import ventreLogo from "@/assets/ventre.png";
+import { professionalTypeLabels } from "@/utils/team";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@ventre/supabase";
 import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
@@ -7,16 +10,13 @@ import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Camera, Check, Loader2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAction } from "next-safe-action/hooks";
 import { Fragment, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { completeRegistrationAction } from "@/actions/complete-registration-action";
-import ventreLogo from "@/assets/ventre.png";
-import { professionalTypeLabels } from "@/utils/team";
 
 type Invite = {
   id: string;

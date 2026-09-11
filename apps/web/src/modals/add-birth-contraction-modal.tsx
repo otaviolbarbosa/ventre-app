@@ -1,6 +1,7 @@
 "use client";
 
 import { addBirthContractionAction } from "@/actions/add-birth-contraction-action";
+import { BIRTH_PAIN_INTENSITY_OPTIONS } from "@/lib/birth-mode-constants";
 import { defaultBirthEventDateTime } from "@/lib/birth-mode-duplicate-check";
 import { dayjs } from "@/lib/dayjs";
 import { type BirthContractionInput, birthContractionSchema } from "@/lib/validations/birth-mode";
@@ -34,11 +35,21 @@ export function AddBirthContractionModal({
 
   const form = useForm<BirthContractionInput>({
     resolver: zodResolver(birthContractionSchema),
-    defaultValues: { duration_seconds: undefined, ...defaultBirthEventDateTime() },
+    defaultValues: {
+      duration_seconds: undefined,
+      pain_intensity: undefined,
+      ...defaultBirthEventDateTime(),
+    },
   });
 
   useEffect(() => {
-    if (open) form.reset({ duration_seconds: undefined, ...defaultBirthEventDateTime() });
+    if (open) {
+      form.reset({
+        duration_seconds: undefined,
+        pain_intensity: undefined,
+        ...defaultBirthEventDateTime(),
+      });
+    }
   }, [open, form]);
 
   async function onSubmit(values: BirthContractionInput) {
@@ -60,7 +71,7 @@ export function AddBirthContractionModal({
     <ContentModal
       open={open}
       onOpenChange={onOpenChange}
-      title="Registrar Contração"
+      title="Registrar Dinâmica Uterina"
       description="Informe a duração da contração em segundos"
     >
       <Form {...form}>
@@ -73,6 +84,51 @@ export function AddBirthContractionModal({
                 <FormLabel>Duração (segundos) *</FormLabel>
                 <FormControl>
                   <Input type="number" min="1" {...field} value={field.value ?? ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="pain_intensity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Intensidade da dor *</FormLabel>
+                <FormControl>
+                  <div
+                    role="radiogroup"
+                    aria-label="Intensidade da dor"
+                    className="grid grid-cols-5 gap-2"
+                  >
+                    {BIRTH_PAIN_INTENSITY_OPTIONS.map(({ value, emoji, label }) => {
+                      const selected = field.value === value;
+                      return (
+                        <label
+                          key={value}
+                          className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border py-3 transition-colors ${
+                            selected
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:bg-muted/50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="pain_intensity"
+                            value={value}
+                            checked={selected}
+                            onChange={() => field.onChange(value)}
+                            className="sr-only"
+                          />
+                          <span className="text-2xl">{emoji}</span>
+                          <span className="text-center font-semibold text-[10px] text-muted-foreground leading-tight">
+                            {label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

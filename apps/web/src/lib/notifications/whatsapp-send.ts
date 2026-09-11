@@ -1,7 +1,11 @@
-import { sendWhatsAppTemplateMessage, WhatsAppApiError } from "@/lib/whatsapp/client";
-import { normalizePhoneToE164 } from "@/lib/whatsapp/phone";
-import { getWhatsAppTemplate, type WhatsAppNotificationType } from "@/lib/whatsapp/templates";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import {
+  WhatsAppApiError,
+  type WhatsAppNotificationType,
+  getWhatsAppTemplate,
+  normalizePhoneToE164,
+  sendWhatsAppTemplateMessage,
+} from "@ventre/whatsapp";
 
 export type WhatsAppRecipient =
   | { recipientType: "patient"; recipientId: string }

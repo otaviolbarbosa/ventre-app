@@ -13,6 +13,8 @@ import {
   AMNIOTIC_FLUID_INDEX_LABELS,
   CLINICAL_FIELDS,
   DOPPLER_RESULT_LABELS,
+  EMOTIONAL_PRENATAL_INTRO,
+  EMOTIONAL_PRENATAL_QUESTIONS,
   FETAL_PRESENTATION_LABELS,
   RISK_GROUPS,
   SURGICAL_FIELDS,
@@ -24,6 +26,7 @@ import { AddLabExamModal } from "@/modals/add-lab-exam-modal";
 import { AddOtherExamModal } from "@/modals/add-other-exam-modal";
 import { AddPregnancyEvolutionModal } from "@/modals/add-pregnancy-evolution-modal";
 import { AddUltrasoundModal } from "@/modals/add-ultrasound-modal";
+import { EditEmotionalPrenatalModal } from "@/modals/edit-emotional-prenatal-modal";
 import { EditGeneralDataModal } from "@/modals/edit-general-data-modal";
 import { EditObstetricHistoryModal } from "@/modals/edit-obstetric-history-modal";
 import { EditPregnancyEvolutionModal } from "@/modals/edit-pregnancy-evolution-modal";
@@ -41,6 +44,7 @@ import {
   CheckCircle2,
   ClipboardList,
   FlaskConical,
+  HeartHandshake,
   HelpCircle,
   MinusCircle,
   Pencil,
@@ -92,6 +96,7 @@ type PrenatalData = {
   labExams: Tables<"lab_exam_results">[];
   vaccines: Tables<"vaccine_records">[];
   otherExams: Tables<"other_exams">[];
+  emotionalRecord: Tables<"prenatal_emotional_records"> | null;
 };
 
 // ── Helper ───────────────────────────────────────────────────────────────────
@@ -1361,15 +1366,86 @@ function OtherExamsSection({
   );
 }
 
+// ── Section: Pré-natal Emocional (doula) ─────────────────────────────────────
+
+function EmotionalPrenatalSection({
+  pregnancyId,
+  record,
+  isEditable,
+  onRefresh,
+}: {
+  pregnancyId: string;
+  record: Tables<"prenatal_emotional_records"> | null;
+  isEditable: boolean;
+  onRefresh: () => void;
+}) {
+  const [editingQuestion, setEditingQuestion] = useState<
+    (typeof EMOTIONAL_PRENATAL_QUESTIONS)[number] | null
+  >(null);
+
+  return (
+    <div>
+      <SectionHeader icon={HeartHandshake} title="Pré-natal Emocional" />
+
+      <p className="mb-4 text-muted-foreground text-sm">{EMOTIONAL_PRENATAL_INTRO}</p>
+
+      <div className="space-y-4">
+        {EMOTIONAL_PRENATAL_QUESTIONS.map((q) => {
+          const answer = record?.[q.name];
+          return (
+            <div key={q.name} className="rounded-lg border px-4 py-2.5">
+              <div className="flex items-start justify-between gap-3">
+                <p className="mb-1 font-medium text-muted-foreground text-xs">{q.question}</p>
+                {isEditable && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => setEditingQuestion(q)}
+                  >
+                    <Pencil className="h-3 w-3" />
+                    {answer ? "Editar" : "Adicionar"}
+                  </Button>
+                )}
+              </div>
+              {answer && <p className="whitespace-pre-wrap text-sm">{answer || "-"}</p>}
+            </div>
+          );
+        })}
+      </div>
+
+      {editingQuestion && (
+        <EditEmotionalPrenatalModal
+          open={!!editingQuestion}
+          onOpenChange={(open) => !open && setEditingQuestion(null)}
+          pregnancyId={pregnancyId}
+          questionName={editingQuestion.name}
+          question={editingQuestion.question}
+          currentValue={record?.[editingQuestion.name]}
+          onSuccess={onRefresh}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 type PrenatalCardProps = {
   patientId: string;
   pregnancyId: string | null | undefined;
   isEditable: boolean;
+  isGeneralEditable: boolean;
+  isDoula?: boolean;
 };
 
-export default function PrenatalCard({ patientId, pregnancyId, isEditable }: PrenatalCardProps) {
+export default function PrenatalCard({
+  patientId,
+  pregnancyId,
+  isEditable,
+  isGeneralEditable,
+  isDoula = false,
+}: PrenatalCardProps) {
   const { execute: fetchData, result, isPending } = useAction(getPrenatalCardAction);
 
   const refresh = useCallback(() => {
@@ -1410,6 +1486,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
     labExams: [],
     vaccines: [],
     otherExams: [],
+    emotionalRecord: null,
   };
 
   return (
@@ -1419,7 +1496,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
           patientId={patientId}
           pregnancyId={pregnancyId}
           data={data}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
@@ -1430,7 +1507,7 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
           pregnancyId={pregnancyId}
           history={data.obstetricHistory}
           pregnancy={data.pregnancy}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
@@ -1439,58 +1516,79 @@ export default function PrenatalCard({ patientId, pregnancyId, isEditable }: Pre
         <RiskFactorsSection
           pregnancyId={pregnancyId}
           riskFactors={data.riskFactors}
-          isEditable={isEditable}
+          isEditable={isGeneralEditable}
           onRefresh={refresh}
         />
       </SectionCard>
 
-      <SectionCard>
-        <EvolutionsSection
-          pregnancyId={pregnancyId}
-          evolutions={data.evolutions}
-          dum={data.pregnancy?.dum}
-          initialWeightKg={data.pregnancy?.initial_weight_kg}
-          initialBmi={data.pregnancy?.initial_bmi}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.evolutions.length) ? (
+        <SectionCard>
+          <EvolutionsSection
+            pregnancyId={pregnancyId}
+            evolutions={data.evolutions}
+            dum={data.pregnancy?.dum}
+            initialWeightKg={data.pregnancy?.initial_weight_kg}
+            initialBmi={data.pregnancy?.initial_bmi}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <UltrasoundsSection
-          pregnancyId={pregnancyId}
-          ultrasounds={data.ultrasounds}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.ultrasounds.length) ? (
+        <SectionCard>
+          <UltrasoundsSection
+            pregnancyId={pregnancyId}
+            ultrasounds={data.ultrasounds}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <LabExamsSection
-          pregnancyId={pregnancyId}
-          labExams={data.labExams}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.labExams.length) ? (
+        <SectionCard>
+          <LabExamsSection
+            pregnancyId={pregnancyId}
+            labExams={data.labExams}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <VaccinesSection
-          pregnancyId={pregnancyId}
-          vaccines={data.vaccines}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.vaccines.length) ? (
+        <SectionCard>
+          <VaccinesSection
+            pregnancyId={pregnancyId}
+            vaccines={data.vaccines}
+            isEditable={isGeneralEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
 
-      <SectionCard>
-        <OtherExamsSection
-          pregnancyId={pregnancyId}
-          otherExams={data.otherExams}
-          isEditable={isEditable}
-          onRefresh={refresh}
-        />
-      </SectionCard>
+      {!isDoula || (isDoula && data.otherExams.length) ? (
+        <SectionCard>
+          <OtherExamsSection
+            pregnancyId={pregnancyId}
+            otherExams={data.otherExams}
+            isEditable={isEditable}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      ) : null}
+
+      {isDoula && (
+        <SectionCard>
+          <EmotionalPrenatalSection
+            pregnancyId={pregnancyId}
+            record={data.emotionalRecord}
+            isEditable={isDoula}
+            onRefresh={refresh}
+          />
+        </SectionCard>
+      )}
     </div>
   );
 }

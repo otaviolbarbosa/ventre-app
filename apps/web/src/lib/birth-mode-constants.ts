@@ -30,6 +30,18 @@ export const BIRTH_CONTRACTION_EFFECTIVENESS_LABELS: Record<string, string> = {
   nao_efetiva: "Não efetiva",
 };
 
+export const BIRTH_PAIN_INTENSITY_OPTIONS: { value: string; emoji: string; label: string }[] = [
+  { value: "fraca", emoji: "😑", label: "Fraca" },
+  { value: "fraca_media", emoji: "😟", label: "Fraca p/ Média" },
+  { value: "media", emoji: "😧", label: "Média" },
+  { value: "media_forte", emoji: "😖", label: "Média p/ Forte" },
+  { value: "forte", emoji: "😫", label: "Forte" },
+];
+
+export const BIRTH_PAIN_INTENSITY_LABELS: Record<string, string> = Object.fromEntries(
+  BIRTH_PAIN_INTENSITY_OPTIONS.map(({ value, emoji, label }) => [value, `${emoji} ${label}`]),
+);
+
 export const BIRTH_MEMBRANE_RUPTURE_TYPE_LABELS: Record<string, string> = {
   espontanea: "Espontânea",
   artificial: "Artificial",
@@ -57,6 +69,7 @@ export const BIRTH_URINE_DIPSTICK_LABELS: Record<string, string> = {
 export type BirthEventType =
   | "start_monitoring"
   | "contraction"
+  | "uterine_activity"
   | "cervical_dilation"
   | "fetal_station"
   | "fetal_heart_rate"
@@ -76,7 +89,12 @@ export const BIRTH_EVENT_CONFIG: Record<
     icon: PlayCircle,
     colorClass: "text-primary",
   },
-  contraction: { label: "Contração", icon: Activity, colorClass: "text-pink-500" },
+  contraction: { label: "Dinâmica Uterina", icon: Activity, colorClass: "text-pink-500" },
+  uterine_activity: {
+    label: "Dinâmica Uterina (lote)",
+    icon: Activity,
+    colorClass: "text-pink-500",
+  },
   cervical_dilation: { label: "Dilatação cervical", icon: Ruler, colorClass: "text-purple-500" },
   fetal_station: {
     label: "Altura de apresentação (Lee)",

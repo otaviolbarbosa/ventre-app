@@ -4,8 +4,10 @@ import { deletePlanAction, getPaginatedPlansAction, togglePlanActiveAction } fro
 import { formatCurrency } from "@/lib/utils";
 import type { Tables } from "@ventre/supabase/types";
 import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
 import { DataTable } from "@ventre/ui/shared/data-table";
 import { Switch } from "@ventre/ui/switch";
+import { Pencil } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
@@ -109,7 +111,9 @@ export function PlansTable() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={plan.is_active}
-                  onCheckedChange={(checked) => togglePlanActive({ id: plan.id, is_active: checked })}
+                  onCheckedChange={(checked: boolean) =>
+                    togglePlanActive({ id: plan.id, is_active: checked })
+                  }
                 />
                 <span className="text-muted-foreground text-xs">
                   {plan.is_active ? "Ativo" : "Inativo"}
@@ -120,9 +124,11 @@ export function PlansTable() {
         ],
         actions: [
           (plan) => (
-            <Link href={`/plans/${plan.id}`} className="text-primary text-sm hover:underline">
-              Editar
-            </Link>
+            <Button size="icon-sm" variant="outline" asChild>
+              <Link href={`/plans/${plan.id}`} className="text-primary">
+                <Pencil />
+              </Link>
+            </Button>
           ),
           "delete",
         ],

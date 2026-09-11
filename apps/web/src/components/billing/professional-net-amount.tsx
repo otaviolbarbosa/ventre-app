@@ -52,7 +52,7 @@ export function ProfessionalNetAmount({
   return (
     <div className="flex w-full items-center justify-between gap-2 py-0.5 text-xs">
       <span className="text-muted-foreground">{label}</span>
-      <span className="flex items-center gap-1.5">
+      <span className="flex flex-col-reverse items-end gap-1.5 sm:flex-row sm:items-center">
         <Popover open={open} onOpenChange={setOpen}>
           <Badge variant="outline" className="gap-1 font-normal">
             −{formatCurrency(totalFeesCents)}
@@ -74,25 +74,30 @@ export function ProfessionalNetAmount({
             </PopoverTrigger>
           </Badge>
           <PopoverContent
-            className="w-64 space-y-1 p-3"
+            className="mt-1 mr-8 w-64 space-y-2 p-3"
             onClick={(e) => e.stopPropagation()}
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
           >
-            <div className="flex justify-between text-muted-foreground text-xs">
-              <span>Valor bruto</span>
-              <span>{formatCurrency(grossAmountCents)}</span>
-            </div>
-            {feeLineItems.map((fee) => (
-              <div key={fee.fee_id} className="flex justify-between text-muted-foreground text-xs">
-                <span>
-                  {fee.name} (
-                  {fee.fee_type === "fixed" ? formatCurrency(fee.value) : `${fee.value}%`})
-                </span>
-                <span>−{formatCurrency(fee.amountCents)}</span>
+            <div className="space-y-1">
+              <div className="flex justify-between text-muted-foreground text-xs">
+                <span>Valor bruto</span>
+                <span>{formatCurrency(grossAmountCents)}</span>
               </div>
-            ))}
-            <div className="flex justify-between border-t pt-1 font-medium text-xs">
+              {feeLineItems.map((fee) => (
+                <div
+                  key={fee.fee_id}
+                  className="flex justify-between text-muted-foreground text-xs"
+                >
+                  <span>
+                    {fee.name} (
+                    {fee.fee_type === "fixed" ? formatCurrency(fee.value) : `${fee.value}%`})
+                  </span>
+                  <span>−{formatCurrency(fee.amountCents)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-between border-t pt-2 font-medium text-xs">
               <span>Valor líquido</span>
               <span>{formatCurrency(netAmountCents)}</span>
             </div>

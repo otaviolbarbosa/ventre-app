@@ -12,6 +12,7 @@ export default async function SubscriptionDetailPage({ params }: { params: Param
     .from("subscriptions")
     .select(`
       id,
+      subscription_id,
       status,
       frequence,
       expires_at,

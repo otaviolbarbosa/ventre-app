@@ -1,7 +1,7 @@
+import type { Invite, SentPatientInvite, SentTeamInvite } from "@/types";
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import type { Database, Tables, TablesInsert } from "@ventre/supabase/types";
 import dayjs from "dayjs";
-import type { Invite, SentPatientInvite, SentTeamInvite } from "@/types";
 
 type ProfessionalType = Database["public"]["Enums"]["professional_type"];
 
@@ -168,7 +168,7 @@ export async function getSentPatientInvites(): Promise<GetSentPatientInvitesResu
     .from("patient_invite_links")
     .select(`
       id, status, invite_type, expires_at, name, email, phone,
-      patient:patients!patient_invite_links_patient_id_fkey(id, name)
+      patient:patients!patient_invite_links_patient_id_fkey(id, name, user:users!patients_user_id_fkey(avatar_url), pregnancies(due_date, dum))
     `)
     .eq("created_by", user.id)
     .order("created_at", { ascending: false });

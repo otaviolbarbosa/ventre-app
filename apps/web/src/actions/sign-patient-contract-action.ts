@@ -1,6 +1,7 @@
 "use server";
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import type { SignatureStamp } from "@/components/shared/contract-pdf-document";
 import { isStaff } from "@/lib/access-control";
 import { generateFinalizedContractPdf } from "@/lib/contract-finalization";
 import { hasUnfilledFields } from "@/lib/contract-header-text";
@@ -11,7 +12,7 @@ import {
   sanitizeClausesHtml,
   uploadContractPdf,
 } from "@/lib/contract-pdf";
-import { buildSignatureLocalityLine } from "@/lib/contract-signature-text";
+import { buildSignatureLocalityLine, formatAuditTimestamp } from "@/lib/contract-signature-text";
 import { enqueueNotification } from "@/lib/notifications/queue";
 import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
@@ -35,7 +36,7 @@ export const signPatientContractAction = authActionClient
         .select("id, is_signed, fully_signed_at, title, clauses_html, city, state")
         .eq("patient_id", patientId)
         .eq("is_base_contract", false)
-        .eq("is_active", true)
+        .in("status", ["draft", "active"])
         .maybeSingle();
 
       if (existing?.fully_signed_at) {
@@ -115,7 +116,7 @@ export const signPatientContractAction = authActionClient
         const { error: revokeError } = await supabase
           .from("contracts")
           .update({
-            is_active: false,
+            status: "revoked",
             revoked_at: new Date().toISOString(),
             revoked_by: user.id,
           })
@@ -145,7 +146,7 @@ export const signPatientContractAction = authActionClient
           .from("contracts")
           .insert({
             is_base_contract: false,
-            is_active: true,
+            status: "active",
             title,
             clauses_html,
             parties_details,
@@ -164,6 +165,7 @@ export const signPatientContractAction = authActionClient
         const { error } = await supabase
           .from("contracts")
           .update({
+            status: "active",
             title,
             clauses_html,
             parties_details,
@@ -178,7 +180,7 @@ export const signPatientContractAction = authActionClient
           .from("contracts")
           .insert({
             is_base_contract: false,
-            is_active: true,
+            status: "active",
             title,
             clauses_html,
             parties_details,
@@ -195,12 +197,31 @@ export const signPatientContractAction = authActionClient
         contractId = inserted.id;
       }
 
+      // The patient may already have signed this contractId (either party can sign in
+      // either order — see sign-contract-as-patient-action.ts) — carry her stamp over
+      // into whichever PDF gets (re)rendered below so a partially-signed contract
+      // always shows every signature collected so far, not just the professional's.
+      const { data: patientSignatureRow } = await supabase
+        .from("contract_signatures")
+        .select("id, signed_at")
+        .eq("contract_id", contractId)
+        .eq("signer_role", "patient")
+        .maybeSingle();
+
+      const contratanteStamp: SignatureStamp | undefined = patientSignatureRow
+        ? {
+            signedByName: patient.name,
+            signedAtLabel: formatAuditTimestamp(patientSignatureRow.signed_at),
+            signatureId: patientSignatureRow.id,
+          }
+        : undefined;
+
       if (!consent) {
         // Professional chose not to sign right now — still generate the initial
         // (unsigned, mutable) PDF so the contract always has an original_document_id
-        // to preview/download from. No hash/verification_code/contract_signatures are
-        // generated, since those only make sense once actually signed — the patient
-        // can only sign once the professional has (sign-contract-as-patient-action.ts).
+        // to preview/download from. No hash/verification_code/professional signature
+        // are generated here, since those only make sense once the professional
+        // actually signs.
         const draftBuffer = await renderContractPdfBuffer({
           headerBlocks: parties_details,
           title,
@@ -209,6 +230,7 @@ export const signPatientContractAction = authActionClient
             localityLine: buildSignatureLocalityLine(city ?? null, state ?? null, new Date()),
             contratanteName: patient.name,
             contratadaName: contratadaName ?? "Profissional",
+            contratanteStamp,
           },
         });
 
@@ -261,6 +283,15 @@ export const signPatientContractAction = authActionClient
       if (!verificationCode)
         throw new Error("Erro ao gerar código de verificação. Tente novamente.");
 
+      // Pre-generated so the id can be burned into the PDF stamp before the
+      // contract_signatures row referencing it actually exists.
+      const professionalSignatureId = randomUUID();
+      const contratadaStamp: SignatureStamp = {
+        signedByName: profile.name ?? "Profissional",
+        signedAtLabel: formatAuditTimestamp(signedAt),
+        signatureId: professionalSignatureId,
+      };
+
       const buffer = await renderContractPdfBuffer({
         headerBlocks: parties_details,
         title,
@@ -269,6 +300,8 @@ export const signPatientContractAction = authActionClient
           localityLine: buildSignatureLocalityLine(city ?? null, state ?? null, new Date(signedAt)),
           contratanteName: patient.name,
           contratadaName: contratadaName ?? "Profissional",
+          contratadaStamp,
+          contratanteStamp,
         },
       });
 
@@ -318,6 +351,7 @@ export const signPatientContractAction = authActionClient
       }
 
       const { error: signatureInsertError } = await supabase.from("contract_signatures").insert({
+        id: professionalSignatureId,
         contract_id: contractId,
         signer_role: "professional",
         signer_id: user.id,

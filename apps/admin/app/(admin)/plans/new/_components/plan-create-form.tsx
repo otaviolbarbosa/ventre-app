@@ -3,6 +3,7 @@
 import { createPlanAction } from "@/actions/plans";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
+import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
@@ -20,6 +21,7 @@ export function PlanCreateForm() {
   const [type, setType] = useState("premium");
   const [value, setValue] = useState("");
   const [benefitsText, setBenefitsText] = useState("");
+  const [isActive, setIsActive] = useState(true);
 
   const { execute, isExecuting } = useAction(createPlanAction, {
     onSuccess: () => {
@@ -45,6 +47,7 @@ export function PlanCreateForm() {
       type: type as "free" | "premium" | "enterprise",
       value: value !== "" ? Number(value) : null,
       benefits,
+      is_active: isActive,
     });
   }
 
@@ -104,7 +107,7 @@ export function PlanCreateForm() {
               </div>
 
               <div className="space-y-1">
-                <Label>Valor (R$)</Label>
+                <Label>Valor de fallback (R$)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -113,6 +116,9 @@ export function PlanCreateForm() {
                   onChange={(e) => setValue(e.target.value)}
                   placeholder="0.00"
                 />
+                <p className="text-muted-foreground text-xs">
+                  Usado só quando não há link de pagamento ativo para o plano.
+                </p>
               </div>
             </div>
 
@@ -125,6 +131,15 @@ export function PlanCreateForm() {
                 className="resize-none font-mono text-xs"
                 placeholder={"Benefício 1\nBenefício 2\nBenefício 3"}
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="is-active"
+                checked={isActive}
+                onCheckedChange={(checked) => setIsActive(checked === true)}
+              />
+              <Label htmlFor="is-active">Plano ativo (visível no paywall)</Label>
             </div>
 
             <div className="flex justify-end gap-3 pt-2">

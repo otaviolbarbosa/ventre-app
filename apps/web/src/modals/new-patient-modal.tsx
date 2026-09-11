@@ -275,7 +275,7 @@ export default function NewPatientModal({
 
   const defaultProfessionalIds = professional?.id ? [professional.id] : undefined;
 
-  const form = useForm<CreatePatientInput>({
+  const form = useForm({
     resolver: zodResolver(createPatientSchema),
     defaultValues: {
       name: "",
@@ -647,6 +647,7 @@ export default function NewPatientModal({
               ...data.billing,
               total_amount: isSplitBilling ? undefined : data.billing.total_amount,
               splitted_billing: isSplitBilling ? profAmounts : undefined,
+              installment_count: data.billing.installment_count ?? 1,
               installment_interval: isCustomInterval ? null : data.billing.installment_interval,
               first_due_date: isCustomInterval ? null : data.billing.first_due_date,
               installment_amounts: installmentAmounts,

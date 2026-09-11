@@ -11,6 +11,7 @@ import { z } from "zod";
 
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
 import { useAuth } from "@/hooks/use-auth";
+import { translateAuthErrorCode } from "@/lib/auth-error-messages";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
@@ -44,6 +45,34 @@ function LoginForm() {
       });
       const params = new URLSearchParams(searchParams.toString());
       params.delete("confirmation");
+      const newUrl = params.size > 0 ? `?${params.toString()}` : window.location.pathname;
+      router.replace(newUrl);
+    }
+
+    if (searchParams.get("passwordReset") === "success") {
+      toast.success("Senha redefinida com sucesso!", {
+        description: "Faça login com sua nova senha.",
+      });
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("passwordReset");
+      const newUrl = params.size > 0 ? `?${params.toString()}` : window.location.pathname;
+      router.replace(newUrl);
+    }
+
+    // Set by app/auth/callback/route.ts on failure — e.g. a recovery/OAuth link that's
+    // expired, already used, or invalid. GoTrue appends the real reason as #error_code=...
+    // on its own redirect, which survives the callback route's further redirect to here
+    // (browsers keep the previous fragment when a Location header omits its own).
+    if (searchParams.get("error") === "auth_callback_error") {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const errorCode = hashParams.get("error_code");
+      toast.error("Não foi possível concluir a ação", {
+        description:
+          translateAuthErrorCode(errorCode) ??
+          "O link utilizado é inválido ou expirou. Tente novamente.",
+      });
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("error");
       const newUrl = params.size > 0 ? `?${params.toString()}` : window.location.pathname;
       router.replace(newUrl);
     }

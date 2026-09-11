@@ -6,10 +6,7 @@ export const activateBirthModeSchema = z
     birth_mode_labour_type: z.enum(["espontaneo", "induzido"], {
       message: "Selecione o tipo de trabalho de parto",
     }),
-    birth_mode_induction_type: z
-      .enum(["balao", "misoprostol", "ocitocina"])
-      .optional()
-      .nullable(),
+    birth_mode_induction_type: z.enum(["balao", "misoprostol", "ocitocina"]).optional().nullable(),
     labour_start_description: z.string().optional().nullable(),
   })
   .refine((v) => v.birth_mode_labour_type !== "induzido" || !!v.birth_mode_induction_type, {
@@ -28,6 +25,9 @@ export const birthEventDateTimeSchema = {
 // ── Contração ────────────────────────────────────────────────────────────────
 export const birthContractionSchema = z.object({
   duration_seconds: z.coerce.number().int().positive("Duração deve ser maior que zero"),
+  pain_intensity: z.enum(["fraca", "fraca_media", "media", "media_forte", "forte"], {
+    message: "Selecione a intensidade da dor",
+  }),
   ...birthEventDateTimeSchema,
 });
 export type BirthContractionInput = z.infer<typeof birthContractionSchema>;
@@ -81,8 +81,7 @@ export const birthMedicationAdministrationSchema = z
   .refine(
     (v) =>
       v.medication_type !== "ocitocina" ||
-      (v.oxytocin_drip_rate_gtt_per_min !== undefined &&
-        v.oxytocin_drip_rate_gtt_per_min !== null),
+      (v.oxytocin_drip_rate_gtt_per_min !== undefined && v.oxytocin_drip_rate_gtt_per_min !== null),
     {
       message: "Informe o gotejamento da ocitocina",
       path: ["oxytocin_drip_rate_gtt_per_min"],
@@ -124,3 +123,34 @@ export const birthUrineTestSchema = z.object({
   ...birthEventDateTimeSchema,
 });
 export type BirthUrineTestInput = z.infer<typeof birthUrineTestSchema>;
+
+// ── Dinâmica uterina (registro em lote) ──────────────────────────────────────
+export const birthUterineActivitySchema = z
+  .object({
+    interval_minutes: z.union([z.literal(10), z.literal(20), z.literal(30)], {
+      message: "Selecione o intervalo (10, 20 ou 30 minutos)",
+    }),
+    contraction_count: z.coerce.number().int().min(0, "Quantidade inválida"),
+    durations_seconds: z
+      .array(z.coerce.number().int().positive("Duração deve ser maior que zero"))
+      .min(1, "Informe ao menos uma duração"),
+    du_notations: z.array(z.string().min(1)).min(1, "Notação DU não calculada"),
+    ...birthEventDateTimeSchema,
+  })
+  .superRefine((v, ctx) => {
+    if (v.durations_seconds.length !== v.contraction_count) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A quantidade de durações deve ser igual à quantidade de contrações",
+        path: ["durations_seconds"],
+      });
+    }
+    if (v.contraction_count > (v.interval_minutes / 10) * 6) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Quantidade de contrações acima do limite esperado para o intervalo",
+        path: ["contraction_count"],
+      });
+    }
+  });
+export type BirthUterineActivityInput = z.infer<typeof birthUterineActivitySchema>;

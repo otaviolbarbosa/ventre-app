@@ -21,7 +21,12 @@ export default async function PatientPrenatalCardPage() {
     <div>
       <Header title="Cartão pré-natal" />
       <div className="space-y-4 px-4">
-        <PrenatalCard patientId={patient.id} pregnancyId={pregnancy?.id} isEditable={false} />
+        <PrenatalCard
+          patientId={patient.id}
+          pregnancyId={pregnancy?.id}
+          isEditable={false}
+          isGeneralEditable={false}
+        />
       </div>
     </div>
   );
