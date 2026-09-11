@@ -1,11 +1,12 @@
 "use client";
 
-import { deletePlanAction, getPaginatedPlansAction } from "@/actions/plans";
+import { deletePlanAction, getPaginatedPlansAction, togglePlanActiveAction } from "@/actions/plans";
 import { formatCurrency } from "@/lib/utils";
 import type { Tables } from "@ventre/supabase/types";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { DataTable } from "@ventre/ui/shared/data-table";
+import { Switch } from "@ventre/ui/switch";
 import { Pencil } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
@@ -45,6 +46,16 @@ export function PlansTable() {
     },
   });
 
+  const { execute: togglePlanActive } = useAction(togglePlanActiveAction, {
+    onSuccess: () => {
+      loadPlans(lastFetchRef.current);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao atualizar status do plano");
+      loadPlans(lastFetchRef.current);
+    },
+  });
+
   const fetchData = useCallback(
     (page: number, size: number) => {
       lastFetchRef.current = { page, size };
@@ -80,15 +91,6 @@ export function PlansTable() {
             ),
           },
           {
-            label: "Ativo",
-            name: "is_active",
-            callback: (plan) => (
-              <Badge variant={plan.is_active ? "default" : "outline"}>
-                {plan.is_active ? "Ativo" : "Inativo"}
-              </Badge>
-            ),
-          },
-          {
             label: "Valor",
             name: "value",
             callback: (plan) => (
@@ -100,6 +102,23 @@ export function PlansTable() {
             name: "benefits",
             callback: (plan) => (
               <span className="text-muted-foreground">{plan.benefits?.length ?? 0} item(s)</span>
+            ),
+          },
+          {
+            label: "Status",
+            name: "is_active",
+            callback: (plan) => (
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={plan.is_active}
+                  onCheckedChange={(checked: boolean) =>
+                    togglePlanActive({ id: plan.id, is_active: checked })
+                  }
+                />
+                <span className="text-muted-foreground text-xs">
+                  {plan.is_active ? "Ativo" : "Inativo"}
+                </span>
+              </div>
             ),
           },
         ],

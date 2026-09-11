@@ -45,8 +45,13 @@ const deletePlanSchema = z.object({
   id: z.string().uuid(),
 });
 
+const togglePlanActiveSchema = z.object({
+  id: z.string().uuid(),
+  is_active: z.boolean(),
+});
+
 export const createPlanAction = adminActionClient
-  .schema(planSchema)
+  .inputSchema(planSchema)
   .action(async ({ parsedInput, ctx }) => {
     const { error } = await ctx.supabaseAdmin.from("plans").insert({
       ...parsedInput,
@@ -81,5 +86,20 @@ export const deletePlanAction = adminActionClient
     if (error) throw new Error(error.message);
 
     revalidatePath("/plans");
+    return { success: true };
+  });
+
+export const togglePlanActiveAction = adminActionClient
+  .schema(togglePlanActiveSchema)
+  .action(async ({ parsedInput, ctx }) => {
+    const { error } = await ctx.supabaseAdmin
+      .from("plans")
+      .update({ is_active: parsedInput.is_active })
+      .eq("id", parsedInput.id);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/plans");
+    revalidatePath(`/plans/${parsedInput.id}`);
     return { success: true };
   });

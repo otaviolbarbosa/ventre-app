@@ -25,6 +25,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 type Profile = Tables<"users">;
 
@@ -143,9 +144,10 @@ export default function ProfileScreen({ profile, address }: ProfileScreenProps) 
       setAvatarUrl(data.avatar_url);
       await refreshProfile();
       router.refresh();
+      toast.success("Foto de perfil atualizada com sucesso");
     } catch (error) {
       console.error("Upload error:", error);
-      alert(error instanceof Error ? error.message : "Erro ao fazer upload da imagem");
+      toast.error(error instanceof Error ? error.message : "Erro ao fazer upload da imagem");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

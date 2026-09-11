@@ -10,6 +10,7 @@ import PersonalDocumentsFields from "@/components/shared/personal-documents-fiel
 import ProfessionalDocumentsFields from "@/components/shared/professional-documents-fields";
 import { useAuth } from "@/hooks/use-auth";
 import { ESTADOS_BR } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { type RequestEnterpriseInput, requestEnterpriseSchema } from "@/lib/validations/enterprise";
 import {
   type PersonalDocumentsInput,
@@ -28,7 +29,15 @@ import { Card } from "@ventre/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
-import { Baby, Building2, Heart, Loader2, LockKeyhole, LogOut, Stethoscope } from "lucide-react";
+import {
+  Building2,
+  HandHeart,
+  Loader2,
+  LockKeyhole,
+  LogOut,
+  Stethoscope,
+  Syringe,
+} from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -51,18 +60,20 @@ const userRoles: {
   label: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  disabled?: boolean;
 }[] = [
   {
     type: "professional",
     label: "Profissional",
-    description: "Obstetra, enfermeira, doula ou fisioterapeuta",
+    description: "Obstetra, enfermeira ou doula",
     icon: Stethoscope,
   },
   {
     type: "manager",
     label: "Empresa",
-    description: "Gerenciamento de múltiplas profissionais",
+    description: "Gerenciamento de múltiplas profissionais. Disponível em breve.",
     icon: Building2,
+    disabled: true,
   },
   // {
   //   type: "secretary",
@@ -88,13 +99,13 @@ const professionalTypes: {
     type: "enfermeiro",
     label: "Enfermeira",
     description: "Profissional de enfermagem obstétrica",
-    icon: Heart,
+    icon: Syringe,
   },
   {
     type: "doula",
     label: "Doula",
     description: "Suporte contínuo durante a gestação e parto",
-    icon: Baby,
+    icon: HandHeart,
   },
   // {
   // 	type: "fisio",
@@ -371,14 +382,20 @@ export default function OnboardingScreen() {
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          {userRoles.map(({ type, label, description, icon: Icon }) => (
+          {userRoles.map(({ type, label, description, icon: Icon, disabled }) => (
             <button
               key={type}
               type="button"
-              onClick={() => handleRoleSelect(type)}
-              className="group"
+              onClick={() => !disabled && handleRoleSelect(type)}
+              className="group disabled:cursor-not-allowed"
+              disabled={disabled}
             >
-              <Card className="flex h-44 w-44 cursor-pointer flex-col items-center justify-center gap-3 p-4 transition-colors group-hover:bg-muted/50">
+              <Card
+                className={cn(
+                  "flex h-44 w-44 cursor-pointer flex-col items-center justify-center gap-3 p-4 transition-colors group-hover:bg-muted/50",
+                  disabled && "cursor-not-allowed opacity-50 group-hover:bg-transparent",
+                )}
+              >
                 <Icon className="h-10 w-10 text-primary" />
                 <div className="text-center">
                   <p className="font-medium text-sm">{label}</p>

@@ -20,7 +20,7 @@ import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
 import { Input } from "@ventre/ui/input";
 import { Skeleton } from "@ventre/ui/skeleton";
-import { Baby, CalendarPlus, Eye, Search, UserPlusIcon, X } from "lucide-react";
+import { Baby, CalendarPlus, Eye, HandHeart, Search, UserPlusIcon, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -353,7 +353,7 @@ export default function HomeProfessionalScreen({
         <div className="flex h-full flex-col">
           <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} noBg />
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-            <Baby className="h-14 w-14 text-muted-foreground/40" />
+            <HandHeart className="h-14 w-14 text-muted-foregroundx" />
             <div>
               <p className="font-semibold text-lg">Nenhuma gestante cadastrada</p>
               <p className="mt-1 text-muted-foreground text-sm">
