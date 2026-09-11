@@ -3,10 +3,10 @@
 import { deletePlanAction, updatePlanAction } from "@/actions/plans";
 import { Button } from "@ventre/ui/button";
 import { Card, CardContent } from "@ventre/ui/card";
-import { Checkbox } from "@ventre/ui/checkbox";
 import { Input } from "@ventre/ui/input";
 import { Label } from "@ventre/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
+import { Switch } from "@ventre/ui/switch";
 import { Textarea } from "@ventre/ui/textarea";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
@@ -149,12 +149,8 @@ export function PlanEditForm({ plan }: { plan: Plan }) {
             </div>
 
             <div className="flex items-center gap-2">
-              <Checkbox
-                id="is-active"
-                checked={isActive}
-                onCheckedChange={(checked) => setIsActive(checked === true)}
-              />
-              <Label htmlFor="is-active">Plano ativo (visível no paywall)</Label>
+              <Switch checked={isActive} onCheckedChange={setIsActive} />
+              <Label>{isActive ? "Ativo" : "Inativo"}</Label>
             </div>
 
             <div className="flex items-center justify-between pt-2">
