@@ -43,6 +43,7 @@ type PaymentLink = {
   total_subscriptions: number | null;
   used_subscription: number;
   amount: number | null;
+  days_off: number;
   created_at: string;
   updated_at: string;
 };
@@ -64,6 +65,7 @@ type FormState = {
   is_limited: boolean;
   total_subscriptions: string;
   amount: string;
+  days_off: string;
 };
 
 const emptyForm: FormState = {
@@ -76,6 +78,7 @@ const emptyForm: FormState = {
   is_limited: false,
   total_subscriptions: "",
   amount: "",
+  days_off: "",
 };
 
 // next-safe-action's default validation errors shape (no custom
@@ -180,6 +183,7 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
       is_limited: link.is_limited,
       total_subscriptions: link.total_subscriptions != null ? String(link.total_subscriptions) : "",
       amount: link.amount != null ? String(link.amount) : "",
+      days_off: link.days_off ? String(link.days_off) : "",
     });
     setIsDialogOpen(true);
   }
@@ -198,6 +202,7 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
       is_limited: form.is_limited,
       total_subscriptions: form.total_subscriptions !== "" ? Number(form.total_subscriptions) : null,
       amount: form.amount !== "" ? Number(form.amount) : null,
+      days_off: form.days_off !== "" ? Number(form.days_off) : 0,
     };
 
     if (editingId) {
@@ -228,6 +233,7 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
               <TableHead>Frequência</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Valor</TableHead>
+              <TableHead>Teste grátis</TableHead>
               <TableHead>Uso</TableHead>
               <TableHead>Stripe ID</TableHead>
               <TableHead />
@@ -252,6 +258,7 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
                       })
                     : "—"}
                 </TableCell>
+                <TableCell>{link.days_off > 0 ? `${link.days_off} dias` : "—"}</TableCell>
                 <TableCell>
                   {link.is_limited ? `${link.used_subscription}/${link.total_subscriptions}` : "Ilimitado"}
                 </TableCell>
@@ -278,7 +285,7 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
             ))}
             {links.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Nenhum link de pagamento cadastrado.
                 </TableCell>
               </TableRow>
@@ -340,6 +347,17 @@ export function PlanPaymentLinksSection({ planId }: { planId: string }) {
                 value={form.amount}
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
                 placeholder="9000"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>Dias de teste grátis</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.days_off}
+                onChange={(e) => setForm((f) => ({ ...f, days_off: e.target.value }))}
+                placeholder="0"
               />
             </div>
 
