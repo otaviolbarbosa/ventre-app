@@ -1,15 +1,19 @@
 "use client";
 
 import { createStripeCheckoutSessionAction } from "@/actions/create-stripe-checkout-session-action";
+import { getReactivationPaymentLinkAction } from "@/actions/get-reactivation-payment-link-action";
 import { useAuth } from "@/hooks/use-auth";
+import { canPurchaseFromPaywall, getPaywallUnavailableMessage } from "@/lib/paywall-access";
+import { getSubscriptionRenewalMessage } from "@/lib/subscription-renewal-message";
 import { cn } from "@/lib/utils";
 import { type Tables, supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import { Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
+import { useConfirmModal } from "@ventre/ui/hooks/use-confirmation-modal";
+import { BadgePercent, Check, Loader2, Lock, RefreshCw, Shield, Star } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // const NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -45,24 +49,45 @@ function formatBRL(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+export type RenewalInfo = {
+  subscriptionId: string;
+  status: Tables<"subscriptions">["status"];
+  expiresAt: string | null;
+};
+
 export default function PaywallScreen({
   plan,
   monthPrice,
   yearPrice,
+  monthTrialDays = 0,
+  yearTrialDays = 0,
+  userType = null,
+  renewal = null,
 }: {
   plan: Tables<"plans">;
   monthPrice: number | null;
   yearPrice: number | null;
+  monthTrialDays?: number;
+  yearTrialDays?: number;
+  userType?: Tables<"users">["user_type"] | null;
+  renewal?: RenewalInfo | null;
 }) {
   const [billing, setBilling] = useState<BillingCycle>("month");
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  const { confirm } = useConfirmModal();
+  const hasOpenedRenewalModal = useRef(false);
   const isAnnual = billing === "year";
+  const canPurchase = canPurchaseFromPaywall(userType);
+  const trialDays = isAnnual ? yearTrialDays : monthTrialDays;
 
   const { executeAsync: executeCreateStripeCheckoutSession } = useAction(
     createStripeCheckoutSessionAction,
+  );
+  const { executeAsync: executeGetReactivationPaymentLink } = useAction(
+    getReactivationPaymentLinkAction,
   );
 
   useEffect(() => {
@@ -92,6 +117,33 @@ export default function PaywallScreen({
       isMounted = false;
     };
   }, [user?.id]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: confirm/executeGetReactivationPaymentLink are stable, only want this to run once per renewal
+  useEffect(() => {
+    if (!renewal || hasOpenedRenewalModal.current) return;
+    hasOpenedRenewalModal.current = true;
+
+    confirm({
+      title: "Assinatura necessária",
+      description: `${getSubscriptionRenewalMessage(renewal.status)} Regularize para continuar usando o Ventre.`,
+      confirmLabel: "Regularizar assinatura",
+      cancelLabel: "Ver planos",
+      onConfirm: async () => {
+        const { data, serverError } = await executeGetReactivationPaymentLink({
+          subscriptionId: renewal.subscriptionId,
+        });
+
+        if (serverError || !data?.url) {
+          toast.error(
+            "Não encontramos um link de pagamento para o seu plano anterior. Escolha um novo plano abaixo.",
+          );
+          return;
+        }
+
+        window.open(data.url, "_blank", "noopener,noreferrer");
+      },
+    });
+  }, [renewal]);
 
   const toggleBilling = () => setBilling((prev) => (prev === "month" ? "year" : "month"));
 
@@ -153,34 +205,34 @@ export default function PaywallScreen({
         </div>
 
         {/* Billing Toggle */}
-        <div className="hero-animate hero-animate-2 mb-10 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setBilling("month")}
-            className={cn(
-              "text-sm transition-colors",
-              !isAnnual ? "font-semibold text-foreground" : "text-muted-foreground",
-            )}
-          >
-            Mensal
-          </button>
-
-          <button
-            type="button"
-            role="switch"
-            aria-checked={isAnnual}
-            onClick={toggleBilling}
-            className="relative h-7 w-14 cursor-pointer rounded-full bg-primary"
-          >
-            <div
+        <div className="mb-10 flex h-14 flex-col items-center gap-2">
+          <div className="hero-animate hero-animate-2 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setBilling("month")}
               className={cn(
-                "absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-300",
-                isAnnual ? "translate-x-8" : "translate-x-1",
+                "text-sm transition-colors",
+                !isAnnual ? "font-semibold text-foreground" : "text-muted-foreground",
               )}
-            />
-          </button>
+            >
+              Mensal
+            </button>
 
-          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isAnnual}
+              onClick={toggleBilling}
+              className="relative h-7 w-14 cursor-pointer rounded-full bg-primary"
+            >
+              <div
+                className={cn(
+                  "absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-300",
+                  isAnnual ? "translate-x-8" : "translate-x-1",
+                )}
+              />
+            </button>
+
             <button
               type="button"
               onClick={() => setBilling("year")}
@@ -191,8 +243,10 @@ export default function PaywallScreen({
             >
               Anual
             </button>
-            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Economize ~17%</Badge>
           </div>
+          {isAnnual && (
+            <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Economize ~17%</Badge>
+          )}
         </div>
 
         {/* Pricing Cards */}
@@ -239,7 +293,7 @@ export default function PaywallScreen({
                 <p className="text-muted-foreground text-sm">{plan.description}</p>
               </div>
 
-              <div className="mb-6">
+              <div className="mb-4">
                 {isAnnual ? (
                   yearPrice != null ? (
                     <>
@@ -278,6 +332,13 @@ export default function PaywallScreen({
                 Tudo do gratuito, mais:
               </p> */}
 
+              {trialDays > 0 && (
+                <Badge className="mb-4 w-fit space-x-2 bg-green-100 text-green-700 hover:bg-green-100">
+                  <BadgePercent size="14" />
+                  <span>Teste gratuitamente por {trialDays} dias</span>
+                </Badge>
+              )}
+
               <div className="flex-1 space-y-2.5">
                 {plan.benefits.map((text) => (
                   <div key={text} className="flex items-center gap-3">
@@ -289,18 +350,24 @@ export default function PaywallScreen({
                 ))}
               </div>
 
-              <Button
-                className="gradient-primary mt-8 w-full"
-                onClick={() => handleSignPlan("plus-care")}
-                disabled={
-                  isLoadingCheckout ||
-                  hasActiveSubscription ||
-                  (isAnnual ? yearPrice == null : monthPrice == null)
-                }
-              >
-                {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {hasActiveSubscription ? "Sua assinatura já está ativa" : "Assinar Mais Cuidado"}
-              </Button>
+              {canPurchase ? (
+                <Button
+                  className="gradient-primary mt-8 w-full"
+                  onClick={() => handleSignPlan("plus-care")}
+                  disabled={
+                    isLoadingCheckout ||
+                    hasActiveSubscription ||
+                    (isAnnual ? yearPrice == null : monthPrice == null)
+                  }
+                >
+                  {isLoadingCheckout && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {hasActiveSubscription ? "Sua assinatura já está ativa" : "Assinar Mais Cuidado"}
+                </Button>
+              ) : (
+                <div className="mt-8 rounded-lg bg-muted px-4 py-3 text-center text-muted-foreground text-sm">
+                  {getPaywallUnavailableMessage(userType)}
+                </div>
+              )}
             </div>
           </div>
 

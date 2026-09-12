@@ -1,6 +1,7 @@
 "use client";
 
 import { Logo } from "@/components/shared/logo";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@ventre/ui/button";
 import { ArrowRight, Menu, X } from "lucide-react";
@@ -15,11 +16,14 @@ const navLinks = [
 
 type Props = {
   userId?: string;
+  hasActiveSubscription?: boolean;
 };
 
-export function PublicHeaderClient({ userId }: Props) {
+export function PublicHeaderClient({ userId, hasActiveSubscription }: Props) {
+  const { signOut } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const showSignOut = Boolean(userId) && !hasActiveSubscription;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -72,11 +76,21 @@ export function PublicHeaderClient({ userId }: Props) {
           {/* Desktop auth */}
           <div className="hidden items-center gap-2 md:flex">
             {userId ? (
-              <Link href="/home">
-                <Button className="gradient-primary gap-2 shadow-soft">
-                  Acessar Painel <ArrowRight className="h-3.5 w-3.5" />
+              showSignOut ? (
+                <Button
+                  className="text-foreground/60 hover:text-foreground"
+                  variant="ghost"
+                  onClick={() => signOut()}
+                >
+                  Sair
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/home">
+                  <Button className="gradient-primary gap-2 shadow-soft">
+                    Acessar Painel <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              )
             ) : (
               <>
                 <Link href="/login">
@@ -137,11 +151,24 @@ export function PublicHeaderClient({ userId }: Props) {
 
           <div className="flex flex-col gap-2 pb-2">
             {userId ? (
-              <Link href="/home" onClick={() => setMenuOpen(false)}>
-                <Button className="gradient-primary w-full gap-2">
-                  Acessar Painel <ArrowRight className="h-3.5 w-3.5" />
+              showSignOut ? (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    signOut();
+                  }}
+                >
+                  Sair
                 </Button>
-              </Link>
+              ) : (
+                <Link href="/home" onClick={() => setMenuOpen(false)}>
+                  <Button className="gradient-primary w-full gap-2">
+                    Acessar Painel <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              )
             ) : (
               <>
                 <Link href="/login" onClick={() => setMenuOpen(false)}>

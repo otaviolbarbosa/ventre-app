@@ -13,6 +13,7 @@ import { Suspense } from "react";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { profile } = await getServerAuth();
+
   const showProfessionalDocumentsBanner = needsProfessionalDocuments(
     (profile?.professional_type as ProfessionalType | null) ?? null,
     profile?.professional_documents ?? null,
