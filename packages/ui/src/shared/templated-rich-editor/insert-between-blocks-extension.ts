@@ -1,6 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { findGapParagraphRangeBefore } from "./find-gap-paragraph-range";
 
 const pluginKey = new PluginKey("insertBetweenBlocks");
 
@@ -39,8 +40,21 @@ export const InsertBetweenBlocks = Extension.create({
             if (!editor.isEditable) return DecorationSet.empty;
 
             const decorations: Decoration[] = [];
+            const childCount = state.doc.childCount;
 
-            state.doc.forEach((_node, offset) => {
+            state.doc.forEach((node, offset, index) => {
+              // Skip the "before" widget for a trailing empty paragraph: it's the
+              // cursor-accessibility placeholder ProseMirror auto-inserts after the doc's
+              // last node (see find-gap-paragraph-range.ts), not real content, and it has
+              // no visible height — so its "before" widget renders immediately on top of
+              // the end-of-doc widget below, reading as one control duplicated on screen.
+              // The end-of-doc widget alone already covers inserting at that position.
+              const isTrailingEmptyPlaceholder =
+                index === childCount - 1 &&
+                node.type.name === "paragraph" &&
+                node.content.size === 0;
+              if (isTrailingEmptyPlaceholder) return;
+
               decorations.push(
                 Decoration.widget(offset, () => makeInsertWidget(offset), {
                   side: -1,
@@ -78,13 +92,32 @@ export const InsertBetweenBlocks = Extension.create({
               if (posAttr === null || posAttr === undefined) return false;
 
               const insertPos = Number(posAttr);
-              const emptyBlock = view.state.schema.nodeFromJSON({
+              const emptyBlockJson = {
                 type: "templateBlock",
                 attrs: { templateId: null, templateScope: null, label: null },
                 content: [{ type: "paragraph" }],
-              });
+              };
 
-              view.dispatch(view.state.tr.insert(insertPos, emptyBlock));
+              // Mirrors insertTemplate's placeholder handling in templated-rich-editor.tsx:
+              // a raw `tr.insert` here would leave the doc's baseline empty paragraph (or a
+              // stranded gap paragraph left behind by TrailingNode after a templateBlock)
+              // as a real sibling next to the new block instead of being consumed by it —
+              // which is how a lone leftover empty paragraph ends up sitting beside (or, once
+              // TrailingNode adds its own after the new isolating block, on both sides of)
+              // the newly inserted block.
+              if (editor.isEmpty) {
+                editor
+                  .chain()
+                  .insertContentAt({ from: 0, to: editor.state.doc.content.size }, emptyBlockJson)
+                  .run();
+                return true;
+              }
+
+              const gapRange = findGapParagraphRangeBefore(editor.state.doc, insertPos);
+              editor
+                .chain()
+                .insertContentAt(gapRange ?? insertPos, emptyBlockJson)
+                .run();
               return true;
             },
           },

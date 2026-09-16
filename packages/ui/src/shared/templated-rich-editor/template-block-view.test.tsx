@@ -62,6 +62,27 @@ describe("TemplateBlockView", () => {
     expect(deleteButton).toBeInTheDocument();
     expect(dragHandle).toBeInTheDocument();
 
+    // Regression check: a custom node view with its own `contentDOM` (this one renders
+    // its content via `NodeViewContent`) never gets ProseMirror's automatic
+    // `dom.draggable = true` — that's only applied to content-less node views (see
+    // prosemirror-view's `ViewDesc.create`). Without this attribute on the node view's
+    // root DOM, the browser never fires a native `dragstart` for `onDragStart` /
+    // `stopEvent` (wired up by Tiptap's NodeView base class) to react to, so the
+    // `data-drag-handle` grip button above did nothing — confirmed live in Storybook
+    // before this was added.
+    const wrapper = dragHandle.closest("[data-node-view-wrapper]");
+    expect(wrapper).toHaveAttribute("draggable", "true");
+
+    // Regression check: Tiptap's NodeView.stopEvent (@tiptap/core) treats a mousedown
+    // whose target tag is INPUT/BUTTON/SELECT/TEXTAREA as plain input interaction and
+    // returns early — before it marks the node "currently dragging". A drag handle
+    // rendered as a native <button> hit that early return, so the following native
+    // `dragstart` on the wrapper got swallowed by stopEvent (it never reached
+    // ProseMirror's own drag handling) even though the drag gesture itself still looked
+    // like it was working. Confirmed live: dragging visibly started, but dropping never
+    // reordered anything.
+    expect(["INPUT", "BUTTON", "SELECT", "TEXTAREA"]).not.toContain(dragHandle.tagName);
+
     saveButton.click();
     expect(onRequestSave).toHaveBeenCalledWith(0, {
       templateId: "t1",
@@ -89,5 +110,8 @@ describe("TemplateBlockView", () => {
     expect(screen.queryByLabelText("Salvar bloco como modelo")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Remover bloco")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Reordenar bloco")).not.toBeInTheDocument();
+
+    const wrapper = document.querySelector("[data-node-view-wrapper]");
+    expect(wrapper).not.toHaveAttribute("draggable", "true");
   });
 });

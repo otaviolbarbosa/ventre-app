@@ -21,6 +21,7 @@ import {
   Underline,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { AutoWrapLooseContent } from "./auto-wrap-loose-content-extension";
 import { findGapParagraphRangeBefore } from "./find-gap-paragraph-range";
 import { InsertBetweenBlocks } from "./insert-between-blocks-extension";
 import { SaveBlockChoiceModal } from "./save-block-choice-modal";
@@ -92,6 +93,7 @@ export function TemplatedRichEditor({
         },
       }),
       InsertBetweenBlocks,
+      AutoWrapLooseContent,
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

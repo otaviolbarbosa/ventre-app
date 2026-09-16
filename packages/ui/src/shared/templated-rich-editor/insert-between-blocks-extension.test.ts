@@ -31,6 +31,52 @@ describe("InsertBetweenBlocks", () => {
     element.remove();
   });
 
+  it("renders a single widget for a fully empty doc (just the placeholder paragraph)", () => {
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    const editor = new Editor({
+      element,
+      extensions: [Document, Text, Paragraph, InsertBetweenBlocks],
+      content: { type: "doc", content: [{ type: "paragraph" }] },
+    });
+
+    const widgets = element.querySelectorAll("[data-insert-block-at]");
+    expect(widgets.length).toBe(1);
+
+    editor.destroy();
+    element.remove();
+  });
+
+  it("renders a single trailing widget after a templateBlock followed by its auto-inserted empty paragraph", () => {
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    const editor = new Editor({
+      element,
+      extensions: [Document, Text, TemplateBlockParagraph, TemplateBlock, InsertBetweenBlocks],
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "templateBlock",
+            attrs: { templateId: null, templateScope: null, label: null },
+            content: [{ type: "paragraph", content: [{ type: "text", text: "bloco" }] }],
+          },
+          { type: "paragraph" },
+        ],
+      },
+    });
+
+    const widgets = element.querySelectorAll("[data-insert-block-at]");
+    // One widget before the templateBlock, one at the end — the trailing empty
+    // paragraph's own "before" widget is suppressed since it sits right on top of it.
+    expect(widgets.length).toBe(2);
+
+    editor.destroy();
+    element.remove();
+  });
+
   it("clicking a widget inserts an empty templateBlock at that position", () => {
     const element = document.createElement("div");
     document.body.appendChild(element);
@@ -49,6 +95,64 @@ describe("InsertBetweenBlocks", () => {
 
     const json = editor.getJSON();
     expect(json.content?.some((node) => node.type === "templateBlock")).toBe(true);
+
+    editor.destroy();
+    element.remove();
+  });
+
+  it("clicking the sole widget on a fully empty doc replaces the placeholder instead of inserting beside it", () => {
+    // Regression test: the click handler used to do a raw `tr.insert`, which left the
+    // doc's baseline empty paragraph as a real sibling next to the new block (and, with
+    // TrailingNode active in the real app, another empty paragraph appended after the
+    // new block too) — producing duplicate "+" widgets around the block. Confirmed live
+    // in Storybook.
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    const editor = new Editor({
+      element,
+      extensions: [Document, Text, TemplateBlockParagraph, TemplateBlock, InsertBetweenBlocks],
+      content: { type: "doc", content: [{ type: "paragraph" }] },
+    });
+
+    const widget = element.querySelector("[data-insert-block-at]") as HTMLButtonElement;
+    widget.click();
+
+    const json = editor.getJSON();
+    expect(json.content?.length).toBe(1);
+    expect(json.content?.[0]?.type).toBe("templateBlock");
+
+    editor.destroy();
+    element.remove();
+  });
+
+  it("clicking the end widget after a templateBlock consumes its trailing gap paragraph instead of leaving it stranded", () => {
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    const editor = new Editor({
+      element,
+      extensions: [Document, Text, TemplateBlockParagraph, TemplateBlock, InsertBetweenBlocks],
+      content: {
+        type: "doc",
+        content: [
+          {
+            type: "templateBlock",
+            attrs: { templateId: null, templateScope: null, label: null },
+            content: [{ type: "paragraph", content: [{ type: "text", text: "bloco" }] }],
+          },
+          { type: "paragraph" },
+        ],
+      },
+    });
+
+    const widgets = element.querySelectorAll("[data-insert-block-at]");
+    const endWidget = widgets[widgets.length - 1] as HTMLButtonElement;
+    endWidget.click();
+
+    const json = editor.getJSON();
+    expect(json.content?.length).toBe(2);
+    expect(json.content?.every((node) => node.type === "templateBlock")).toBe(true);
 
     editor.destroy();
     element.remove();
