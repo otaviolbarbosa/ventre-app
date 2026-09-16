@@ -1266,12 +1266,12 @@ Expected: FAIL — stub renders no buttons.
 // apps/web/src/components/shared/templated-rich-editor/template-block-view.tsx
 "use client";
 
-import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
+import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { cn } from "@ventre/ui/utils";
 import { GripVertical, Save, Trash2 } from "lucide-react";
 import type { TemplateBlockAttrs, TemplateBlockOptions } from "./template-block-node";
 
-export function TemplateBlockView({ node, editor, getPos, extension }: NodeViewProps) {
+export function TemplateBlockView({ node, editor, getPos, extension }: ReactNodeViewProps) {
   const attrs = node.attrs as TemplateBlockAttrs;
   const options = extension.options as TemplateBlockOptions;
   const editable = editor.isEditable;
@@ -1338,7 +1338,7 @@ export function TemplateBlockView({ node, editor, getPos, extension }: NodeViewP
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test -- template-block-view.test.tsx`
-Expected: PASS (2 tests). If `NodeViewProps` isn't exported from `@tiptap/react` in the installed version, `pnpm check-types` will fail with a clear "no exported member" error — check `node_modules/@tiptap/react/dist/index.d.ts` for the actual export name and adjust the import.
+Expected: PASS (2 tests).
 
 - [ ] **Step 5: Verify types**
 
