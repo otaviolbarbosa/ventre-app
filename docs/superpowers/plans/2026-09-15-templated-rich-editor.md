@@ -193,7 +193,9 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
     eq: vi.fn(() => builder),
     or: vi.fn(() => builder),
     order: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
     then: (
       onFulfilled: (value: typeof result) => unknown,
       onRejected?: (reason: unknown) => unknown,
@@ -343,7 +345,9 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
       return builder;
     }),
     select: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
   };
   return builder;
 }
@@ -500,7 +504,9 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
     update: vi.fn(() => builder),
     select: vi.fn(() => builder),
     eq: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
   };
   return builder;
 }
@@ -651,7 +657,9 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
     delete: vi.fn(() => builder),
     select: vi.fn(() => builder),
     eq: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
   };
   return builder;
 }
