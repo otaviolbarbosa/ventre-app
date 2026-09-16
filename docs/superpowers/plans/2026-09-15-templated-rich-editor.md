@@ -779,15 +779,19 @@ Edit `apps/web/package.json`, adding to `dependencies` (matching the versions al
 ```json
 "@tiptap/core": "^3.0.0",
 "@tiptap/extension-bullet-list": "^3.0.0",
+"@tiptap/extension-document": "^3.0.0",
 "@tiptap/extension-heading": "^3.0.0",
 "@tiptap/extension-ordered-list": "^3.0.0",
 "@tiptap/extension-paragraph": "^3.0.0",
+"@tiptap/extension-text": "^3.0.0",
 "@tiptap/extension-text-align": "^3.0.0",
 "@tiptap/extension-text-style": "^3.0.0",
 "@tiptap/pm": "^3.0.0",
 "@tiptap/react": "^3.0.0",
 "@tiptap/starter-kit": "^3.0.0",
 ```
+
+`@tiptap/extension-document` and `@tiptap/extension-text` are added here because Tasks 7-9's tests construct headless editors directly with `Document`/`Text` (not via `StarterKit`) — they're not otherwise used by the app, but need to be direct dependencies for pnpm's strict resolution to allow importing them.
 
 Run: `pnpm install`
 Expected: lockfile updates, no errors.
@@ -871,7 +875,7 @@ Expected: FAIL — module not found.
 
 ```typescript
 // apps/web/src/components/shared/templated-rich-editor/unwrap-template-blocks.ts
-import type { JSONContent } from "@tiptap/react";
+import type { JSONContent } from "@tiptap/core";
 
 export function unwrapTemplateBlocks(node: JSONContent): JSONContent {
   if (!node.content) return node;
@@ -937,9 +941,9 @@ This test mounts a headless Tiptap `Editor` (not `useEditor`/React) with just en
 ```typescript
 // apps/web/src/components/shared/templated-rich-editor/template-block-node.test.ts
 // @vitest-environment happy-dom
-import { Document } from "@tiptap/extension-document";
-import { Text } from "@tiptap/extension-text";
-import { Editor } from "@tiptap/react";
+import Document from "@tiptap/extension-document";
+import Text from "@tiptap/extension-text";
+import { Editor } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 import { TemplateBlock, TemplateBlockParagraph } from "./template-block-node";
 
@@ -1139,9 +1143,9 @@ Mounting a real NodeView standalone (outside a full `Editor`) isn't practical �
 ```tsx
 // apps/web/src/components/shared/templated-rich-editor/template-block-view.test.tsx
 // @vitest-environment happy-dom
-import { Document } from "@tiptap/extension-document";
-import { Text } from "@tiptap/extension-text";
-import { Editor } from "@tiptap/react";
+import Document from "@tiptap/extension-document";
+import Text from "@tiptap/extension-text";
+import { Editor } from "@tiptap/core";
 import { cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TemplateBlock, TemplateBlockParagraph } from "./template-block-node";
@@ -1331,10 +1335,10 @@ git commit -m "feat(editor): add TemplateBlockView chrome (drag handle, save, de
 ```typescript
 // apps/web/src/components/shared/templated-rich-editor/insert-between-blocks-extension.test.ts
 // @vitest-environment happy-dom
-import { Document } from "@tiptap/extension-document";
-import { Paragraph } from "@tiptap/extension-paragraph";
-import { Text } from "@tiptap/extension-text";
-import { Editor } from "@tiptap/react";
+import Document from "@tiptap/extension-document";
+import Paragraph from "@tiptap/extension-paragraph";
+import Text from "@tiptap/extension-text";
+import { Editor } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 import { InsertBetweenBlocks } from "./insert-between-blocks-extension";
 import { TemplateBlock, TemplateBlockParagraph } from "./template-block-node";
@@ -1976,9 +1980,10 @@ Expected: FAIL — module not found.
 // apps/web/src/components/shared/templated-rich-editor/templated-rich-editor.tsx
 "use client";
 
+import type { JSONContent } from "@tiptap/core";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { TextStyleKit } from "@tiptap/extension-text-style";
-import { EditorContent, type JSONContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import type { Tables } from "@ventre/supabase/types";
 import { ConfirmModal } from "@ventre/ui/shared/confirm-modal";
@@ -2006,6 +2011,7 @@ import {
   TemplateBlockHeading,
   TemplateBlockOrderedList,
   TemplateBlockParagraph,
+  type TemplateBlockScope,
 } from "./template-block-node";
 
 export interface TemplatedRichEditorProps {
@@ -2087,11 +2093,19 @@ export function TemplatedRichEditor({
   function insertTemplate(template: Tables<"document_templates">) {
     const pos = editor.state.selection.to;
     const templateContent = template.content as unknown as JSONContent;
+    // document_templates.scope is a plain `text` column (constrained by a CHECK, not a
+    // Postgres enum), so the generated type is `string`, not the "personal" | "global"
+    // union TemplateBlockAttrs expects — the cast is safe because the DB constraint
+    // already guarantees one of those two values.
     editor
       .chain()
       .insertContentAt(pos, {
         type: "templateBlock",
-        attrs: { templateId: template.id, templateScope: template.scope, label: template.title },
+        attrs: {
+          templateId: template.id,
+          templateScope: template.scope as TemplateBlockScope,
+          label: template.title,
+        },
         content: templateContent.content ?? [{ type: "paragraph" }],
       })
       .run();
