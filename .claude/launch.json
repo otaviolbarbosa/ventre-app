@@ -14,6 +14,16 @@
       "runtimeArgs": ["--filter", "admin", "exec", "next", "dev", "--port", "3001"],
       "port": 3001,
       "url": "http://localhost:3001"
+    },
+    {
+      "name": "storybook",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.nvm/versions/node/v22.18.0/bin:$PATH\" && exec pnpm --filter storybook exec storybook dev -p 6006 --ci"
+      ],
+      "port": 6006,
+      "url": "http://localhost:6006"
     }
   ]
 }
