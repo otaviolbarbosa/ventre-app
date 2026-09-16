@@ -2054,6 +2054,59 @@ describe("TemplatedRichEditor", () => {
       );
     });
   });
+
+  it("inserts a new templateBlock as a top-level sibling, not nested, when the caret is inside an existing templateBlock", async () => {
+    // This is the one test exercising the actual reason resolveTopLevelInsertPos exists:
+    // Task 7 confirmed the schema alone does NOT reject a templateBlock nested inside
+    // another one, so this insertion-position logic is the only thing standing between
+    // the feature and nested blocks. The other insertion test (test 1) inserts into an
+    // empty doc, where the caret is already at the top level — it never exercises the
+    // depth-2 case (caret inside an existing block's paragraph) this helper is for.
+    const onChange = vi.fn();
+    const content = {
+      type: "doc",
+      content: [
+        {
+          type: "templateBlock",
+          attrs: { templateId: "t1", templateScope: "personal", label: "Hemograma completo" },
+          content: [{ type: "paragraph", content: [{ type: "text", text: "HEMOGRAMA" }] }],
+        },
+      ],
+    };
+
+    render(
+      <TemplatedRichEditor
+        content={content}
+        onChange={onChange}
+        templates={[PERSONAL_TEMPLATE]}
+        onOverwriteTemplate={vi.fn()}
+        onCreateTemplate={vi.fn()}
+      />,
+    );
+
+    // Click into the existing block's text to move the caret there — ProseMirror syncs
+    // its selection off the browser's own Selection/Range state on click. If this
+    // doesn't reliably move ProseMirror's selection under happy-dom (unlike a real
+    // browser), that's worth escalating rather than guessing around: try
+    // editor.commands.setTextSelection at a known position instead (this requires
+    // exposing the editor instance for the test, e.g. a test-only ref/callback prop —
+    // only add that if the click-based approach genuinely doesn't work here).
+    const existingText = await screen.findByText("HEMOGRAMA");
+    await userEvent.click(existingText);
+
+    await userEvent.click(await screen.findByLabelText("Inserir modelo Hemograma completo"));
+
+    await waitFor(() => {
+      const lastCall = onChange.mock.calls.at(-1)?.[0];
+      const topLevelNodes: { type?: string; content?: { type?: string }[] }[] =
+        lastCall?.content ?? [];
+
+      expect(topLevelNodes.filter((node) => node.type === "templateBlock").length).toBe(2);
+      for (const node of topLevelNodes) {
+        expect(node.content?.some((child) => child.type === "templateBlock")).toBe(false);
+      }
+    });
+  });
 });
 ```
 
@@ -2088,7 +2141,7 @@ import {
   Plus,
   Underline,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { InsertBetweenBlocks } from "./insert-between-blocks-extension";
 import { SaveBlockChoiceModal } from "./save-block-choice-modal";
 import { SaveBlockTemplateModal } from "./save-block-template-modal";
@@ -2168,6 +2221,19 @@ export function TemplatedRichEditor({
     onUpdate: ({ editor: e }) => onChange(e.getJSON()),
   });
 
+  // useEditor only applies `content` at creation time — it does not re-parse it into the
+  // doc on later prop updates. A consuming screen that loads its document asynchronously
+  // (the expected real usage) would otherwise see a permanently blank editor. Mirrors the
+  // same fix already used by the sibling RichEditor (packages/ui/src/shared/rich-editor/
+  // rich-editor.tsx:61-65), adapted for JSON (RichEditor compares HTML strings) — the
+  // stringify comparison guards against clobbering the user's own in-flight edits on every
+  // onChange round-trip (onChange fires with the same content `content` was just set to).
+  useEffect(() => {
+    if (!editor) return;
+    if (JSON.stringify(content) === JSON.stringify(editor.getJSON())) return;
+    editor.commands.setContent(content);
+  }, [editor, content]);
+
   if (!editor) return null;
 
   // Resolves to the position right after the top-level block containing `pos` (or `pos`
@@ -2207,13 +2273,20 @@ export function TemplatedRichEditor({
     setIsSaving(true);
     try {
       const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as JSONContent | undefined;
-      if (nodeJson?.content) {
-        await onOverwriteTemplate(activeBlock.attrs.templateId, {
-          type: "doc",
-          content: nodeJson.content,
-        });
-      }
+      if (!nodeJson?.content) return;
+      await onOverwriteTemplate(activeBlock.attrs.templateId, {
+        type: "doc",
+        content: nodeJson.content,
+      });
       setSaveStep(null);
+    } catch (error) {
+      // Surfacing this to the user (toast, inline error) is the consuming screen's
+      // responsibility — onOverwriteTemplate is expected to come from a hook like
+      // next-safe-action's useAction, which has its own onError handling. This catch
+      // exists only so a rejection doesn't become an unhandled promise rejection;
+      // leaving saveStep untouched (not calling setSaveStep(null)) keeps the modal open
+      // so the user can retry instead of it silently closing as if it had succeeded.
+      console.error(error);
     } finally {
       setIsSaving(false);
     }
@@ -2224,19 +2297,20 @@ export function TemplatedRichEditor({
     setIsSaving(true);
     try {
       const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as JSONContent | undefined;
-      if (nodeJson?.content) {
-        const { id } = await onCreateTemplate(title, { type: "doc", content: nodeJson.content });
-        editor
-          .chain()
-          .command(({ tr }) => {
-            tr.setNodeAttribute(activeBlock.pos, "templateId", id);
-            tr.setNodeAttribute(activeBlock.pos, "templateScope", "personal");
-            tr.setNodeAttribute(activeBlock.pos, "label", title);
-            return true;
-          })
-          .run();
-      }
+      if (!nodeJson?.content) return;
+      const { id } = await onCreateTemplate(title, { type: "doc", content: nodeJson.content });
+      editor
+        .chain()
+        .command(({ tr }) => {
+          tr.setNodeAttribute(activeBlock.pos, "templateId", id);
+          tr.setNodeAttribute(activeBlock.pos, "templateScope", "personal");
+          tr.setNodeAttribute(activeBlock.pos, "label", title);
+          return true;
+        })
+        .run();
       setSaveStep(null);
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsSaving(false);
     }
@@ -2363,6 +2437,7 @@ export function TemplatedRichEditor({
               <button
                 type="button"
                 onClick={() => insertTemplate(template)}
+                disabled={disabled}
                 aria-label={`Inserir modelo ${template.title}`}
               >
                 <Plus className="h-4 w-4" />
@@ -2404,7 +2479,7 @@ export function TemplatedRichEditor({
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `pnpm --filter web test -- templated-rich-editor.test.tsx`
-Expected: PASS (4 tests).
+Expected: PASS (5 tests).
 
 - [ ] **Step 5: Verify types and lint across the whole feature**
 
