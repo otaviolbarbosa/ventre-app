@@ -954,11 +954,11 @@ This test mounts a headless Tiptap `Editor` (not `useEditor`/React) with just en
 // @vitest-environment happy-dom
 import Document from "@tiptap/extension-document";
 import Text from "@tiptap/extension-text";
-import { Editor } from "@tiptap/core";
+import { Editor, type Content } from "@tiptap/core";
 import { describe, expect, it } from "vitest";
 import { TemplateBlock, TemplateBlockParagraph } from "./template-block-node";
 
-function makeEditor(content: unknown) {
+function makeEditor(content: Content) {
   return new Editor({
     extensions: [Document, Text, TemplateBlockParagraph, TemplateBlock],
     content,
