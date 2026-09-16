@@ -2,6 +2,21 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Nota (2026-09-16):** depois que este plano foi executado (Tasks 1-12) e
+> passou pela revisão final, o componente `templated-rich-editor` (e tudo
+> dentro dele — node, NodeView, modais, extensão de inserção,
+> `unwrapTemplateBlocks`) foi movido de `apps/web/src/components/shared/
+> templated-rich-editor/` para `packages/ui/src/shared/templated-rich-
+> editor/`, com infra de testes (Vitest + Testing Library) configurada
+> dentro do próprio `packages/ui`. As referências a `apps/web/.../
+> templated-rich-editor/` abaixo (e nos briefs de cada task) refletem os
+> caminhos originais de quando o plano foi escrito e executado — o código
+> real está em `packages/ui`. Também foram adicionadas stories em
+> `apps/storybook/src/stories/TemplatedRichEditor.stories.tsx`, cuja
+> verificação ao vivo encontrou e corrigiu um bug real no widget de
+> inserção "+" (posição obsoleta após o documento crescer) que nenhum teste
+> automatizado exercitava.
+
 **Goal:** Build a Tiptap-based rich text editor (`TemplatedRichEditor`) whose content is composed of reusable, saveable content blocks ("modelos"), backed by a new `document_templates` table — the shared editing primitive that future prescription/document screens (atestados, laudos, etc.) will build on.
 
 **Architecture:** A custom Tiptap Node (`templateBlock`) wraps groups of paragraphs/headings/lists in a plain `<div data-type="template-block">`, rendered via a React NodeView that adds edit-only chrome (drag handle, save icon, delete icon). Content is stored and exchanged as ProseMirror JSON (not HTML), so block metadata (`templateId`, `label`) survives round-trips exactly. `document_templates` (new table, RLS-scoped `personal`/`global`) backs the "Modelos" sidebar and the save-as-template flow, which reuses the existing `ContentModal`-based two-step "overwrite or create new" pattern already proven for contract templates.

@@ -1,5 +1,17 @@
 # Editor de texto rico baseado em modelos (`templated-rich-editor`)
 
+> **Nota (2026-09-16):** este documento originalmente colocava o componente em
+> `apps/web/src/components/shared/templated-rich-editor/` (ver seção "Estado
+> atual relevante" abaixo, que cita a ausência de infra de testes em
+> `packages/ui` como motivo). Depois da implementação, o componente foi
+> movido para `packages/ui/src/shared/templated-rich-editor/` — a infra de
+> testes (Vitest + Testing Library) foi configurada dentro do próprio
+> `packages/ui`, preservando a separação entre pacote de UI reutilizável e
+> app, sem abrir mão de cobertura de testes. As menções a `apps/web/src/
+> components/shared/templated-rich-editor/` no restante deste documento e no
+> plano de implementação refletem o caminho original — o código real está em
+> `packages/ui`.
+
 ## Motivação
 
 Este é o primeiro passo de uma iniciativa maior — prescrições e documentos
