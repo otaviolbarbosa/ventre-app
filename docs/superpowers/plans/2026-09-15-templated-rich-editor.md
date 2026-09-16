@@ -345,6 +345,7 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
       return builder;
     }),
     select: vi.fn(() => builder),
+    eq: vi.fn(() => builder),
     limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
     maybeSingle: vi.fn(() => Promise.resolve(result)),
@@ -429,6 +430,7 @@ Expected: FAIL — module not found.
 // apps/web/src/actions/create-document-template-action.ts
 "use server";
 
+import type { Json } from "@ventre/supabase/types";
 import { authActionClient } from "@/lib/safe-action";
 import { createDocumentTemplateSchema } from "@/lib/validations/document-template";
 
@@ -440,7 +442,7 @@ export const createDocumentTemplateAction = authActionClient
       .insert({
         category,
         title,
-        content,
+        content: content as Json,
         scope: "personal",
         owner_id: user.id,
       })
@@ -582,6 +584,7 @@ Expected: FAIL — module not found.
 // apps/web/src/actions/update-document-template-action.ts
 "use server";
 
+import type { Json } from "@ventre/supabase/types";
 import { authActionClient } from "@/lib/safe-action";
 import { updateDocumentTemplateSchema } from "@/lib/validations/document-template";
 
@@ -591,7 +594,7 @@ export const updateDocumentTemplateAction = authActionClient
     const { data: template, error } = await supabase
       .from("document_templates")
       .update({
-        content,
+        content: content as Json,
         ...(title !== undefined ? { title } : {}),
       })
       .eq("id", templateId)
