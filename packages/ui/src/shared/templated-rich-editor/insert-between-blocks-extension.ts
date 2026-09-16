@@ -12,7 +12,7 @@ const pluginKey = new PluginKey("insertBetweenBlocks");
 // normal flow so ProseMirror's own DOM placement — which is correct — determines where
 // it visually sits.
 const WIDGET_CLASS =
-  "mx-auto flex h-4 w-4 items-center justify-center rounded-full border border-input bg-background text-[10px] leading-none text-muted-foreground opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100";
+  "mx-auto flex h-4 w-4 items-center justify-center rounded-full border border-input bg-background text-[10px] leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
 
 function makeInsertWidget(pos: number): HTMLButtonElement {
   const button = document.createElement("button");

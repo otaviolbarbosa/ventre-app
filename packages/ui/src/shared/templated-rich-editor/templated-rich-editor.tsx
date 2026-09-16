@@ -21,6 +21,7 @@ import {
   Underline,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { findGapParagraphRangeBefore } from "./find-gap-paragraph-range";
 import { InsertBetweenBlocks } from "./insert-between-blocks-extension";
 import { SaveBlockChoiceModal } from "./save-block-choice-modal";
 import { SaveBlockTemplateModal } from "./save-block-template-modal";
@@ -65,7 +66,12 @@ export function TemplatedRichEditor({
 
   const extensions = useMemo(
     () => [
-      StarterKit.configure({ paragraph: false, heading: false, bulletList: false, orderedList: false }),
+      StarterKit.configure({
+        paragraph: false,
+        heading: false,
+        bulletList: false,
+        orderedList: false,
+      }),
       TemplateBlockParagraph,
       TemplateBlockHeading,
       TemplateBlockBulletList,
@@ -143,23 +149,37 @@ export function TemplatedRichEditor({
   };
 
   const insertTemplate = (template: Tables<"document_templates">) => {
-    const pos = resolveTopLevelInsertPos(editor.state.selection.to);
     const templateContent = template.content as unknown as JSONContent;
     // document_templates.scope is a plain `text` column (constrained by a CHECK, not a
     // Postgres enum), so the generated type is `string`, not the "personal" | "global"
     // union TemplateBlockAttrs expects — the cast is safe because the DB constraint
     // already guarantees one of those two values.
+    const blockJson: JSONContent = {
+      type: "templateBlock",
+      attrs: {
+        templateId: template.id,
+        templateScope: template.scope as TemplateBlockScope,
+        label: template.title,
+      },
+      content: templateContent.content ?? [{ type: "paragraph" }],
+    };
+
+    // An entirely empty editor is just the single placeholder paragraph a ProseMirror
+    // doc always needs to stay non-empty — replace it outright instead of inserting
+    // after it, so the first block in a fresh document never leaves a blank line above it.
+    if (editor.isEmpty) {
+      editor
+        .chain()
+        .insertContentAt({ from: 0, to: editor.state.doc.content.size }, blockJson)
+        .run();
+      return;
+    }
+
+    const pos = resolveTopLevelInsertPos(editor.state.selection.to);
+    const gapRange = findGapParagraphRangeBefore(editor.state.doc, pos);
     editor
       .chain()
-      .insertContentAt(pos, {
-        type: "templateBlock",
-        attrs: {
-          templateId: template.id,
-          templateScope: template.scope as TemplateBlockScope,
-          label: template.title,
-        },
-        content: templateContent.content ?? [{ type: "paragraph" }],
-      })
+      .insertContentAt(gapRange ?? pos, blockJson)
       .run();
   };
 
@@ -167,7 +187,9 @@ export function TemplatedRichEditor({
     if (!activeBlock?.attrs.templateId) return;
     setIsSaving(true);
     try {
-      const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as JSONContent | undefined;
+      const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as
+        | JSONContent
+        | undefined;
       if (!nodeJson?.content) return;
       await onOverwriteTemplate(activeBlock.attrs.templateId, {
         type: "doc",
@@ -191,7 +213,9 @@ export function TemplatedRichEditor({
     if (!activeBlock) return;
     setIsSaving(true);
     try {
-      const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as JSONContent | undefined;
+      const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as
+        | JSONContent
+        | undefined;
       if (!nodeJson?.content) return;
       const { id } = await onCreateTemplate(title, { type: "doc", content: nodeJson.content });
       editor
@@ -215,7 +239,10 @@ export function TemplatedRichEditor({
     if (deleteTarget === null) return;
     const node = editor.state.doc.nodeAt(deleteTarget);
     if (node) {
-      editor.chain().deleteRange({ from: deleteTarget, to: deleteTarget + node.nodeSize }).run();
+      editor
+        .chain()
+        .deleteRange({ from: deleteTarget, to: deleteTarget + node.nodeSize })
+        .run();
     }
     setDeleteTarget(null);
   };
@@ -228,8 +255,8 @@ export function TemplatedRichEditor({
     );
 
   return (
-    <div className={cn("flex gap-4", className)}>
-      <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-input">
+    <div className="flex gap-4">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
           <select
             disabled={disabled}
@@ -344,8 +371,15 @@ export function TemplatedRichEditor({
             <AlignJustify className="h-4 w-4" />
           </button>
         </div>
-        <div className="relative flex-1 overflow-y-auto [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6">
-          <EditorContent editor={editor} />
+        <div
+          className={cn(
+            "flex flex-col overflow-hidden rounded-2xl border border-input bg-white",
+            className,
+          )}
+        >
+          <div className="relative flex-1 overflow-y-auto [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6">
+            <EditorContent editor={editor} />
+          </div>
         </div>
       </div>
 

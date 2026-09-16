@@ -242,4 +242,46 @@ describe("TemplatedRichEditor", () => {
       }
     });
   });
+
+  it("does not leave a leading empty paragraph when inserting into an empty editor", async () => {
+    const onChange = vi.fn();
+
+    render(
+      <TemplatedRichEditor
+        content={EMPTY_DOC}
+        onChange={onChange}
+        templates={[PERSONAL_TEMPLATE]}
+        onOverwriteTemplate={vi.fn()}
+        onCreateTemplate={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(await screen.findByLabelText("Inserir modelo Hemograma completo"));
+
+    await waitFor(() => {
+      const lastCall = onChange.mock.calls.at(-1)?.[0];
+      const topLevelNodes: { type?: string }[] = lastCall?.content ?? [];
+
+      // The original empty paragraph must be gone — but a trailing empty paragraph MAY
+      // legitimately reappear after it, since the templateBlock is now the only (and
+      // thus last) top-level node, and ProseMirror needs a cursor-reachable position
+      // after an `isolating` node. That's fine; only a *leading* paragraph is the bug.
+      expect(topLevelNodes[0]?.type).toBe("templateBlock");
+    });
+  });
+
+  // The "no gap paragraph between two blocks" behavior (reproduced live: a templateBlock
+  // that's the last top-level node gets an empty trailing paragraph auto-appended by
+  // ProseMirror — it needs a cursor-reachable position after an `isolating` node — and
+  // naively inserting "after the caret" when the caret is in that placeholder would leave
+  // it stranded between two real blocks) is covered by find-gap-paragraph-range.test.ts
+  // instead of here. An integration-level reproduction needs the caret placed inside an
+  // *empty* paragraph, which isn't reliably driveable under happy-dom: a direct click on
+  // an empty node doesn't move ProseMirror's selection the way clicking real text does
+  // (no text node for hit-testing to resolve against), and userEvent.keyboard's
+  // {End}/arrow-key handling only supports real <input>/<textarea> elements, not
+  // contenteditable regions ("Not implemented. The result of this interaction is
+  // unreliable."). The unit test constructs the exact doc shape and queries the helper at
+  // a known, deterministic position instead of fighting DOM-interaction simulation for
+  // something it isn't built to simulate.
 });
