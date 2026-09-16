@@ -20,7 +20,7 @@ import {
   Plus,
   Underline,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { InsertBetweenBlocks } from "./insert-between-blocks-extension";
 import { SaveBlockChoiceModal } from "./save-block-choice-modal";
 import { SaveBlockTemplateModal } from "./save-block-template-modal";
@@ -100,6 +100,19 @@ export function TemplatedRichEditor({
     onUpdate: ({ editor: e }) => onChange(e.getJSON()),
   });
 
+  // useEditor only applies `content` at creation time — it does not re-parse it into the
+  // doc on later prop updates. A consuming screen that loads its document asynchronously
+  // (the expected real usage) would otherwise see a permanently blank editor. Mirrors the
+  // same fix already used by the sibling RichEditor (packages/ui/src/shared/rich-editor/
+  // rich-editor.tsx:61-65), adapted for JSON (RichEditor compares HTML strings) — the
+  // stringify comparison guards against clobbering the user's own in-flight edits on every
+  // onChange round-trip (onChange fires with the same content `content` was just set to).
+  useEffect(() => {
+    if (!editor) return;
+    if (JSON.stringify(content) === JSON.stringify(editor.getJSON())) return;
+    editor.commands.setContent(content);
+  }, [editor, content]);
+
   if (!editor) return null;
 
   // Resolves to the position right after the top-level block containing `pos` (or `pos`
@@ -139,13 +152,20 @@ export function TemplatedRichEditor({
     setIsSaving(true);
     try {
       const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as JSONContent | undefined;
-      if (nodeJson?.content) {
-        await onOverwriteTemplate(activeBlock.attrs.templateId, {
-          type: "doc",
-          content: nodeJson.content,
-        });
-      }
+      if (!nodeJson?.content) return;
+      await onOverwriteTemplate(activeBlock.attrs.templateId, {
+        type: "doc",
+        content: nodeJson.content,
+      });
       setSaveStep(null);
+    } catch (error) {
+      // Surfacing this to the user (toast, inline error) is the consuming screen's
+      // responsibility — onOverwriteTemplate is expected to come from a hook like
+      // next-safe-action's useAction, which has its own onError handling. This catch
+      // exists only so a rejection doesn't become an unhandled promise rejection;
+      // leaving saveStep untouched (not calling setSaveStep(null)) keeps the modal open
+      // so the user can retry instead of it silently closing as if it had succeeded.
+      console.error(error);
     } finally {
       setIsSaving(false);
     }
@@ -156,19 +176,20 @@ export function TemplatedRichEditor({
     setIsSaving(true);
     try {
       const nodeJson = editor.state.doc.nodeAt(activeBlock.pos)?.toJSON() as JSONContent | undefined;
-      if (nodeJson?.content) {
-        const { id } = await onCreateTemplate(title, { type: "doc", content: nodeJson.content });
-        editor
-          .chain()
-          .command(({ tr }) => {
-            tr.setNodeAttribute(activeBlock.pos, "templateId", id);
-            tr.setNodeAttribute(activeBlock.pos, "templateScope", "personal");
-            tr.setNodeAttribute(activeBlock.pos, "label", title);
-            return true;
-          })
-          .run();
-      }
+      if (!nodeJson?.content) return;
+      const { id } = await onCreateTemplate(title, { type: "doc", content: nodeJson.content });
+      editor
+        .chain()
+        .command(({ tr }) => {
+          tr.setNodeAttribute(activeBlock.pos, "templateId", id);
+          tr.setNodeAttribute(activeBlock.pos, "templateScope", "personal");
+          tr.setNodeAttribute(activeBlock.pos, "label", title);
+          return true;
+        })
+        .run();
       setSaveStep(null);
+    } catch (error) {
+      console.error(error);
     } finally {
       setIsSaving(false);
     }
@@ -295,6 +316,7 @@ export function TemplatedRichEditor({
               <button
                 type="button"
                 onClick={() => insertTemplate(template)}
+                disabled={disabled}
                 aria-label={`Inserir modelo ${template.title}`}
               >
                 <Plus className="h-4 w-4" />
