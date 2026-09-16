@@ -1251,6 +1251,47 @@ export type Database = {
           },
         ]
       }
+      document_templates: {
+        Row: {
+          category: Database["public"]["Enums"]["document_template_category"]
+          content: Json
+          created_at: string
+          id: string
+          owner_id: string | null
+          scope: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["document_template_category"]
+          content: Json
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          scope?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["document_template_category"]
+          content?: Json
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          scope?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_templates_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enterprise_billing_fees: {
         Row: {
           created_at: string
@@ -3309,6 +3350,14 @@ export type Database = {
         | "tres_cruzes"
       blood_type: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
       delivery_method: "cesarean" | "vaginal" | "vaginal_assisted"
+      document_template_category:
+        | "prescricao"
+        | "exame"
+        | "cirurgia"
+        | "laudo"
+        | "atestado"
+        | "declaracao"
+        | "relatorio"
       doppler_result: "normal" | "abnormal" | "not_performed"
       fetal_presentation: "cephalic" | "pelvic" | "transverse"
       installment_status:
@@ -3549,6 +3598,15 @@ export const Constants = {
       ],
       blood_type: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
       delivery_method: ["cesarean", "vaginal", "vaginal_assisted"],
+      document_template_category: [
+        "prescricao",
+        "exame",
+        "cirurgia",
+        "laudo",
+        "atestado",
+        "declaracao",
+        "relatorio",
+      ],
       doppler_result: ["normal", "abnormal", "not_performed"],
       fetal_presentation: ["cephalic", "pelvic", "transverse"],
       installment_status: [

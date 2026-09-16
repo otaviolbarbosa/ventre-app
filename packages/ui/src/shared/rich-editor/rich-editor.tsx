@@ -192,7 +192,10 @@ export function RichEditor({
         </button>
       </div>
       <div
-        className={cn("flex flex-col overflow-hidden rounded-2xl border border-input", className)}
+        className={cn(
+          "flex flex-col overflow-hidden rounded-2xl border border-input bg-white",
+          className,
+        )}
       >
         <div className="flex-1 overflow-y-auto [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6">
           <EditorContent editor={editor} />
