@@ -2,12 +2,38 @@
 import Document from "@tiptap/extension-document";
 import Text from "@tiptap/extension-text";
 import { Editor, type Content } from "@tiptap/core";
+import { StarterKit } from "@tiptap/starter-kit";
 import { describe, expect, it } from "vitest";
-import { TemplateBlock, TemplateBlockParagraph } from "./template-block-node";
+import {
+  TemplateBlock,
+  TemplateBlockBulletList,
+  TemplateBlockHeading,
+  TemplateBlockOrderedList,
+  TemplateBlockParagraph,
+} from "./template-block-node";
 
 function makeEditor(content: Content) {
   return new Editor({
     extensions: [Document, Text, TemplateBlockParagraph, TemplateBlock],
+    content,
+  });
+}
+
+// Mirrors the real extension set TemplatedRichEditor configures (StarterKit with its
+// built-in paragraph/heading/list nodes disabled in favor of the templateBlock-content
+// group-extended replacements) — used specifically for the <script> regression test
+// below, where fidelity to the actual schema matters more than the minimal Document/Text
+// setup `makeEditor` uses for the other tests in this file.
+function makeFullEditor(content: Content) {
+  return new Editor({
+    extensions: [
+      StarterKit.configure({ paragraph: false, heading: false, bulletList: false, orderedList: false }),
+      TemplateBlockParagraph,
+      TemplateBlockHeading,
+      TemplateBlockBulletList,
+      TemplateBlockOrderedList,
+      TemplateBlock,
+    ],
     content,
   });
 }
@@ -90,6 +116,26 @@ describe("templateBlock node", () => {
     const inner = outer?.content?.[0];
 
     expect(inner?.type).toBe("templateBlock");
+    editor.destroy();
+  });
+
+  it("strips a pasted/injected <script> tag instead of creating a templateBlock from it (regression for the design's no-<script>-delimiter decision)", () => {
+    // The spec deliberately rejected using <script> tags to delimit blocks — see
+    // "Sem <script> para delimitar blocos" in the design doc — precisely because a
+    // <script> element's raw-text content model and display:none-by-default rendering
+    // make it unsuitable, and this custom templateBlock Node exists instead. This test
+    // defends that decision: Tiptap/ProseMirror's own HTML parser (via the browser's
+    // DOMParser) should already drop <script> elements on `setContent`, since no schema
+    // rule maps to them — this test confirms that reality holds, not new sanitization.
+    const editor = makeFullEditor('<p>texto</p><script>alert("xss")</script>');
+
+    const html = editor.getHTML();
+    const json = editor.getJSON();
+
+    expect(html).not.toContain("<script");
+    expect(html).not.toContain("alert(");
+    expect(JSON.stringify(json)).not.toContain("templateBlock");
+
     editor.destroy();
   });
 });

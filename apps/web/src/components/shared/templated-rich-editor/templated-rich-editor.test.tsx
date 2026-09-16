@@ -117,6 +117,40 @@ describe("TemplatedRichEditor", () => {
     expect(screen.queryByText("Sobrescrever modelo atual")).not.toBeInTheDocument();
   });
 
+  it("skips the choice modal and opens the name modal directly for a block referencing a global template", async () => {
+    // Exercises the other half of the
+    // `attrs.templateId && attrs.templateScope === "personal" ? "choice" : "name"` ternary
+    // in onRequestSave — the "no templateId" test above only covers the null-templateId
+    // branch; this one covers templateId present but templateScope='global', which must
+    // also skip straight to the name modal since global templates aren't overwritable by
+    // regular users.
+    const content = {
+      type: "doc",
+      content: [
+        {
+          type: "templateBlock",
+          attrs: { templateId: "t1", templateScope: "global", label: "Modelo global" },
+          content: [{ type: "paragraph", content: [{ type: "text", text: "conteúdo global" }] }],
+        },
+      ],
+    };
+
+    render(
+      <TemplatedRichEditor
+        content={content}
+        onChange={vi.fn()}
+        templates={[]}
+        onOverwriteTemplate={vi.fn()}
+        onCreateTemplate={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(await screen.findByLabelText("Salvar bloco como modelo"));
+
+    expect(await screen.findByText("Salvar como novo modelo")).toBeInTheDocument();
+    expect(screen.queryByText("Sobrescrever modelo atual")).not.toBeInTheDocument();
+  });
+
   it("removes a block after confirming deletion", async () => {
     const onChange = vi.fn();
     const content = {
