@@ -4,8 +4,15 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 
 const pluginKey = new PluginKey("insertBetweenBlocks");
 
+// No `position: absolute`/`left`/`top`/`translate`/`z-index` here on purpose — this
+// codebase imports no `.ProseMirror { position: relative }` stylesheet, so an
+// absolutely-positioned widget escapes to the single nearest positioned ancestor (the
+// editor's scrollable wrapper in templated-rich-editor.tsx) instead of the document
+// position ProseMirror actually placed it at. `flex` + `mx-auto` keeps the button in
+// normal flow so ProseMirror's own DOM placement — which is correct — determines where
+// it visually sits.
 const WIDGET_CLASS =
-  "absolute left-1/2 top-0 z-10 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-input bg-background text-xs text-muted-foreground opacity-0 transition-opacity hover:opacity-100 hover:text-foreground focus-visible:opacity-100";
+  "mx-auto flex h-4 w-4 items-center justify-center rounded-full border border-input bg-background text-[10px] leading-none text-muted-foreground opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100";
 
 function makeInsertWidget(pos: number): HTMLButtonElement {
   const button = document.createElement("button");
@@ -22,11 +29,15 @@ export const InsertBetweenBlocks = Extension.create({
   name: "insertBetweenBlocks",
 
   addProseMirrorPlugins() {
+    const { editor } = this;
+
     return [
       new Plugin({
         key: pluginKey,
         props: {
           decorations: (state) => {
+            if (!editor.isEditable) return DecorationSet.empty;
+
             const decorations: Decoration[] = [];
 
             state.doc.forEach((_node, offset) => {
@@ -50,6 +61,8 @@ export const InsertBetweenBlocks = Extension.create({
           },
           handleDOMEvents: {
             click: (view, event) => {
+              if (!view.editable) return false;
+
               const target = event.target as HTMLElement;
               const posAttr = target
                 .closest("[data-insert-block-at]")

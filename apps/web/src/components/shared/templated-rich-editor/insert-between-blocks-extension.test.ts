@@ -53,4 +53,27 @@ describe("InsertBetweenBlocks", () => {
     editor.destroy();
     element.remove();
   });
+
+  it("renders no insert widgets when the editor is not editable", () => {
+    const element = document.createElement("div");
+    document.body.appendChild(element);
+
+    const editor = new Editor({
+      element,
+      editable: false,
+      extensions: [Document, Text, Paragraph, InsertBetweenBlocks],
+      content: {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "um" }] },
+          { type: "paragraph", content: [{ type: "text", text: "dois" }] },
+        ],
+      },
+    });
+
+    expect(element.querySelectorAll("[data-insert-block-at]").length).toBe(0);
+
+    editor.destroy();
+    element.remove();
+  });
 });
