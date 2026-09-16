@@ -34,6 +34,9 @@ import {
   type TemplateBlockScope,
 } from "./template-block-node";
 
+const FONT_SIZES = ["8px", "10px", "11px", "12px", "14px", "16px", "18px", "20px", "24px"];
+const FONT_FAMILIES = ["Inter", "Arial", "Times New Roman", "Georgia", "Courier New"];
+
 export interface TemplatedRichEditorProps {
   content: JSONContent;
   onChange: (content: JSONContent) => void;
@@ -228,6 +231,35 @@ export function TemplatedRichEditor({
     <div className={cn("flex gap-4", className)}>
       <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-input">
         <div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
+          <select
+            disabled={disabled}
+            className="h-8 rounded-md border border-input bg-background px-1 text-xs disabled:opacity-50"
+            onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
+            value={FONT_FAMILIES.find((f) => editor.isActive("textStyle", { fontFamily: f })) ?? ""}
+          >
+            <option value="">Fonte</option>
+            {FONT_FAMILIES.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+
+          <select
+            disabled={disabled}
+            className="h-8 rounded-md border border-input bg-background px-1 text-xs disabled:opacity-50"
+            onChange={(e) => editor.commands.setFontSize(e.target.value)}
+            value={FONT_SIZES.find((s) => editor.isActive("textStyle", { fontSize: s })) ?? ""}
+          >
+            <option value="">Tam.</option>
+            {FONT_SIZES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          <div className="mx-0.5 h-5 w-px bg-border" />
           <button
             type="button"
             onClick={() => editor.chain().focus().toggleBold().run()}
