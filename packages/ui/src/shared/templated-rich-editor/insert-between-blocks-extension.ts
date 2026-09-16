@@ -51,9 +51,17 @@ export const InsertBetweenBlocks = Extension.create({
 
             const endPos = state.doc.content.size;
             decorations.push(
+              // Keyed by position, not a fixed "insert-end" — ProseMirror reuses a widget's
+              // DOM node across decoration recomputes when the key matches, without
+              // necessarily re-invoking the factory. A fixed key here meant that once the
+              // doc grew (e.g. after inserting a block), the end widget kept whichever DOM
+              // node was first created for it — with `dataset.insertBlockAt` baked in from
+              // that earlier, now-wrong position — even though it visually moved to the
+              // correct new location. Confirmed live in Storybook: the button rendered at
+              // the bottom of the doc but still carried the position from before the insert.
               Decoration.widget(endPos, () => makeInsertWidget(endPos), {
                 side: 1,
-                key: "insert-end",
+                key: `insert-end-${endPos}`,
               }),
             );
 
