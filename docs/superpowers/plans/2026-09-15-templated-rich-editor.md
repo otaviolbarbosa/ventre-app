@@ -1378,7 +1378,7 @@ git commit -m "feat(editor): add TemplateBlockView chrome (drag handle, save, de
 
 **Interfaces:**
 - Consumes: nothing new.
-- Produces: `InsertBetweenBlocks` (Tiptap `Extension`, no options needed — fully self-contained via ProseMirror's `handleClick`), consumed by Task 12.
+- Produces: `InsertBetweenBlocks` (Tiptap `Extension`, no options needed — fully self-contained via ProseMirror's `handleDOMEvents.click`), consumed by Task 12.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1501,20 +1501,24 @@ export const InsertBetweenBlocks = Extension.create({
 
             return DecorationSet.create(state.doc, decorations);
           },
-          handleClick: (view, _pos, event) => {
-            const target = event.target as HTMLElement;
-            const posAttr = target.closest("[data-insert-block-at]")?.getAttribute("data-insert-block-at");
-            if (posAttr === null || posAttr === undefined) return false;
+          handleDOMEvents: {
+            click: (view, event) => {
+              const target = event.target as HTMLElement;
+              const posAttr = target
+                .closest("[data-insert-block-at]")
+                ?.getAttribute("data-insert-block-at");
+              if (posAttr === null || posAttr === undefined) return false;
 
-            const insertPos = Number(posAttr);
-            const emptyBlock = view.state.schema.nodeFromJSON({
-              type: "templateBlock",
-              attrs: { templateId: null, templateScope: null, label: null },
-              content: [{ type: "paragraph" }],
-            });
+              const insertPos = Number(posAttr);
+              const emptyBlock = view.state.schema.nodeFromJSON({
+                type: "templateBlock",
+                attrs: { templateId: null, templateScope: null, label: null },
+                content: [{ type: "paragraph" }],
+              });
 
-            view.dispatch(view.state.tr.insert(insertPos, emptyBlock));
-            return true;
+              view.dispatch(view.state.tr.insert(insertPos, emptyBlock));
+              return true;
+            },
           },
         },
       }),
@@ -1522,6 +1526,19 @@ export const InsertBetweenBlocks = Extension.create({
   },
 });
 ```
+
+`handleDOMEvents: { click }` is used instead of `handleClick` deliberately: ProseMirror's
+`handleClick` is wired through the `mousedown`→`mouseup` pipeline (`prosemirror-view`'s
+`LeftMouseDown.up()` → `handleSingleClick`), not the DOM `click` event — a raw
+`element.click()` call (per the WHATWG spec) dispatches only `"click"`, with no
+`mousedown`/`mouseup`, so `handleClick` never fires from it (confirmed empirically during
+implementation — this is not a testing-environment quirk, it reproduces in a real browser
+too, since `handleClick`'s `pos` argument is document-position-resolved and this widget
+isn't really "document content" the same way clicked text is). `handleDOMEvents.click`
+responds directly to the DOM `click` event instead, which real mouse clicks and
+`element.click()` both dispatch — a better fit here since the insert position already
+comes from the widget's own `data-insert-block-at` attribute, not from `handleClick`'s
+position-resolution machinery, which this code never used anyway.
 
 - [ ] **Step 4: Run test to verify it passes**
 
