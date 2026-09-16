@@ -22,7 +22,9 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
     eq: vi.fn(() => builder),
     or: vi.fn(() => builder),
     order: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
     single: vi.fn(() => Promise.resolve(result)),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
     // biome-ignore lint/suspicious/noThenProperty: mock must be thenable to emulate Supabase's awaitable query builder
     then: (
       onFulfilled: (value: typeof result) => unknown,
