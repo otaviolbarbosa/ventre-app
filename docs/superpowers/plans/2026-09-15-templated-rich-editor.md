@@ -2176,12 +2176,12 @@ export function TemplatedRichEditor({
   // content — see the "No nesting" Global Constraint: the schema alone doesn't reject
   // invalid nesting, so insertion call sites have to avoid producing it in the first
   // place.
-  function resolveTopLevelInsertPos(pos: number): number {
+  const resolveTopLevelInsertPos = (pos: number): number => {
     const $pos = editor.state.doc.resolve(pos);
     return $pos.depth === 0 ? pos : $pos.after(1);
-  }
+  };
 
-  function insertTemplate(template: Tables<"document_templates">) {
+  const insertTemplate = (template: Tables<"document_templates">) => {
     const pos = resolveTopLevelInsertPos(editor.state.selection.to);
     const templateContent = template.content as unknown as JSONContent;
     // document_templates.scope is a plain `text` column (constrained by a CHECK, not a
@@ -2200,9 +2200,9 @@ export function TemplatedRichEditor({
         content: templateContent.content ?? [{ type: "paragraph" }],
       })
       .run();
-  }
+  };
 
-  async function handleOverwrite() {
+  const handleOverwrite = async () => {
     if (!activeBlock?.attrs.templateId) return;
     setIsSaving(true);
     try {
@@ -2217,9 +2217,9 @@ export function TemplatedRichEditor({
     } finally {
       setIsSaving(false);
     }
-  }
+  };
 
-  async function handleCreateNew(title: string) {
+  const handleCreateNew = async (title: string) => {
     if (!activeBlock) return;
     setIsSaving(true);
     try {
@@ -2240,16 +2240,16 @@ export function TemplatedRichEditor({
     } finally {
       setIsSaving(false);
     }
-  }
+  };
 
-  function handleConfirmDelete() {
+  const handleConfirmDelete = () => {
     if (deleteTarget === null) return;
     const node = editor.state.doc.nodeAt(deleteTarget);
     if (node) {
       editor.chain().deleteRange({ from: deleteTarget, to: deleteTarget + node.nodeSize }).run();
     }
     setDeleteTarget(null);
-  }
+  };
 
   const toolbarBtn = (active: boolean) =>
     cn(
@@ -2352,7 +2352,7 @@ export function TemplatedRichEditor({
       </div>
 
       <div className="w-56 shrink-0">
-        <h3 className="mb-2 text-sm font-medium">Modelos</h3>
+        <h3 className="mb-2 font-medium text-sm">Modelos</h3>
         <ul className="space-y-1">
           {templates.map((template) => (
             <li
