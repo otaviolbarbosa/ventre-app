@@ -1729,7 +1729,12 @@ describe("SaveBlockTemplateModal", () => {
   it("calls onConfirm with the entered name on submit", async () => {
     const onConfirm = vi.fn();
     render(
-      <SaveBlockTemplateModal open onOpenChange={() => {}} isPending={false} onConfirm={onConfirm} />,
+      <SaveBlockTemplateModal
+        open
+        onOpenChange={() => undefined}
+        isPending={false}
+        onConfirm={onConfirm}
+      />,
     );
 
     await userEvent.type(screen.getByLabelText("Nome"), "Vitamina D");
@@ -1741,7 +1746,12 @@ describe("SaveBlockTemplateModal", () => {
   it("does not call onConfirm when the name is empty", async () => {
     const onConfirm = vi.fn();
     render(
-      <SaveBlockTemplateModal open onOpenChange={() => {}} isPending={false} onConfirm={onConfirm} />,
+      <SaveBlockTemplateModal
+        open
+        onOpenChange={() => undefined}
+        isPending={false}
+        onConfirm={onConfirm}
+      />,
     );
 
     await userEvent.click(screen.getByText("Salvar"));
@@ -1753,7 +1763,12 @@ describe("SaveBlockTemplateModal", () => {
   it("calls onOpenChange(false) when cancelled", async () => {
     const onOpenChange = vi.fn();
     render(
-      <SaveBlockTemplateModal open onOpenChange={onOpenChange} isPending={false} onConfirm={() => {}} />,
+      <SaveBlockTemplateModal
+        open
+        onOpenChange={onOpenChange}
+        isPending={false}
+        onConfirm={() => undefined}
+      />,
     );
 
     await userEvent.click(screen.getByText("Cancelar"));
