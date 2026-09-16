@@ -1,5 +1,7 @@
+import ventreLogo from "@/assets/ventre.png";
 import PatientRegisterScreen from "@/screens/patient-register-screen";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
+import Image from "next/image";
 import Link from "next/link";
 
 type PageProps = { searchParams: Promise<{ piid?: string }> };
@@ -83,12 +85,8 @@ function ErrorState({ message, hint }: { message: string; hint?: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#FFFAF5] px-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-sm">
-        <img
-          src="https://ventre.app/logo.png"
-          alt="Ventre"
-          width={120}
-          className="mx-auto mb-6 object-contain"
-        />
+        <Image src={ventreLogo} alt="Ventre" width={120} className="mx-auto mb-6 object-contain" />
+
         <p className="font-semibold text-[#433831] text-lg">{message}</p>
         {hint && <p className="mt-2 text-[#81726C] text-sm">{hint}</p>}
         <Link
