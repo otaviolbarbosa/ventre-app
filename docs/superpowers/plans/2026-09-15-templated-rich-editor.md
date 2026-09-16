@@ -1936,7 +1936,10 @@ describe("TemplatedRichEditor", () => {
       />,
     );
 
-    await userEvent.click(screen.getByLabelText("Inserir modelo Hemograma completo"));
+    // findByLabelText, not getByLabelText: useEditor uses immediatelyRender: false (same as
+    // RichEditor), so the editor — and this sidebar, gated behind `if (!editor) return null`
+    // — isn't necessarily present in the very first synchronous render commit.
+    await userEvent.click(await screen.findByLabelText("Inserir modelo Hemograma completo"));
 
     await waitFor(() => {
       const lastCall = onChange.mock.calls.at(-1)?.[0];
@@ -1972,7 +1975,10 @@ describe("TemplatedRichEditor", () => {
       />,
     );
 
-    await userEvent.click(screen.getByLabelText("Salvar bloco como modelo"));
+    // findByLabelText, not getByLabelText: this button lives inside templateBlock's
+    // NodeView, which mounts via ReactNodeViewRenderer/EditorContent's own lifecycle —
+    // the same async-mount timing Task 8 had to account for.
+    await userEvent.click(await screen.findByLabelText("Salvar bloco como modelo"));
     expect(await screen.findByText("Sobrescrever modelo atual")).toBeInTheDocument();
 
     await userEvent.click(screen.getByText("Sobrescrever modelo atual"));
@@ -2007,7 +2013,7 @@ describe("TemplatedRichEditor", () => {
       />,
     );
 
-    await userEvent.click(screen.getByLabelText("Salvar bloco como modelo"));
+    await userEvent.click(await screen.findByLabelText("Salvar bloco como modelo"));
 
     expect(await screen.findByText("Salvar como novo modelo")).toBeInTheDocument();
     expect(screen.queryByText("Sobrescrever modelo atual")).not.toBeInTheDocument();
@@ -2036,7 +2042,7 @@ describe("TemplatedRichEditor", () => {
       />,
     );
 
-    await userEvent.click(screen.getByLabelText("Remover bloco"));
+    await userEvent.click(await screen.findByLabelText("Remover bloco"));
     expect(await screen.findByText("Remover bloco")).toBeInTheDocument();
 
     await userEvent.click(screen.getByText("Confirmar"));
@@ -2104,14 +2110,6 @@ export interface TemplatedRichEditorProps {
   onCreateTemplate: (title: string, content: JSONContent) => Promise<{ id: string }>;
   disabled?: boolean;
   className?: string;
-}
-
-function emptyTemplateBlock(): JSONContent {
-  return {
-    type: "templateBlock",
-    attrs: { templateId: null, templateScope: null, label: null },
-    content: [{ type: "paragraph" }],
-  };
 }
 
 export function TemplatedRichEditor({
