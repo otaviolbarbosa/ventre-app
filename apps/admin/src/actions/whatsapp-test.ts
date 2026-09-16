@@ -41,6 +41,46 @@ const testWhatsAppTemplateSchema = z.discriminatedUnion("templateType", [
     professionalName: z.string().min(1, "Obrigatório"),
     patientName: z.string().min(1, "Obrigatório"),
   }),
+  z.object({
+    templateType: z.literal("installment_payment_reminder"),
+    phone: phoneSchema,
+    patientName: z.string().min(1, "Obrigatório"),
+    installmentNumber: z.coerce.number().int().min(1, "Obrigatório"),
+    billingName: z.string().min(1, "Obrigatório"),
+    amount: z.string().min(1, "Obrigatório"),
+    dueDate: z.string().min(1, "Obrigatório"),
+    professionalName: z.string().min(1, "Obrigatório"),
+  }),
+  z.object({
+    templateType: z.literal("contract_pending_signature"),
+    phone: phoneSchema,
+    patientName: z.string().min(1, "Obrigatório"),
+    professionalName: z.string().min(1, "Obrigatório"),
+    contractId: z.string().min(1, "Obrigatório"),
+  }),
+  z.object({
+    templateType: z.literal("contract_created"),
+    phone: phoneSchema,
+    patientName: z.string().min(1, "Obrigatório"),
+    professionalName: z.string().min(1, "Obrigatório"),
+    contractId: z.string().min(1, "Obrigatório"),
+  }),
+  z.object({
+    templateType: z.literal("daily_agenda_summary"),
+    phone: phoneSchema,
+    professionalName: z.string().min(1, "Obrigatório"),
+    appointmentCount: z.coerce.number().int().min(1, "Obrigatório"),
+    firstAppointmentTime: z.string().min(1, "Obrigatório"),
+    lastAppointmentTime: z.string().min(1, "Obrigatório"),
+  }),
+  z.object({
+    templateType: z.literal("cancel_appointment_patient"),
+    phone: phoneSchema,
+    patientName: z.string().min(1, "Obrigatório"),
+    date: z.string().min(1, "Obrigatório"),
+    time: z.string().min(1, "Obrigatório"),
+    professionalName: z.string().min(1, "Obrigatório"),
+  }),
 ]);
 
 export const testWhatsAppTemplateAction = adminActionClient
