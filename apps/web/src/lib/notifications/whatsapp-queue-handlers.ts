@@ -105,7 +105,7 @@ async function handleInstallmentPaymentReminder(
   const { data: installment, error } = await supabaseAdmin
     .from("installments")
     .select(
-      "due_date, amount, status, billing:billings(description, patient:patients(name, created_by))",
+      "due_date, amount, status, installment_number, billing:billings(description, patient:patients(name, created_by))",
     )
     .eq("id", notification.referenceId)
     .maybeSingle();
@@ -136,6 +136,7 @@ async function handleInstallmentPaymentReminder(
     recipient: recipientOf(notification),
     templateParams: {
       patientName: patient.name,
+      installmentNumber: installment.installment_number,
       amount: String(installment.amount),
       billingName: billing?.description ?? "",
       dueDate: installment.due_date,

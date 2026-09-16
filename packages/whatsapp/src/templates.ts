@@ -16,6 +16,7 @@ export type WhatsAppNotificationType =
   // Fase 3 — trigger/cron-based (paciente)
   | "appointment_reminder"
   | "appointment_unconfirmed"
+  | "cancel_appointment_patient"
   | "installment_payment_reminder"
   | "installment_overdue_reminder"
   | "installment_under_review_stalled"
@@ -23,6 +24,7 @@ export type WhatsAppNotificationType =
   | "dpp_passed_no_birth_record"
   | "prenatal_followup_gap"
   | "contract_pending_signature"
+  | "contract_created"
   // Fase 3 — trigger/cron-based (profissional)
   | "daily_agenda_summary"
   | "payment_received"
@@ -66,6 +68,7 @@ type WhatsAppTemplateParams = {
   daysRemaining?: number;
   planName?: string;
   patientInviteId?: string;
+  contractId?: string;
 };
 
 type WhatsAppTemplate = {
@@ -159,12 +162,22 @@ export function getWhatsAppTemplate(
         params.professionalName ?? "",
       ],
     }),
+    cancel_appointment_patient: () => ({
+      name: "cancel_appointment_patient",
+      parameters: [
+        params.patientName ?? "",
+        params.date ?? "",
+        params.time ?? "",
+        params.professionalName ?? "",
+      ],
+    }),
     installment_payment_reminder: () => ({
       name: "installment_payment_reminder",
       parameters: [
         params.patientName ?? "",
-        params.amount ?? "",
+        String(params.installmentNumber ?? ""),
         params.billingName ?? "",
+        params.amount ?? "",
         params.dueDate ?? "",
         params.professionalName ?? "",
       ],
@@ -201,6 +214,12 @@ export function getWhatsAppTemplate(
     contract_pending_signature: () => ({
       name: "contract_pending_signature",
       parameters: [params.patientName ?? "", params.professionalName ?? ""],
+      buttonParameter: params.contractId ?? "",
+    }),
+    contract_created: () => ({
+      name: "contract_created",
+      parameters: [params.patientName ?? "", params.professionalName ?? ""],
+      buttonParameter: params.contractId ?? "",
     }),
     daily_agenda_summary: () => ({
       name: "daily_agenda_summary",
