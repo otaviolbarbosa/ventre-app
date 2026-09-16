@@ -2103,7 +2103,12 @@ describe("TemplatedRichEditor", () => {
 
       expect(topLevelNodes.filter((node) => node.type === "templateBlock").length).toBe(2);
       for (const node of topLevelNodes) {
-        expect(node.content?.some((child) => child.type === "templateBlock")).toBe(false);
+        // `content ?? []`, not `content?.`: a childless top-level node (e.g. a trailing
+        // empty paragraph ProseMirror can append after an `isolating` templateBlock) has
+        // no `content` key at all in its JSON — `[].some(...)` is correctly `false`
+        // ("vacuously has no nested templateBlock"), whereas `undefined?.some(...)` is
+        // `undefined`, which fails `.toBe(false)` even though the assertion should pass.
+        expect((node.content ?? []).some((child) => child.type === "templateBlock")).toBe(false);
       }
     });
   });
@@ -2228,6 +2233,19 @@ export function TemplatedRichEditor({
   // rich-editor.tsx:61-65), adapted for JSON (RichEditor compares HTML strings) — the
   // stringify comparison guards against clobbering the user's own in-flight edits on every
   // onChange round-trip (onChange fires with the same content `content` was just set to).
+  //
+  // Known caveat (found during Task 12's review fix round, via a standalone A/B repro):
+  // if `content` doesn't byte-match Tiptap's own schema-normalized JSON (e.g. missing
+  // `attrs: { textAlign: null }`), this comparison treats it as "changed" and calls
+  // setContent even when nothing meaningfully differs. For a document whose LAST
+  // top-level node is a templateBlock specifically, that redundant setContent call can
+  // append a trailing empty paragraph (ProseMirror needs a cursor-reachable position
+  // after an `isolating` node). Content round-tripped through this editor's own onChange
+  // already carries normalized attrs, so this mainly affects hand-authored fixtures or
+  // content predating this schema — same class of imprecision RichEditor's own
+  // string-equality check already accepts, not something this task introduces new risk
+  // for. Worth a look if a future screen sees an unexpected trailing blank line on
+  // documents ending in a template block.
   useEffect(() => {
     if (!editor) return;
     if (JSON.stringify(content) === JSON.stringify(editor.getJSON())) return;
