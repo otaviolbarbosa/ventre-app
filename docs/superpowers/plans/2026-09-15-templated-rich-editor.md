@@ -1172,17 +1172,17 @@ git commit -m "feat(editor): add templateBlock node schema with group-restricted
 
 - [ ] **Step 1: Write the failing test**
 
-Mounting a real NodeView standalone (outside a full `Editor`) isn't practical — `getPos`/`extension.options` are supplied by Tiptap's rendering machinery. This test instead mounts a minimal real editor (as in Task 7) and asserts on the rendered chrome.
+React NodeViews only mount through React's own lifecycle — specifically, `ReactNodeViewRenderer` checks `editor.contentComponent`, which is only ever set by `<EditorContent>`'s mount effect (`PureEditorContent`'s `componentDidMount`/`componentDidUpdate` → `init()`, in `@tiptap/react`'s source). A bare `new Editor({ element, ... })` — the pattern used in Task 7's test — never sets `contentComponent`, so `ReactNodeViewRenderer` silently returns `{}` and ProseMirror falls back to plain schema `renderHTML` output: no `NodeViewWrapper`, no buttons, ever. This test must mount through `<EditorContent>` via `@testing-library/react`'s `render()`, and query asynchronously (`findBy*`), since the NodeView mounts after React's initial commit, not synchronously with it.
 
 ```tsx
 // apps/web/src/components/shared/templated-rich-editor/template-block-view.test.tsx
 // @vitest-environment happy-dom
 import Document from "@tiptap/extension-document";
 import Text from "@tiptap/extension-text";
-import { Editor } from "@tiptap/core";
-import { cleanup } from "@testing-library/react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { TemplateBlock, TemplateBlockParagraph } from "./template-block-node";
+import { TemplateBlock, type TemplateBlockAttrs, TemplateBlockParagraph } from "./template-block-node";
 
 afterEach(cleanup);
 
@@ -1197,60 +1197,76 @@ const DOC = {
   ],
 };
 
-describe("TemplateBlockView", () => {
-  it("renders drag/save/delete controls when editable, and calls onRequestSave/onRequestDelete", () => {
-    const onRequestSave = vi.fn();
-    const onRequestDelete = vi.fn();
-    const element = document.createElement("div");
-    document.body.appendChild(element);
-
-    const editor = new Editor({
-      element,
-      extensions: [
-        Document,
-        Text,
-        TemplateBlockParagraph,
-        TemplateBlock.configure({ onRequestSave, onRequestDelete }),
-      ],
-      content: DOC,
-      editable: true,
-    });
-
-    const saveButton = element.querySelector('[aria-label="Salvar bloco como modelo"]');
-    const deleteButton = element.querySelector('[aria-label="Remover bloco"]');
-    const dragHandle = element.querySelector("[data-drag-handle]");
-
-    expect(saveButton).not.toBeNull();
-    expect(deleteButton).not.toBeNull();
-    expect(dragHandle).not.toBeNull();
-
-    (saveButton as HTMLButtonElement).click();
-    expect(onRequestSave).toHaveBeenCalledWith(0, { templateId: "t1", templateScope: "personal", label: "Vitamina D" });
-
-    (deleteButton as HTMLButtonElement).click();
-    expect(onRequestDelete).toHaveBeenCalledWith(0, { templateId: "t1", templateScope: "personal", label: "Vitamina D" });
-
-    editor.destroy();
-    element.remove();
+function TestHarness({
+  onRequestSave,
+  onRequestDelete,
+  editable,
+}: {
+  onRequestSave: (pos: number, attrs: TemplateBlockAttrs) => void;
+  onRequestDelete: (pos: number, attrs: TemplateBlockAttrs) => void;
+  editable: boolean;
+}) {
+  const editor = useEditor({
+    extensions: [
+      Document,
+      Text,
+      TemplateBlockParagraph,
+      TemplateBlock.configure({ onRequestSave, onRequestDelete }),
+    ],
+    content: DOC,
+    editable,
+    immediatelyRender: false,
   });
 
-  it("hides all chrome when the editor is not editable", () => {
-    const element = document.createElement("div");
-    document.body.appendChild(element);
+  if (!editor) return null;
 
-    const editor = new Editor({
-      element,
-      extensions: [Document, Text, TemplateBlockParagraph, TemplateBlock],
-      content: DOC,
-      editable: false,
+  return <EditorContent editor={editor} />;
+}
+
+describe("TemplateBlockView", () => {
+  it("renders drag/save/delete controls when editable, and calls onRequestSave/onRequestDelete", async () => {
+    const onRequestSave = vi.fn();
+    const onRequestDelete = vi.fn();
+
+    render(
+      <TestHarness onRequestSave={onRequestSave} onRequestDelete={onRequestDelete} editable />,
+    );
+
+    const saveButton = await screen.findByLabelText("Salvar bloco como modelo");
+    const deleteButton = await screen.findByLabelText("Remover bloco");
+    const dragHandle = await screen.findByLabelText("Reordenar bloco");
+
+    expect(saveButton).toBeInTheDocument();
+    expect(deleteButton).toBeInTheDocument();
+    expect(dragHandle).toBeInTheDocument();
+
+    saveButton.click();
+    expect(onRequestSave).toHaveBeenCalledWith(0, {
+      templateId: "t1",
+      templateScope: "personal",
+      label: "Vitamina D",
     });
 
-    expect(element.querySelector('[aria-label="Salvar bloco como modelo"]')).toBeNull();
-    expect(element.querySelector('[aria-label="Remover bloco"]')).toBeNull();
-    expect(element.querySelector("[data-drag-handle]")).toBeNull();
+    deleteButton.click();
+    expect(onRequestDelete).toHaveBeenCalledWith(0, {
+      templateId: "t1",
+      templateScope: "personal",
+      label: "Vitamina D",
+    });
+  });
 
-    editor.destroy();
-    element.remove();
+  it("hides all chrome when the editor is not editable", async () => {
+    render(<TestHarness onRequestSave={vi.fn()} onRequestDelete={vi.fn()} editable={false} />);
+
+    // Wait for the NodeView to actually mount (confirmed via its content, which renders
+    // regardless of editable state) before asserting the chrome is absent — otherwise
+    // "not yet mounted" would look identical to "correctly hidden" and the test would
+    // pass vacuously.
+    await screen.findByText("2000ui");
+
+    expect(screen.queryByLabelText("Salvar bloco como modelo")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Remover bloco")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Reordenar bloco")).not.toBeInTheDocument();
   });
 });
 ```
