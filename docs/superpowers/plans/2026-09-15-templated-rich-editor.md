@@ -1309,7 +1309,7 @@ export function TemplateBlockView({ node, editor, getPos, extension }: ReactNode
       className={cn(
         "rounded-lg",
         editable &&
-          "group relative my-2 border border-dashed border-input p-3 hover:border-primary/50",
+          "group relative my-2 border border-input border-dashed p-3 hover:border-primary/50",
       )}
     >
       {editable && (
