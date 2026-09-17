@@ -94,13 +94,25 @@ export function getWhatsAppTemplate(
     // no próprio template aprovado na Meta, não aqui.
     appointment_scheduled: () => ({
       name: "new_appointment",
-      parameters: [params.patientName ?? "", params.date ?? "", params.time ?? ""],
+      parameters: [
+        params.patientName ?? "",
+        params.appointmentType ?? "",
+        params.professionalName ?? "",
+        params.date ?? "",
+        params.time ?? "",
+      ],
       buttonParameters: [params.appointmentId ?? "", params.appointmentId ?? ""],
     }),
     // name real aprovado: "appointment_rescheduling". Mesmo esquema de botões do item acima.
     appointment_updated: () => ({
       name: "appointment_rescheduling",
-      parameters: [params.patientName ?? "", params.date ?? "", params.time ?? ""],
+      parameters: [
+        params.patientName ?? "",
+        params.appointmentType ?? "",
+        params.professionalName ?? "",
+        params.date ?? "",
+        params.time ?? "",
+      ],
       buttonParameters: [params.appointmentId ?? "", params.appointmentId ?? ""],
     }),
     appointment_cancelled: () => ({
