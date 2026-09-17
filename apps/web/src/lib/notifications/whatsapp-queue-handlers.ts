@@ -67,6 +67,58 @@ async function handleAppointmentReminder(
   };
 }
 
+export async function handleAppointmentScheduled(
+  supabaseAdmin: SupabaseAdmin,
+  notification: DequeuedNotification,
+): Promise<WhatsAppQueueHandlerResult> {
+  const { data: appointment, error } = await supabaseAdmin
+    .from("appointments")
+    .select("date, time, status, patient:patients!appointments_patient_id_fkey(name)")
+    .eq("id", notification.referenceId)
+    .maybeSingle();
+  if (error)
+    throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
+  if (!appointment || appointment.status !== "agendada") return { action: "skip" };
+
+  const patient = appointment.patient as unknown as { name: string } | null;
+  return {
+    action: "send",
+    recipient: recipientOf(notification),
+    templateParams: {
+      patientName: patient?.name ?? "",
+      date: appointment.date,
+      time: appointment.time,
+      appointmentId: notification.referenceId,
+    },
+  };
+}
+
+export async function handleAppointmentRescheduling(
+  supabaseAdmin: SupabaseAdmin,
+  notification: DequeuedNotification,
+): Promise<WhatsAppQueueHandlerResult> {
+  const { data: appointment, error } = await supabaseAdmin
+    .from("appointments")
+    .select("date, time, status, patient:patients!appointments_patient_id_fkey(name)")
+    .eq("id", notification.referenceId)
+    .maybeSingle();
+  if (error)
+    throw new Error(`Falha ao buscar consulta ${notification.referenceId}: ${error.message}`);
+  if (!appointment || appointment.status !== "agendada") return { action: "skip" };
+
+  const patient = appointment.patient as unknown as { name: string } | null;
+  return {
+    action: "send",
+    recipient: recipientOf(notification),
+    templateParams: {
+      patientName: patient?.name ?? "",
+      date: appointment.date,
+      time: appointment.time,
+      appointmentId: notification.referenceId,
+    },
+  };
+}
+
 async function handleAppointmentUnconfirmed(
   supabaseAdmin: SupabaseAdmin,
   notification: DequeuedNotification,
@@ -823,6 +875,8 @@ async function handleBirthModeActivated(
 export const WHATSAPP_QUEUE_HANDLERS: Partial<
   Record<WhatsAppNotificationType, WhatsAppQueueHandler>
 > = {
+  appointment_scheduled: handleAppointmentScheduled,
+  appointment_updated: handleAppointmentRescheduling,
   appointment_reminder: handleAppointmentReminder,
   appointment_unconfirmed: handleAppointmentUnconfirmed,
   installment_payment_reminder: handleInstallmentPaymentReminder,

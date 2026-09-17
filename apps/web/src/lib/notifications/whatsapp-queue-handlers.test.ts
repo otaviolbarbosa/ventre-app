@@ -1,13 +1,22 @@
 import { dayjs } from "@/lib/dayjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { contractRow } = vi.hoisted(() => ({
+const { contractRow, appointmentRow } = vi.hoisted(() => ({
   contractRow: {
     data: null as {
       is_signed: boolean;
       status: string;
       created_at: string;
       patient: { name: string; created_by: string } | null;
+    } | null,
+    error: null as { message: string } | null,
+  },
+  appointmentRow: {
+    data: null as {
+      date: string;
+      time: string;
+      status: string;
+      patient: { name: string } | null;
     } | null,
     error: null as { message: string } | null,
   },
@@ -22,7 +31,11 @@ function makeQueryBuilder(result: { data: unknown; error: unknown }) {
   return builder;
 }
 
-import { handleContractPendingSignature } from "./whatsapp-queue-handlers";
+import {
+  handleAppointmentRescheduling,
+  handleAppointmentScheduled,
+  handleContractPendingSignature,
+} from "./whatsapp-queue-handlers";
 
 describe("handleContractPendingSignature", () => {
   const supabaseAdmin = {
@@ -64,5 +77,69 @@ describe("handleContractPendingSignature", () => {
     } as Parameters<typeof handleContractPendingSignature>[1]);
 
     expect(result.action).not.toBe("skip");
+  });
+});
+
+describe.each([
+  ["handleAppointmentScheduled", handleAppointmentScheduled],
+  ["handleAppointmentRescheduling", handleAppointmentRescheduling],
+] as const)("%s", (_name, handler) => {
+  const supabaseAdmin = {
+    from: vi.fn((table: string) => {
+      if (table === "appointments") return makeQueryBuilder(appointmentRow);
+      throw new Error(`unexpected table: ${table}`);
+    }),
+  } as unknown as Parameters<typeof handler>[0];
+
+  beforeEach(() => {
+    appointmentRow.data = {
+      date: "2026-12-25",
+      time: "14:00",
+      status: "agendada",
+      patient: { name: "Maria" },
+    };
+    appointmentRow.error = null;
+  });
+
+  it("sends with patient name, date, time and appointmentId as button parameter", async () => {
+    const result = await handler(supabaseAdmin, {
+      referenceId: "appointment-1",
+      recipientType: "patient",
+      recipientId: "patient-1",
+    } as Parameters<typeof handler>[1]);
+
+    expect(result).toEqual({
+      action: "send",
+      recipient: { recipientType: "patient", recipientId: "patient-1" },
+      templateParams: {
+        patientName: "Maria",
+        date: "2026-12-25",
+        time: "14:00",
+        appointmentId: "appointment-1",
+      },
+    });
+  });
+
+  it("skips when the appointment is no longer scheduled (e.g. cancelled in the meantime)", async () => {
+    appointmentRow.data = {
+      ...(appointmentRow.data as NonNullable<typeof appointmentRow.data>),
+      status: "cancelada",
+    };
+
+    const result = await handler(supabaseAdmin, {
+      referenceId: "appointment-1",
+    } as Parameters<typeof handler>[1]);
+
+    expect(result.action).toBe("skip");
+  });
+
+  it("skips when the appointment no longer exists", async () => {
+    appointmentRow.data = null;
+
+    const result = await handler(supabaseAdmin, {
+      referenceId: "appointment-1",
+    } as Parameters<typeof handler>[1]);
+
+    expect(result.action).toBe("skip");
   });
 });

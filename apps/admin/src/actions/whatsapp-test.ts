@@ -1,7 +1,11 @@
 "use server";
 
 import { adminActionClient } from "@/lib/safe-action";
-import { getWhatsAppTemplate, normalizePhoneToE164, sendWhatsAppTemplateMessage } from "@ventre/whatsapp";
+import {
+  getWhatsAppTemplate,
+  normalizePhoneToE164,
+  sendWhatsAppTemplateMessage,
+} from "@ventre/whatsapp";
 import { z } from "zod";
 
 const phoneSchema = z.string().min(10, "Informe um telefone válido (DDD + número)");
@@ -81,6 +85,22 @@ const testWhatsAppTemplateSchema = z.discriminatedUnion("templateType", [
     time: z.string().min(1, "Obrigatório"),
     professionalName: z.string().min(1, "Obrigatório"),
   }),
+  z.object({
+    templateType: z.literal("appointment_scheduled"),
+    phone: phoneSchema,
+    patientName: z.string().min(1, "Obrigatório"),
+    date: z.string().min(1, "Obrigatório"),
+    time: z.string().min(1, "Obrigatório"),
+    appointmentId: z.string().min(1, "Obrigatório"),
+  }),
+  z.object({
+    templateType: z.literal("appointment_updated"),
+    phone: phoneSchema,
+    patientName: z.string().min(1, "Obrigatório"),
+    date: z.string().min(1, "Obrigatório"),
+    time: z.string().min(1, "Obrigatório"),
+    appointmentId: z.string().min(1, "Obrigatório"),
+  }),
 ]);
 
 export const testWhatsAppTemplateAction = adminActionClient
@@ -97,7 +117,7 @@ export const testWhatsAppTemplateAction = adminActionClient
       to,
       templateName: template.name,
       parameters: template.parameters,
-      buttonParameter: template.buttonParameter,
+      buttonParameters: template.buttonParameters,
     });
 
     return { externalMessageId, templateName: template.name };
