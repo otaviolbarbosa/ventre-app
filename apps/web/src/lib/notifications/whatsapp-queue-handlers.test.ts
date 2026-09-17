@@ -16,7 +16,9 @@ const { contractRow, appointmentRow } = vi.hoisted(() => ({
       date: string;
       time: string;
       status: string;
+      type: string;
       patient: { name: string } | null;
+      professional: { name: string } | null;
     } | null,
     error: null as { message: string } | null,
   },
@@ -96,12 +98,14 @@ describe.each([
       date: "2026-12-25",
       time: "14:00",
       status: "agendada",
+      type: "consulta",
       patient: { name: "Maria" },
+      professional: { name: "Dra. Ana" },
     };
     appointmentRow.error = null;
   });
 
-  it("sends with patient name, date, time and appointmentId as button parameter", async () => {
+  it("sends with patient name, appointment type, professional name, date, time and appointmentId as button parameter", async () => {
     const result = await handler(supabaseAdmin, {
       referenceId: "appointment-1",
       recipientType: "patient",
@@ -113,6 +117,8 @@ describe.each([
       recipient: { recipientType: "patient", recipientId: "patient-1" },
       templateParams: {
         patientName: "Maria",
+        appointmentType: "Consulta",
+        professionalName: "Dra. Ana",
         date: "2026-12-25",
         time: "14:00",
         appointmentId: "appointment-1",

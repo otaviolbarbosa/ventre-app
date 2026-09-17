@@ -73,7 +73,9 @@ export async function handleAppointmentScheduled(
 ): Promise<WhatsAppQueueHandlerResult> {
   const { data: appointment, error } = await supabaseAdmin
     .from("appointments")
-    .select("date, time, status, patient:patients!appointments_patient_id_fkey(name)")
+    .select(
+      "date, time, status, type, patient:patients!appointments_patient_id_fkey(name), professional:users(name)",
+    )
     .eq("id", notification.referenceId)
     .maybeSingle();
   if (error)
@@ -81,11 +83,14 @@ export async function handleAppointmentScheduled(
   if (!appointment || appointment.status !== "agendada") return { action: "skip" };
 
   const patient = appointment.patient as unknown as { name: string } | null;
+  const professional = appointment.professional as unknown as { name: string } | null;
   return {
     action: "send",
     recipient: recipientOf(notification),
     templateParams: {
       patientName: patient?.name ?? "",
+      appointmentType: APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type,
+      professionalName: professional?.name ?? "",
       date: appointment.date,
       time: appointment.time,
       appointmentId: notification.referenceId,
@@ -99,7 +104,9 @@ export async function handleAppointmentRescheduling(
 ): Promise<WhatsAppQueueHandlerResult> {
   const { data: appointment, error } = await supabaseAdmin
     .from("appointments")
-    .select("date, time, status, patient:patients!appointments_patient_id_fkey(name)")
+    .select(
+      "date, time, status, type, patient:patients!appointments_patient_id_fkey(name), professional:users(name)",
+    )
     .eq("id", notification.referenceId)
     .maybeSingle();
   if (error)
@@ -107,11 +114,14 @@ export async function handleAppointmentRescheduling(
   if (!appointment || appointment.status !== "agendada") return { action: "skip" };
 
   const patient = appointment.patient as unknown as { name: string } | null;
+  const professional = appointment.professional as unknown as { name: string } | null;
   return {
     action: "send",
     recipient: recipientOf(notification),
     templateParams: {
       patientName: patient?.name ?? "",
+      appointmentType: APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type,
+      professionalName: professional?.name ?? "",
       date: appointment.date,
       time: appointment.time,
       appointmentId: notification.referenceId,

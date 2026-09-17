@@ -114,7 +114,16 @@ export function WhatsAppTestForm() {
         break;
       case "appointment_scheduled":
       case "appointment_updated":
-        execute({ templateType, phone, patientName, date, time, appointmentId });
+        execute({
+          templateType,
+          phone,
+          patientName,
+          appointmentType,
+          professionalName,
+          date,
+          time,
+          appointmentId,
+        });
         break;
     }
   }
@@ -160,7 +169,9 @@ export function WhatsAppTestForm() {
               templateType === "contract_pending_signature" ||
               templateType === "contract_created" ||
               templateType === "daily_agenda_summary" ||
-              templateType === "cancel_appointment_patient") && (
+              templateType === "cancel_appointment_patient" ||
+              templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
               <div className="space-y-1">
                 <Label>Nome do profissional *</Label>
                 <Input
@@ -216,6 +227,18 @@ export function WhatsAppTestForm() {
                   <Input value={location} onChange={(e) => setLocation(e.target.value)} required />
                 </div>
               </>
+            )}
+
+            {(templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
+              <div className="space-y-1">
+                <Label>Tipo de consulta *</Label>
+                <Input
+                  value={appointmentType}
+                  onChange={(e) => setAppointmentType(e.target.value)}
+                  required
+                />
+              </div>
             )}
 
             {(templateType === "cancel_appointment_patient" ||
