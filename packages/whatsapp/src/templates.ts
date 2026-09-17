@@ -69,12 +69,13 @@ type WhatsAppTemplateParams = {
   planName?: string;
   patientInviteId?: string;
   contractId?: string;
+  appointmentId?: string;
 };
 
 type WhatsAppTemplate = {
   name: string;
   parameters: string[];
-  buttonParameter?: string;
+  buttonParameters?: string[];
 };
 
 // Os nomes abaixo são placeholders de negócio — a submissão real dos templates no Meta
@@ -87,13 +88,20 @@ export function getWhatsAppTemplate(
   params: WhatsAppTemplateParams,
 ): WhatsAppTemplate {
   const templates: Record<WhatsAppNotificationType, () => WhatsAppTemplate> = {
+    // name real aprovado no Business Manager já veio como "new_appointment" — chave interna
+    // fica appointment_scheduled por consistência com o resto do arquivo. Botões (0 = confirmar,
+    // 1 = cancelar) levam o mesmo appointmentId; a URL de cada botão (com ?aid=) é configurada
+    // no próprio template aprovado na Meta, não aqui.
     appointment_scheduled: () => ({
-      name: "appointment_scheduled",
+      name: "new_appointment",
       parameters: [params.patientName ?? "", params.date ?? "", params.time ?? ""],
+      buttonParameters: [params.appointmentId ?? "", params.appointmentId ?? ""],
     }),
+    // name real aprovado: "appointment_rescheduling". Mesmo esquema de botões do item acima.
     appointment_updated: () => ({
-      name: "appointment_updated",
+      name: "appointment_rescheduling",
       parameters: [params.patientName ?? "", params.date ?? "", params.time ?? ""],
+      buttonParameters: [params.appointmentId ?? "", params.appointmentId ?? ""],
     }),
     appointment_cancelled: () => ({
       name: "appointment_cancelled",
@@ -214,12 +222,12 @@ export function getWhatsAppTemplate(
     contract_pending_signature: () => ({
       name: "contract_pending_signature",
       parameters: [params.patientName ?? "", params.professionalName ?? ""],
-      buttonParameter: params.contractId ?? "",
+      buttonParameters: [params.contractId ?? ""],
     }),
     contract_created: () => ({
       name: "contract_created",
       parameters: [params.patientName ?? "", params.professionalName ?? ""],
-      buttonParameter: params.contractId ?? "",
+      buttonParameters: [params.contractId ?? ""],
     }),
     daily_agenda_summary: () => ({
       name: "daily_agenda_summary",
@@ -282,12 +290,12 @@ export function getWhatsAppTemplate(
     patient_self_registration_invite: () => ({
       name: "patient_self_registration_invite",
       parameters: [params.patientName ?? ""],
-      buttonParameter: params.patientInviteId ?? "",
+      buttonParameters: [params.patientInviteId ?? ""],
     }),
     patient_link_existing_invite: () => ({
       name: "patient_link_existing_invite",
       parameters: [params.patientName ?? ""],
-      buttonParameter: params.patientInviteId ?? "",
+      buttonParameters: [params.patientInviteId ?? ""],
     }),
   };
 

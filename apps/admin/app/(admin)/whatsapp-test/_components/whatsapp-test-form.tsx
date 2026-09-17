@@ -21,6 +21,8 @@ const TEMPLATE_OPTIONS = [
   { value: "contract_created", label: "Contrato criado" },
   { value: "daily_agenda_summary", label: "Resumo da agenda do dia" },
   { value: "cancel_appointment_patient", label: "Consulta cancelada (paciente)" },
+  { value: "appointment_scheduled", label: "Nova consulta agendada" },
+  { value: "appointment_updated", label: "Consulta reagendada" },
 ] as const;
 
 type TemplateType = (typeof TEMPLATE_OPTIONS)[number]["value"];
@@ -41,6 +43,7 @@ export function WhatsAppTestForm() {
   const [billingName, setBillingName] = useState("Pré-natal Emocional");
   const [dueDate, setDueDate] = useState("15/06/2026");
   const [contractId, setContractId] = useState("00000000-0000-0000-0000-000000000000");
+  const [appointmentId, setAppointmentId] = useState("00000000-0000-0000-0000-000000000000");
   const [appointmentCount, setAppointmentCount] = useState("3");
   const [firstAppointmentTime, setFirstAppointmentTime] = useState("10:00");
   const [lastAppointmentTime, setLastAppointmentTime] = useState("16:00");
@@ -109,6 +112,10 @@ export function WhatsAppTestForm() {
       case "cancel_appointment_patient":
         execute({ templateType, phone, patientName, date, time, professionalName });
         break;
+      case "appointment_scheduled":
+      case "appointment_updated":
+        execute({ templateType, phone, patientName, date, time, appointmentId });
+        break;
     }
   }
 
@@ -171,10 +178,16 @@ export function WhatsAppTestForm() {
               templateType === "installment_payment_reminder" ||
               templateType === "contract_pending_signature" ||
               templateType === "contract_created" ||
-              templateType === "cancel_appointment_patient") && (
+              templateType === "cancel_appointment_patient" ||
+              templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
               <div className="space-y-1">
                 <Label>Nome da paciente *</Label>
-                <Input value={patientName} onChange={(e) => setPatientName(e.target.value)} required />
+                <Input
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  required
+                />
               </div>
             )}
 
@@ -205,7 +218,9 @@ export function WhatsAppTestForm() {
               </>
             )}
 
-            {templateType === "cancel_appointment_patient" && (
+            {(templateType === "cancel_appointment_patient" ||
+              templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label>Data *</Label>
@@ -215,6 +230,18 @@ export function WhatsAppTestForm() {
                   <Label>Hora *</Label>
                   <Input value={time} onChange={(e) => setTime(e.target.value)} required />
                 </div>
+              </div>
+            )}
+
+            {(templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
+              <div className="space-y-1">
+                <Label>ID do agendamento (parâmetro dos botões) *</Label>
+                <Input
+                  value={appointmentId}
+                  onChange={(e) => setAppointmentId(e.target.value)}
+                  required
+                />
               </div>
             )}
 
@@ -313,9 +340,7 @@ export function WhatsAppTestForm() {
               </div>
             )}
 
-            {result.serverError && (
-              <p className="text-destructive text-sm">{result.serverError}</p>
-            )}
+            {result.serverError && <p className="text-destructive text-sm">{result.serverError}</p>}
 
             {result.data && (
               <p className="text-muted-foreground text-xs">
