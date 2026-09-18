@@ -2,6 +2,7 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
+import { formatFriendlyDate } from "@/lib/notifications/format";
 import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
@@ -77,7 +78,7 @@ export const cancelDayAppointmentsAction = authActionClient
       sendWhatsAppToUser(
         { recipientType: "patient", recipientId: patientId },
         "appointment_cancelled",
-        { patientName, date: parsedInput.date },
+        { patientName, date: formatFriendlyDate(parsedInput.date) },
         { referenceType: "appointment", referenceId: appointmentId },
       ).catch((err) => {
         console.error("[whatsapp] cancel-day-appointments send failed", err);

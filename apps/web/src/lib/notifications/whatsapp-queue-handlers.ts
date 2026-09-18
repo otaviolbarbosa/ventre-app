@@ -1,5 +1,6 @@
 // apps/web/src/lib/notifications/whatsapp-queue-handlers.ts
 import { dayjs } from "@/lib/dayjs";
+import { formatFriendlyDate, formatFriendlyTime } from "@/lib/notifications/format";
 import type { DequeuedNotification } from "@/lib/notifications/queue";
 import type { WhatsAppQueueRecipient } from "@/lib/notifications/whatsapp-queue-send";
 import type { createServerSupabaseAdmin } from "@ventre/supabase/server";
@@ -59,8 +60,8 @@ async function handleAppointmentReminder(
     templateParams: {
       patientName: patient?.name ?? "",
       appointmentType: APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type,
-      date: appointment.date,
-      time: appointment.time,
+      date: formatFriendlyDate(appointment.date),
+      time: formatFriendlyTime(appointment.time),
       professionalName: professional?.name ?? "",
       location: appointment.location ?? "Não informado",
     },
@@ -91,8 +92,8 @@ export async function handleAppointmentScheduled(
       patientName: patient?.name ?? "",
       appointmentType: APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type,
       professionalName: professional?.name ?? "",
-      date: appointment.date,
-      time: appointment.time,
+      date: formatFriendlyDate(appointment.date),
+      time: formatFriendlyTime(appointment.time),
       appointmentId: notification.referenceId,
     },
   };
@@ -122,8 +123,8 @@ export async function handleAppointmentRescheduling(
       patientName: patient?.name ?? "",
       appointmentType: APPOINTMENT_TYPE_LABELS[appointment.type] ?? appointment.type,
       professionalName: professional?.name ?? "",
-      date: appointment.date,
-      time: appointment.time,
+      date: formatFriendlyDate(appointment.date),
+      time: formatFriendlyTime(appointment.time),
       appointmentId: notification.referenceId,
     },
   };
@@ -153,8 +154,8 @@ async function handleAppointmentUnconfirmed(
     recipient: recipientOf(notification),
     templateParams: {
       patientName: patient?.name ?? "",
-      date: appointment.date,
-      time: appointment.time,
+      date: formatFriendlyDate(appointment.date),
+      time: formatFriendlyTime(appointment.time),
       professionalName: professional?.name ?? "",
     },
   };
@@ -341,7 +342,7 @@ async function handleDppApproaching(
     templateParams: {
       patientName: patient.name,
       daysUntilDpp,
-      dppDate: pregnancy.due_date,
+      dppDate: formatFriendlyDate(pregnancy.due_date),
       professionalName: professional?.name ?? "",
     },
   };
@@ -532,8 +533,8 @@ async function handleDailyAgendaSummary(
     templateParams: {
       professionalName: professional.name,
       appointmentCount: todaysAppointments.length,
-      firstAppointmentTime: firstAppointment?.time ?? "",
-      lastAppointmentTime: lastAppointment?.time ?? "",
+      firstAppointmentTime: firstAppointment?.time ? formatFriendlyTime(firstAppointment.time) : "",
+      lastAppointmentTime: lastAppointment?.time ? formatFriendlyTime(lastAppointment.time) : "",
     },
   };
 }
@@ -581,7 +582,7 @@ async function handlePaymentReceived(
       paymentMethod: PAYMENT_METHOD_LABELS[payment.payment_method] ?? payment.payment_method,
       installmentNumber: installment?.installment_number,
       totalInstallments: installment?.billing?.installment_count,
-      paymentDate: payment.paid_at,
+      paymentDate: formatFriendlyDate(payment.paid_at),
     },
   };
 }
@@ -696,7 +697,7 @@ async function handleInstallmentOverdueProfessional(
       patientName: patient?.name ?? "",
       amount: String(installment.amount),
       overdueDays,
-      dueDate: installment.due_date,
+      dueDate: formatFriendlyDate(installment.due_date),
     },
   };
 }
@@ -732,7 +733,7 @@ async function handleAppointmentLastMinuteCancel(
     templateParams: {
       professionalName: professional?.name ?? "",
       patientName: patient?.name ?? "",
-      time: appointment.time,
+      time: formatFriendlyTime(appointment.time),
     },
   };
 }

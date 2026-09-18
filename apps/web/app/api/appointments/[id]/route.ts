@@ -1,3 +1,4 @@
+import { formatFriendlyDate, formatFriendlyTime } from "@/lib/notifications/format";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
@@ -115,7 +116,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         sendWhatsAppToUser(
           { recipientType: "patient", recipientId: patient.id },
           isCancelled ? "appointment_cancelled" : "appointment_updated",
-          { patientName: patient.name, date: appointment.date, time: appointment.time },
+          {
+            patientName: patient.name,
+            date: formatFriendlyDate(appointment.date),
+            time: formatFriendlyTime(appointment.time),
+          },
           { referenceType: "appointment", referenceId: id },
         ).catch((err) => {
           console.error("[whatsapp] appointment update/cancel send failed", err);

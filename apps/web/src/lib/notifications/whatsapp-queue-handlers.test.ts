@@ -108,15 +108,21 @@ describe.each([
   } as unknown as Parameters<typeof handler>[0];
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-12-20T12:00:00.000Z"));
     appointmentRow.data = {
       date: "2026-12-25",
-      time: "14:00",
+      time: "14:00:00",
       status: "agendada",
       type: "consulta",
       patient: { name: "Maria" },
       professional: { name: "Dra. Ana" },
     };
     appointmentRow.error = null;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("sends with patient name, appointment type, professional name, date, time and appointmentId as button parameter", async () => {
@@ -133,11 +139,35 @@ describe.each([
         patientName: "Maria",
         appointmentType: "Consulta",
         professionalName: "Dra. Ana",
-        date: "2026-12-25",
+        date: "25/12",
         time: "14:00",
         appointmentId: "appointment-1",
       },
     });
+  });
+
+  it("uses 'hoje'/'amanhã' for the date when the appointment is very soon", async () => {
+    appointmentRow.data = {
+      ...(appointmentRow.data as NonNullable<typeof appointmentRow.data>),
+      date: "2026-12-20",
+    };
+    const today = await handler(supabaseAdmin, {
+      referenceId: "appointment-1",
+      recipientType: "patient",
+      recipientId: "patient-1",
+    } as Parameters<typeof handler>[1]);
+    expect(today.action === "send" && today.templateParams.date).toBe("hoje");
+
+    appointmentRow.data = {
+      ...(appointmentRow.data as NonNullable<typeof appointmentRow.data>),
+      date: "2026-12-21",
+    };
+    const tomorrow = await handler(supabaseAdmin, {
+      referenceId: "appointment-1",
+      recipientType: "patient",
+      recipientId: "patient-1",
+    } as Parameters<typeof handler>[1]);
+    expect(tomorrow.action === "send" && tomorrow.templateParams.date).toBe("amanhã");
   });
 
   it("skips when the appointment is no longer scheduled (e.g. cancelled in the meantime)", async () => {
