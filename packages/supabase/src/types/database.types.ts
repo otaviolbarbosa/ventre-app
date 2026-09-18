@@ -127,6 +127,8 @@ export type Database = {
       }
       appointments: {
         Row: {
+          cancellation_reason: string | null
+          cancelled_by_patient_at: string | null
           confirmed_by_patient_at: string | null
           created_at: string | null
           date: string
@@ -141,12 +143,15 @@ export type Database = {
           notes: string | null
           patient_id: string | null
           professional_id: string
+          reschedule_requested: boolean
           status: Database["public"]["Enums"]["appointment_status"]
           time: string
           type: Database["public"]["Enums"]["appointment_type"]
           updated_at: string | null
         }
         Insert: {
+          cancellation_reason?: string | null
+          cancelled_by_patient_at?: string | null
           confirmed_by_patient_at?: string | null
           created_at?: string | null
           date: string
@@ -161,12 +166,15 @@ export type Database = {
           notes?: string | null
           patient_id?: string | null
           professional_id: string
+          reschedule_requested?: boolean
           status?: Database["public"]["Enums"]["appointment_status"]
           time: string
           type: Database["public"]["Enums"]["appointment_type"]
           updated_at?: string | null
         }
         Update: {
+          cancellation_reason?: string | null
+          cancelled_by_patient_at?: string | null
           confirmed_by_patient_at?: string | null
           created_at?: string | null
           date?: string
@@ -181,6 +189,7 @@ export type Database = {
           notes?: string | null
           patient_id?: string | null
           professional_id?: string
+          reschedule_requested?: boolean
           status?: Database["public"]["Enums"]["appointment_status"]
           time?: string
           type?: Database["public"]["Enums"]["appointment_type"]

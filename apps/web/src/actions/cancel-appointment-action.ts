@@ -4,16 +4,22 @@ import { authActionClient } from "@/lib/safe-action";
 import dayjs from "dayjs";
 import { z } from "zod";
 
-export const confirmAppointmentAttendanceAction = authActionClient
-  .inputSchema(z.object({ appointmentId: z.string().uuid() }))
+export const cancelAppointmentAction = authActionClient
+  .inputSchema(
+    z.object({
+      appointmentId: z.string().uuid(),
+      reason: z.string().trim().max(500).optional(),
+      requestReschedule: z.boolean().default(false),
+    }),
+  )
   .action(async ({ parsedInput, ctx: { supabaseAdmin, user, profile } }) => {
     if (profile.user_type !== "patient") {
-      throw new Error("Apenas pacientes podem confirmar presença.");
+      throw new Error("Apenas pacientes podem cancelar agendamentos.");
     }
 
     const { data: appointment } = await supabaseAdmin
       .from("appointments")
-      .select("id, patient_id, date, time, status, confirmed_by_patient_at")
+      .select("id, patient_id, date, time, status")
       .eq("id", parsedInput.appointmentId)
       .single();
 
@@ -29,24 +35,25 @@ export const confirmAppointmentAttendanceAction = authActionClient
       .maybeSingle();
 
     if (!patient) {
-      throw new Error("Você não tem permissão para confirmar esta consulta.");
+      throw new Error("Você não tem permissão para cancelar esta consulta.");
     }
 
     if (appointment.status === "cancelada") {
-      throw new Error("Esta consulta foi cancelada e não pode ser confirmada.");
+      return { success: true };
     }
 
     if (dayjs(`${appointment.date}T${appointment.time}`).isBefore(dayjs())) {
-      throw new Error("Não é possível confirmar presença em uma consulta que já passou.");
-    }
-
-    if (appointment.confirmed_by_patient_at) {
-      return { success: true };
+      throw new Error("Não é possível cancelar uma consulta que já passou.");
     }
 
     const { error } = await supabaseAdmin
       .from("appointments")
-      .update({ confirmed_by_patient_at: new Date().toISOString() })
+      .update({
+        status: "cancelada",
+        cancellation_reason: parsedInput.reason || null,
+        reschedule_requested: parsedInput.requestReschedule,
+        cancelled_by_patient_at: new Date().toISOString(),
+      })
       .eq("id", parsedInput.appointmentId);
 
     if (error) {
