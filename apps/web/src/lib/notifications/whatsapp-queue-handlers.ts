@@ -160,7 +160,7 @@ async function handleAppointmentUnconfirmed(
   };
 }
 
-async function handleInstallmentPaymentReminder(
+export async function handleInstallmentPaymentReminder(
   supabaseAdmin: SupabaseAdmin,
   notification: DequeuedNotification,
 ): Promise<WhatsAppQueueHandlerResult> {
@@ -193,6 +193,12 @@ async function handleInstallmentPaymentReminder(
     );
   }
 
+  const daysUntilDue = dayjs(installment.due_date)
+    .startOf("day")
+    .diff(dayjs().startOf("day"), "day");
+  const friendlyDueDate =
+    daysUntilDue <= 0 ? "hoje" : `em ${daysUntilDue} dia${daysUntilDue === 1 ? "" : "s"}`;
+
   return {
     action: "send",
     recipient: recipientOf(notification),
@@ -201,7 +207,7 @@ async function handleInstallmentPaymentReminder(
       installmentNumber: installment.installment_number,
       amount: String(installment.amount),
       billingName: billing?.description ?? "",
-      dueDate: installment.due_date,
+      dueDate: friendlyDueDate,
       professionalName: professional?.name ?? "",
     },
   };
