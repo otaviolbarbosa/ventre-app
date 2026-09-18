@@ -27,8 +27,8 @@ async function fetchFlagFromPostHog(distinctId: string, flagKey: string): Promis
     });
     if (!res.ok) return false;
 
-    const data = (await res.json()) as { featureFlags?: Record<string, unknown> };
-    return data.featureFlags?.[flagKey] === true;
+    const data = (await res.json()) as { flags?: Record<string, { enabled?: boolean }> };
+    return data.flags?.[flagKey]?.enabled === true;
   } catch {
     // PostHog unreachable — fail closed: keep the subscription requirement enforced
     // rather than accidentally letting everyone through on an outage.

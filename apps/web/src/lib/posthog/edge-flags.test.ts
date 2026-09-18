@@ -37,7 +37,9 @@ describe("resolveDisableSubscriptionAccessFlag", () => {
   it("busca no PostHog quando não há cookie, e devolve um cookie novo pra cachear", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ featureFlags: { disable_subscription_access: true } }),
+      json: async () => ({
+        flags: { disable_subscription_access: { key: "disable_subscription_access", enabled: true } },
+      }),
     }) as unknown as typeof fetch;
 
     const result = await resolveDisableSubscriptionAccessFlag(undefined, "user-1");
@@ -45,6 +47,20 @@ describe("resolveDisableSubscriptionAccessFlag", () => {
     expect(result.enabled).toBe(true);
     expect(result.freshCookie).toMatchObject({ name: "vt_dsa_flag", value: "1" });
     expect(result.freshCookie?.options.maxAge).toBe(120);
+  });
+
+  it("interpreta enabled: false no formato real do /flags/?v=2 como flag desligada", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        flags: { disable_subscription_access: { key: "disable_subscription_access", enabled: false } },
+      }),
+    }) as unknown as typeof fetch;
+
+    const result = await resolveDisableSubscriptionAccessFlag(undefined, "user-1");
+
+    expect(result.enabled).toBe(false);
+    expect(result.freshCookie).toMatchObject({ value: "0" });
   });
 
   it("retorna false (fail closed) quando a chamada ao PostHog falha", async () => {
