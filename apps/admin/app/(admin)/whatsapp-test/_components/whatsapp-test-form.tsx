@@ -16,6 +16,13 @@ const TEMPLATE_OPTIONS = [
   { value: "patient_self_registration_invite", label: "Convite de autocadastro de paciente" },
   { value: "patient_link_existing_invite", label: "Convite de vínculo a paciente existente" },
   { value: "birth_mode_activated", label: "Modo parto ativado" },
+  { value: "installment_payment_reminder", label: "Lembrete de pagamento de parcela" },
+  { value: "contract_pending_signature", label: "Contrato pendente de assinatura" },
+  { value: "contract_created", label: "Contrato criado" },
+  { value: "daily_agenda_summary", label: "Resumo da agenda do dia" },
+  { value: "cancel_appointment_patient", label: "Consulta cancelada (paciente)" },
+  { value: "appointment_scheduled", label: "Nova consulta agendada" },
+  { value: "appointment_updated", label: "Consulta reagendada" },
 ] as const;
 
 type TemplateType = (typeof TEMPLATE_OPTIONS)[number]["value"];
@@ -31,6 +38,15 @@ export function WhatsAppTestForm() {
   const [location, setLocation] = useState("Clínica Central");
   const [planName, setPlanName] = useState("Plano Premium");
   const [patientInviteId, setPatientInviteId] = useState("00000000-0000-0000-0000-000000000000");
+  const [installmentNumber, setInstallmentNumber] = useState("3");
+  const [amount, setAmount] = useState("R$ 99,99");
+  const [billingName, setBillingName] = useState("Pré-natal Emocional");
+  const [dueDate, setDueDate] = useState("15/06/2026");
+  const [contractId, setContractId] = useState("00000000-0000-0000-0000-000000000000");
+  const [appointmentId, setAppointmentId] = useState("00000000-0000-0000-0000-000000000000");
+  const [appointmentCount, setAppointmentCount] = useState("3");
+  const [firstAppointmentTime, setFirstAppointmentTime] = useState("10:00");
+  const [lastAppointmentTime, setLastAppointmentTime] = useState("16:00");
 
   const { execute, isExecuting, result } = useAction(testWhatsAppTemplateAction, {
     onSuccess: ({ data }) => {
@@ -66,6 +82,48 @@ export function WhatsAppTestForm() {
         break;
       case "birth_mode_activated":
         execute({ templateType, phone, professionalName, patientName });
+        break;
+      case "installment_payment_reminder":
+        execute({
+          templateType,
+          phone,
+          patientName,
+          installmentNumber: Number(installmentNumber),
+          billingName,
+          amount,
+          dueDate,
+          professionalName,
+        });
+        break;
+      case "contract_pending_signature":
+      case "contract_created":
+        execute({ templateType, phone, patientName, professionalName, contractId });
+        break;
+      case "daily_agenda_summary":
+        execute({
+          templateType,
+          phone,
+          professionalName,
+          appointmentCount: Number(appointmentCount),
+          firstAppointmentTime,
+          lastAppointmentTime,
+        });
+        break;
+      case "cancel_appointment_patient":
+        execute({ templateType, phone, patientName, date, time, professionalName });
+        break;
+      case "appointment_scheduled":
+      case "appointment_updated":
+        execute({
+          templateType,
+          phone,
+          patientName,
+          appointmentType,
+          professionalName,
+          date,
+          time,
+          appointmentId,
+        });
         break;
     }
   }
@@ -106,7 +164,14 @@ export function WhatsAppTestForm() {
 
             {(templateType === "appointment_reminder" ||
               templateType === "subscription_billing_issue" ||
-              templateType === "birth_mode_activated") && (
+              templateType === "birth_mode_activated" ||
+              templateType === "installment_payment_reminder" ||
+              templateType === "contract_pending_signature" ||
+              templateType === "contract_created" ||
+              templateType === "daily_agenda_summary" ||
+              templateType === "cancel_appointment_patient" ||
+              templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
               <div className="space-y-1">
                 <Label>Nome do profissional *</Label>
                 <Input
@@ -120,10 +185,20 @@ export function WhatsAppTestForm() {
             {(templateType === "appointment_reminder" ||
               templateType === "patient_self_registration_invite" ||
               templateType === "patient_link_existing_invite" ||
-              templateType === "birth_mode_activated") && (
+              templateType === "birth_mode_activated" ||
+              templateType === "installment_payment_reminder" ||
+              templateType === "contract_pending_signature" ||
+              templateType === "contract_created" ||
+              templateType === "cancel_appointment_patient" ||
+              templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
               <div className="space-y-1">
                 <Label>Nome da paciente *</Label>
-                <Input value={patientName} onChange={(e) => setPatientName(e.target.value)} required />
+                <Input
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  required
+                />
               </div>
             )}
 
@@ -154,6 +229,121 @@ export function WhatsAppTestForm() {
               </>
             )}
 
+            {(templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
+              <div className="space-y-1">
+                <Label>Tipo de consulta *</Label>
+                <Input
+                  value={appointmentType}
+                  onChange={(e) => setAppointmentType(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {(templateType === "cancel_appointment_patient" ||
+              templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label>Data *</Label>
+                  <Input value={date} onChange={(e) => setDate(e.target.value)} required />
+                </div>
+                <div className="space-y-1">
+                  <Label>Hora *</Label>
+                  <Input value={time} onChange={(e) => setTime(e.target.value)} required />
+                </div>
+              </div>
+            )}
+
+            {(templateType === "appointment_scheduled" ||
+              templateType === "appointment_updated") && (
+              <div className="space-y-1">
+                <Label>ID do agendamento (parâmetro dos botões) *</Label>
+                <Input
+                  value={appointmentId}
+                  onChange={(e) => setAppointmentId(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {templateType === "installment_payment_reminder" && (
+              <>
+                <div className="space-y-1">
+                  <Label>Número da parcela *</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={installmentNumber}
+                    onChange={(e) => setInstallmentNumber(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Nome da cobrança *</Label>
+                  <Input
+                    value={billingName}
+                    onChange={(e) => setBillingName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Valor *</Label>
+                  <Input value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                </div>
+                <div className="space-y-1">
+                  <Label>Vencimento *</Label>
+                  <Input value={dueDate} onChange={(e) => setDueDate(e.target.value)} required />
+                </div>
+              </>
+            )}
+
+            {(templateType === "contract_pending_signature" ||
+              templateType === "contract_created") && (
+              <div className="space-y-1">
+                <Label>ID do contrato (parâmetro do botão) *</Label>
+                <Input
+                  value={contractId}
+                  onChange={(e) => setContractId(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            {templateType === "daily_agenda_summary" && (
+              <>
+                <div className="space-y-1">
+                  <Label>Quantidade de agendamentos *</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={appointmentCount}
+                    onChange={(e) => setAppointmentCount(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label>Primeiro horário *</Label>
+                    <Input
+                      value={firstAppointmentTime}
+                      onChange={(e) => setFirstAppointmentTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Último horário *</Label>
+                    <Input
+                      value={lastAppointmentTime}
+                      onChange={(e) => setLastAppointmentTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             {templateType === "subscription_billing_issue" && (
               <div className="space-y-1">
                 <Label>Nome do plano *</Label>
@@ -173,9 +363,7 @@ export function WhatsAppTestForm() {
               </div>
             )}
 
-            {result.serverError && (
-              <p className="text-destructive text-sm">{result.serverError}</p>
-            )}
+            {result.serverError && <p className="text-destructive text-sm">{result.serverError}</p>}
 
             {result.data && (
               <p className="text-muted-foreground text-xs">

@@ -1,3 +1,9 @@
+import { mustHaveActiveSubscription } from "@/lib/access-control";
+import {
+  readCachedFlagCookie,
+  resolveDisableSubscriptionAccessFlag,
+} from "@/lib/posthog/edge-flags";
+import { shouldRedirectToPaywall } from "@/lib/subscription-gate";
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -82,6 +88,14 @@ export async function proxy(request: NextRequest) {
   const isPublicRoute =
     pathname === "/" || publicRoutes.some((route) => pathname.startsWith(route));
 
+  // A Server Action invocation is itself a POST to the current page — if middleware
+  // redirects that request, the client's action runtime can't parse the response
+  // (it expects an action-flight response, not a plain redirect) and throws
+  // "An unexpected response was received from the server." Let the action run; if it
+  // needs to redirect, its own redirect() call produces a normal follow-up navigation
+  // that this middleware gates as usual.
+  const isServerActionRequest = request.headers.has("next-action");
+
   // If user is not authenticated and trying to access protected route
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -98,7 +112,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Onboarding gate for authenticated users on protected routes
-  if (user && !isPublicRoute) {
+  if (user && !isPublicRoute && !isServerActionRequest) {
     const { data: profile } = await supabase
       .from("users")
       .select("user_type, professional_type")
@@ -107,7 +121,7 @@ export async function proxy(request: NextRequest) {
 
     const isStaff = profile?.user_type === "manager" || profile?.user_type === "secretary";
 
-    let hasEnterprise = false;
+    let enterpriseId: string | null = null;
     if (isStaff) {
       const { data: ueRow } = await supabase
         .from("user_enterprises")
@@ -115,8 +129,9 @@ export async function proxy(request: NextRequest) {
         .eq("user_id", user.id)
         .limit(1)
         .maybeSingle();
-      hasEnterprise = ueRow?.enterprise_id != null;
+      enterpriseId = ueRow?.enterprise_id ?? null;
     }
+    const hasEnterprise = enterpriseId != null;
 
     const isOnboardingComplete =
       profile?.user_type === "patient" ||
@@ -133,6 +148,58 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/home";
       return NextResponse.redirect(url);
+    }
+
+    // Professionals/staff need an active subscription once onboarded (patients never do).
+    // This must live here rather than in a layout: Next.js doesn't re-run a shared layout
+    // on a client-side navigation between sibling routes it wraps (e.g. the onboarding
+    // action's redirect("/home") right after finishing onboarding), so a layout-based gate
+    // silently gets skipped on exactly that transition. Middleware runs on every request.
+    // biome-ignore lint/suspicious/noExplicitAny: shape for the pure gate helpers, not a full users row
+    const subscriptionProfile: any = {
+      user_type: profile?.user_type,
+      professional_type: profile?.professional_type,
+      enterprise_id: enterpriseId,
+    };
+
+    if (mustHaveActiveSubscription(subscriptionProfile)) {
+      const cachedFlag = readCachedFlagCookie(request.cookies);
+      const { enabled: bypassEnabled, freshCookie } = await resolveDisableSubscriptionAccessFlag(
+        cachedFlag,
+        user.id,
+      );
+
+      const subscriptionOrFilter = enterpriseId
+        ? `user_id.eq.${user.id},enterprise_id.eq.${enterpriseId}`
+        : `user_id.eq.${user.id}`;
+
+      const { data: subscriptionRows } = await supabase
+        .from("subscriptions")
+        .select("status, expires_at")
+        .or(subscriptionOrFilter)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const subscription = subscriptionRows?.[0] ?? null;
+
+      if (
+        shouldRedirectToPaywall({
+          profile: subscriptionProfile,
+          subscription,
+          bypassFlagEnabled: bypassEnabled,
+        })
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/paywall";
+        const response = NextResponse.redirect(url);
+        if (freshCookie)
+          response.cookies.set(freshCookie.name, freshCookie.value, freshCookie.options);
+        return response;
+      }
+
+      if (freshCookie) {
+        supabaseResponse.cookies.set(freshCookie.name, freshCookie.value, freshCookie.options);
+      }
     }
 
     // Patients only get the shared (dashboard) routes plus their own (patient) routes —

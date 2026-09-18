@@ -15,7 +15,7 @@ export async function sendWhatsAppTemplateMessage(params: {
   templateName: string;
   languageCode?: string;
   parameters: string[];
-  buttonParameter?: string;
+  buttonParameters?: string[];
 }): Promise<{ externalMessageId: string }> {
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const token = process.env.WHATSAPP_SYSTEM_USER_TOKEN;
@@ -46,16 +46,12 @@ export async function sendWhatsAppTemplateMessage(params: {
                 type: "body",
                 parameters: params.parameters.map((text) => ({ type: "text", text })),
               },
-              ...(params.buttonParameter
-                ? [
-                    {
-                      type: "button",
-                      sub_type: "url",
-                      index: "0",
-                      parameters: [{ type: "text", text: params.buttonParameter }],
-                    },
-                  ]
-                : []),
+              ...(params.buttonParameters?.map((text, index) => ({
+                type: "button",
+                sub_type: "url",
+                index: String(index),
+                parameters: [{ type: "text", text }],
+              })) ?? []),
             ],
           },
         }),

@@ -17,6 +17,7 @@ const basePaymentLinkSchema = z.object({
   is_limited: z.boolean().default(false),
   total_subscriptions: z.number().int().min(1).nullable().optional(),
   amount: z.number().int().min(0).nullable().optional(),
+  days_off: z.number().int().min(0).default(0),
 });
 
 const paymentLinkSchema = basePaymentLinkSchema

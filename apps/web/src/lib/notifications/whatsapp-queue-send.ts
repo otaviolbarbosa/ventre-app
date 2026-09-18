@@ -50,7 +50,7 @@ export async function sendWhatsAppTemplateFromQueue(
     to: normalizedPhone,
     templateName: template.name,
     parameters: template.parameters,
-    buttonParameter: template.buttonParameter,
+    buttonParameters: template.buttonParameters,
   });
 
   return { outcome: "sent", externalMessageId };

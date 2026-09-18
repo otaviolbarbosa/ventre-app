@@ -1,6 +1,7 @@
 "use server";
 
 import { authActionClient } from "@/lib/safe-action";
+import dayjs from "dayjs";
 import { z } from "zod";
 
 export const confirmAppointmentAttendanceAction = authActionClient
@@ -12,7 +13,7 @@ export const confirmAppointmentAttendanceAction = authActionClient
 
     const { data: appointment } = await supabaseAdmin
       .from("appointments")
-      .select("id, patient_id")
+      .select("id, patient_id, date, time, status, confirmed_by_patient_at")
       .eq("id", parsedInput.appointmentId)
       .single();
 
@@ -29,6 +30,18 @@ export const confirmAppointmentAttendanceAction = authActionClient
 
     if (!patient) {
       throw new Error("Você não tem permissão para confirmar esta consulta.");
+    }
+
+    if (appointment.status === "cancelada") {
+      throw new Error("Esta consulta foi cancelada e não pode ser confirmada.");
+    }
+
+    if (dayjs(`${appointment.date}T${appointment.time}`).isBefore(dayjs())) {
+      throw new Error("Não é possível confirmar presença em uma consulta que já passou.");
+    }
+
+    if (appointment.confirmed_by_patient_at) {
+      return { success: true };
     }
 
     const { error } = await supabaseAdmin

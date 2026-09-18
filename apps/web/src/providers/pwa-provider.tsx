@@ -46,7 +46,14 @@ export function PwaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
+    // Serwist only builds public/sw.js for production (see next.config.js's
+    // `disable: NODE_ENV === "development"`). Registering unconditionally here
+    // means that once any dev has run a production build locally, the stale
+    // sw.js left in public/ (gitignored, but still served as a static asset by
+    // `next dev`) gets registered in their browser and keeps intercepting
+    // fetches — including Server Action calls — across every later dev session,
+    // silently breaking redirects until the SW is manually unregistered.
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {
         // SW registration failed silently
       });

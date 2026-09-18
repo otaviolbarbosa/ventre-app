@@ -1,6 +1,7 @@
 "use server";
 
 import { insertActivityLog } from "@/lib/activity-log";
+import { enqueueNotification } from "@/lib/notifications/queue";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import { updateAppointmentSchema } from "@/lib/validations/appointment";
@@ -17,6 +18,14 @@ export const updateAppointmentAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const { id, ...fields } = parsedInput;
 
+    // Só dispara appointment_rescheduling quando data/hora de fato mudam — updates de outros
+    // campos (status, notas, tipo etc.) não devem gerar aviso de reagendamento ao paciente.
+    const { data: previousAppointment } = await supabase
+      .from("appointments")
+      .select("date, time, patient_id")
+      .eq("id", id)
+      .single();
+
     const { error } = await supabase.from("appointments").update(fields).eq("id", id);
 
     if (error) throw new Error(error.message);
@@ -27,6 +36,27 @@ export const updateAppointmentAction = authActionClient
       .select("*, patient:patients(name)")
       .eq("id", id)
       .single();
+
+    if (
+      previousAppointment?.patient_id &&
+      updatedAppointment &&
+      (fields.date !== undefined || fields.time !== undefined) &&
+      (updatedAppointment.date !== previousAppointment.date ||
+        updatedAppointment.time !== previousAppointment.time)
+    ) {
+      try {
+        await enqueueNotification({
+          queueName: "whatsapp_notifications",
+          notificationType: "appointment_updated",
+          referenceType: "appointment",
+          referenceId: id,
+          recipientType: "patient",
+          recipientId: previousAppointment.patient_id,
+        });
+      } catch (err) {
+        console.error("[appointment-rescheduling] Failed to enqueue whatsapp notification", err);
+      }
+    }
 
     if (updatedAppointment) {
       // Fire-and-forget — GCal failure must not break update
