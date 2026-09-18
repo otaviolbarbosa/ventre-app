@@ -2,7 +2,6 @@
 
 import { isStaff } from "@/lib/access-control";
 import { insertActivityLog } from "@/lib/activity-log";
-import { enqueueNotification } from "@/lib/notifications/queue";
 import { captureServerEvent } from "@/lib/posthog/server";
 import { authActionClient } from "@/lib/safe-action";
 import {
@@ -51,21 +50,6 @@ export const addAppointmentAction = authActionClient
         .single();
 
       patientName = patient?.name ?? null;
-    }
-
-    if (appointment.patient_id) {
-      try {
-        await enqueueNotification({
-          queueName: "whatsapp_notifications",
-          notificationType: "appointment_scheduled",
-          referenceType: "appointment",
-          referenceId: appointment.id,
-          recipientType: "patient",
-          recipientId: appointment.patient_id,
-        });
-      } catch (err) {
-        console.error("[appointment-scheduled] Failed to enqueue whatsapp notification", err);
-      }
     }
 
     if (appointmentEnterpriseId) {

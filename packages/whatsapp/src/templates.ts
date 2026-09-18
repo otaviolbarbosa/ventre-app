@@ -1,3 +1,5 @@
+import { shortenName } from "./name";
+
 export type WhatsAppNotificationType =
   // Fase 2 — action-triggered
   | "appointment_scheduled"
@@ -85,8 +87,19 @@ type WhatsAppTemplate = {
 // ({{1}}, {{2}}...) que cada corpo de mensagem vai usar.
 export function getWhatsAppTemplate(
   type: WhatsAppNotificationType,
-  params: WhatsAppTemplateParams,
+  rawParams: WhatsAppTemplateParams,
 ): WhatsAppTemplate {
+  // Todo nome próprio (paciente, profissional, quem convidou) entra encurtado em qualquer
+  // template — ver shortenName para a regra de preposição de sobrenome.
+  const params: WhatsAppTemplateParams = {
+    ...rawParams,
+    patientName: rawParams.patientName ? shortenName(rawParams.patientName) : rawParams.patientName,
+    professionalName: rawParams.professionalName
+      ? shortenName(rawParams.professionalName)
+      : rawParams.professionalName,
+    inviterName: rawParams.inviterName ? shortenName(rawParams.inviterName) : rawParams.inviterName,
+  };
+
   const templates: Record<WhatsAppNotificationType, () => WhatsAppTemplate> = {
     // name real aprovado no Business Manager já veio como "new_appointment" — chave interna
     // fica appointment_scheduled por consistência com o resto do arquivo. Botões (0 = confirmar,

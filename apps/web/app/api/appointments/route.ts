@@ -1,3 +1,4 @@
+import { formatFriendlyDate, formatFriendlyTime } from "@/lib/notifications/format";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 import { sendWhatsAppToUser } from "@/lib/notifications/whatsapp-send";
@@ -114,7 +115,11 @@ export async function POST(request: Request) {
         sendWhatsAppToUser(
           { recipientType: "patient", recipientId: validation.data.patient_id },
           "appointment_scheduled",
-          { patientName: patient.name, date: validation.data.date, time: validation.data.time },
+          {
+            patientName: patient.name,
+            date: formatFriendlyDate(validation.data.date),
+            time: formatFriendlyTime(validation.data.time),
+          },
           { referenceType: "appointment", referenceId: appointment.id },
         ).catch((err) => {
           console.error("[whatsapp] appointment_scheduled send failed", err);
