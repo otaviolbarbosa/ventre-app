@@ -1,3 +1,3 @@
 {
-  "ignoreCommand": "npx turbo-ignore"
+  "ignoreCommand": "case \"$VERCEL_GIT_COMMIT_REF\" in main|dev) if [ \"$VERCEL_ENV\" != \"production\" ]; then exit 0; fi ;; esac; npx turbo-ignore"
 }
